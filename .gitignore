@@ -1,0 +1,14 @@
+# 依賴與 build 產物
+node_modules/
+dist/
+
+# Pyodide 執行環境：build / dev 前由 scripts/copy-pyodide.mjs 從 node_modules 複製（約 13 MB）
+public/pyodide/
+
+# e2e 截圖
+e2e/shots/
+
+# 編輯器與系統
+.DS_Store
+*.log
+.vite/

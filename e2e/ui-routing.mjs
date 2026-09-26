@@ -22,6 +22,21 @@ const homeChunks = [...loaded]
 t('home does not load CodeMirror chunk', !homeChunks.some((n) => /^CodeEditor-/.test(n)), homeChunks.join(','))
 t('home does not load Curriculum chunk', !homeChunks.some((n) => /^Curriculum-/.test(n)))
 t('home does not load page chunks', !homeChunks.some((n) => /^(Skill|Exercises|Scenarios|Playground|Roadmap)-/.test(n)))
+t('home does not load skill body chunks', !homeChunks.some((n) => /^d\d-[a-z]+-/.test(n)))
+
+// 技能頁：只載自己領域的內文 chunk；同領域換課不再下載；換領域才多載一個
+const bodyChunks = () => [...loaded].filter((n) => /^d\d-[a-z]+-/.test(n))
+await page.goto(base + '#/skill/sql-joins', { waitUntil: 'networkidle' })
+await page.waitForSelector('.points li')
+t('skill page renders body (points)', (await page.$$('.points li')).length >= 2)
+t('skill page loads exactly its domain body chunk', bodyChunks().length === 1 && /^d3-data-/.test(bodyChunks()[0]), bodyChunks().join(','))
+const h1Before = await page.textContent('h1')
+await page.click('.lesson-nav a.next')
+await page.waitForFunction((prev) => (document.querySelector('h1')?.textContent || '') !== prev && document.querySelectorAll('.points li').length > 0, h1Before, { timeout: 30000 })
+t('same-domain next lesson loads no new body chunk', bodyChunks().length === 1, await page.textContent('h1'))
+await page.goto(base + '#/skill/jwt', { waitUntil: 'networkidle' })
+await page.waitForFunction(() => /JWT/.test(document.querySelector('h1')?.textContent || '') && document.querySelectorAll('.points li').length > 0, null, { timeout: 30000 })
+t('other domain loads its own body chunk', bodyChunks().length === 2 && bodyChunks().some((n) => /^d4-auth-/.test(n)), bodyChunks().join(','))
 
 // 調慢網路：延遲 400 ms、80 kB/s，讓 Curriculum chunk（約 70 kB）要跑一秒多
 const cdp = await ctx.newCDPSession(page)

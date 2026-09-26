@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { findSkill, neighbors } from '../content/roadmap.js'
+import { readSkillBody } from '../content/skillBody.js'
 import { useProgress } from '../progress.js'
 import { Level, DomainPill, LabEmbed, labTitle } from '../components/bits.jsx'
 import { Callout } from '../labs/ui.jsx'
@@ -16,10 +17,11 @@ export default function Skill({ id }) {
   if (!s) return <p className="status-msg">找不到這一課：{id}</p>
 
   const d = s.domain
+  const body = readSkillBody(d, s.id)   // 內文另外一個 chunk：沒到就 suspend（換頁時舊頁面留著）
   const color = `var(--c-${d.color})`
   const done = isDone(s.id)
   const { prev, next } = neighbors(s.id)
-  const checkState = checks(s.id, s.checklist.length)
+  const checkState = checks(s.id, body.checklist.length)
   const checkedN = checkState.filter(Boolean).length
   const assess = assessmentFor(s.id, progress)
   const related = scenariosForSkill(s.id)
@@ -53,10 +55,10 @@ export default function Skill({ id }) {
       <div className="course-bar">
         <nav className="course-toc" aria-label="本課章節">
           {s.lab && <a href="#lab" className="lab-link">▶ 實驗室</a>}
-          <a href="#points">重點（{s.points.length}）</a>
+          <a href="#points">重點（{body.points.length}）</a>
           {assess.total > 0 && <a href="#assess">驗收（{assess.passed}/{assess.total}）</a>}
-          <a href="#check">自我檢核（{checkedN}/{s.checklist.length}）</a>
-          {s.refs?.length > 0 && <a href="#refs">延伸閱讀</a>}
+          <a href="#check">自我檢核（{checkedN}/{body.checklist.length}）</a>
+          {body.refs.length > 0 && <a href="#refs">延伸閱讀</a>}
         </nav>
         <button className={`btn small done-btn${done ? ' is-done' : ' ghost'}`} onClick={() => toggleDone(s.id)}>
           {done ? '✓ 已完成' : '標記完成'}
@@ -74,7 +76,7 @@ export default function Skill({ id }) {
         <div className="lesson-body">
           <h2 id="points">重點</h2>
           <ul className="points">
-            {s.points.map((p, i) => <li key={i}><span><b>{p.b}</b>　<Inline text={p.t} /></span></li>)}
+            {body.points.map((p, i) => <li key={i}><span><b>{p.b}</b>　<Inline text={p.t} /></span></li>)}
           </ul>
 
           <h2 id="assess">驗收 <span className="muted" style={{ fontSize: '0.85rem', fontFamily: 'var(--sans)', fontWeight: 500 }}>{assess.total > 0 ? `${assess.passed} / ${assess.total}` : ''}</span></h2>
@@ -82,18 +84,18 @@ export default function Skill({ id }) {
           {assess.exercises.map((ex) => <ExerciseRunner key={ex.id} exercise={ex} compact />)}
           {assess.quiz && <Quiz key={s.id} skillId={s.id} questions={assess.quiz} />}
 
-          <h2 id="check">自我檢核 <span className="muted" style={{ fontSize: '0.85rem', fontFamily: 'var(--sans)', fontWeight: 500 }}>{checkedN} / {s.checklist.length}</span></h2>
+          <h2 id="check">自我檢核 <span className="muted" style={{ fontSize: '0.85rem', fontFamily: 'var(--sans)', fontWeight: 500 }}>{checkedN} / {body.checklist.length}</span></h2>
           <ul className="checklist">
-            {s.checklist.map((c, i) => (
+            {body.checklist.map((c, i) => (
               <li key={i}>
                 <label>
-                  <input type="checkbox" checked={checkState[i]} onChange={() => toggleCheck(s.id, i, s.checklist.length)} />
+                  <input type="checkbox" checked={checkState[i]} onChange={() => toggleCheck(s.id, i, body.checklist.length)} />
                   <span>{c}</span>
                 </label>
               </li>
             ))}
           </ul>
-          {checkedN === s.checklist.length && !done && (
+          {checkedN === body.checklist.length && !done && (
             <Callout tone="good" title="全部打勾了">可以按上方的「標記完成」把這一站點亮。</Callout>
           )}
 
@@ -106,11 +108,11 @@ export default function Skill({ id }) {
             </>
           )}
 
-          {s.refs?.length > 0 && (
+          {body.refs.length > 0 && (
             <>
               <h2 id="refs">延伸閱讀</h2>
               <ul className="refs">
-                {s.refs.map((r) => <li key={r.url}><a href={r.url} target="_blank" rel="noreferrer">{r.label} ↗</a></li>)}
+                {body.refs.map((r) => <li key={r.url}><a href={r.url} target="_blank" rel="noreferrer">{r.label} ↗</a></li>)}
               </ul>
             </>
           )}

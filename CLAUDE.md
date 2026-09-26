@@ -12,7 +12,7 @@
 
 ## 改內容時
 
-- 技能：`src/content/dN-*.js`；id 全站唯一，`lab` 對應 `src/labs/index.js` 的 key。
+- 技能：索引在 `src/content/dN-*.js`（列表與卡片用的欄位），內文在 `src/content/body/dN-*.js`（`points` / `checklist` / `refs`，以技能 id 為 key，技能頁才懶載入）；id 全站唯一，`lab` 對應 `src/labs/index.js` 的 key。**改完必跑** `npm run validate:content`。`roadmap.js` 與 `dN-*.js` 要能被 Node 直接 import（校驗腳本用），不放 `import.meta.glob`。
 - 程式題：`src/content/exercises/`；**改完必跑** `npm run build && npm run preview` + `npm run e2e:verify`（解答必須通過、起始碼應該不通過）。
 - 選擇題：`src/content/quizzes/`；**改完必跑** `npm run validate:quizzes`。
 - 實驗室：照 `docs/CONTRIBUTING-labs.md` 的合約；用 `?lab=XxxLab` 單獨預覽；**改完必跑** `LAB=XxxLab npm run e2e:labs`（改 `src/labs/ui.jsx` 則跑全部 `npm run e2e:labs`）。

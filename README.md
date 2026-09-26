@@ -34,7 +34,9 @@
 src/
   content/         內容（純資料，改這裡不用碰元件）
     roadmap.js       領域索引、學習路線 PATH、工作關鍵字 WORK_KEYWORDS、查詢 helper
-    d1-language.js … d8-algo.js   每個領域一檔：skills[] 各有 summary / example / keywords / points / checklist / refs / lab
+    d1-language.js … d8-algo.js   每個領域一檔的「索引」：skills[] 各有 id / title / en / level / summary / example / keywords / lab（跟著主 chunk）
+    body/d1-language.js … d8-algo.js   每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs（技能頁才懶載入，每領域一個 chunk）
+    skillBody.js     內文的 Suspense 載入器（readSkillBody / preloadSkillBody）
     schemas.js       SQL 練習與 Playground 共用的電商範例資料庫
     exercises/       程式題（sql / python / js），index.js 匯總
     quizzes/         選擇題題庫，每領域一檔（extra.js 放跨領域補題），index.js 以 glob 自動收集
@@ -61,7 +63,7 @@ hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/
 
 ## 新增內容
 
-- **技能**：在 `content/dN-*.js` 的 `skills` 加一個物件（id 全站唯一）；`refs` 只放確定存在的官方文件。
+- **技能**：分兩處——`content/dN-*.js` 的 `skills` 加索引物件（id 全站唯一），`content/body/dN-*.js` 加同一個 id 的內文（`points` / `checklist` / `refs`）；`refs` 只放確定存在的官方文件。寫完跑 `npm run validate:content`（索引與內文的 id 必須一一對應）。
 - **實驗室**：見 `docs/CONTRIBUTING-labs.md`（合約、共用元件 API、驗證流程）。
 - **程式題**：在 `content/exercises/<領域>.js` 加一筆：`kind` 為 `sql`（`setup` + `expect: { columns, rows, ordered }`，或 `expect.query` 指定驗證查詢）或 `python` / `js`（`tests: [{ name, code }]`，測試碼與使用者程式碼在同一命名空間；JS 內建 `assert` / `assertEqual`）。寫完跑 `npm run e2e:verify` 確認解答通過、起始碼不通過。
 - **選擇題**：見 `docs/CONTRIBUTING-quizzes.md`；寫完跑 `npm run validate:quizzes`。
@@ -70,7 +72,7 @@ hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/
 ## 驗證
 
 ```bash
-npm run validate                 # 題庫與情境結構
+npm run validate                 # 技能索引與內文對應、題庫、情境結構
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
 npm run e2e:runtime              # Playground 的 Python / SQL / JS 真的能跑
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過

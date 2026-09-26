@@ -1,0 +1,139 @@
+// 領域 5：資安（以 OWASP Top 10 為地圖） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d5-security.js
+export default {
+  'owasp-top10': {
+    points: [
+      { b: 'A01 存取控制失效', t: '第一名。改網址的 id 就看到別人的訂單（IDOR）、一般使用者打 admin API。解法：每個資源操作都驗擁有權與角色。' },
+      { b: 'A02 加密機制失效', t: '明文存密碼、用 MD5、HTTP 傳敏感資料、自己實作加密。解法：TLS、bcrypt/argon2、用成熟函式庫。' },
+      { b: 'A03 注入', t: 'SQL / NoSQL / OS 命令 / LDAP 注入。解法：參數化查詢、ORM、輸入驗證、避免拼接 shell 命令。' },
+      { b: 'A05 安全設定錯誤 & A06 過時元件', t: 'debug 模式開在正式環境、預設密碼、CORS `*`、依賴有已知漏洞沒更新。解法：設定檢查清單、依賴掃描。' },
+      { b: 'A07 身分驗證失效 & A09 日誌監控不足', t: '沒限流的登入（暴力破解）、弱密碼政策、session 不過期；出事了沒有 log 可查。' },
+      { b: 'A04 不安全設計、A08 完整性失效、A10 SSRF', t: '設計階段沒做威脅建模；未驗證的更新 / 反序列化；伺服器被誘導去請求內網位址（拿使用者給的 URL 去 fetch 時要白名單）。' },
+      { b: '2021 版與 2025 版編號不同', t: '上面用的是 2021 版編號（多數文章仍用它）。2025 版重新排序：軟體供應鏈失效升到 A03、SSRF 併入 A01、新增 A10「例外狀況處理不當」。看到編號先確認是哪一版，觀念本身沒變。' },
+    ],
+    checklist: [
+      '能不看清單說出至少 6 類並各舉一個例子',
+      '能對自己負責的一個 API 用 Top 10 過一遍並列出風險',
+    ],
+    refs: [
+      { label: 'OWASP Top 10', url: 'https://owasp.org/www-project-top-ten/' },
+      { label: 'OWASP API Security Top 10', url: 'https://owasp.org/www-project-api-security/' },
+      { label: 'OWASP Cheat Sheet Series', url: 'https://cheatsheetseries.owasp.org/' },
+    ],
+  },
+  'injection': {
+    points: [
+      { b: '程式碼與資料的邊界', t: '`f"... WHERE name = \'{name}\'"` 讓輸入可以「關掉引號、寫自己的 SQL」。參數化把 SQL 與值分開送，資料庫永遠把值當值。' },
+      { b: 'ORM 預設安全，但有逃生口', t: 'SQLAlchemy 的 `text()` 裡如果自己 f-string 一樣會中。動態的表名 / 欄名 / 排序欄位無法參數化——用白名單對照。' },
+      { b: 'NoSQL 也會被注入', t: 'MongoDB 的 filter 直接放使用者 JSON 會被 `{"$ne": null}` 繞過；輸入型別要驗證成純值。' },
+      { b: 'OS 命令注入', t: '`os.system(f"convert {filename}")` 讓檔名變命令。用 `subprocess.run([...])` 陣列形式、不經 shell。' },
+      { b: '最小權限的資料庫帳號', t: 'API 用的帳號不該能 DROP TABLE；就算被注入，損害也有上限。' },
+    ],
+    checklist: [
+      '能示範一個 SQL 注入 payload 並用參數化修好',
+      '能說出 ORM 什麼情況下仍然可能被注入',
+      '知道 MongoDB 運算子注入怎麼發生、怎麼防',
+    ],
+    refs: [
+      { label: 'OWASP：SQL Injection Prevention Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html' },
+    ],
+  },
+  'password-storage': {
+    points: [
+      { b: '三個詞三件事', t: '編碼是換表示法（誰都能解）；雜湊是單向摘要（驗證用、不能還原）；加密是有金鑰的可逆轉換（傳輸與靜態資料用）。密碼要的是雜湊。' },
+      { b: 'salt 讓相同密碼不同雜湊', t: '每個使用者一個隨機 salt 存在雜湊旁邊；彩虹表與「一次破全部」失效。' },
+      { b: '慢是特性', t: '雜湊要故意慢（幾十到幾百毫秒），攻擊者每秒只能試幾千次而不是幾十億次。work factor 隨硬體進步調高。' },
+      { b: '用函式庫的 hash / verify', t: '`argon2-cffi`、`bcrypt`、Django / passlib 內建。它們處理 salt、格式、常數時間比對，你只呼叫兩個函式。' },
+      { b: '為什麼不加密', t: '加密需要金鑰，金鑰放在伺服器上——外洩時金鑰跟著走，等於明文。而且驗證密碼根本不需要還原它。' },
+    ],
+    checklist: [
+      '能解釋為什麼 SHA-256(password) 不夠、加了 salt 還是不夠',
+      '能用 argon2 或 bcrypt 實作註冊與登入的雜湊與驗證',
+      '能說出「密碼不加密」的理由',
+    ],
+    refs: [
+      { label: 'OWASP：Password Storage Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html' },
+    ],
+  },
+  'crypto-toolbox': {
+    points: [
+      { b: '雜湊：單向、固定長度、驗完整性', t: 'SHA-256 給檔案校驗、ETag、內容定址；密碼要用慢雜湊（argon2 / bcrypt）不是 SHA。MD5 / SHA-1 已不安全，別用在安全用途。' },
+      { b: 'HMAC：有金鑰的雜湊，驗來源', t: '雙方共享 secret，`HMAC(secret, message)` 證明「訊息來自持有 secret 的人且沒被改」。JWT HS256、webhook 簽章、簽名 cookie 都是它。比對一律用常數時間函式（`hmac.compare_digest`）。' },
+      { b: '對稱加密：藏內容', t: 'AES-GCM 這類 AEAD 同時給機密性與完整性；nonce 絕不重複；金鑰不放程式碼（KMS / Secret Manager）。用在靜態資料欄位加密。' },
+      { b: '非對稱：簽章與金鑰交換', t: '私鑰簽、公鑰驗（JWT RS256 / ES256、TLS 憑證）；多服務只需散布公鑰。TLS 握手用它交換對稱金鑰，之後走對稱。' },
+      { b: '亂數要用 CSPRNG', t: 'token、session id、重設連結、salt 用 `secrets.token_urlsafe()` / `os.urandom()`；`random` 模組可預測，只能拿來洗牌遊戲。' },
+    ],
+    checklist: [
+      '能為「webhook 驗證」「密碼儲存」「重設密碼連結」「加密身分證欄位」各挑對工具並說明理由',
+      '能解釋為什麼比對簽章要用常數時間函式',
+      '知道 HS256 與 RS256 在多服務架構下的差別',
+    ],
+    refs: [
+      { label: 'Python secrets 模組', url: 'https://docs.python.org/3/library/secrets.html' },
+      { label: 'OWASP：Cryptographic Storage Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html' },
+    ],
+  },
+  'xss-csrf': {
+    points: [
+      { b: 'XSS 的後端責任', t: 'API 回 JSON 時 `Content-Type: application/json`（別讓瀏覽器當 HTML 渲染）；伺服器端渲染的模板預設要跳脫；使用者上傳的 HTML 要用白名單清洗。' },
+      { b: 'CSP 是最後一道', t: '`Content-Security-Policy: default-src \'self\'` 讓注入的 inline script 跑不起來。從 report-only 模式開始調。' },
+      { b: 'CSRF：瀏覽器自動帶 cookie 的副作用', t: '惡意網站的表單能讓使用者的瀏覽器帶著你的 cookie 送 POST。`SameSite=Lax` 擋掉大多數；狀態改變操作用 POST 不用 GET；表單型網站加 CSRF token。' },
+      { b: '安全標頭基本盤', t: '`Strict-Transport-Security`、`X-Content-Type-Options: nosniff`、`X-Frame-Options` / `frame-ancestors`、`Referrer-Policy`。在 nginx 或 middleware 一次加。' },
+      { b: 'Bearer token 不會被 CSRF', t: 'Authorization 標頭不會被瀏覽器自動帶，所以純 token API 天生免疫 CSRF——但要防 XSS 偷 token。' },
+    ],
+    checklist: [
+      '能說出 cookie session 與 Bearer token 各要防 CSRF 還是 XSS、為什麼',
+      '能為自己的服務加上五個安全標頭並用瀏覽器 devtools 驗證',
+    ],
+    refs: [
+      { label: 'OWASP：CSRF Prevention Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html' },
+      { label: 'MDN：Content Security Policy', url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP' },
+    ],
+  },
+  'input-validation': {
+    points: [
+      { b: '在邊界一次驗完', t: '請求進來就轉成型別明確的 model；之後的程式碼相信這個 model。內部函式不重複驗。' },
+      { b: '白名單優於黑名單', t: '狀態只能是三個值之一、排序欄位只能是明列的幾個、上傳只接受特定副檔名與 MIME——列出允許的，其他全拒。' },
+      { b: '長度與數量上限', t: '字串長度、陣列元素數、分頁 limit 上限、request body 大小（nginx `client_max_body_size`）。沒上限就是 DoS 入口。' },
+      { b: '檔案上傳', t: '檢查 MIME 與 magic bytes 而非副檔名、重新命名成隨機檔名、存到物件儲存不存在 web root、圖片重新編碼（去除惡意內容）、掃毒視需求。' },
+      { b: '別信 Content-Length 與客戶端算的值', t: '總金額由伺服器算、折扣由伺服器查——前端傳來的價格只是參考。' },
+    ],
+    checklist: [
+      '能為一個「建立訂單」API 列出每個欄位的驗證規則',
+      '能設計安全的檔案上傳流程',
+    ],
+    refs: [
+      { label: 'OWASP：Input Validation Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html' },
+    ],
+  },
+  'secrets': {
+    points: [
+      { b: '.env 只在本機', t: '`.env` 進 `.gitignore`，repo 放 `.env.example`（只有 key 沒有值）。pre-commit 加 secret 掃描（gitleaks）。' },
+      { b: 'CI/CD 的 secrets 功能', t: 'GitHub Actions secrets / GitLab CI/CD variables（masked + protected）。log 會自動遮罩，但別自己 echo 出來。' },
+      { b: 'Docker image 裡不能有 secret', t: '`COPY .env` 或 build arg 傳 secret 都會留在層裡。build 時真的需要（例如私有套件庫）用 BuildKit 的 `RUN --mount=type=secret,id=…`，不進任何層；runtime 用環境變數或 secret mount。' },
+      { b: '輪替要能做', t: '任何 secret 都假設會外洩：能不停機換、知道誰在用、有到期日。簽 JWT 的 key 也要能換（kid 標頭）。' },
+      { b: '外洩了怎麼辦', t: '立刻撤銷與輪替、查 log 看有沒有被用、從 git 歷史清掉只是順便（已經被爬走了）。' },
+    ],
+    checklist: [
+      'repo 裡沒有任何 secret，且有自動掃描',
+      '能說出 secret 在本機、CI、正式環境各放哪裡',
+      '知道外洩後的處理順序',
+    ],
+    refs: [
+      { label: 'OWASP：Secrets Management Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html' },
+    ],
+  },
+  'supply-chain': {
+    points: [
+      { b: 'lock 檔固定版本與 hash', t: '沒有 lock，今天跟明天裝到的東西不同；有 hash 才能確定沒被掉包。' },
+      { b: '定期掃描依賴', t: '`pip-audit` / `uv` 生態的漏洞掃描、GitHub Dependabot 自動開 PR。放進 CI 每週跑。' },
+      { b: 'image 也要掃', t: 'base image 的系統套件有漏洞很常見。用 slim / distroless base、定期重 build、Trivy 掃描。' },
+      { b: '別裝來路不明的套件', t: 'typosquatting（名字差一個字母）真的存在；新依賴看一下下載量、維護狀態、原始碼。' },
+      { b: 'CI 的 action 也是依賴', t: 'GitHub Actions 的第三方 action 釘 commit SHA 而非 tag；最小權限的 `permissions:`。' },
+    ],
+    checklist: [
+      '專案有 lock 檔且 CI 用 frozen 安裝',
+      'CI 有依賴與 image 漏洞掃描',
+    ],
+    refs: [],
+  },
+}

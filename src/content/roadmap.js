@@ -1,4 +1,6 @@
 // Backend Atlas 內容索引：8 個領域、各領域的技能（skill）、學習路線與工作關鍵字對照
+// 這裡只有列表與卡片需要的索引欄位（id / title / en / level / summary / example / keywords / lab），
+// 技能內文（points / checklist / refs）在 ./body/，由 skillBody.js 於技能頁懶載入。此檔要能被 Node 直接 import（校驗腳本用），不要放 import.meta.glob。
 import language from './d1-language.js'
 import web from './d2-web.js'
 import data from './d3-data.js'

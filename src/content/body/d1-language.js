@@ -1,0 +1,122 @@
+// 領域 1：語言與工程實踐（以 Python 為範例） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d1-language.js
+export default {
+  'python-backend': {
+    points: [
+      { b: '型別提示是文件也是防線', t: '`def get_user(user_id: int) -> User | None` 一眼看出輸入輸出；搭配 pyright / mypy 在存檔時就抓到錯，和 TypeScript 的型別直覺一致。' },
+      { b: '資料用 dataclass / pydantic 裝', t: '不要用 dict 到處傳。pydantic `BaseModel` 會驗證、轉型、產生 JSON schema——FastAPI 的請求/回應模型就是它。' },
+      { b: '例外是控制流的一部分', t: '自訂例外類別（`class NotFound(Exception)`），在最外層統一轉成 HTTP 狀態碼；不要在每個函式裡 try/except 吞掉。' },
+      { b: '標準庫比你想的強', t: '`pathlib`、`datetime`（永遠帶時區 `timezone.utc`）、`logging`、`json`、`functools.lru_cache`、`itertools`——先查標準庫再裝套件。' },
+      { b: '可變預設參數與 late binding', t: '`def f(items=[])` 是經典地雷；用 `None` 再在函式內建新 list。這類「Python 特有陷阱」值得花一小時掃一遍。' },
+    ],
+    checklist: [
+      '能用型別提示與 pydantic model 定義一個 API 的請求與回應',
+      '能解釋 `Optional[int]`、`int | None`、`list[str]` 的差異與用法',
+      '知道 datetime 要帶時區，並能用 `datetime.now(timezone.utc)`',
+      '能設計自訂例外並在單一位置轉成 HTTP 錯誤',
+    ],
+    refs: [
+      { label: 'Python 官方文件', url: 'https://docs.python.org/3/' },
+      { label: 'typing 模組', url: 'https://docs.python.org/3/library/typing.html' },
+      { label: 'pydantic', url: 'https://docs.pydantic.dev/' },
+    ],
+  },
+  'uv-packaging': {
+    points: [
+      { b: 'pyproject.toml 記「你要什麼」，uv.lock 記「實際裝了什麼」', t: '前者是直接依賴與版本範圍，後者是完整解析結果（含間接依賴、精確版本、hash）。兩個都進版控。' },
+      { b: '`uv run` 是新的入口', t: '不用 activate。`uv run pytest`、`uv run uvicorn app:app` 會先確保 .venv 與 lock 同步再執行。' },
+      { b: '`--locked` 給 CI、`--frozen` 給 Docker', t: '`uv sync --locked`：lock 與 pyproject 不一致就失敗（CI 用它抓「忘了更新 lock」）；`uv sync --frozen`：不檢查、不更新，照 lock 裝（Docker build 用它）。兩者都不會「順便升級」，這是可重現的保證。' },
+      { b: 'dev 依賴分組', t: '`uv add --dev pytest ruff` 進 `[dependency-groups]`，正式環境 `--no-dev` 就不會裝。' },
+      { b: '.python-version 釘版本', t: 'uv 會自動下載對應的 Python，團隊不再各用各的 3.10 / 3.12。' },
+    ],
+    checklist: [
+      '能從零 `uv init` 一個專案、加依賴、跑起來',
+      '能說明 pyproject.toml 與 uv.lock 的分工，以及為何 lock 要進版控',
+      '知道 `uv sync --locked`、`uv sync --frozen` 與 `uv lock --upgrade` 分別在什麼情境用',
+    ],
+    refs: [
+      { label: 'uv 官方文件', url: 'https://docs.astral.sh/uv/' },
+    ],
+  },
+  'python-async': {
+    points: [
+      { b: '`await` 是「讓出控制權」', t: '碰到 I/O 就把執行權還給 event loop 去跑別人，I/O 完成再回來。單執行緒也能同時處理很多請求——但 CPU 密集運算會霸住 loop。' },
+      { b: 'GIL 的實際意義', t: '預設的 CPython 同一時間只有一個執行緒在跑 Python bytecode；等 I/O 時會釋放 GIL，所以多執行緒對 I/O 密集有效、對 CPU 密集無效（要用多程序）。3.13 起有實驗性的 free-threaded build，但生態系還在跟上。' },
+      { b: '別在 async 函式裡用同步 driver', t: '`psycopg2`、`requests` 會阻塞整個 loop。要用 `asyncpg`、`httpx.AsyncClient`、`motor`，或把同步呼叫丟到 threadpool。' },
+      { b: 'FastAPI 的 def 與 async def 差別', t: '`def` handler 會自動在 threadpool 執行（不會卡 loop）；`async def` 才真的跑在 loop 上，裡面就不能有阻塞呼叫。' },
+    ],
+    checklist: [
+      '能畫出 6 個 I/O 請求在同步 / 多執行緒 / async 三種模式下的時間軸',
+      '能說出「在 async 裡呼叫同步 DB driver」會發生什麼事',
+      '知道 CPU 密集工作在 Python 該怎麼處理',
+    ],
+    refs: [
+      { label: 'asyncio 官方文件', url: 'https://docs.python.org/3/library/asyncio.html' },
+      { label: 'FastAPI：Concurrency and async / await', url: 'https://fastapi.tiangolo.com/async/' },
+    ],
+  },
+  'web-framework': {
+    points: [
+      { b: '一個請求的路徑', t: 'ASGI server（uvicorn）→ middleware（CORS、log、trace id）→ 路由比對 → 依賴注入（DB session、目前使用者）→ 參數驗證（pydantic）→ handler → 回應序列化 → middleware 收尾。' },
+      { b: '依賴注入不是魔法', t: '`Depends(get_db)` 就是「執行這個函式、把結果塞給我」。把「取得目前使用者」「開 DB session」寫成依賴，handler 只剩商業邏輯。' },
+      { b: '分層：router / service / repository', t: 'router 管 HTTP、service 管商業規則、repository 管資料庫。小專案可以合併，但界線要在腦中存在。' },
+      { b: '設定與生命週期', t: '啟動時建立連線池、關閉時釋放（lifespan）；設定從環境變數讀（pydantic-settings）。' },
+    ],
+    checklist: [
+      '能畫出一個請求從 uvicorn 到 handler 再回去的每一層',
+      '能用 Depends 抽出「目前使用者」與「DB session」',
+      '知道 middleware 適合做什麼、不適合做什麼',
+    ],
+    refs: [
+      { label: 'FastAPI 官方文件', url: 'https://fastapi.tiangolo.com/' },
+    ],
+  },
+  'testing': {
+    points: [
+      { b: 'fixture 是依賴注入', t: '`def test_x(client, db)`：pytest 依名字找 fixture 提供。DB session、測試用 client、假資料都這樣給，測試本身很乾淨。' },
+      { b: '整合測試用真的資料庫', t: '用 docker-compose 起一個測試用 PostgreSQL，每個測試在 transaction 裡跑、結束 rollback。SQLite 假裝 Postgres 會漏掉真正的 bug。' },
+      { b: 'mock 外部服務，不 mock 自己的資料庫', t: '第三方 API、寄信、付款用 mock 或 fake；自己的資料層要真的測。' },
+      { b: 'API 測試用 TestClient', t: 'FastAPI 的 `TestClient` 直接打 handler 不用起 server，一個測試幾毫秒。' },
+    ],
+    checklist: [
+      '能為一個 API endpoint 寫「正常」「驗證失敗」「未授權」三種測試',
+      '能設定測試資料庫 fixture，每個測試互不污染',
+      '知道什麼該 mock、什麼不該',
+    ],
+    refs: [
+      { label: 'pytest 官方文件', url: 'https://docs.pytest.org/' },
+      { label: 'FastAPI：Testing', url: 'https://fastapi.tiangolo.com/tutorial/testing/' },
+    ],
+  },
+  'code-quality': {
+    points: [
+      { b: 'ruff 一個工具取代五個', t: 'lint（flake8 規則集）、import 排序、格式化（black 相容）都是它，快到可以每次存檔跑。設定寫在 pyproject.toml 的 `[tool.ruff]`。' },
+      { b: '型別檢查的嚴格度漸進', t: '先 `basic`，新檔案用 `strict`。回報的錯誤多半是真的 bug（None 沒處理、回傳型別不一致）。' },
+      { b: 'pre-commit 讓規則自動執行', t: 'commit 時自動跑 ruff / pyright；CI 再跑一次當最後防線。' },
+    ],
+    checklist: [
+      '專案有 ruff + 型別檢查設定，且 CI 會跑',
+      '能讀懂型別檢查器的錯誤並修正，而不是加 `# type: ignore`',
+    ],
+    refs: [
+      { label: 'ruff', url: 'https://docs.astral.sh/ruff/' },
+      { label: 'mypy', url: 'https://mypy.readthedocs.io/' },
+    ],
+  },
+  'logging-config': {
+    points: [
+      { b: '結構化 log（JSON）', t: '每行 log 帶 `request_id`、`user_id`、`path`、`duration_ms`，才能在 log 系統裡查詢與聚合。人讀的格式只留給本機開發。' },
+      { b: '錯誤分三層', t: '預期的商業錯誤（回 4xx、不記 error log）、未預期的例外（回 500、記 stack trace、送告警）、驗證錯誤（回 422、附欄位）。' },
+      { b: '設定來自環境變數', t: '同一份 image 靠環境變數跑在 dev / staging / prod；secret 不寫進程式碼與 repo。這是 12-factor 的核心。' },
+      { b: 'request id 貫穿全程', t: 'middleware 產生或沿用 `X-Request-ID`，寫進每行 log 與回應標頭，前後端對問題時才對得上。' },
+    ],
+    checklist: [
+      '服務的每行 log 都是 JSON 且帶 request_id',
+      '有一個全域例外處理器，未預期錯誤不會把 stack trace 回給客戶端',
+      '所有設定（DB URL、secret）都從環境變數讀',
+    ],
+    refs: [
+      { label: 'logging 官方文件', url: 'https://docs.python.org/3/library/logging.html' },
+      { label: 'The Twelve-Factor App', url: 'https://12factor.net/' },
+    ],
+  },
+}

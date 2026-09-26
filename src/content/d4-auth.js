@@ -1,4 +1,5 @@
 // 領域 4：驗證與授權（AuthN & AuthZ）
+// 技能內文（points / checklist / refs）在 ./body/d4-auth.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'auth',
   no: 4,
@@ -17,21 +18,6 @@ export default {
       example: { primary: 'Cookie session（伺服器端儲存）', alts: ['Bearer token', 'JWT'] },
       keywords: ['Token'],
       lab: null,
-      points: [
-        { b: 'Session：伺服器記、客戶端拿號碼牌', t: '登入後伺服器在 Redis / DB 存一筆 session，把 session id 種進 HttpOnly cookie。每次請求靠 id 查回使用者。可即時撤銷，但要有共用儲存。' },
-        { b: 'Token：客戶端帶證明', t: '登入後發一個 token（隨機字串或 JWT），客戶端放 `Authorization: Bearer`。伺服器驗證即可，不需查表（JWT）或查一次（opaque token）。' },
-        { b: '撤銷是核心差異', t: 'session 刪掉就失效；無狀態 JWT 發出去就收不回，只能靠短效期 + refresh token 或黑名單。' },
-        { b: 'Cookie 與 Bearer 的攻擊面不同', t: 'cookie 自動帶 → 要防 CSRF（SameSite）；Bearer 存在 JS 可讀處 → 要防 XSS 偷走。沒有絕對安全的地方，只有對應的防護。' },
-        { b: '單一伺服器用 session、跨服務用 token', t: '一台 API + 一個前端，session 最簡單安全；多個服務、行動 App、第三方要呼叫時 token 比較方便。' },
-      ],
-      checklist: [
-        '能畫出 session 與 token 兩種登入流程的時序圖',
-        '能說出各自怎麼撤銷、各自要防什麼攻擊',
-        '能為自己的專案選一種並說明理由',
-      ],
-      refs: [
-        { label: 'OWASP：Session Management Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html' },
-      ],
     },
     {
       id: 'jwt',
@@ -42,22 +28,6 @@ export default {
       example: { primary: 'JWT（HS256 / RS256）', alts: ['PASETO', 'opaque token + introspection'] },
       keywords: ['Token', 'JWT'],
       lab: 'JwtLab',
-      points: [
-        { b: 'base64url 不是加密', t: 'payload 任何人解開都能讀。放 user id、role、exp 可以；密碼、個資、信用卡不行。' },
-        { b: '簽章保證完整性', t: 'HS256 用共享 secret（單一服務）、RS256 / ES256 用私鑰簽、公鑰驗（多服務只需公鑰）。改一個字元簽章就不符。' },
-        { b: '標準欄位', t: '`sub`（主體）、`iss`（發行者）、`aud`（受眾）、`exp` / `iat` / `nbf`（時間）。驗證時 exp、iss、aud 都要檢查，不只簽章。' },
-        { b: 'access 短、refresh 長', t: 'access token 15 分鐘內、放記憶體或 Bearer；refresh token 幾天、放 HttpOnly cookie、用一次換一次（rotation），被盜用可偵測。' },
-        { b: 'alg 由伺服器決定', t: '驗證時指定允許的演算法，不要信 header 裡的 `alg`——`none` 與 HS/RS 混淆攻擊都靠這個。' },
-      ],
-      checklist: [
-        '能手動解開一個 JWT 並指出三段各是什麼',
-        '能說明為什麼 JWT 不能即時撤銷，以及實務上怎麼補',
-        '能列出驗證 JWT 時要檢查的五件事',
-      ],
-      refs: [
-        { label: 'RFC 7519：JSON Web Token', url: 'https://datatracker.ietf.org/doc/html/rfc7519' },
-        { label: 'jwt.io', url: 'https://jwt.io/' },
-      ],
     },
     {
       id: 'oauth-oidc',
@@ -68,23 +38,6 @@ export default {
       example: { primary: 'Authorization Code + PKCE', alts: ['Client Credentials（服務對服務）', 'Device Code'] },
       keywords: ['OAuth', 'Token'],
       lab: 'OAuthLab',
-      points: [
-        { b: '四個角色', t: 'Resource Owner（使用者）、Client（你的 App）、Authorization Server（Google 的登入）、Resource Server（Google 的 API）。OAuth 解決的是「使用者授權 Client 存取 Resource Server」。' },
-        { b: '授權碼流程的關鍵在「換」', t: '導回時網址列只出現短命的 code，真正的 token 由 client 拿 code 向授權伺服器換：機密型 client（有後端）在後端帶 client_secret 換；公開型 client（SPA、手機）在自己這端帶 PKCE verifier 換。token 從不出現在網址列。' },
-        { b: 'PKCE 給公開型 client', t: 'SPA 與手機 App 藏不住 secret，用 code_verifier / code_challenge 證明「換 token 的人就是發起請求的人」。現在所有 client 都建議用。' },
-        { b: 'state 防 CSRF', t: '導向前產生隨機 state 存起來，回來時比對。少了它攻擊者能把自己的 code 塞給你。' },
-        { b: 'OIDC = OAuth + 身分', t: 'OAuth 只說「可以存取」，OIDC 多回一個 id_token（JWT）告訴你「這個人是誰」。「用 Google 登入」用的是 OIDC。' },
-      ],
-      checklist: [
-        '能畫出授權碼流程 8 步並標出哪一步在瀏覽器、哪一步在後端',
-        '能解釋 PKCE 與 state 各防什麼',
-        '能說出 OAuth 與 OIDC 的差別、access_token 與 id_token 的差別',
-      ],
-      refs: [
-        { label: 'RFC 6749：OAuth 2.0', url: 'https://datatracker.ietf.org/doc/html/rfc6749' },
-        { label: 'RFC 7636：PKCE', url: 'https://datatracker.ietf.org/doc/html/rfc7636' },
-        { label: 'OpenID Connect Core', url: 'https://openid.net/specs/openid-connect-core-1_0.html' },
-      ],
     },
     {
       id: 'rbac-abac',
@@ -95,21 +48,6 @@ export default {
       example: { primary: 'RBAC + 擁有權檢查', alts: ['ABAC（OPA / Casbin）', 'ReBAC（Zanzibar 類）'] },
       keywords: ['RBAC', 'ABAC'],
       lab: 'AccessControlLab',
-      points: [
-        { b: 'RBAC：使用者 → 角色 → 權限', t: '權限綁在角色上、角色指派給使用者。新人來指派角色即可。缺點：需求細到「只能改自己的」時角色會爆炸。' },
-        { b: 'ABAC：政策看屬性', t: '規則像「部門相同且工作時間內可讀」，屬性來自使用者、資源、環境。彈性高，但規則多了難以回答「誰能看這份文件」。' },
-        { b: '實務混搭', t: '角色決定大方向（admin / member），資源層再加擁有權與狀態檢查（只能編輯自己的草稿）。' },
-        { b: '授權檢查放在服務層', t: '不要只擋在 UI 或路由；每個操作的服務函式都要驗，因為同一操作可能從多條路徑進來（API、背景工作、admin 工具）。' },
-        { b: '拒絕優先、預設拒絕', t: '沒有規則明確允許就拒絕；多條規則衝突時拒絕勝出。' },
-      ],
-      checklist: [
-        '能為一個內容平台設計角色與權限矩陣',
-        '能指出哪些需求 RBAC 做不到、要加什麼',
-        '能說出授權檢查應該放在哪一層、為什麼',
-      ],
-      refs: [
-        { label: 'OWASP：Authorization Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html' },
-      ],
     },
     {
       id: 'auth-in-practice',
@@ -120,21 +58,6 @@ export default {
       example: { primary: 'FastAPI Depends', alts: ['Django permissions', 'NestJS guards', 'Express middleware'] },
       keywords: ['Python', 'JWT', 'RBAC'],
       lab: null,
-      points: [
-        { b: '`get_current_user` 依賴', t: '從 cookie 或 Bearer 取 token → 驗證 → 查使用者 → 回傳；失敗丟 401。所有需要登入的 endpoint 都 `Depends` 它。' },
-        { b: '`require_role("admin")` 依賴工廠', t: '回傳一個依賴函式，內部呼叫 get_current_user 再檢查角色，失敗丟 403。401 是「不知道你是誰」、403 是「知道你是誰但不行」。' },
-        { b: '資源層的擁有權檢查', t: '`get_order_or_403(order_id, user)`：查到訂單後比對 owner；找不到回 404 而不是 403（避免洩漏存在性）。' },
-        { b: '密碼比對用常數時間', t: '用 hasher 內建的 verify，不要自己 `==`。登入失敗訊息統一（不要說「帳號不存在」）。' },
-        { b: '測試要涵蓋三種身分', t: '未登入、登入但無權、有權——每個受保護 endpoint 至少三個測試。' },
-      ],
-      checklist: [
-        '能寫出 get_current_user 與 require_role 兩個依賴並在 endpoint 使用',
-        '能正確區分 401 / 403 / 404 的使用時機',
-        '每個受保護 endpoint 都有三種身分的測試',
-      ],
-      refs: [
-        { label: 'FastAPI：Security', url: 'https://fastapi.tiangolo.com/tutorial/security/' },
-      ],
     },
     {
       id: 'api-keys-mfa',
@@ -145,19 +68,6 @@ export default {
       example: { primary: 'API key（雜湊儲存）+ OAuth client credentials', alts: ['mTLS', 'SAML SSO', 'TOTP MFA'] },
       keywords: ['OAuth', 'Token'],
       lab: null,
-      points: [
-        { b: 'API key 當密碼對待', t: '只在建立時顯示一次、資料庫存雜湊、可命名可撤銷、可設 scope 與到期、記錄最後使用時間。' },
-        { b: '服務對服務用 client credentials', t: '服務用自己的 client_id / secret 向授權伺服器換 token，或在內網用 mTLS。不要讓服務共用某個人類使用者的帳號。' },
-        { b: 'MFA 補第二因素', t: 'TOTP（Authenticator App）最普及、WebAuthn / passkey 最安全；簡訊 OTP 最弱。高風險操作（改密碼、提款）要再驗一次（step-up）。' },
-        { b: 'SSO 交給 IdP', t: '企業客戶要求 SAML / OIDC 登入：你的系統當 Service Provider，身分由客戶的 IdP（Okta、Entra ID）提供。' },
-        { b: '憑證輪替要能不停機', t: '同時接受新舊兩把 key 一段時間，切換完再撤舊的。' },
-      ],
-      checklist: [
-        '能設計 API key 的資料表與產生 / 驗證 / 撤銷流程',
-        '能說明 client credentials 流程與授權碼流程的差別',
-        '知道 TOTP 與 passkey 的差異',
-      ],
-      refs: [],
     },
   ],
 }

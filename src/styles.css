@@ -120,8 +120,9 @@ code, pre, kbd { font-family: var(--mono); }
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
 .brand-mark { width: 22px; height: 22px; flex-shrink: 0; }
-.brand-name { font-family: var(--serif); font-weight: 700; letter-spacing: 0.02em; font-size: 1rem; }
-.brand-sub { color: var(--ink-3); font-size: 0.78rem; letter-spacing: 0.08em; }
+.brand-name { font-family: var(--serif); font-weight: 700; letter-spacing: 0.02em; font-size: 1rem; white-space: nowrap; }
+.brand-sub { color: var(--ink-3); font-size: 0.78rem; letter-spacing: 0.08em; white-space: nowrap; }
+@media (max-width: 440px) { .brand-sub { display: none; } }
 .topnav-links { display: flex; align-items: center; gap: 22px; }
 .topnav-links a { color: var(--ink-2); text-decoration: none; padding: 4px 0; position: relative; }
 .topnav-links a:hover { color: var(--ink-1); }
@@ -131,6 +132,48 @@ code, pre, kbd { font-family: var(--mono); }
 .theme-btn { background: none; border: 1px solid var(--border); border-radius: 999px; cursor: pointer; width: 30px; height: 30px; color: var(--ink-2); font-size: 0.95rem; line-height: 1; }
 .theme-btn:hover { color: var(--ink-1); border-color: var(--ink-3); }
 .nav-toggle { display: none; background: none; border: 1px solid var(--border); border-radius: var(--radius); width: 34px; height: 30px; cursor: pointer; color: var(--ink-2); }
+
+/* 帳號（登入是選配；沒設定 Firebase 時整塊不出現） */
+/* 選單與訊息對齊整個 topnav-right 的右緣（不是按鈕本身），手機上右側還有主題與選單按鈕時才不會超出畫面左緣 */
+.topnav-right { position: relative; }
+.account { display: flex; align-items: center; }
+.account-btn { background: none; border: 1px solid var(--border); border-radius: 999px; height: 30px; padding: 0 12px; cursor: pointer; color: var(--ink-2); font: inherit; font-size: 0.82rem; white-space: nowrap; }
+.account-btn:hover:not(:disabled) { color: var(--ink-1); border-color: var(--ink-3); }
+.account-btn:disabled { cursor: default; opacity: 0.7; }
+.account-btn.avatar { width: 30px; padding: 0; position: relative; display: inline-grid; place-items: center; }
+.account-btn.skeleton { background: var(--surface-2); }
+.avatar-img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display: inline-grid; place-items: center; background: var(--surface-2); color: var(--ink-2); font-size: 0.78rem; font-weight: 700; }
+.avatar-img.big { width: 40px; height: 40px; font-size: 1rem; flex-shrink: 0; }
+.sync-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-3); display: inline-block; }
+.account-btn .sync-dot { position: absolute; right: -2px; bottom: -2px; border: 2px solid var(--page); box-sizing: content-box; }
+.sync-dot.synced { background: var(--good); }
+.sync-dot.offline { background: var(--warning); }
+.sync-dot.error { background: var(--critical); }
+.sync-dot.idle { display: none; }
+.account-pop {
+  position: absolute; right: 0; top: calc(100% + 10px); z-index: 60; width: min(320px, calc(100vw - 32px));
+  background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius); box-shadow: var(--shadow-2);
+  padding: 14px 16px; display: grid; gap: 10px; font-size: 0.84rem; color: var(--ink-2);
+}
+.account-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.account-who > div { display: grid; min-width: 0; }
+.account-who b { color: var(--ink-1); }
+.account-who span { color: var(--ink-3); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-sync { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.account-sync .sync-dot.idle { display: inline-block; }
+.account-err { color: var(--critical); }
+.account-note { font-size: 0.76rem; color: var(--ink-3); line-height: 1.55; }
+.account-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 10px; border-top: 1px solid var(--hairline); }
+.linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.linklike.danger { color: var(--critical); }
+.account-msg {
+  position: absolute; right: 0; top: calc(100% + 10px); z-index: 60; width: min(300px, calc(100vw - 32px));
+  display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; font-size: 0.8rem; line-height: 1.5;
+  background: var(--surface-1); border: 1px solid var(--hairline); border-left: 3px solid var(--accent); border-radius: var(--radius); box-shadow: var(--shadow-2); color: var(--ink-2);
+}
+.account-msg.bad { border-left-color: var(--critical); }
+.account-msg span { flex: 1; }
+.account-msg-x { background: none; border: 0; cursor: pointer; color: var(--ink-3); font-size: 1rem; line-height: 1; padding: 0 2px; }
 @media (max-width: 760px) {
   .topnav-links { display: none; }
   .topnav-links.open {

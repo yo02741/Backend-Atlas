@@ -1,6 +1,6 @@
 # Backend Atlas — agent 守則
 
-純靜態的後端學習網站（Vite + React 18，無後端）。內容與程式分離：**內容在 `src/content/`，互動實驗室在 `src/labs/`，執行環境在 `src/runtime/`**。細節見 `README.md`。
+純靜態的後端學習網站（Vite + React 18，沒有自己的後端；選配的 Google 登入同步用 Firebase Auth + Firestore，沒設定時整段不出現）。內容與程式分離：**內容在 `src/content/`，互動實驗室在 `src/labs/`，執行環境在 `src/runtime/`**。細節見 `README.md`。
 
 ## 原則
 
@@ -8,7 +8,7 @@
 - **顏色只用 CSS token**（`var(--c-*)`、`var(--ink-*)`…），不寫死 hex；亮暗主題、390px 手機都要檢查。
 - **繁體中文（台灣用語）**，技術名詞保留英文。
 - **語氣**：直接、精簡、講事實。課程頁不寫「為什麼要學」之類的動機段落（那些留在 `docs/` 的課綱裡）；不用預設特定讀者背景或對話脈絡的措辭（例如「給前端工程師」「你工作上常聽到」「你已經會…」）。
-- 不新增 npm 依賴，除非有明確理由（目前：react、codemirror、pglite、pyodide）。
+- 不新增 npm 依賴，除非有明確理由（目前：react、codemirror、pglite、pyodide、firebase——只在 `src/cloud/firebase.js` import，懶載入）。
 
 ## 改內容時
 
@@ -18,6 +18,12 @@
 - 實驗室：照 `docs/CONTRIBUTING-labs.md` 的合約；用 `?lab=XxxLab` 單獨預覽；**改完必跑** `LAB=XxxLab npm run e2e:labs`（改 `src/labs/ui.jsx` 則跑全部 `npm run e2e:labs`）。
 - 設計情境：`src/content/scenarios/` + `src/labs/scenarios/`，照 `docs/CONTRIBUTING-scenarios.md`；**改完必跑** `npm run validate:scenarios`。
 
+## 改登入同步時
+
+- 進度形狀或合併規則（`src/progressData.js`）：**改完必跑** `npm run test:unit`；形狀變了要同步改 `firestore.rules`，並提醒擁有者到 Firebase Console 重新發布規則。
+- 同步流程、帳號 UI、規則：**改完必跑** `npm run e2e:cloud`（需要 Java 11+）。
+- Firebase SDK 只准出現在 `src/cloud/firebase.js`；主 chunk 不能含 SDK（`npm run e2e:ui` 的路由測試會檢查首頁沒下載 `firebase-*.js`）。
+
 ## 交付前
 
-`npm run validate` → `npm run build` → `npm run preview`（另一終端）→ `npm run e2e`。全綠再 commit。
+`npm run validate` → `npm run test:unit` → `npm run build` → `npm run preview`（另一終端）→ `npm run e2e`。全綠再 commit。

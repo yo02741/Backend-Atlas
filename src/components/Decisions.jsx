@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
 import Md from './Md.jsx'
 import { useProgress } from '../progress.js'
+import { useCloud } from '../cloud/sync.js'
 
-/* 決策題：每題一個情境變體，從做法裡選一個，可填理由（只存在這個瀏覽器）。全對才通過。 */
+/* 決策題：每題一個情境變體，從做法裡選一個，可填理由（存在這個瀏覽器，登入時同步到帳號）。全對才通過。 */
 export default function Decisions({ scenario }) {
   const { scenarioStatus, setScenario, rationale, setRationale } = useProgress()
+  const synced = useCloud().status === 'signed-in'
   const status = scenarioStatus(scenario.id)
   const [picks, setPicks] = useState(() => Object.fromEntries(scenario.decisions.map((d) => [d.id, null])))
   const [submitted, setSubmitted] = useState(false)
@@ -56,8 +58,8 @@ export default function Decisions({ scenario }) {
                 })}
               </div>
               <label className="dec-rationale">
-                <span className="kicker">你的理由（選填，只存在這個瀏覽器）</span>
-                <textarea rows={2} value={rationale(key)} placeholder="用一兩句話說明你為什麼這樣選——之後回頭看會很有用。"
+                <span className="kicker">你的理由（選填，{synced ? '會同步到你的帳號' : '只存在這個瀏覽器'}）</span>
+                <textarea rows={2} maxLength={1000} value={rationale(key)} placeholder="用一兩句話說明你為什麼這樣選——之後回頭看會很有用。"
                           onChange={(e) => setRationale(key, e.target.value)} />
               </label>
               {submitted && (

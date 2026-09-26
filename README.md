@@ -26,7 +26,7 @@
 - 逾時保護：Python 12 秒、JS 8 秒，超過就砍掉 worker 重開（沒有 SharedArrayBuffer 無法中斷 Python）。
 - SQL 練習每次執行前重建 `public` schema 並套用該題的 setup；執行後自動 `ROLLBACK` 收掉沒 COMMIT 的交易。
 - 編輯器：CodeMirror 6，主題全走 CSS token（亮暗自動）。
-- 進度（完成、檢核、程式題、選擇題）只存在瀏覽器 localStorage。
+- 進度（完成、檢核、程式題、選擇題、決策題）存在瀏覽器 localStorage；設定 Firebase 後可以用 Google 帳號登入同步（見「登入與同步」）。
 
 ## 結構
 
@@ -46,14 +46,18 @@ src/
   runtime/         py.js + py.worker.js（Pyodide）、sql.js（PGlite）、js.js + js.worker.js、check.js（評分）
   pages/           Home / Roadmap / Domain / Skill / Labs / Exercises / Playground / Curriculum / Scenarios
   App.jsx          hash 路由與外殼；首頁以外的頁面 React.lazy 懶載入（CodeMirror、題庫、課綱各自成 chunk），換頁走 startTransition
-  components/      MetroMap、HeroArt、bits、CodeEditor、ExerciseRunner、Quiz、Decisions、Output、Markdown
+  components/      MetroMap、HeroArt、bits、CodeEditor、ExerciseRunner、Quiz、Decisions、Output、Markdown、Account（登入按鈕與帳號選單）
   assess.js        一個技能的驗收狀態（程式題 + 選擇題）
-  progress.js      localStorage 進度
+  progress.js      localStorage 進度（useProgress），並提供同步層用的 getProgress / replaceProgress / onLocalChange
+  progressData.js  進度的資料形狀、正規化、三方合併（純函式，Node 可測）
+  cloud/           選配的登入同步：config.js（讀 VITE_FIREBASE_*）、sync.js（同步狀態機，主 chunk）、firebase.js（SDK，懶載入）
   styles.css       站台樣式與 design tokens
   harness.jsx      開發用：?lab=JwtLab 只渲染該實驗室
   verify.jsx       開發用：?verify=1 把每題解答與起始碼丟進真實執行環境評分
 docs/              CURRICULUM.md、AUDIT.md、CONTRIBUTING-labs.md、CONTRIBUTING-quizzes.md、CONTRIBUTING-scenarios.md
-scripts/           copy-pyodide.mjs、validate-quizzes.mjs、validate-scenarios.mjs
+scripts/           copy-pyodide.mjs、validate-content.mjs、validate-quizzes.mjs、validate-scenarios.mjs、test-progress.mjs
+firestore.rules    雲端進度的存取規則（本人才能讀寫、文件形狀固定）；firebase.json 是 emulator 設定
+.env.e2e           e2e 用的 Firebase 設定（指向 emulator 的 demo 專案）
 e2e/               Playwright 腳本（見下）
 ```
 
@@ -73,16 +77,51 @@ hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/
 
 ```bash
 npm run validate                 # 技能索引與內文對應、題庫、情境結構
+npm run test:unit                # 進度合併規則（兩台裝置、離線、取消完成）
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
 npm run e2e:runtime              # Playground 的 Python / SQL / JS 真的能跑
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
 npm run e2e:ui                   # 練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停
 npm run e2e:labs                 # 37 個實驗室：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
+npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Emulator 與 preview；需要 Java 11+）
 ```
 
 只跑一個實驗室：`LAB=CacheLab npm run e2e:labs`；加 `SMOKE_MOBILE=1` 會在 390px 再跑一輪。
 
+## 登入與同步（選配）
+
+沒設定 Firebase 時站上不會出現登入按鈕，一切只存在瀏覽器。設定後右上角出現「登入」（Google 帳號），進度同步到 Firestore。
+
+- **只在需要時載入**：Firebase SDK（約 55 kB gzip）是獨立 chunk，只有按「登入」、或這台裝置上次是登入狀態時才下載。
+- **同步什麼**：`atlas-progress-v1` 整份：完成的技能、清單勾選、練習題 / 選擇題 / 決策題的狀態、決策題理由。程式草稿（`atlas-ex-*`、`atlas-playground-*`）不同步。
+- **存在哪**：Firestore `users/{uid}`，形狀 `{ v: 1, progress, updatedAt }`。`firestore.rules` 只准本人讀寫，欄位形狀固定、`updatedAt` 必須是伺服器時間。文件裡不放姓名或 email。
+- **怎麼合併**：每次同步是一個 transaction：讀雲端、與本機做三方合併、有差才寫回。base 是這台上次同步完成時的內容（`atlas-sync-base-v1`）：本機沒改的項目取雲端，本機改過的留本機；兩邊都改了，題目狀態取較好的，理由留本機。所以另一台「取消完成」會傳過來，離線時的取消也不會被加回來；兩台同時上傳時，後到的會拿到對方的版本重新合併。這台第一次登入某個帳號時沒有 base，等於聯集，兩邊都不丟。實作與測試：`src/progressData.js`、`scripts/test-progress.mjs`。
+- **何時同步**：登入或開站還原登入、改動後 1.5 秒、切回分頁、恢復連線、帳號選單的「立即同步」。離線或失敗時保留「未上傳」標記（`atlas-sync-v1`），下次補上。
+- **帳號選單**：同步狀態、登出（本機進度保留）、登出並清除這台裝置的進度（共用電腦用）、刪除雲端進度（其他仍登入的裝置下次同步時也會登出，各自的本機進度保留）。
+- **登入方式**：`signInWithPopup`。不用 redirect，因為 Safari 與新版 Chrome 擋第三方儲存，`authDomain` 跟站台不同網域時 redirect 會失敗。滑到或聚焦「登入」按鈕時先預載 SDK，讓按下時能直接開出視窗；手機第一次點若被擋，會提示再按一次。
+
+### 啟用步驟
+
+1. [Firebase Console](https://console.firebase.google.com/) 建一個新專案（例如 `backend-atlas`，Google Analytics 可關）。
+2. 專案設定 → 一般 → 新增「網頁」應用程式，記下 `firebaseConfig` 裡的 `apiKey`、`authDomain`、`projectId`、`appId`。
+3. Authentication → 開始使用 → Sign-in method → 啟用 Google（填支援 email）。
+4. Authentication → 設定 → 授權網域 → 新增 `yo02741.github.io`（`localhost` 預設已在）。
+5. Firestore Database → 建立資料庫（正式版模式，區域 `asia-east1`）→ 規則分頁貼上 `firestore.rules` 的內容 → 發布。或用 CLI：`npx firebase-tools deploy --only firestore:rules --project <專案 id>`。
+6. repo 根目錄新增 `.env.production` 並 commit（這些值本來就會出現在前端程式裡，資料安全靠規則）：
+   ```
+   VITE_FIREBASE_API_KEY=...
+   VITE_FIREBASE_AUTH_DOMAIN=<專案 id>.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=<專案 id>
+   VITE_FIREBASE_APP_ID=...
+   ```
+   push 之後 CI 的 build 就會帶上登入。只想在本機試可以改放 `.env.local`（已 gitignore）。
+7. （建議）Google Cloud Console → API 和服務 → 憑證 → 這把 Browser key 加上網站限制：`https://yo02741.github.io/*`、`https://<專案 id>.firebaseapp.com/*`、`http://localhost:*`。
+
+### 測試
+
+`npm run e2e:cloud` 以 `--mode e2e` build（讀 `.env.e2e`，指向 Firebase Emulator 的 `demo-backend-atlas`，不連任何真實服務），用 `firebase-tools` 起 Auth 與 Firestore emulator，跑 `e2e/cloud-sync.mjs`：規則的越權與壞資料拒絕、兩台裝置首次合併、取消完成的傳遞、離線補傳、關分頁前的改動補傳、兩台同時編輯、登出 / 清除 / 刪除雲端、session 還原、沒登入不下載 SDK、手機版面。emulator build 的瀏覽器登入走假 id token（這個沙箱連不到 `apis.google.com`），真正的 Google 彈出視窗要在正式站上試。
+
 ## 部署
 
-push 到 `main` 觸發 `.github/workflows/deploy.yml`：`npm ci` → 校驗題庫 → build → 上 GitHub Pages。第一次需要在 repo Settings → Pages 把 Source 設為 GitHub Actions（workflow 也會嘗試自動啟用）。
+push 到 `main` 觸發 `.github/workflows/deploy.yml`：`npm ci` → 校驗內容與題庫、進度合併單元測試 → build（有 `.env.production` 就帶上登入）→ 上 GitHub Pages。第一次需要在 repo Settings → Pages 把 Source 設為 GitHub Actions（workflow 也會嘗試自動啟用）。

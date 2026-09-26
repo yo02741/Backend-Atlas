@@ -4,6 +4,8 @@ import { findSkill, findDomain } from './content/roadmap.js'
 import { findScenario } from './content/scenarios/index.js'
 import { findExercise } from './content/exercises/index.js'
 import { LAB_META } from './labs/index.js'
+import Account from './components/Account.jsx'
+import { cloudEnabled } from './cloud/config.js'
 
 /* 首頁以外的頁面都懶載入：CodeMirror、題庫、課綱 markdown 只在真的進到那一頁時才下載。
    換頁走 startTransition：舊頁面留在畫面上直到新 chunk 到齊，不會閃出「載入中」；等待期間頂端顯示進度條。 */
@@ -143,6 +145,7 @@ function Shell({ theme, toggleTheme, view, pending, children }) {
           {link('#/playground', 'Playground', view === 'playground')}
         </div>
         <div className="topnav-right">
+          <Account />
           <button className="theme-btn" onClick={toggleTheme}
                   title={theme === 'dark' ? '切換明亮模式' : '切換暗黑模式'}
                   aria-label={theme === 'dark' ? '切換明亮模式' : '切換暗黑模式'}>
@@ -153,7 +156,7 @@ function Shell({ theme, toggleTheme, view, pending, children }) {
       </nav>
       {children}
       <footer className="colophon">
-        <span>Backend Atlas — 看得見的後端基礎。進度只存在你的瀏覽器。</span>
+        <span>Backend Atlas — 看得見的後端基礎。{cloudEnabled ? '進度存在你的瀏覽器，登入後同步到你的帳號。' : '進度只存在你的瀏覽器。'}</span>
         <span><a href="https://github.com/yo02741/Backend-Atlas" target="_blank" rel="noreferrer">GitHub</a> · <a href="https://roadmap.sh/backend" target="_blank" rel="noreferrer">roadmap.sh/backend</a></span>
       </footer>
       <BackToTop />

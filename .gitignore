@@ -12,3 +12,10 @@ e2e/shots/
 .DS_Store
 *.log
 .vite/
+
+# 登入同步的 e2e build（vite build --mode e2e）與 Firebase Emulator 的紀錄
+dist-e2e/
+.env.local
+.env.*.local
+firebase-debug.log
+firestore-debug.log

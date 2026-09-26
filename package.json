@@ -17,9 +17,11 @@
     "e2e:ui": "node e2e/ui-exercise.mjs && node e2e/ui-quiz.mjs && node e2e/ui-scenario.mjs && node e2e/ui-routing.mjs && node e2e/ui-visibility.mjs",
     "e2e:labs": "node e2e/labs-smoke.mjs",
     "e2e": "npm run e2e:runtime && npm run e2e:verify && npm run e2e:ui && npm run e2e:labs && npm run e2e:sweep",
+    "e2e:cloud": "vite build --mode e2e --outDir dist-e2e && npx -y firebase-tools@15 emulators:exec --only auth,firestore --project demo-backend-atlas \"node e2e/cloud-sync.mjs\"",
     "validate:scenarios": "node scripts/validate-scenarios.mjs",
     "validate:content": "node scripts/validate-content.mjs",
-    "validate": "npm run validate:content && npm run validate:quizzes && npm run validate:scenarios"
+    "validate": "npm run validate:content && npm run validate:quizzes && npm run validate:scenarios",
+    "test:unit": "node scripts/test-progress.mjs"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",
@@ -28,14 +30,15 @@
     "@electric-sql/pglite": "^0.5.8",
     "@lezer/highlight": "^1.2.4",
     "codemirror": "^6.0.2",
+    "firebase": "^12.19.0",
     "pyodide": "^314.0.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.0",
-    "playwright": "1.56.1"
+    "playwright": "1.56.1",
+    "vite": "^6.0.0"
   },
-  "description": "看得見的後端基礎：給前端工程師的後端學習地圖（互動實驗室、瀏覽器內執行的練習題、Playground）"
+  "description": "看得見的後端基礎：後端學習地圖（互動實驗室、瀏覽器內執行的練習題、Playground）"
 }

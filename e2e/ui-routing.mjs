@@ -23,6 +23,7 @@ t('home does not load CodeMirror chunk', !homeChunks.some((n) => /^CodeEditor-/.
 t('home does not load Curriculum chunk', !homeChunks.some((n) => /^Curriculum-/.test(n)))
 t('home does not load page chunks', !homeChunks.some((n) => /^(Skill|Exercises|Scenarios|Playground|Roadmap)-/.test(n)))
 t('home does not load skill body chunks', !homeChunks.some((n) => /^d\d-[a-z]+-/.test(n)))
+t('home does not load the Firebase SDK (only after 登入 or a restored session)', !homeChunks.some((n) => /^firebase-/.test(n)))
 t('home title', await page.title() === 'Backend Atlas · 後端學習地圖', await page.title())
 
 // 技能頁：只載自己領域的內文 chunk；同領域換課不再下載；換領域才多載一個
@@ -76,7 +77,10 @@ t('scenario title', await page.title() === 'API 快取 · Backend Atlas', await 
 await page.goto(base + '#/curriculum?week=10', { waitUntil: 'networkidle' })
 await page.waitForSelector('#week-10')
 t('curriculum week 10 has scenario chips', (await page.$$('#week-10 + .curri-week-links a')).length >= 3, String((await page.$$('#week-10 + .curri-week-links a')).length))
-t('curriculum ?week= scrolls to the week', await page.evaluate(() => { const r = document.getElementById('week-10').getBoundingClientRect(); return r.top >= -5 && r.top < 200 }))
+// 課綱頁在標題渲染後的下一個 frame（requestAnimationFrame）才捲動：等條件成立，不要在渲染當下取樣
+await page.waitForFunction(() => { const r = document.getElementById('week-10').getBoundingClientRect(); return r.top >= -5 && r.top < 200 }, null, { timeout: 3000 }).catch(() => {})
+const weekTop = await page.evaluate(() => [Math.round(document.getElementById('week-10').getBoundingClientRect().top), Math.round(scrollY), document.querySelector('h1')?.textContent])
+t('curriculum ?week= scrolls to the week', weekTop[0] >= -5 && weekTop[0] < 200, JSON.stringify(weekTop))
 t('scenario page week pill links to curriculum week', (await (await (await page.goto(base + '#/scenario/pagination', { waitUntil: 'networkidle' }), page.waitForSelector('.lesson-meta a.mono')), page.getAttribute('.lesson-meta a.mono', 'href'))) === '#/curriculum?week=10')
 
 console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'no page/console errors')

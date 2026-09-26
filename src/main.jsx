@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import LabHarness from './harness.jsx'
+import { initCloud } from './cloud/sync.js'
 const VerifyHarness = lazy(() => import('./verify.jsx'))   // 開發用，不進正式站的主 chunk
 import './styles.css'
 import './labs/lab.css'
@@ -12,4 +13,5 @@ import './labs/lab.css'
 const params = new URLSearchParams(window.location.search)
 const labName = params.get('lab')
 const root = createRoot(document.getElementById('root'))
+if (!labName && !params.get('verify')) initCloud()   // 登入同步（沒設定 Firebase 時什麼都不做）
 root.render(labName ? <LabHarness name={labName} /> : params.get('verify') ? <Suspense fallback={null}><VerifyHarness /></Suspense> : <App />)

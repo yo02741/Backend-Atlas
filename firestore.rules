@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Backend Atlas 的學習進度：每位使用者一份文件 users/{uid}，只有本人讀得到、寫得了。
+// 文件形狀固定為 { v: 1, progress: {...}, updatedAt: 伺服器時間 }，其他欄位一律拒絕。
+// 改完用 `npm run e2e:cloud` 驗（跑在 Firebase Emulator 上，含越權與壞資料的拒絕測試）。
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function validProgress(p) {
+      return p is map
+        && p.keys().hasOnly(['done', 'checks', 'exercises', 'quizzes', 'scenarios', 'rationales'])
+        && p.get('done', []) is list && p.get('done', []).size() <= 1000
+        && p.get('checks', {}) is map && p.get('checks', {}).size() <= 1000
+        && p.get('exercises', {}) is map && p.get('exercises', {}).size() <= 1000
+        && p.get('quizzes', {}) is map && p.get('quizzes', {}).size() <= 1000
+        && p.get('scenarios', {}) is map && p.get('scenarios', {}).size() <= 1000
+        && p.get('rationales', {}) is map && p.get('rationales', {}).size() <= 1000;
+    }
+
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['v', 'progress', 'updatedAt'])
+        && request.resource.data.v == 1
+        && request.resource.data.updatedAt == request.time
+        && validProgress(request.resource.data.progress);
+    }
+  }
+}

@@ -28,8 +28,8 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: 校驗題庫與設計情境
-        run: npm run validate
+      - name: 校驗內容與題庫、進度合併單元測試
+        run: npm run validate && npm run test:unit
 
       - name: Build（含複製 Pyodide 到 public/pyodide）
         run: npm run build

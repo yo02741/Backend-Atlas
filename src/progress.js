@@ -1,36 +1,39 @@
 import { useCallback, useEffect, useState } from 'react'
+import { emptyProgress, normalizeProgress } from './progressData.js'
 
-/* 學習進度：只存在這個瀏覽器（localStorage），每個讀寫都包 try/catch。
-   結構：{ done, checks, exercises, quizzes, scenarios: { scenarioId: 'pass' }, rationales: { 'scenarioId:decisionId': text } } */
+/* 學習進度：存在這個瀏覽器（localStorage），每個讀寫都包 try/catch。
+   登入時由 src/cloud/sync.js 同步到帳號：它透過 onLocalChange 得知使用者的改動，用 replaceProgress 寫回雲端的版本。
+   資料形狀與合併規則見 progressData.js。 */
 const KEY = 'atlas-progress-v1'
 
 function load() {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return empty()
-    const p = JSON.parse(raw)
-    return {
-      done: Array.isArray(p.done) ? p.done : [],
-      checks: p.checks && typeof p.checks === 'object' ? p.checks : {},
-      exercises: p.exercises && typeof p.exercises === 'object' ? p.exercises : {},
-      quizzes: p.quizzes && typeof p.quizzes === 'object' ? p.quizzes : {},
-      scenarios: p.scenarios && typeof p.scenarios === 'object' ? p.scenarios : {},
-      rationales: p.rationales && typeof p.rationales === 'object' ? p.rationales : {},
-    }
-  } catch { return empty() }
+    return raw ? normalizeProgress(JSON.parse(raw)) : emptyProgress()
+  } catch { return emptyProgress() }
 }
-function empty() { return { done: [], checks: {}, exercises: {}, quizzes: {}, scenarios: {}, rationales: {} } }
 function save(p) {
   try { localStorage.setItem(KEY, JSON.stringify(p)) } catch { /* 私密模式等情況忽略 */ }
 }
 
 const listeners = new Set()
+const changeHooks = new Set()
 let state = load()
-function set(next) {
+function apply(next) {
   state = next
   save(state)
   listeners.forEach((l) => l(state))
 }
+/* 使用者自己的改動：寫入並通知同步層 */
+function set(next) {
+  apply(next)
+  changeHooks.forEach((h) => h(state))
+}
+
+/* 給同步層用：讀目前進度、以雲端版本覆寫（不算使用者改動，不會再觸發上傳）、訂閱使用者改動 */
+export function getProgress() { return state }
+export function replaceProgress(next) { apply(normalizeProgress(next)) }
+export function onLocalChange(fn) { changeHooks.add(fn); return () => changeHooks.delete(fn) }
 
 export function useProgress() {
   const [p, setP] = useState(state)
@@ -67,6 +70,6 @@ export function useProgress() {
   }, [])
   const rationale = useCallback((key) => p.rationales[key] || '', [p])
   const setRationale = useCallback((key, text) => { set({ ...state, rationales: { ...state.rationales, [key]: text } }) }, [])
-  const reset = useCallback(() => set(empty()), [])
+  const reset = useCallback(() => set(emptyProgress()), [])
   return { done: p.done, isDone, toggleDone, checks, toggleCheck, exerciseStatus, setExercise, quizStatus, setQuiz, scenarioStatus, setScenario, rationale, setRationale, exercises: p.exercises, quizzes: p.quizzes, scenarios: p.scenarios, reset }
 }

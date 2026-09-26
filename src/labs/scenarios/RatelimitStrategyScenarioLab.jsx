@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, Stats, Stat, Caption, fmtN } from '../ui.jsx'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, useWidth, Stats, Stat, Caption, fmtN } from '../ui.jsx'
 
 /* 限流情境模擬器：三種流量來源 × 三種端點 × 四種做法，跑 60 秒看誰被擋、誰漏網
    固定視窗、每分鐘計數，數字全部示意。 */
@@ -92,6 +92,8 @@ export default function RatelimitStrategyScenarioLab() {
   const E = ENDPOINTS[ep]
   const nginxOn = USES_NGINX[approach]
   const keyLabel = (s) => (s.acc ? (E.plan ? `key ×${s.acc}${s.plan ? `（${s.plan}）` : ''}` : `帳號 ×${s.acc}`) : `匿名 → IP ×${s.ips}`)
+  const box = useRef(null)
+  const narrow = useWidth(box, 640) < 520     // 手機：SVG 改直式（兩層上下疊、每個來源標籤 / 長條 / 數字三行）
 
   return (
     <Lab accent="orange" kicker="SCENARIO LAB" title="同一分鐘的流量，換 key 換位置，誤傷與漏網對調"
@@ -111,9 +113,9 @@ export default function RatelimitStrategyScenarioLab() {
       </LabControls>
 
       <LabGrid variant="wide">
-        <div className="lab-stack">
+        <div className="lab-stack" ref={box}>
           <LabStage label="流量與限流層" caption={`端點「${E.name}」：${E.note}。綠＝放行、紅＝429；灰框＝這個做法沒用到的那一層。`}>
-            <FlowSvg approach={approach} rows={rows} ipLimit={ipLimit} userLimit={userLimit} allow={allow} plan={!!E.plan} keyLabel={keyLabel} started={started} />
+            <FlowSvg approach={approach} rows={rows} ipLimit={ipLimit} userLimit={userLimit} allow={allow} plan={!!E.plan} keyLabel={keyLabel} started={started} narrow={narrow} />
           </LabStage>
           <Stats min={150}>
             <Stat label="誤傷（辦公室 + 一般使用者被擋）" value={started ? fmtN(hurt) : '—'} tone={started && hurt ? 'bad' : ''} />
@@ -168,6 +170,7 @@ export default function RatelimitStrategyScenarioLab() {
         .rls-svg .layer-s { font-family: var(--mono); font-size: 10px; fill: var(--ink-3); }
         .rls-svg .off-t { fill: var(--ink-3); font-weight: 400; }
         .rls-svg rect.bar-ok, .rls-svg rect.bar-bad { transition: width 0.05s linear; }
+        .rls-svg.narrow .layer-s { font-size: 10.5px; } .rls-svg.narrow .n { font-size: 11.5px; } .rls-svg.narrow .svg-text.small { font-size: 11px; }
         @media (prefers-reduced-motion: reduce) { .rls-svg rect.bar-ok, .rls-svg rect.bar-bad { transition: none; } }
         @media (max-width: 640px) { .rls-hint { font-size: 0.74rem; } }
       `}</style>
@@ -175,11 +178,46 @@ export default function RatelimitStrategyScenarioLab() {
   )
 }
 
-function FlowSvg({ approach, rows, ipLimit, userLimit, allow, plan, keyLabel, started }) {
+function FlowSvg({ approach, rows, ipLimit, userLimit, allow, plan, keyLabel, started, narrow = false }) {
   const W = 640, MAX = 1500, BX = 170, BW = 330, ROW = 54, TOP = 92
   const nginxOn = USES_NGINX[approach], appOn = USES_APP[approach]
   const appSub = approach === 'tiered' ? (plan ? `依方案 ×1 / ×10 / ×50 · 基準 ${userLimit}` : `沒有方案 → 每帳號 ≤ ${userLimit}`) : `每帳號 ≤ ${userLimit} 次/分（Redis 計數）`
   const nginxSub = `limit_req rate ≈ ${ipLimit} 次/分${allow ? ' · 辦公室 IP 白名單' : '（burst 略）'}`
+  if (narrow) {
+    /* 手機：viewBox 320 寬（縮放比接近 1，字才看得清）；兩層上下疊，每個來源三行：名稱＋key / 說明 / 長條 / 放行、429、到應用層 */
+    const NW = 320, NBX = 6, NBW = 308, NROW = 76, NTOP = 128
+    return (
+      <svg className="rls-svg narrow" viewBox={`0 0 ${NW} ${NTOP + rows.length * NROW}`} width="100%" role="img" aria-label="三種流量來源經過 nginx 與應用層限流">
+        <g>
+          <rect className={`layer${nginxOn ? '' : ' off'}`} x={6} y={6} width={308} height={46} rx="6" />
+          <text className={`layer-t${nginxOn ? '' : ' off-t'}`} x={16} y={25}>nginx · 每 IP 粗限</text>
+          <text className="layer-s" x={16} y={42}>{nginxOn ? nginxSub : '這個做法沒用到'}</text>
+          <line className="svg-edge" x1={160} y1={52} x2={160} y2={66} />
+          <polygon points="160,66 156,59 164,59" style={{ fill: 'var(--ink-3)' }} />
+          <rect className={`layer${appOn ? '' : ' off'}`} x={6} y={66} width={308} height={46} rx="6" />
+          <text className={`layer-t${appOn ? '' : ' off-t'}`} x={16} y={85}>API + Redis · 每帳號 / key 細限</text>
+          <text className="layer-s" x={16} y={102}>{appOn ? appSub : '請求到這裡已經被 nginx 決定了'}</text>
+        </g>
+        {rows.map((r, i) => {
+          const y = NTOP + i * NROW
+          const okW = (r.allowed / MAX) * NBW, badW = (r.blocked / MAX) * NBW
+          return (
+            <g key={r.id}>
+              <text className="svg-text" x={NBX} y={y + 12} fontWeight="700">{r.name}</text>
+              <text className="layer-s" x={NBX + NBW} y={y + 12} textAnchor="end">{keyLabel(r)}</text>
+              <text className="svg-text small" x={NBX} y={y + 27}>{r.sub}</text>
+              <rect className="bar-bg" x={NBX} y={y + 34} width={NBW} height={18} rx="3" />
+              <rect className="bar-ok" x={NBX} y={y + 34} width={Math.max(0, okW)} height={18} rx="3" />
+              <rect className="bar-bad" x={NBX + okW} y={y + 34} width={Math.max(0, badW)} height={18} />
+              <text className="n ok" x={NBX} y={y + 66}>{started ? `放行 ${fmtN(r.allowed)}` : ''}</text>
+              <text className={`n${r.blocked > 0 ? ' bad' : ''}`} x={NBX + 100} y={y + 66}>{started ? `429 ${fmtN(r.blocked)}` : ''}</text>
+              <text className="svg-text small" x={NBX + NBW} y={y + 66} textAnchor="end">{started ? `到應用層 ${fmtN(r.toApp)} / ${fmtN(r.total)}` : '尚未送出'}</text>
+            </g>
+          )
+        })}
+      </svg>
+    )
+  }
   return (
     <svg className="rls-svg" viewBox={`0 0 ${W} ${TOP + rows.length * ROW + 4}`} width="100%" role="img" aria-label="三種流量來源經過 nginx 與應用層限流">
       <g>

@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status, useReducedMotion, Stats, Stat, fmtN } from '../ui.jsx'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status, useReducedMotion, Stats, Stat, fmtN, useWidth } from '../ui.jsx'
 
 /* 秒殺情境模擬器：
    ① 開賣：N 個請求同時衝向 DB / Redis / 佇列，看賣出、超賣、鎖等待堆積、回應時間、1 秒內有答案的比例
@@ -111,6 +111,8 @@ export default function FlashSaleScenarioLab() {
   const ex = EXPLAIN[mode]
   const step = RACE[mode][race.step]
   const pct = Math.round((sim.within / n) * 100)
+  const box = useRef(null)
+  const narrow = useWidth(box, 700) < 520   // 手機：兩張圖改直式 viewBox（360 寬），字不會被縮到看不清
 
   return (
     <Lab accent="red" kicker="SCENARIO LAB" title="開賣那一秒：同一批請求，四種做法四種結局"
@@ -130,7 +132,7 @@ export default function FlashSaleScenarioLab() {
             {ran && (pct >= 99 ? <Status ok>{pct}% 在 1 秒內有答案</Status> : pct >= 80 ? <Status warn>{pct}% 在 1 秒內有答案</Status> : <Status>{pct}% 在 1 秒內有答案</Status>)}
           </LabControls>
           <LabStage label="請求衝向後端的動畫" caption={`${n.toLocaleString()} 個請求在 100 ms 內到齊（示意）。綠＝搶到、紅＝超賣、灰＝沒搶到${n > 1000 ? `；每個點代表 ${Math.ceil(n / 1000)} 個請求` : ''}`}>
-            <RushSvg key={runId} mode={mode} n={n} outcome={sim.outcome} run={ran} reduced={reduced} />
+            <div ref={box}><RushSvg key={runId} mode={mode} n={n} outcome={sim.outcome} run={ran} reduced={reduced} narrow={narrow} /></div>
           </LabStage>
           <div aria-live="polite">
             <Stats min={140}>
@@ -143,7 +145,7 @@ export default function FlashSaleScenarioLab() {
             </Stats>
           </div>
           <LabStage label="兩個請求搶最後一件的時序" caption={step.text}>
-            <RaceSvg steps={RACE[mode]} cur={race.step} />
+            <RaceSvg steps={RACE[mode]} cur={race.step} narrow={narrow} />
             <div className="fs-step"><Stepper step={race.step} total={4} onStep={race.setStep} playing={race.playing} onPlay={race.toggle} /></div>
           </LabStage>
         </div>
@@ -184,28 +186,64 @@ export default function FlashSaleScenarioLab() {
 /* 回應時間：秒保留兩位小數（kit 的 fmtMs 是一位，輸出不同，故留本地版） */
 const fmt = (ms) => ms >= 1000 ? `${(ms / 1000).toFixed(2)} s` : `${Math.round(ms)} ms`
 
-/* 請求衝向後端：最多畫 1,000 個點，起點在左側使用者區，終點排進目標框 */
+/* 請求衝向後端：最多畫 1,000 個點，起點在左側使用者區，終點排進目標框
+   窄版（手機）改直式：使用者在最上面一條、往下衝進 API、再進目標框；DB（Redis / 排隊做法）在最下面 */
 const rnd = (i, s) => { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v) }
-function RushSvg({ mode, n, outcome, run, reduced }) {
+function RushSvg({ mode, n, outcome, run, reduced, narrow = false }) {
   const dots = Math.min(n, 1000)
   const per = n / dots
-  const target = mode === 'redis' ? { x: 330, w: 130, label: 'Redis', sub: 'DECR sale:1001:stock' }
-    : mode === 'queue' ? { x: 330, w: 130, label: '佇列', sub: 'API 只 enqueue，回 202' }
-    : { x: 400, w: 160, label: 'PostgreSQL', sub: 'items 的那一列（行鎖）' }
+  const hasDb = mode === 'redis' || mode === 'queue'
+  const label = mode === 'redis' ? 'Redis' : mode === 'queue' ? '佇列' : 'PostgreSQL'
+  const sub = mode === 'redis' ? 'DECR sale:1001:stock' : mode === 'queue' ? 'API 只 enqueue，回 202' : 'items 的那一列（行鎖）'
+  const cls = (i) => outcome[Math.min(n - 1, Math.floor(i * per))]
+  const dot = (i, sx, sy, ex, ey) => {
+    const c = run ? cls(i) : ''
+    return <circle key={i} className={`fs-dot ${c}${run ? ' fly' : ''}`} cx={sx} cy={sy} r={1.8}
+                   style={{ '--dx': `${(ex - sx).toFixed(1)}px`, '--dy': `${(ey - sy).toFixed(1)}px`, animationDelay: run && !reduced ? `${((i / dots) * 0.7).toFixed(2)}s` : '0s' }} />
+  }
+  if (narrow) {
+    const H = hasDb ? 476 : 384
+    const TX = 30, TW = 300, COLS = 40, rows = Math.ceil(dots / COLS)
+    const cw = (TW - 16) / COLS, ch = Math.min(5, 120 / Math.max(rows, 1))
+    return (
+      <svg className="fs-rush narrow" viewBox={`0 0 360 ${H}`} role="img" aria-label={`${n} 個請求衝向 ${label}`}>
+        <text x="180" y="16" textAnchor="middle" className="svg-text small">使用者 × {n.toLocaleString()}</text>
+        <path className="edge" d="M180 100 V116" /><path className="edge" d="M180 166 V190" />
+        <rect x="130" y="116" width="100" height="50" rx="6" className="box" />
+        <text x="180" y="138" textAnchor="middle" className="svg-text">API</text>
+        <text x="180" y="156" textAnchor="middle" className="svg-text small">多台實例</text>
+        <rect x={TX} y="190" width={TW} height="170" rx="6" className={`box${hasDb ? '' : ' hot'}`} />
+        <text x="180" y="208" textAnchor="middle" className="svg-text">{label}</text>
+        <text x="180" y="222" textAnchor="middle" className="svg-text small">{sub}</text>
+        {hasDb && (
+          <g>
+            <path className="edge svg-dash" d="M180 360 V384" />
+            <rect x={TX} y="384" width={TW} height="72" rx="6" className="box" />
+            <text x="180" y="406" textAnchor="middle" className="svg-text">PostgreSQL</text>
+            <text x="180" y="424" textAnchor="middle" className="svg-text small">{mode === 'redis' ? 'worker 非同步建訂單' : '單一 worker 寫入'}</text>
+            <text x="180" y="440" textAnchor="middle" className="svg-text small">只收到成功的那些</text>
+          </g>
+        )}
+        {Array.from({ length: dots }, (_, i) => dot(i, 16 + rnd(i, 1) * 328, 30 + rnd(i, 2) * 66,
+          TX + 8 + (i % COLS) * cw + cw / 2, 232 + Math.floor(i / COLS) * ch + ch / 2))}
+        {!run && <text x="180" y={H - 8} textAnchor="middle" className="svg-text small">按「開賣」讓請求衝出去</text>}
+      </svg>
+    )
+  }
+  const target = hasDb ? { x: 330, w: 130 } : { x: 400, w: 160 }
   const COLS = 25, rows = Math.ceil(dots / COLS)
   const cw = (target.w - 16) / COLS, ch = Math.min(5, 176 / Math.max(rows, 1))
-  const cls = (i) => outcome[Math.min(n - 1, Math.floor(i * per))]
   return (
-    <svg className="fs-rush" viewBox="0 0 640 270" role="img" aria-label={`${n} 個請求衝向 ${target.label}`}>
+    <svg className="fs-rush" viewBox="0 0 640 270" role="img" aria-label={`${n} 個請求衝向 ${label}`}>
       <text x="64" y="16" textAnchor="middle" className="svg-text small">使用者 × {n.toLocaleString()}</text>
       <rect x="150" y="95" width="90" height="80" rx="6" className="box" />
       <text x="195" y="130" textAnchor="middle" className="svg-text">API</text>
       <text x="195" y="146" textAnchor="middle" className="svg-text small">多台實例</text>
       <path className="edge" d="M118 135 H150" /><path className="edge" d={`M240 135 H${target.x}`} />
-      <rect x={target.x} y="40" width={target.w} height="212" rx="6" className={`box${mode === 'naive' || mode === 'atomic' ? ' hot' : ''}`} />
-      <text x={target.x + target.w / 2} y="58" textAnchor="middle" className="svg-text">{target.label}</text>
-      <text x={target.x + target.w / 2} y="72" textAnchor="middle" className="svg-text small">{target.sub}</text>
-      {(mode === 'redis' || mode === 'queue') && (
+      <rect x={target.x} y="40" width={target.w} height="212" rx="6" className={`box${hasDb ? '' : ' hot'}`} />
+      <text x={target.x + target.w / 2} y="58" textAnchor="middle" className="svg-text">{label}</text>
+      <text x={target.x + target.w / 2} y="72" textAnchor="middle" className="svg-text small">{sub}</text>
+      {hasDb && (
         <g>
           <path className="edge svg-dash" d="M460 146 H500" />
           <rect x="500" y="100" width="124" height="92" rx="6" className="box" />
@@ -214,20 +252,46 @@ function RushSvg({ mode, n, outcome, run, reduced }) {
           <text x="562" y="164" textAnchor="middle" className="svg-text small">只收到成功的那些</text>
         </g>
       )}
-      {Array.from({ length: dots }, (_, i) => {
-        const sx = 18 + rnd(i, 1) * 96, sy = 26 + rnd(i, 2) * 222
-        const ex = target.x + 8 + (i % COLS) * cw + cw / 2, ey = 84 + Math.floor(i / COLS) * ch + ch / 2
-        const c = run ? cls(i) : ''
-        return <circle key={i} className={`fs-dot ${c}${run ? ' fly' : ''}`} cx={sx} cy={sy} r={1.8}
-                       style={{ '--dx': `${(ex - sx).toFixed(1)}px`, '--dy': `${(ey - sy).toFixed(1)}px`, animationDelay: run && !reduced ? `${((i / dots) * 0.7).toFixed(2)}s` : '0s' }} />
-      })}
+      {Array.from({ length: dots }, (_, i) => dot(i, 18 + rnd(i, 1) * 96, 26 + rnd(i, 2) * 222,
+        target.x + 8 + (i % COLS) * cw + cw / 2, 84 + Math.floor(i / COLS) * ch + ch / 2))}
       {!run && <text x="320" y="262" textAnchor="middle" className="svg-text small">按「開賣」讓請求衝出去</text>}
     </svg>
   )
 }
 
-/* 兩條泳道、四個步驟；底下一列是 stock 的值 */
-function RaceSvg({ steps, cur }) {
+/* 兩條泳道、四個步驟；底下一列是 stock 的值
+   窄版（手機）轉置：步驟由上往下、A / B 兩欄並排，stock 值在左側一欄 */
+function RaceSvg({ steps, cur, narrow = false }) {
+  if (narrow) {
+    const AX = 122.5, BX = 277.5, SX = 26, NW = 145, H = 192
+    return (
+      <svg className="fs-race narrow" viewBox={`0 0 360 ${H}`} role="img" aria-label="兩個請求的時序">
+        <text x={SX} y="16" textAnchor="middle" className="svg-text small">stock</text>
+        {[['請求 A', AX], ['請求 B', BX]].map(([l, x]) => (
+          <g key={l}>
+            <text x={x} y="16" textAnchor="middle" className="svg-text small">{l}</text>
+            <line x1={x} x2={x} y1={24} y2={H - 6} className="lane" />
+          </g>
+        ))}
+        {steps.map((s, k) => {
+          const y = 44 + k * 42
+          const shown = k <= cur
+          return (
+            <g key={k} style={{ opacity: shown ? 1 : 0.18, transition: 'opacity 0.3s ease' }}>
+              {[[s.a, AX], [s.b, BX]].map(([t, x], j) => (
+                <g key={j}>
+                  <rect x={x - NW / 2} y={y - 13} width={NW} height="26" rx="5" className={`node${k === cur ? ' cur' : ''}${s.bad && j === 1 && k === cur ? ' bad' : ''}`} />
+                  <text x={x} y={y + 4} textAnchor="middle" className="svg-mono">{t}</text>
+                </g>
+              ))}
+              <text x={SX} y={y + 4} textAnchor="middle" className={`stock${s.stock < 0 ? ' neg' : ''}`}>{s.stock}</text>
+              {k < 3 && <text x={SX} y={y + 27} textAnchor="middle" className="svg-text small">↓</text>}
+            </g>
+          )
+        })}
+      </svg>
+    )
+  }
   const X0 = 70, CW = 140
   return (
     <svg className="fs-race" viewBox="0 0 640 150" role="img" aria-label="兩個請求的時序">

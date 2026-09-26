@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status, Stats, Stat, fmtN } from '../ui.jsx'
+import React, { useMemo, useRef, useState } from 'react'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, useWidth, Callout, Status, Stats, Stat, fmtN } from '../ui.jsx'
 
 /* 資料庫擴展情境模擬器：Stepper 逐階段疊上去——現況 → pgbouncer → 讀寫分離 → 表分割 → 分片。
    每一階段看：連線數（客戶端 / DB 端）、每台的 CPU、能撐的 QPS、複雜度；後兩階段另外看掃了幾個分區、打了幾台。
@@ -75,6 +75,8 @@ export default function DbScalingScenarioLab() {
   const m = useMemo(() => model(step, api, per, readPct, query), [step, api, per, readPct, query])
   const ex = EXPLAIN[step]
   const lines = mathLines(step, api, per, m, query)
+  const box = useRef(null)
+  const narrow = useWidth(box, 640) < 520     // 手機：拓樸改直式（API 橫排 → pgbouncer → DB 節點上下疊），viewBox 窄一點字才看得清
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="同一台快撐不住的 PostgreSQL，四步疊上去看每一步解了什麼"
@@ -89,9 +91,9 @@ export default function DbScalingScenarioLab() {
         {step >= 3 && <Seg label="查詢型態" tinted value={query} onChange={setQuery} options={[{ value: 'user', label: '帶 user_id' }, { value: 'all', label: '跨全表統計' }]} />}
       </LabControls>
       <LabGrid variant="wide">
-        <div className="lab-stack">
+        <div className="lab-stack" ref={box}>
           <LabStage label="拓樸與負載" caption={`${STAGES[step]}：${m.nodes.length}${step === 4 ? ` 種節點 × ${SHARDS} 片` : ' 個節點'}（CPU、連線、QPS 皆為示意）`}>
-            <TopoSvg step={step} api={api} per={per} m={m} />
+            {narrow ? <TopoSvgNarrow step={step} api={api} per={per} m={m} /> : <TopoSvg step={step} api={api} per={per} m={m} />}
           </LabStage>
           <Stats min={140}>
             <Stat label="客戶端連線" value={`${m.clientConns} 條`} note={step >= 1 ? '接到 pgbouncer' : '直連 DB'} />
@@ -151,6 +153,7 @@ export default function DbScalingScenarioLab() {
         .dbs-topo .conn { font-family: var(--mono); font-size: 11px; fill: var(--ink-2); }
         .dbs-topo .conn.bad { fill: var(--critical); font-weight: 700; }
         .dbs-topo .pct { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: var(--ink-1); }
+        .dbs-topo.narrow .svg-text.small { font-size: 11px; } .dbs-topo.narrow .conn, .dbs-topo.narrow .pct, .dbs-topo.narrow .svg-mono { font-size: 11.5px; }
         @media (prefers-reduced-motion: reduce) { .dbs-topo .fill, .dbs-topo .box, .dbs-topo .edge, .dbs-topo .cell { transition: none; } }
       `}</style>
     </Lab>
@@ -237,6 +240,81 @@ function TopoSvg({ step, api, per, m }) {
           <text x="16" y="244" className="svg-text small">{m.shardsHit === SHARDS ? `跨全表：打 ${SHARDS} 片再合併（scatter / gather）；JOIN 與交易跨片做不到` : `帶 user_id：hash 後只打 1 片，其他 ${SHARDS - 1} 片沒感覺；備份、migration 各片各做`}</text>
         </g>
       )}
+    </svg>
+  )
+}
+
+/* 手機版拓樸（viewBox 320 寬）：API 橫排在最上面 → pgbouncer → 左側一條匯流排接到上下疊的 DB 節點；③ 分區格、④ 四片上下疊。
+   幾何全部另算，模型與文字內容和桌機版相同；太長的說明在「：」「；」處拆成兩行 */
+const splitAt = (text, seps) => { for (const sp of seps) { const i = text.indexOf(sp); if (i > 0) return [text.slice(0, i + 1), text.slice(i + 1)] } return [text] }
+function TopoSvgNarrow({ step, api, per, m }) {
+  const n = Math.min(api, 8)
+  const hasPool = step >= 1
+  const connCls = m.connOver ? ' bad' : ''
+  const BUS = 16, NX = 30, NW = 282, GAP = 8
+  const topY = hasPool ? 122 : 70
+  const rows = step < 2 ? [{ y: topY, h: 60 }] : Array.from({ length: 3 }, (_, i) => ({ y: topY + i * (58 + GAP), h: 58 }))
+  const SH = 66
+  const shardY = (k) => topY + k * (SH + GAP)
+  const lastMid = step === 4 ? shardY(SHARDS - 1) + SH / 2 : rows[rows.length - 1].y + rows[rows.length - 1].h / 2
+  const bottom = step === 4 ? shardY(SHARDS - 1) + SH : rows[rows.length - 1].y + rows[rows.length - 1].h
+  const capLines = step === 3
+    ? splitAt(`events 的 ${PARTS} 個分區：這個查詢掃 ${m.partsHit} 個${m.partsHit === PARTS ? '（全掃）' : '（partition pruning）'}`, ['：'])
+    : step === 4 ? splitAt(m.shardsHit === SHARDS ? `跨全表：打 ${SHARDS} 片再合併（scatter / gather）；JOIN 與交易跨片做不到` : `帶 user_id：hash 後只打 1 片，其他 ${SHARDS - 1} 片沒感覺；備份、migration 各片各做`, ['；']) : []
+  const cellsY = bottom + 8
+  const capY = (step === 3 ? cellsY + 14 : bottom) + 20
+  const H = capLines.length ? capY + (capLines.length - 1) * 15 + 6 : bottom + 8
+  const busTop = hasPool ? 110 : 34
+  return (
+    <svg className="dbs-topo narrow" viewBox={`0 0 320 ${H}`} role="img" aria-label={`${STAGES[step]} 的拓樸`}>
+      <text x="10" y="13" className="svg-text small">API × {api}（每台 {per} 條）</text>
+      {Array.from({ length: n }, (_, i) => <rect key={i} x={10 + i * 38} y="19" width="34" height="14" rx="3" className="api" />)}
+      {api > 8 && <text x="152" y="50" textAnchor="end" className="svg-text small">…共 {api} 台</text>}
+      <path className={`edge${hasPool ? '' : connCls}`} d={`M160 33 V${busTop}`} />
+      <text x="168" y="50" className={`conn${hasPool ? '' : connCls}`}>{m.clientConns} 條</text>
+      {hasPool && (
+        <g>
+          <rect x="60" y="58" width="200" height="52" rx="6" className="box on" />
+          <text x="160" y="76" textAnchor="middle" className="svg-text">pgbouncer</text>
+          <text x="160" y="91" textAnchor="middle" className="svg-mono">{m.clientConns} → {m.dbConns}</text>
+          <text x="160" y="105" textAnchor="middle" className="svg-text small">{step >= 2 ? '每台 DB 各一個' : 'transaction 模式'}</text>
+        </g>
+      )}
+      <path className={`edge${step === 4 ? '' : connCls}`} d={`M160 ${busTop} V${topY - 8} H${BUS} V${lastMid}`} />
+      {step < 4 ? (
+        <g>
+          {rows.map((r, i) => (
+            <g key={i}>
+              <path className={`edge${connCls}`} d={`M${BUS} ${r.y + r.h / 2} H${NX}`} />
+              <DbNode x={NX} y={r.y} w={NW} h={r.h} label={m.nodes[i].label} cpu={m.nodes[i].cpu} on={step === 2 && i > 0}
+                      sub={i === 0 && step >= 3 ? `events 5 億列 → ${PARTS} 個分區` : i === 0 && step < 3 ? 'events 5 億列（單表）' : 'streaming replication'} />
+              <text x={NX + NW - 8} y={r.y + 22} textAnchor="end" className={`conn${connCls}`}>{m.dbConns}/{MAX_CONN}</text>
+            </g>
+          ))}
+          {step === 3 && Array.from({ length: PARTS }, (_, k) => (
+            <rect key={k} x={NX + k * (NW / PARTS)} y={cellsY} width={NW / PARTS - 1.5} height="14" rx="1.5"
+                  className={`cell${m.partsHit === PARTS ? ' hot' : k === 7 ? ' hit' : ''}`} />
+          ))}
+        </g>
+      ) : (
+        <g>
+          {Array.from({ length: SHARDS }, (_, k) => {
+            const y = shardY(k)
+            const hit = m.shardsHit === SHARDS || k === 1
+            return (
+              <g key={k}>
+                <path className="edge" d={`M${BUS} ${y + SH / 2} H${NX}`} style={{ opacity: hit ? 1 : 0.25 }} />
+                <rect x={NX} y={y} width={NW} height={SH} rx="6" className={`box${hit ? (m.shardsHit === SHARDS ? ' bad' : ' on') : ''}`} />
+                <text x={NX + 10} y={y + 16} className="svg-text">shard {k} · id % {SHARDS} = {k}</text>
+                <DbNode x={NX + 8} y={y + 22} w={126} h={36} label="主 + 2 讀" cpu={Math.max(...m.nodes.map((nd) => nd.cpu))} />
+                <text x={NX + 146} y={y + 38} className="svg-text small">pgbouncer {m.dbConns}/{MAX_CONN}</text>
+                <text x={NX + 146} y={y + 54} className={`conn${hit && m.shardsHit === SHARDS ? ' bad' : ''}`}>{hit ? (m.shardsHit === SHARDS ? '被打到（scatter）' : '這個查詢打這片') : '沒被打到'}</text>
+              </g>
+            )
+          })}
+        </g>
+      )}
+      {capLines.map((l, i) => <text key={i} x={step === 3 ? NX : 10} y={capY + i * 15} className="svg-text small">{l}</text>)}
     </svg>
   )
 }

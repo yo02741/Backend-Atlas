@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Callout, Status, Stats, Stat } from '../ui.jsx'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Callout, Status, Stats, Stat, useWidth } from '../ui.jsx'
 
 /* 冪等情境模擬器：時序圖（客戶端 / API / DB），純示意、沒有真的後端
    ① 回應在網路上遺失後客戶端重送：DB 多幾筆、扣款幾次、客戶端最後拿到什麼
@@ -106,6 +106,8 @@ export default function IdempotencyScenarioLab() {
   const dup = Math.max(0, snap.charges - 1)
   const consistent = snap.client.length < 2 ? null : snap.client.every((r) => r === snap.client[0]) ? 'same' : snap.client.some((r) => r.includes('處理中')) ? 'retry' : snap.client.every((r) => r.includes('p_1')) ? 'p1' : 'diff'
   const done = cur === steps.length - 1
+  const box = useRef(null)
+  const narrow = useWidth(box, 700) < 520   // 手機：時序圖改窄版 viewBox（360 寬、泳道靠攏），字不會被縮到看不清
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="同一筆付款送兩次：DB 裡會有幾筆？"
@@ -126,7 +128,7 @@ export default function IdempotencyScenarioLab() {
       <LabGrid variant="wide">
         <div className="lab-stack">
           <LabStage label="時序圖" caption="虛線加 ✕＝回應在網路上遺失；綠＝被擋下或回存的回應；紅＝多扣了一次。">
-            <SeqSvg steps={steps} cur={cur} />
+            <div ref={box}><SeqSvg steps={steps} cur={cur} narrow={narrow} /></div>
           </LabStage>
           <ol className="idm-log">
             {steps.map((s, i) => (
@@ -197,21 +199,33 @@ export default function IdempotencyScenarioLab() {
         .idm-svg .head.bad { fill: var(--critical); stroke: var(--critical); } .idm-svg .head.ok { fill: var(--good); stroke: var(--good); }
         .idm-svg .lost { fill: var(--critical); font-size: 13px; font-weight: 700; }
         .idm-svg .note { fill: color-mix(in srgb, var(--serious) 12%, var(--surface-1)); stroke: var(--serious); }
+        .idm-svg.narrow .lbl { font-size: 11.5px; paint-order: stroke; stroke: var(--page); stroke-width: 3px; stroke-linejoin: round; }
       `}</style>
     </Lab>
   )
 }
 
-function SeqSvg({ steps, cur }) {
+/* 窄版（手機）：viewBox 360 寬、三條泳道靠攏；步驟標籤依估算寬度夾在畫面內，不超出左右邊 */
+const XN = { client: 52, api: 180, db: 308 }
+const estW = (str, fs) => [...str].reduce((w, ch) => w + (ch.charCodeAt(0) > 0x2000 ? 1 : 0.62), 0) * fs
+
+function SeqSvg({ steps, cur, narrow = false }) {
+  const W = narrow ? 360 : 620
+  const XX = narrow ? XN : X
   const H = TOP + steps.length * ROW + 8
   const lanes = [{ id: C, name: '客戶端' }, { id: A, name: 'API' }, { id: D, name: 'DB' }]
+  const labelX = (mid, text) => {
+    if (!narrow) return mid
+    const half = estW(text, 11.5) / 2
+    return Math.max(6 + half, Math.min(W - 6 - half, mid))
+  }
   return (
-    <svg className="idm-svg" viewBox={`0 0 620 ${H}`} width="100%" role="img" aria-label="客戶端、API、DB 的時序圖">
+    <svg className={`idm-svg${narrow ? ' narrow' : ''}`} viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="客戶端、API、DB 的時序圖">
       {lanes.map((l) => (
         <g key={l.id}>
-          <rect className="svg-node" x={X[l.id] - 44} y={6} width={88} height={28} rx="5" />
-          <text className="svg-text" x={X[l.id]} y={25} textAnchor="middle" fontWeight="700">{l.name}</text>
-          <line className="svg-edge svg-dash" x1={X[l.id]} y1={34} x2={X[l.id]} y2={H - 4} style={{ opacity: 0.5 }} />
+          <rect className="svg-node" x={XX[l.id] - 44} y={6} width={88} height={28} rx="5" />
+          <text className="svg-text" x={XX[l.id]} y={25} textAnchor="middle" fontWeight="700">{l.name}</text>
+          <line className="svg-edge svg-dash" x1={XX[l.id]} y1={34} x2={XX[l.id]} y2={H - 4} style={{ opacity: 0.5 }} />
         </g>
       ))}
       {steps.map((s, i) => {
@@ -223,12 +237,12 @@ function SeqSvg({ steps, cur }) {
         if (s.from === s.to) {
           return (
             <g key={i}>
-              <rect className="note" x={X[s.from] - 80} y={y - 14} width={160} height={24} rx="4" />
-              <text className={`lbl ${cls}`} x={X[s.from]} y={y + 2} textAnchor="middle">{s.short}</text>
+              <rect className="note" x={XX[s.from] - 80} y={y - 14} width={160} height={24} rx="4" />
+              <text className={`lbl ${cls}`} x={XX[s.from]} y={y + 2} textAnchor="middle">{s.short}</text>
             </g>
           )
         }
-        const x1 = X[s.from], x2 = X[s.to]
+        const x1 = XX[s.from], x2 = XX[s.to]
         const dir = x2 > x1 ? 1 : -1
         const xEnd = s.lost ? (x1 + x2) / 2 : x2 - dir * 4
         return (
@@ -237,7 +251,7 @@ function SeqSvg({ steps, cur }) {
             {s.lost
               ? <text className="lost" x={xEnd + dir * 8} y={y + 5} textAnchor="middle">✕</text>
               : <polygon className={`head ${cls}`} points={`${x2},${y} ${x2 - dir * 9},${y - 4} ${x2 - dir * 9},${y + 4}`} />}
-            <text className={`lbl ${cls}`} x={(x1 + x2) / 2} y={y - 7} textAnchor="middle">{s.short}</text>
+            <text className={`lbl ${cls}`} x={labelX((x1 + x2) / 2, s.short)} y={y - 7} textAnchor="middle">{s.short}</text>
           </g>
         )
       })}

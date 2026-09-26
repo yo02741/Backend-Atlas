@@ -7,6 +7,8 @@ import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, C
 
 const FILE = 100, PARTS = 10
 const NODES = { client: { x: 70, y: 130, label: '客戶端' }, api: { x: 320, y: 48, label: 'API' }, s3: { x: 570, y: 130, label: '物件儲存' }, w: { x: 320, y: 214, label: '縮圖 worker' } }
+/* 手機（narrow）：viewBox 縮成 340×350、四個節點排成較高的菱形，字才不會被縮到看不清 */
+const NODES_NARROW = { client: { x: 62, y: 180 }, api: { x: 170, y: 50 }, s3: { x: 278, y: 180 }, w: { x: 170, y: 290 } }
 const EDGES = { 'c-api': ['client', 'api'], 'api-s3': ['api', 's3'], 'c-s3': ['client', 's3'], 'api-w': ['api', 'w'], 's3-w': ['s3', 'w'], 'w-s3': ['w', 's3'] }
 
 function buildTimeline(mode, cut) {
@@ -192,7 +194,8 @@ export default function UploadScenarioLab() {
         .up-svg .cut { fill: var(--critical); font-family: var(--sans); font-size: 11px; font-weight: 700; }
         .up-svg .cutx { stroke: var(--critical); stroke-width: 2.5; }
         .up-svg .gear { fill: none; stroke: var(--c-violet); stroke-width: 3; stroke-dasharray: 4 3; }
-        .up-svg.narrow .nlabel { font-size: 17px; } .up-svg.narrow .nsub { font-size: 13.5px; } .up-svg.narrow .elabel { font-size: 15px; } .up-svg.narrow .cut { font-size: 15px; }
+        .up-svg.narrow { max-width: 420px; }
+        .up-svg.narrow .nlabel { font-size: 14px; } .up-svg.narrow .nsub { font-size: 11.5px; } .up-svg.narrow .elabel { font-size: 12.5px; } .up-svg.narrow .cut { font-size: 12.5px; }
         .up-conc { border-top: 1px solid var(--hairline); padding-top: 12px; display: grid; gap: 10px; }
         .up-meters { display: grid; gap: 8px; }
         .up-meter { display: grid; grid-template-columns: 130px 1fr 92px; gap: 10px; align-items: center; font-size: 0.78rem; color: var(--ink-2); }
@@ -231,7 +234,8 @@ function Meter({ label, value, max, unit, bad }) {
 
 /* 節點圖：目前階段的邊亮起、封包沿邊移動；API 節點內畫記憶體條；中斷時在邊上畫 ✕ */
 function Flow({ tl, at, active, mem, narrow }) {
-  const pt = (id) => NODES[id]
+  const P = narrow ? Object.fromEntries(Object.entries(NODES).map(([id, n]) => [id, { ...n, ...NODES_NARROW[id] }])) : NODES
+  const pt = (id) => P[id]
   const endpoints = (edge) => { const [a, b] = EDGES[edge]; return [pt(a), pt(b)] }
   const doneEdges = new Set(tl.ph.filter((p) => p.b <= at && EDGES[p.edge]).map((p) => p.edge))
   const prog = active ? (at - active.a) / (active.b - active.a) : 0
@@ -239,7 +243,7 @@ function Flow({ tl, at, active, mem, narrow }) {
   const onNodes = new Set(active && EDGES[active.edge] ? EDGES[active.edge] : active?.edge === 'w' ? ['w'] : [])
   const lerp = (p, q, f) => ({ x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f })
   return (
-    <svg className={`up-svg${narrow ? ' narrow' : ''}`} viewBox="0 0 640 262" role="img" aria-label="客戶端、API、物件儲存、縮圖 worker 四個節點與目前的資料流">
+    <svg className={`up-svg${narrow ? ' narrow' : ''}`} viewBox={narrow ? '0 0 340 350' : '0 0 640 262'} role="img" aria-label="客戶端、API、物件儲存、縮圖 worker 四個節點與目前的資料流">
       {Object.keys(EDGES).filter((e) => e !== 'w-s3').map((e) => { const [p, q] = endpoints(e); return <line key={e} x1={p.x} y1={p.y} x2={q.x} y2={q.y} className={`edge${active?.edge === e || (active?.edge === 'w-s3' && e === 's3-w') ? ' on' : doneEdges.has(e) || doneEdges.has('w-s3') && e === 's3-w' ? ' done' : ''}`} />
       })}
       {active && EDGES[active.edge] && (() => {
@@ -248,15 +252,20 @@ function Flow({ tl, at, active, mem, narrow }) {
         return (
           <g>
             {Array.from({ length: n }, (_, i) => { const f = ((prog * 1.4 + i / n) % 1); const c = lerp(p, q, 0.12 + f * 0.76); return <circle key={i} cx={c.x} cy={c.y} r={active.kind === 'data' ? 4.5 : 4} className={`pkt ${active.kind}`} /> })}
-            <text x={mid.x} y={mid.y - 12} textAnchor="middle" className="elabel">{active.kind === 'data' ? `${active.label} ${Math.round(active.mb * prog)} / ${active.mb} MB` : '請求'}</text>
+            {narrow && active.kind === 'data'
+              ? <text x={mid.x} y={mid.y - 22} textAnchor="middle" className="elabel"><tspan x={mid.x}>{active.label}</tspan><tspan x={mid.x} dy="14">{Math.round(active.mb * prog)} / {active.mb} MB</tspan></text>
+              : <text x={mid.x} y={mid.y - 12} textAnchor="middle" className="elabel">{active.kind === 'data' ? `${active.label} ${Math.round(active.mb * prog)} / ${active.mb} MB` : '請求'}</text>}
           </g>
         )
       })()}
       {gapPrev && EDGES[gapPrev.edge] && (() => {
-        const [p, q] = endpoints(gapPrev.edge), c = lerp(p, q, 0.7)
-        return <g><line x1={c.x - 7} y1={c.y - 7} x2={c.x + 7} y2={c.y + 7} className="cutx" /><line x1={c.x + 7} y1={c.y - 7} x2={c.x - 7} y2={c.y + 7} className="cutx" /><text x={c.x} y={c.y - 14} textAnchor="middle" className="cut">網路中斷，重新連線…</text></g>
+        const [p, q] = endpoints(gapPrev.edge), c = lerp(p, q, 0.7), mx = (p.x + q.x) / 2
+        return <g><line x1={c.x - 7} y1={c.y - 7} x2={c.x + 7} y2={c.y + 7} className="cutx" /><line x1={c.x + 7} y1={c.y - 7} x2={c.x - 7} y2={c.y + 7} className="cutx" />
+          {narrow
+            ? <text x={mx} y={c.y + 22} textAnchor="middle" className="cut"><tspan x={mx}>網路中斷，</tspan><tspan x={mx} dy="14">重新連線…</tspan></text>
+            : <text x={c.x} y={c.y - 14} textAnchor="middle" className="cut">網路中斷，重新連線…</text>}</g>
       })()}
-      {Object.entries(NODES).map(([id, n]) => (
+      {Object.entries(P).map(([id, n]) => (
         <g key={id}>
           <rect x={n.x - 52} y={n.y - 22} width="104" height="44" rx="4" className={`node${id === 'api' && mem > 0 ? ' hot' : onNodes.has(id) ? ' on' : ''}`} />
           <text x={n.x} y={id === 'api' ? n.y - 4 : n.y + 1} textAnchor="middle" className="nlabel">{n.label}</text>
@@ -265,7 +274,7 @@ function Flow({ tl, at, active, mem, narrow }) {
           {id === 'w' && active?.edge === 'w' && <circle cx={n.x + 40} cy={n.y - 10} r="6" className="gear svg-pulse" />}
         </g>
       ))}
-      <text x="320" y="254" textAnchor="middle" className="nsub">{at >= tl.total ? `完成 · 客戶端共送出 ${tl.sent} MB · API worker 忙 ${tl.apiBusy.toFixed(1)} s` : active?.kind === 'gap' ? '客戶端重新連線中' : active ? `${active.kind === 'work' ? '縮圖 worker 處理中' : active.edge === 'c-api' ? '客戶端 → API' : active.edge === 'api-s3' ? 'API → 物件儲存' : active.edge === 'c-s3' ? '客戶端 → 物件儲存（不經 API）' : active.edge === 'api-w' ? 'API → 佇列 → worker' : 'worker ↔ 物件儲存'}` : '按「上傳 100 MB」'}</text>
+      <text x={narrow ? 170 : 320} y={narrow ? 336 : 254} textAnchor="middle" className="nsub">{at >= tl.total ? `完成 · 客戶端共送出 ${tl.sent} MB · API worker 忙 ${tl.apiBusy.toFixed(1)} s` : active?.kind === 'gap' ? '客戶端重新連線中' : active ? `${active.kind === 'work' ? '縮圖 worker 處理中' : active.edge === 'c-api' ? '客戶端 → API' : active.edge === 'api-s3' ? 'API → 物件儲存' : active.edge === 'c-s3' ? '客戶端 → 物件儲存（不經 API）' : active.edge === 'api-w' ? 'API → 佇列 → worker' : 'worker ↔ 物件儲存'}` : '按「上傳 100 MB」'}</text>
     </svg>
   )
 }

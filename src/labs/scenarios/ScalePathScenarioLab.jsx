@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Toggle, Stepper, Callout, Status, Stats, Stat, Caption } from '../ui.jsx'
+import React, { useMemo, useRef, useState } from 'react'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Toggle, Stepper, Callout, Status, Stats, Stat, Caption, useWidth } from '../ui.jsx'
 
 /* 擴展路徑情境模擬器（容量模擬器）：
    QPS 對數滑桿 100 → 100,000；右側六個元件各有示意容量。畫面算出每個元件的使用率、
@@ -90,6 +90,9 @@ export default function ScalePathScenarioLab() {
   const goal = useMemo(() => model(100000, readPct, cfg), [readPct, cfg])
   const ok = !r.over && !r.connBroken
   const st = (id) => r.state[id]
+  const pgState = st('dbr') === 'bad' || st('dbw') === 'bad' ? 'bad' : st('dbr') === 'warn' || st('dbw') === 'warn' ? 'warn' : 'ok'
+  const box = useRef(null)
+  const narrow = useWidth(box, 700) < 520   // 手機：路徑圖改直式（360 寬），節點上下排，字不會被縮到看不清
   const nextKey = r.connBroken ? 'conn' : r.first?.id
   const statusLine = r.connBroken ? `連線數 ${fmtN(r.conn.load)} 條超過 ${r.conn.cap}，不論流量多少都會出錯。`
     : r.over ? `已超過這個配置的上限（≈ ${fmtN(r.holds)} QPS），${short(r.first.name)}正在丟請求。`
@@ -116,20 +119,43 @@ export default function ScalePathScenarioLab() {
       <LabGrid variant="wide">
         <div className="lab-stack">
           <LabStage label="請求路徑與每條邊的流量" caption="每條邊標的是示意流量：讀先問快取，沒命中才到 PostgreSQL；寫直接進主庫，或先進佇列。">
-            <svg className="sp-svg" viewBox="0 0 640 170" role="img" aria-label="請求路徑">
-              <Edge d="M70 85 H130" label={`${fmtN(qps)} QPS`} x={100} y={76} />
-              <Edge d="M210 85 H270" label={fmtN(qps)} x={240} y={76} />
-              <Edge d="M370 70 C 400 70, 400 35, 430 35" label={`讀 ${fmtN(cfg.hit ? r.reads : 0)}`} x={400} y={38} />
-              <Edge d="M370 85 C 420 85, 430 105, 470 105 L 530 105" label={`讀 ${fmtN(r.toDb)}`} x={400} y={80} />
-              <Edge d="M370 100 C 400 100, 400 150, 430 150 H 530 L 585 130" label={cfg.queue ? `寫 ${fmtN(r.writes)} → 佇列` : `寫 ${fmtN(r.writes)}`} x={320} y={135} />
-              <Node x={10} y={60} w={60} h={50} t="Client" s="使用者" state="ok" />
-              <Node x={130} y={60} w={80} h={50} t="LB" s={cfg.instances > 1 ? 'nginx' : '（略）'} state={st('lb')} />
-              <Node x={270} y={55} w={100} h={60} t={`API × ${cfg.instances}`} s={cfg.vertical ? '16 vCPU' : '4 vCPU'} state={st('api')} />
-              <Node x={430} y={10} w={110} h={46} t="Redis" s={cfg.hit ? `命中 ${cfg.hit}%` : '未啟用'} state={st('redis')} />
-              <Node x={430} y={85} w={100} h={40} t={cfg.pgb ? 'pgbouncer' : '直連'} s={`${cfg.instances * CAP.pool} 條`} state={st('conn')} />
-              <Node x={540} y={80} w={95} h={50} t="PostgreSQL" s={`主庫 + ${cfg.replicas} 副本`} state={st('dbr') === 'bad' || st('dbw') === 'bad' ? 'bad' : st('dbr') === 'warn' || st('dbw') === 'warn' ? 'warn' : 'ok'} />
-              {cfg.queue && <Node x={430} y={132} w={100} h={34} t="佇列 + worker" s="批次 INSERT" state="ok" />}
-            </svg>
+            <div ref={box}>
+              {narrow ? (
+                /* 直式：Client → LB → API 往下走，再分成快取（左）與連線池 → PostgreSQL（右）；寫入沿中間往下，有佇列時先進左下的佇列 */
+                <svg className="sp-svg narrow" viewBox="0 0 360 400" role="img" aria-label="請求路徑">
+                  <Edge d="M180 50 V76" label={`${fmtN(qps)} QPS`} x={190} y={67} anchor="l" />
+                  <Edge d="M180 120 V146" label={fmtN(qps)} x={190} y={137} anchor="l" />
+                  <Edge d="M150 196 C150 222, 80 220, 80 246" label={`讀 ${fmtN(cfg.hit ? r.reads : 0)}`} x={12} y={236} anchor="l" />
+                  <Edge d="M210 196 C210 222, 280 220, 280 246" label={`讀 ${fmtN(r.toDb)}`} x={348} y={236} anchor="r" />
+                  <path d="M280 290 V336" className="e" />
+                  {cfg.queue
+                    ? <><Edge d="M180 196 V318 H80 V340" label={`寫 ${fmtN(r.writes)} → 佇列`} x={174} y={310} anchor="r" /><path d="M150 361 H210" className="e" /></>
+                    : <Edge d="M180 196 V361 H210" label={`寫 ${fmtN(r.writes)}`} x={174} y={322} anchor="r" />}
+                  <Node x={130} y={6} w={100} h={44} t="Client" s="使用者" state="ok" />
+                  <Node x={130} y={76} w={100} h={44} t="LB" s={cfg.instances > 1 ? 'nginx' : '（略）'} state={st('lb')} />
+                  <Node x={120} y={146} w={120} h={50} t={`API × ${cfg.instances}`} s={cfg.vertical ? '16 vCPU' : '4 vCPU'} state={st('api')} />
+                  <Node x={10} y={246} w={140} h={46} t="Redis" s={cfg.hit ? `命中 ${cfg.hit}%` : '未啟用'} state={st('redis')} />
+                  <Node x={210} y={246} w={140} h={44} t={cfg.pgb ? 'pgbouncer' : '直連'} s={`${cfg.instances * CAP.pool} 條`} state={st('conn')} />
+                  <Node x={210} y={336} w={140} h={50} t="PostgreSQL" s={`主庫 + ${cfg.replicas} 副本`} state={pgState} />
+                  {cfg.queue && <Node x={10} y={340} w={140} h={42} t="佇列 + worker" s="批次 INSERT" state="ok" />}
+                </svg>
+              ) : (
+                <svg className="sp-svg" viewBox="0 0 640 170" role="img" aria-label="請求路徑">
+                  <Edge d="M70 85 H130" label={`${fmtN(qps)} QPS`} x={100} y={76} />
+                  <Edge d="M210 85 H270" label={fmtN(qps)} x={240} y={76} />
+                  <Edge d="M370 70 C 400 70, 400 35, 430 35" label={`讀 ${fmtN(cfg.hit ? r.reads : 0)}`} x={400} y={38} />
+                  <Edge d="M370 85 C 420 85, 430 105, 470 105 L 530 105" label={`讀 ${fmtN(r.toDb)}`} x={400} y={80} />
+                  <Edge d="M370 100 C 400 100, 400 150, 430 150 H 530 L 585 130" label={cfg.queue ? `寫 ${fmtN(r.writes)} → 佇列` : `寫 ${fmtN(r.writes)}`} x={320} y={135} />
+                  <Node x={10} y={60} w={60} h={50} t="Client" s="使用者" state="ok" />
+                  <Node x={130} y={60} w={80} h={50} t="LB" s={cfg.instances > 1 ? 'nginx' : '（略）'} state={st('lb')} />
+                  <Node x={270} y={55} w={100} h={60} t={`API × ${cfg.instances}`} s={cfg.vertical ? '16 vCPU' : '4 vCPU'} state={st('api')} />
+                  <Node x={430} y={10} w={110} h={46} t="Redis" s={cfg.hit ? `命中 ${cfg.hit}%` : '未啟用'} state={st('redis')} />
+                  <Node x={430} y={85} w={100} h={40} t={cfg.pgb ? 'pgbouncer' : '直連'} s={`${cfg.instances * CAP.pool} 條`} state={st('conn')} />
+                  <Node x={540} y={80} w={95} h={50} t="PostgreSQL" s={`主庫 + ${cfg.replicas} 副本`} state={pgState} />
+                  {cfg.queue && <Node x={430} y={132} w={100} h={34} t="佇列 + worker" s="批次 INSERT" state="ok" />}
+                </svg>
+              )}
+            </div>
           </LabStage>
           <LabStage plain>
             <div className="sp-flow">
@@ -214,6 +240,8 @@ export default function ScalePathScenarioLab() {
         .sp-svg .n.off { stroke-dasharray: 4 3; }
         .sp-svg .t { font-family: var(--sans); font-size: 11.5px; font-weight: 700; fill: var(--ink-1); text-anchor: middle; }
         .sp-svg .s { font-family: var(--mono); font-size: 9.5px; fill: var(--ink-3); text-anchor: middle; }
+        .sp-svg .el.l { text-anchor: start; } .sp-svg .el.r { text-anchor: end; }
+        .sp-svg.narrow .t { font-size: 12.5px; } .sp-svg.narrow .s, .sp-svg.narrow .el { font-size: 11px; }
         .sp-flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
         @media (max-width: 640px) { .sp-flow { grid-template-columns: 1fr 1fr; } }
         .sp-card { position: relative; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 10px 12px 12px; display: grid; gap: 6px; align-content: start; min-height: 86px; transition: border-color 0.2s ease; }
@@ -240,8 +268,8 @@ export default function ScalePathScenarioLab() {
   )
 }
 
-function Edge({ d, label, x, y }) {
-  return <><path d={d} className="e" /><text x={x} y={y} className="el">{label}</text></>
+function Edge({ d, label, x, y, anchor }) {
+  return <><path d={d} className="e" /><text x={x} y={y} className={`el${anchor ? ' ' + anchor : ''}`}>{label}</text></>
 }
 function Node({ x, y, w, h, t, s, state }) {
   return (

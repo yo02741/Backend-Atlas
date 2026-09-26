@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Toggle, Stepper, usePlayer, Code, Callout } from './ui.jsx'
+import React, { useMemo, useRef, useState } from 'react'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Toggle, Stepper, usePlayer, Code, Callout, useWidth } from './ui.jsx'
 
 /* ============================================================
    docker compose 視覺化：一份 YAML → 網路 / 服務 / volume 拓樸
@@ -58,6 +58,9 @@ export default function ComposeLab() {
   const goStep = (n) => { setSel(null); player.setStep(n) }
   const pick = (id) => setSel((cur) => (cur === id ? null : id))
 
+  const box = useRef(null)
+  const narrow = useWidth(box, 640) < 440   // 手機：拓樸改直式、字放大
+
   const lines = useMemo(() => buildYaml(healthy), [healthy])
   const src = lines.map((l) => l.t).join('\n')
   const hl = sel ? lines.map((l, i) => (l.svc === sel || (sel === 'pgdata' && l.vol) ? i + 1 : 0)).filter(Boolean) : []
@@ -87,9 +90,9 @@ export default function ComposeLab() {
           <Code lang="yaml" title="compose.yaml（點服務段落）" highlight={hl} dim>{src}</Code>
         </div>
 
-        <div className="lab-stack">
+        <div className="lab-stack" ref={box}>
           <LabStage label="compose 拓樸圖" caption={info ? DNS[info] : '穿出「主機」框的線 = ports；沒穿出的 = expose（只在網路內）。滑過或點節點看它的 DNS 名字。'}>
-            <Topology sel={sel} st={st} step={step} apiDown={apiDown} slow={slow} healthy={healthy} onPick={pick} onHover={setHover} />
+            <Topology sel={sel} st={st} step={step} apiDown={apiDown} slow={slow} healthy={healthy} onPick={pick} onHover={setHover} narrow={narrow} />
           </LabStage>
           <LabExplain title={explain.title}>
             {explain.text.map((t, i) => <p key={i} dangerouslySetInnerHTML={{ __html: md(t) }} />)}
@@ -127,6 +130,13 @@ export default function ComposeLab() {
         .cmp-port { fill: var(--surface-1); stroke: var(--lab-accent); stroke-width: 1.5; }
         .cmp-err { font-family: var(--mono); font-size: 10px; font-weight: 700; fill: var(--critical); }
         .cmp-lbl { font-family: var(--mono); font-size: 9.5px; fill: var(--ink-3); paint-order: stroke; stroke: var(--page); stroke-width: 4; }
+        /* 窄版（手機）：直式拓樸、viewBox 較窄，字級調大讓縮放後仍讀得清楚 */
+        .cmp-svg.narrow { max-width: 420px; margin: 0 auto; }
+        .cmp-svg.narrow .svg-text { font-size: 13px; }
+        .cmp-svg.narrow .svg-text.small { font-size: 11.5px; }
+        .cmp-svg.narrow .svg-mono { font-size: 11.5px; }
+        .cmp-svg.narrow .cmp-lbl, .cmp-svg.narrow .cmp-st { font-size: 11px; }
+        .cmp-svg.narrow .cmp-err { font-size: 11.5px; }
       `}</style>
     </Lab>
   )
@@ -182,23 +192,61 @@ function stepExplain(step, slow, healthy, apiDown) {
 }
 
 /* ---- 拓樸 SVG ---- */
-const W = 84, H = 44
-const N = {
-  nginx: { x: 124, y: 124, title: 'nginx', port: ':80', sub: 'nginx:1.27' },
-  api:   { x: 250, y: 124, title: 'api', port: ':8000', sub: 'build .' },
-  db:    { x: 384, y: 124, title: 'db', port: ':5432', sub: 'postgres:16' },
-  redis: { x: 284, y: 214, title: 'redis', port: ':6379', sub: 'redis:7' },
+const META = {
+  nginx: { title: 'nginx', port: ':80', sub: 'nginx:1.27' },
+  api:   { title: 'api', port: ':8000', sub: 'build .' },
+  db:    { title: 'db', port: ':5432', sub: 'postgres:16' },
+  redis: { title: 'redis', port: ':6379', sub: 'redis:7' },
+}
+/* 兩套座標：wide 是桌機的橫式（瀏覽器 → nginx → api → db，redis 在下）；narrow 是手機的直式（由上往下串，redis 在 api 右邊）。
+   節點內文字位置以 W/H/ty/sy 推算，其餘標籤都直接給座標。 */
+const LAYOUT = {
+  wide: {
+    vb: '0 0 500 350', W: 84, H: 44, ty: 18, sy: 33,
+    N: { nginx: [124, 124], api: [250, 124], db: [384, 124], redis: [284, 214] },
+    host: { x: 96, y: 26, width: 398, height: 314 }, hostLbl: { x: 108, y: 42 },
+    net: { x: 112, y: 56, width: 372, height: 224 }, netLbl: { x: 122, y: 72 },
+    br: { x: 6, y: 126, w: 64, h: 40, cx: 38, ty: 143, sy: 157 },
+    inEdge: 'M70 146 H 122', port: { cx: 96, cy: 146, r: 9, dy: 3.5 }, portsLbl: { x: 120, y: 180, anchor: 'end' },
+    eNA: 'M208 146 H 248', lNA: { x: 229, y: 118, anchor: 'middle' },
+    eAD: 'M334 146 H 382', lAD: { x: 359, y: 118, anchor: 'middle' },
+    eAR: 'M326 168 V 212', lAR: { x: 332, y: 196 },
+    err502: { x: 229, y: 200, anchor: 'middle' }, errRef: { x: 359, y: 162, anchor: 'middle' },
+    expose: { x: 298, y: 270 },
+    eDV: 'M440 168 V 292', lDV: { x: 432, y: 292, anchor: 'end' },
+    vol: { path: 'M410 300 a30 6 0 0 0 60 0 v 24 a30 6 0 0 1 -60 0 z', cx: 440, cy: 300, nameY: 318, lblX: 400, lblY: 316, lblAnchor: 'end' },
+    fs: { port80: 9, port: 10, pgdata: 10 },
+  },
+  narrow: {
+    vb: '0 0 340 620', W: 100, H: 48, ty: 20, sy: 37,
+    N: { nginx: [30, 150], api: [30, 252], db: [30, 372], redis: [210, 252] },
+    host: { x: 8, y: 62, width: 324, height: 550 }, hostLbl: { x: 324, y: 80, anchor: 'end' },
+    net: { x: 20, y: 96, width: 300, height: 396 }, netLbl: { x: 310, y: 114, anchor: 'end', lines: ['network: default', '（compose 自動建立，服務名 = DNS 名）'] },
+    br: { x: 8, y: 6, w: 72, h: 40, cx: 44, ty: 23, sy: 38 },
+    inEdge: 'M44 46 V 148', port: { cx: 44, cy: 62, r: 11, dy: 4 }, portsLbl: { x: 60, y: 88, anchor: 'start' },
+    eNA: 'M44 198 V 250', lNA: { x: 52, y: 222, anchor: 'start' },
+    eAD: 'M44 300 V 370', lAD: { x: 52, y: 332, anchor: 'start' },
+    eAR: 'M130 276 H 208', lAR: { x: 169, y: 268, anchor: 'middle' },
+    err502: { x: 52, y: 240, anchor: 'start' }, errRef: { x: 52, y: 352, anchor: 'start' },
+    expose: { x: 182, y: 460, lines: ['expose 8000：沒有線穿出主機框，', '外面連不到 api'] },
+    eDV: 'M44 420 V 558', lDV: { x: 52, y: 530, anchor: 'start' },
+    vol: { path: 'M14 566 a30 6 0 0 0 60 0 v 24 a30 6 0 0 1 -60 0 z', cx: 44, cy: 566, nameY: 584, lblX: 82, lblY: 582, lblAnchor: 'start' },
+    fs: { port80: 11, port: 11, pgdata: 11.5 }, stAnchor: 'end',
+  },
 }
 const keyPick = (fn) => (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn() } }
 
-function Topology({ sel, st, step, apiDown, slow, healthy, onPick, onHover }) {
+function Topology({ sel, st, step, apiDown, slow, healthy, onPick, onHover, narrow = false }) {
+  const L = narrow ? LAYOUT.narrow : LAYOUT.wide
+  const { W, H } = L
   const flowing = step === 4
   const edge = (a, b, extra = '') => `svg-edge cmp-edge${sel === a || sel === b ? ' on' : ''} ${extra}`
   const dead = flowing && apiDown
   const flow = flowing ? 'svg-flow' : ''
   const flowOk = flowing && !apiDown ? 'svg-flow' : ''
+  const netLblStyle = { fill: 'var(--lab-accent)', fontWeight: 700 }
   return (
-    <svg viewBox="0 0 500 350" role="img" aria-label="compose 拓樸：主機內的 default 網路包含 nginx、api、db、redis；db 掛 pgdata volume"
+    <svg className={`cmp-svg${narrow ? ' narrow' : ''}`} viewBox={L.vb} role="img" aria-label="compose 拓樸：主機內的 default 網路包含 nginx、api、db、redis；db 掛 pgdata volume"
          onClick={(e) => { if (e.target.tagName === 'svg') onPick(null) }}>
       <defs>
         <marker id="cmp-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
@@ -207,59 +255,66 @@ function Topology({ sel, st, step, apiDown, slow, healthy, onPick, onHover }) {
       </defs>
 
       {/* 主機框 + 網路框 */}
-      <rect x="96" y="26" width="398" height="314" rx="6" className="cmp-frame" />
-      <text x="108" y="42" className="svg-text small">主機（Docker host）</text>
-      <rect x="112" y="56" width="372" height="224" rx="6" className={`cmp-frame net${step >= 1 ? ' lit' : ''}`} />
-      <text x="122" y="72" className="svg-text small" style={{ fill: 'var(--lab-accent)', fontWeight: 700 }}>network: default（compose 自動建立，服務名 = DNS 名）</text>
+      <rect {...L.host} rx="6" className="cmp-frame" />
+      <text x={L.hostLbl.x} y={L.hostLbl.y} textAnchor={L.hostLbl.anchor} className="svg-text small">主機（Docker host）</text>
+      <rect {...L.net} rx="6" className={`cmp-frame net${step >= 1 ? ' lit' : ''}`} />
+      {L.netLbl.lines
+        ? L.netLbl.lines.map((t, i) => <text key={i} x={L.netLbl.x} y={L.netLbl.y + i * 16} textAnchor={L.netLbl.anchor} className="svg-text small" style={netLblStyle}>{t}</text>)
+        : <text x={L.netLbl.x} y={L.netLbl.y} className="svg-text small" style={netLblStyle}>network: default（compose 自動建立，服務名 = DNS 名）</text>}
 
       {/* 瀏覽器 → 主機 :80 → nginx（唯一穿出主機框的線） */}
-      <rect x="6" y="126" width="64" height="40" rx="20" className="svg-node" />
-      <text x="38" y="143" className="svg-text" textAnchor="middle" style={{ fontWeight: 700 }}>瀏覽器</text>
-      <text x="38" y="157" className="svg-text small" textAnchor="middle">localhost</text>
-      <path d="M70 146 H 122" className={`${edge('nginx', null)} ${flow}`} markerEnd="url(#cmp-arrow)" />
-      <circle cx="96" cy="146" r="9" className="cmp-port" />
-      <text x="96" y="149.5" className="svg-mono" textAnchor="middle" style={{ fontSize: 9, fontWeight: 700 }}>80</text>
-      <text x="120" y="180" className="cmp-lbl" textAnchor="end">ports "80:80"</text>
+      <rect x={L.br.x} y={L.br.y} width={L.br.w} height={L.br.h} rx="20" className="svg-node" />
+      <text x={L.br.cx} y={L.br.ty} className="svg-text" textAnchor="middle" style={{ fontWeight: 700 }}>瀏覽器</text>
+      <text x={L.br.cx} y={L.br.sy} className="svg-text small" textAnchor="middle">localhost</text>
+      <path d={L.inEdge} className={`${edge('nginx', null)} ${flow}`} markerEnd="url(#cmp-arrow)" />
+      <circle cx={L.port.cx} cy={L.port.cy} r={L.port.r} className="cmp-port" />
+      <text x={L.port.cx} y={L.port.cy + L.port.dy} className="svg-mono" textAnchor="middle" style={{ fontSize: L.fs.port80, fontWeight: 700 }}>80</text>
+      <text x={L.portsLbl.x} y={L.portsLbl.y} className="cmp-lbl" textAnchor={L.portsLbl.anchor}>ports "80:80"</text>
 
       {/* nginx → api → db / redis */}
-      <path d="M208 146 H 248" className={`${edge('nginx', 'api', dead ? 'dead' : '')} ${flow}`} markerEnd="url(#cmp-arrow)" />
-      <text x="229" y="118" className="cmp-lbl" textAnchor="middle">api:8000</text>
-      <path d="M334 146 H 382" className={`${edge('api', 'db')} ${flowOk}`} markerEnd="url(#cmp-arrow)" />
-      <text x="359" y="118" className="cmp-lbl" textAnchor="middle">db:5432</text>
-      <path d="M326 168 V 212" className={`${edge('api', 'redis')} ${flowOk}`} markerEnd="url(#cmp-arrow)" />
-      <text x="332" y="196" className="cmp-lbl">redis:6379</text>
-      {dead && <text x="229" y="200" className="cmp-err svg-pulse" textAnchor="middle">502 Bad Gateway</text>}
-      {step === 2 && slow && !healthy && <text x="359" y="162" className="cmp-err svg-pulse" textAnchor="middle">refused</text>}
-      <text x="298" y="270" className="svg-text small" textAnchor="middle">expose 8000：沒有線穿出主機框，外面連不到 api</text>
+      <path d={L.eNA} className={`${edge('nginx', 'api', dead ? 'dead' : '')} ${flow}`} markerEnd="url(#cmp-arrow)" />
+      <text x={L.lNA.x} y={L.lNA.y} className="cmp-lbl" textAnchor={L.lNA.anchor}>api:8000</text>
+      <path d={L.eAD} className={`${edge('api', 'db')} ${flowOk}`} markerEnd="url(#cmp-arrow)" />
+      <text x={L.lAD.x} y={L.lAD.y} className="cmp-lbl" textAnchor={L.lAD.anchor}>db:5432</text>
+      <path d={L.eAR} className={`${edge('api', 'redis')} ${flowOk}`} markerEnd="url(#cmp-arrow)" />
+      <text x={L.lAR.x} y={L.lAR.y} className="cmp-lbl" textAnchor={L.lAR.anchor}>redis:6379</text>
+      {dead && <text x={L.err502.x} y={L.err502.y} className="cmp-err svg-pulse" textAnchor={L.err502.anchor}>502 Bad Gateway</text>}
+      {step === 2 && slow && !healthy && <text x={L.errRef.x} y={L.errRef.y} className="cmp-err svg-pulse" textAnchor={L.errRef.anchor}>refused</text>}
+      {L.expose.lines
+        ? L.expose.lines.map((t, i) => <text key={i} x={L.expose.x} y={L.expose.y + i * 16} className="svg-text small" textAnchor="middle">{t}</text>)
+        : <text x={L.expose.x} y={L.expose.y} className="svg-text small" textAnchor="middle">expose 8000：沒有線穿出主機框，外面連不到 api</text>}
 
       {/* db → volume（離開網路框，仍在主機內） */}
-      <path d="M440 168 V 292" className={`svg-edge svg-dash cmp-edge${sel === 'db' || sel === 'pgdata' ? ' on' : ''}`} />
-      <text x="432" y="292" className="cmp-lbl" textAnchor="end">/var/lib/postgresql/data</text>
+      <path d={L.eDV} className={`svg-edge svg-dash cmp-edge${sel === 'db' || sel === 'pgdata' ? ' on' : ''}`} />
+      <text x={L.lDV.x} y={L.lDV.y} className="cmp-lbl" textAnchor={L.lDV.anchor}>/var/lib/postgresql/data</text>
 
-      {Object.entries(N).map(([id, n]) => (
-        <g key={id} className={`cmp-node ${st[id]}${sel === id ? ' sel' : ''}`}
-           onClick={(e) => { e.stopPropagation(); onPick(id) }} onKeyDown={keyPick(() => onPick(id))}
-           onMouseEnter={() => onHover(id)} onMouseLeave={() => onHover(null)}
-           onFocus={() => onHover(id)} onBlur={() => onHover(null)}
-           role="button" tabIndex={0} aria-label={`服務 ${id}`}>
-          <rect x={n.x} y={n.y} width={W} height={H} rx="5" className="svg-node" />
-          <text x={n.x + 9} y={n.y + 18} className="svg-text" style={{ fontWeight: 700 }}>{n.title}</text>
-          <text x={n.x + W - 8} y={n.y + 18} className="svg-mono" textAnchor="end" style={{ fontSize: 10, fill: 'var(--ink-2)' }}>{n.port}</text>
-          <text x={n.x + 9} y={n.y + 33} className="svg-text small">{n.sub}</text>
-          {st[id] !== 'off' && (
-            <text x={n.x} y={n.y + H + 13} className={`cmp-st ${st[id]}${st[id] === 'starting' ? ' svg-pulse' : ''}`}>{STATUS_TEXT[st[id]]}</text>
-          )}
-        </g>
-      ))}
+      {Object.entries(META).map(([id, m]) => {
+        const [x, y] = L.N[id]
+        return (
+          <g key={id} className={`cmp-node ${st[id]}${sel === id ? ' sel' : ''}`}
+             onClick={(e) => { e.stopPropagation(); onPick(id) }} onKeyDown={keyPick(() => onPick(id))}
+             onMouseEnter={() => onHover(id)} onMouseLeave={() => onHover(null)}
+             onFocus={() => onHover(id)} onBlur={() => onHover(null)}
+             role="button" tabIndex={0} aria-label={`服務 ${id}`}>
+            <rect x={x} y={y} width={W} height={H} rx="5" className="svg-node" />
+            <text x={x + 9} y={y + L.ty} className="svg-text" style={{ fontWeight: 700 }}>{m.title}</text>
+            <text x={x + W - 8} y={y + L.ty} className="svg-mono" textAnchor="end" style={{ fontSize: L.fs.port, fill: 'var(--ink-2)' }}>{m.port}</text>
+            <text x={x + 9} y={y + L.sy} className="svg-text small">{m.sub}</text>
+            {st[id] !== 'off' && (
+              <text x={L.stAnchor === 'end' ? x + W : x} y={y + H + 13} textAnchor={L.stAnchor} className={`cmp-st ${st[id]}${st[id] === 'starting' ? ' svg-pulse' : ''}`}>{STATUS_TEXT[st[id]]}</text>
+            )}
+          </g>
+        )
+      })}
 
       {/* volume 圓柱 */}
       <g className={`cmp-node${sel === 'pgdata' ? ' sel' : ''}`} onClick={(e) => { e.stopPropagation(); onPick('pgdata') }}
          onKeyDown={keyPick(() => onPick('pgdata'))} onMouseEnter={() => onHover('pgdata')} onMouseLeave={() => onHover(null)}
          onFocus={() => onHover('pgdata')} onBlur={() => onHover(null)} role="button" tabIndex={0} aria-label="volume pgdata">
-        <path d="M410 300 a30 6 0 0 0 60 0 v 24 a30 6 0 0 1 -60 0 z" className="cmp-vol" />
-        <ellipse cx="440" cy="300" rx="30" ry="6" className="cmp-vol" />
-        <text x="440" y="318" className="svg-mono" textAnchor="middle" style={{ fontSize: 10 }}>pgdata</text>
-        <text x="400" y="316" className="svg-text small" textAnchor="end">volume</text>
+        <path d={L.vol.path} className="cmp-vol" />
+        <ellipse cx={L.vol.cx} cy={L.vol.cy} rx="30" ry="6" className="cmp-vol" />
+        <text x={L.vol.cx} y={L.vol.nameY} className="svg-mono" textAnchor="middle" style={{ fontSize: L.fs.pgdata }}>pgdata</text>
+        <text x={L.vol.lblX} y={L.vol.lblY} className="svg-text small" textAnchor={L.vol.lblAnchor}>volume</text>
       </g>
     </svg>
   )

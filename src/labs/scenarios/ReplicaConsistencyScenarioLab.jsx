@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useReducedMotion, Stats, Stat, Caption, fmtMs } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useReducedMotion, useWidth, Stats, Stat, Caption, fmtMs } from '../ui.jsx'
 
 /* 讀寫分離情境模擬器：
    主庫 + 兩台副本。按「寫入然後立刻重整」跑一次時序：寫到主庫 → WAL 串流 → 使用者 gap ms 後按 F5 →
@@ -76,6 +76,8 @@ export default function ReplicaConsistencyScenarioLab() {
   const [lsn, setLsn] = useState(100)
   const reduced = useReducedMotion()
   const seq = useRef(0)
+  const box = useRef(null)
+  const narrow = useWidth(box, 640) < 520     // 手機：SVG 改直式（使用者 → 主庫 → 兩台副本上下排），viewBox 窄一點字才看得清
   const effLag = peak ? 2000 : lag
   const m = MODES[mode]
   const table = useMemo(() => Object.entries(MODES).map(([k, v]) => ({ id: k, label: v.label, need: v.need, ...expected(k, effLag, gap), peak: expected(k, 2000, gap).stale })), [effLag, gap])
@@ -133,8 +135,34 @@ export default function ReplicaConsistencyScenarioLab() {
       </LabControls>
 
       <LabGrid variant="wide">
-        <div className="lab-stack">
+        <div className="lab-stack" ref={box}>
           <LabStage label="主庫、兩台副本與讀寫路徑" caption="紫＝寫入與 WAL 串流、橘＝這次讀取走的路、紅框＝被挑到但還沒追上的副本。">
+            {narrow ? (
+            <svg className="rc-svg narrow" viewBox="0 0 320 280" role="img" aria-label="主庫與兩台副本的讀寫路徑">
+              <path d="M136 60 V100" className={`e${step === 0 ? ' on' : ''}`} />
+              <path d="M130 174 C 130 200, 79 190, 79 214" className={`e repl${step === 1 ? ' on' : ''}`} />
+              <path d="M190 174 C 190 200, 241 190, 241 214" className={`e repl${step === 1 ? ' on' : ''}`} />
+              {step >= 2 && t.target === 'primary' && <path d="M154 60 V100" className="e on read" />}
+              {step >= 2 && t.target === 0 && <path d="M124 30 C 10 30, 10 150, 30 214" className="e on read" />}
+              {step >= 2 && t.target === 1 && <path d="M196 30 C 330 30, 330 150, 290 214" className="e on read" />}
+              <g transform="translate(124,6)"><rect width="72" height="54" rx="6" className={`n${step >= 0 ? ' on' : ''}`} /><text x="36" y="24" className="t">使用者</text><text x="36" y="42" className="s">{isOrder ? 'POST → GET' : 'PATCH → F5'}</text></g>
+              <g transform="translate(98,100)"><rect width="124" height="74" rx="6" className={`n${step === 0 || (step >= 2 && t.target === 'primary') ? ' on' : ''}`} /><text x="62" y="24" className="t">主庫（寫）</text><text x="62" y="44" className="s">LSN {lsn}</text><text x="62" y="62" className="s">{isOrder ? 'orders: 5001 ✓' : "name = 'Alicia'"}</text></g>
+              {REPL.map((r, i) => {
+                const behind = replLsn(r) < lsn
+                return (
+                  <g key={r.id} transform={`translate(${i === 0 ? 4 : 166},214)`}>
+                    <rect width="150" height="60" rx="6" className={`n${step >= 2 && t.target === r.id ? ' on' : ''}${behind && step >= 2 && t.pick === r.id ? ' behind' : ''}`} />
+                    <text x="75" y="22" className="t">{r.name}（讀）</text>
+                    <text x="75" y="40" className={`s${behind ? ' bad' : ''}`}>LSN {replLsn(r)} · 落後 {Math.round(effLag * r.ratio)} ms</text>
+                    <text x="75" y="54" className="s">{behind ? (isOrder ? 'orders: 5001 ✗' : "name = 'Alice'") : (isOrder ? 'orders: 5001 ✓' : "name = 'Alicia'")}</text>
+                  </g>
+                )
+              })}
+              <text x="122" y="84" className="s">寫入</text><text x="160" y="200" className="s">WAL 串流</text>
+              {mode === 'lsn' && step >= 2 && <text x="162" y="84" className="s l">X-After-LSN: {lsn}</text>}
+              {mode === 'primary-read' && step >= 2 && <text x="162" y="84" className="s l">cookie last_write_at</text>}
+            </svg>
+            ) : (
             <svg className="rc-svg" viewBox="0 0 600 230" role="img" aria-label="主庫與兩台副本的讀寫路徑">
               <path d="M96 115 H188" className={`e${step === 0 ? ' on' : ''}`} />
               <path d="M312 105 C 360 105, 380 60, 426 60" className={`e repl${step === 1 ? ' on' : ''}`} />
@@ -159,6 +187,7 @@ export default function ReplicaConsistencyScenarioLab() {
               {mode === 'lsn' && step >= 2 && <text x="142" y="160" className="s">X-After-LSN: {lsn}</text>}
               {mode === 'primary-read' && step >= 2 && <text x="142" y="160" className="s">cookie last_write_at</text>}
             </svg>
+            )}
             <p className={`rc-phase${flow ? ' on' : ''}`}>
               {phaseText}{' '}
               {step === 3 && (t.fresh ? <Status ok>{t.fallback ? '新值（改讀主庫）' : '新值'}</Status> : <Status>{isOrder ? '404' : '舊值'}</Status>)}
@@ -226,6 +255,7 @@ export default function ReplicaConsistencyScenarioLab() {
         .rc-svg .t { font-family: var(--sans); font-size: 12.5px; font-weight: 700; fill: var(--ink-1); text-anchor: middle; }
         .rc-svg .s { font-family: var(--mono); font-size: 10px; fill: var(--ink-3); text-anchor: middle; }
         .rc-svg .s.bad { fill: var(--critical); font-weight: 700; }
+        .rc-svg.narrow .t { font-size: 13px; } .rc-svg.narrow .s { font-size: 10.5px; } .rc-svg.narrow .s.l { text-anchor: start; }
         .rc-phase { margin-top: 10px; text-align: center; font-size: 0.8rem; color: var(--ink-3); min-height: 1.6em; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
         .rc-phase.on { color: var(--ink-1); font-weight: 600; }
         .rc-log { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-family: var(--mono); font-size: 0.76rem; color: var(--ink-2); }

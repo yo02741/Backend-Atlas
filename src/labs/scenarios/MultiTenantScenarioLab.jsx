@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, Stats, Stat, fmtN } from '../ui.jsx'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, Stats, Stat, fmtN, useWidth } from '../ui.jsx'
 
 /* 多租戶隔離模擬器：
    SVG 畫三種佈局（一張表多色列 / 多個 schema 框 / 多個 DB 桶）
@@ -21,6 +21,8 @@ const ROWS = ['acme', 'globex', 'acme', 'initech', 'acme', 'umbrella', 'acme', '
 const EMP = [['acme', '林 O 安', 'R&D'], ['globex', '陳 O 廷', 'R&D'], ['acme', '張 O 慧', 'R&D'], ['initech', '王 O 翔', 'R&D'], ['globex', '李 O 珊', 'R&D'], ['hooli', '吳 O 豪', 'R&D'], ['acme', '黃 O 雯', 'R&D'], ['stark', '劉 O 恩', 'R&D']]
 const tint = (c, pct = 45) => `color-mix(in srgb, var(--c-${c}) ${pct}%, transparent)`
 const colorOf = (id) => TENANTS.find((t) => t.id === id).c
+/* SVG 版面：桌機 640×256；手機（窄版）改 360 寬，共用表拉長列距、schema / DB 改 2 欄 4 列 */
+const VB = { wide: { W: 640, H: 256 }, shared: { W: 360, H: 290 }, boxes: { W: 360, H: 400 } }
 
 const APPROACHES = [
   { value: 'shared', label: '共用表 + tenant_id' },
@@ -66,6 +68,9 @@ export default function MultiTenantScenarioLab() {
   const pick = (a) => { setAction(a); setMigrating(false) }
   const progress = action === 'migrate' ? Math.min(tick, steps) : 0
   const migDone = action === 'migrate' && tick >= steps
+  const box = useRef(null)
+  const narrow = useWidth(box, 700) < 520   // 手機：SVG 改窄版 viewBox，字不會被縮到看不清
+  const vb = narrow ? (approach === 'shared' ? VB.shared : VB.boxes) : VB.wide
 
   const migrations = approach === 'shared' ? 1 : tenants
   const minutes = migrations * 2
@@ -104,11 +109,13 @@ export default function MultiTenantScenarioLab() {
       <LabGrid>
         <div className="lab-stack">
           <LabStage label="資料佈局" caption={captionOf(approach, action, tenants, progress, steps, migDone)}>
-            <svg viewBox="0 0 640 256" width="100%" className="mt-svg">
-              {approach === 'shared' && <SharedSvg burst={action === 'burst'} mig={action === 'migrate'} done={migDone} leak={leak} forgot={forgot} rls={rls} />}
-              {approach === 'schema' && <BoxesSvg kind="schema" shown={shown} tenants={tenants} burst={action === 'burst'} progress={progress} mig={action === 'migrate'} />}
-              {approach === 'database' && <BoxesSvg kind="database" shown={shown} tenants={tenants} burst={action === 'burst'} progress={progress} mig={action === 'migrate'} />}
-            </svg>
+            <div ref={box}>
+              <svg viewBox={`0 0 ${vb.W} ${vb.H}`} width="100%" className="mt-svg" role="img" aria-label={`多租戶資料佈局：${approach === "shared" ? "共用表，以 tenant_id 隔離" : approach === "schema" ? "每租戶一個 schema" : "每租戶一個資料庫"}`}>
+                {approach === 'shared' && <SharedSvg burst={action === 'burst'} mig={action === 'migrate'} done={migDone} leak={leak} forgot={forgot} rls={rls} narrow={narrow} />}
+                {approach === 'schema' && <BoxesSvg kind="schema" shown={shown} tenants={tenants} burst={action === 'burst'} progress={progress} mig={action === 'migrate'} narrow={narrow} />}
+                {approach === 'database' && <BoxesSvg kind="database" shown={shown} tenants={tenants} burst={action === 'burst'} progress={progress} mig={action === 'migrate'} narrow={narrow} />}
+              </svg>
+            </div>
           </LabStage>
           {action === 'migrate' && <MigBar approach={approach} tenants={tenants} progress={progress} steps={steps} done={migDone} />}
           {action === 'stats' ? (
@@ -192,27 +199,31 @@ function captionOf(approach, action, tenants, progress, steps, done) {
   return approach === 'shared' ? '一張表，每列的顏色是它的 tenant_id；acme 佔了一半以上的列。' : approach === 'schema' ? '一台實例、一個 database、每個租戶一個 schema。' : '每個租戶自己的資料庫。'
 }
 
-/* 共用表：16 條多色列 */
-function SharedSvg({ burst, mig, done, leak, forgot, rls }) {
+/* 共用表：16 條多色列（窄版：欄位靠攏、列距 11.5 → 13、格內字 9.5 → 10.5） */
+function SharedSvg({ burst, mig, done, leak, forgot, rls, narrow = false }) {
   const leaking = forgot && !rls
   const filtering = forgot && rls
+  const L = narrow
+    ? { ox: 12, ow: 336, oh: VB.shared.H - 26, tx: 20, cx: [20, 92, 140, 222], sx: 20, sw: 320, sh: 11, pitch: 13, dy: 9, fs: 10.5, ex: 340, ea: 'end' }
+    : { ox: 20, ow: 600, oh: 230, tx: 32, cx: [40, 140, 230, 400], sx: 32, sw: 576, sh: 10, pitch: 11.5, dy: 8, fs: 9.5, ex: 560, ea: undefined }
   return (
     <g>
-      <rect x={20} y={14} width={600} height={230} rx={6} className={`svg-node${burst ? ' hot' : mig ? (done ? ' done' : ' on svg-pulse') : ''}`} />
-      <text x={32} y={34} className="svg-text">employees · 一張表 · 所有租戶{done && mig ? '　✓ migration 套完 1 次' : ''}</text>
-      <text x={40} y={52} className="svg-text small">tenant_id</text><text x={140} y={52} className="svg-text small">id</text><text x={230} y={52} className="svg-text small">name</text><text x={400} y={52} className="svg-text small">department</text>
+      <rect x={L.ox} y={14} width={L.ow} height={L.oh} rx={6} className={`svg-node${burst ? ' hot' : mig ? (done ? ' done' : ' on svg-pulse') : ''}`} />
+      <text x={L.tx} y={34} className="svg-text">employees · 一張表 · 所有租戶{done && mig ? '　✓ migration 套完 1 次' : ''}</text>
+      <text x={L.cx[0]} y={52} className="svg-text small">tenant_id</text><text x={L.cx[1]} y={52} className="svg-text small">id</text><text x={L.cx[2]} y={52} className="svg-text small">name</text><text x={L.cx[3]} y={52} className="svg-text small">department</text>
       {ROWS.map((t, i) => {
         const mine = t === ME
         const cls = leaking && !mine ? 'hot' : ''
         const op = filtering && !mine ? 0.18 : 1
+        const y = 58 + i * L.pitch + L.dy
         return (
           <g key={i} className="stripe" style={{ opacity: op }}>
-            <rect x={32} y={58 + i * 11.5} width={576} height={10} rx={1.5} fill={tint(colorOf(t), burst && t === 'acme' ? 70 : 40)} className={`${cls}${burst && t === 'acme' ? ' svg-pulse' : ''}`} stroke={cls ? undefined : 'none'} />
-            <text x={40} y={66 + i * 11.5} className="svg-mono" style={{ fontSize: 9.5 }}>{t === 'acme' ? 1 : t === 'globex' ? 42 : 7 + i}</text>
-            <text x={140} y={66 + i * 11.5} className="svg-mono" style={{ fontSize: 9.5 }}>{1000 + i}</text>
-            <text x={230} y={66 + i * 11.5} className="svg-mono" style={{ fontSize: 9.5 }}>{t}</text>
-            {leaking && !mine && <text x={560} y={66 + i * 11.5} className="svg-mono" fill="var(--critical)" style={{ fontSize: 9.5 }}>外洩</text>}
-            {filtering && !mine && <text x={560} y={66 + i * 11.5} className="svg-mono" style={{ fontSize: 9.5 }}>policy 擋</text>}
+            <rect x={L.sx} y={58 + i * L.pitch} width={L.sw} height={L.sh} rx={1.5} fill={tint(colorOf(t), burst && t === 'acme' ? 70 : 40)} className={`${cls}${burst && t === 'acme' ? ' svg-pulse' : ''}`} stroke={cls ? undefined : 'none'} />
+            <text x={L.cx[0]} y={y} className="svg-mono" style={{ fontSize: L.fs }}>{t === 'acme' ? 1 : t === 'globex' ? 42 : 7 + i}</text>
+            <text x={L.cx[1]} y={y} className="svg-mono" style={{ fontSize: L.fs }}>{1000 + i}</text>
+            <text x={L.cx[2]} y={y} className="svg-mono" style={{ fontSize: L.fs }}>{t}</text>
+            {leaking && !mine && <text x={L.ex} y={y} textAnchor={L.ea} className="svg-mono" fill="var(--critical)" style={{ fontSize: L.fs }}>外洩</text>}
+            {filtering && !mine && <text x={L.ex} y={y} textAnchor={L.ea} className="svg-mono" style={{ fontSize: L.fs }}>policy 擋</text>}
           </g>
         )
       })}
@@ -220,35 +231,39 @@ function SharedSvg({ burst, mig, done, leak, forgot, rls }) {
   )
 }
 
-/* schema 框 / DB 桶：4 × 2 */
-function BoxesSvg({ kind, shown, tenants, burst, progress, mig }) {
+/* schema 框 / DB 桶：4 × 2（窄版：2 × 4） */
+function BoxesSvg({ kind, shown, tenants, burst, progress, mig, narrow = false }) {
   const list = TENANTS.slice(0, shown)
   const isSchema = kind === 'schema'
+  const B = narrow
+    ? { W: VB.boxes.W, H: VB.boxes.H, ox: 12, ow: 336, oh: VB.boxes.H - 28, tx: 20, cols: 2, x0: 20, px: 170, py: 84, bw: 150 }
+    : { W: VB.wide.W, H: VB.wide.H, ox: 20, ow: 600, oh: 230, tx: 32, cols: 4, x0: 36, px: 148, py: 100, bw: 132 }
   return (
     <g>
-      {isSchema && <rect x={20} y={14} width={600} height={230} rx={6} className={`svg-node${burst ? ' hot' : ''}`} />}
-      {isSchema && <text x={32} y={34} className="svg-text">PostgreSQL 實例 · 1 個 database · {tenants} 個 schema</text>}
+      {isSchema && <rect x={B.ox} y={14} width={B.ow} height={B.oh} rx={6} className={`svg-node${burst ? ' hot' : ''}`} />}
+      {isSchema && <text x={B.tx} y={34} className="svg-text">PostgreSQL 實例 · 1 個 database · {tenants} 個 schema</text>}
       {list.map((t, i) => {
-        const col = i % 4; const row = Math.floor(i / 4)
-        const x = 36 + col * 148; const y = (isSchema ? 46 : 22) + row * 100
+        const col = i % B.cols; const row = Math.floor(i / B.cols)
+        const x = B.x0 + col * B.px; const y = (isSchema ? 46 : 22) + row * B.py
         const done = mig && i < progress; const cur = mig && i === progress
         const hot = burst && (isSchema || t.big)
         const cls = `svg-node${hot ? ' hot' : done ? ' done' : cur ? ' on svg-pulse' : ''}`
         const h = t.big ? 76 : 60
+        const w = B.bw
         return (
           <g key={t.id} className={hot && t.big ? 'svg-pulse' : ''}>
             {isSchema
-              ? <rect x={x} y={y} width={132} height={h} rx={4} className={cls} />
-              : <><rect x={x} y={y + 8} width={132} height={h - 8} rx={8} className={cls} /><ellipse cx={x + 66} cy={y + 8} rx={66} ry={8} className={cls} /></>}
+              ? <rect x={x} y={y} width={w} height={h} rx={4} className={cls} />
+              : <><rect x={x} y={y + 8} width={w} height={h - 8} rx={8} className={cls} /><ellipse cx={x + w / 2} cy={y + 8} rx={w / 2} ry={8} className={cls} /></>}
             <text x={x + 8} y={y + (isSchema ? 16 : 28)} className="svg-mono">{isSchema ? `t_${t.id}` : `db-${t.id}`}</text>
-            {Array.from({ length: t.size }, (_, k) => <rect key={k} x={x + 8} y={y + (isSchema ? 24 : 36) + k * 7} width={116 - k * 12} height={4} rx={1} fill={tint(t.c, 55)} />)}
-            {done && <text x={x + 124} y={y + (isSchema ? 16 : 28)} textAnchor="end" className="svg-mono" fill="var(--good)">✓</text>}
-            {hot && t.big && <text x={x + 124} y={y + h - 6} textAnchor="end" className="svg-mono" fill="var(--critical)">暴衝</text>}
-            {hot && !t.big && <text x={x + 124} y={y + h - 6} textAnchor="end" className="svg-mono" fill="var(--critical)">變慢</text>}
+            {Array.from({ length: t.size }, (_, k) => <rect key={k} x={x + 8} y={y + (isSchema ? 24 : 36) + k * 7} width={w - 16 - k * 12} height={4} rx={1} fill={tint(t.c, 55)} />)}
+            {done && <text x={x + w - 8} y={y + (isSchema ? 16 : 28)} textAnchor="end" className="svg-mono" fill="var(--good)">✓</text>}
+            {hot && t.big && <text x={x + w - 8} y={y + h - 6} textAnchor="end" className="svg-mono" fill="var(--critical)">暴衝</text>}
+            {hot && !t.big && <text x={x + w - 8} y={y + h - 6} textAnchor="end" className="svg-mono" fill="var(--critical)">變慢</text>}
           </g>
         )
       })}
-      {tenants > 8 && <text x={608} y={240} textAnchor="end" className="svg-text small">…畫 8 個代表 {tenants} 個{mig ? `，實際要跑 ${tenants} 次` : ''}</text>}
+      {tenants > 8 && <text x={B.W - 32} y={B.H - 16} textAnchor="end" className="svg-text small">…畫 8 個代表 {tenants} 個{mig ? `，實際要跑 ${tenants} 次` : ''}</text>}
     </g>
   )
 }

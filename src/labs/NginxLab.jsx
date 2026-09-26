@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Code, Callout } from './ui.jsx'
+import React, { useRef, useState } from 'react'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Code, Callout, useWidth } from './ui.jsx'
 
 /* ============================================================
    nginx 反向代理視覺化：一個請求怎麼被 location 分派
@@ -82,6 +82,8 @@ export default function NginxLab() {
     ...(app2Down ? [{ line: 3, text: 'app2:8000' }] : []),
   ]
   const explain = explainFor(path, hit)
+  const box = useRef(null)
+  const narrow = useWidth(box, 640) < 440   // 手機：分派圖改窄版排法、字放大
 
   return (
     <Lab className="ngx" accent="yellow" kicker="DEPLOY LAB" title="nginx 反向代理：一個請求怎麼被分派"
@@ -99,11 +101,11 @@ export default function NginxLab() {
       <LabGrid variant="even">
         <Code lang="nginx" title="nginx.conf" highlight={hl} dim marks={marks}>{CONF}</Code>
 
-        <div className="lab-stack">
+        <div className="lab-stack" ref={box}>
           <LabStage label="nginx 分派圖"
                     caption={tls ? 'TLS 在 nginx 終結：瀏覽器到 nginx 是 https，nginx 到 app 是內網 http 明文；憑證與私鑰只放在 nginx 這一台。'
                                  : hit ? `第 ${hit.id} 個請求 ${p.label} → ${DEST[hit.target]}` : '按「送出請求」看箭頭往哪裡走；app 節點右側是各台收到的請求數。'}>
-            <Diagram path={path} hit={hit} counts={counts} app2Down={app2Down} tls={tls} />
+            <Diagram path={path} hit={hit} counts={counts} app2Down={app2Down} tls={tls} narrow={narrow} />
           </LabStage>
           <LabExplain title={explain.title}>
             {explain.text.map((t, i) => <p key={i} dangerouslySetInnerHTML={{ __html: md(t) }} />)}
@@ -135,6 +137,13 @@ export default function NginxLab() {
         .ngx-lbl { font-family: var(--mono); font-size: 9.5px; fill: var(--ink-3); paint-order: stroke; stroke: var(--page); stroke-width: 4; }
         .ngx-lock { fill: var(--good); }
         .ngx-lock path { fill: none; stroke: var(--good); stroke-width: 1.5; }
+        /* 窄版（手機）：viewBox 較窄，字級調大讓縮放後仍讀得清楚 */
+        .ngx-svg.narrow { max-width: 420px; margin: 0 auto; }
+        .ngx-svg.narrow .svg-text { font-size: 13.5px; }
+        .ngx-svg.narrow .svg-text.small { font-size: 11px; }
+        .ngx-svg.narrow .svg-mono { font-size: 12px; }
+        .ngx-svg.narrow .ngx-count, .ngx-svg.narrow .ngx-ok { font-size: 11.5px; }
+        .ngx-svg.narrow .ngx-err, .ngx-svg.narrow .ngx-lbl { font-size: 10.5px; }
       `}</style>
     </Lab>
   )
@@ -169,20 +178,47 @@ function explainFor(path, hit) {
 }
 
 /* ---- 分派圖 ---- */
-const T = {
-  app1:   { x: 380, y: 36, h: 34, title: 'app1', sub: ':8000' },
-  app2:   { x: 380, y: 82, h: 34, title: 'app2', sub: ':8000' },
-  app3:   { x: 380, y: 128, h: 34, title: 'app3', sub: ':8000' },
-  static: { x: 380, y: 200, h: 40, title: '靜態檔', sub: '/var/www/static/…' },
-  spa:    { x: 380, y: 256, h: 40, title: 'SPA', sub: '/var/www/spa/index.html' },
+const TMETA = {
+  app1:   { title: 'app1', sub: ':8000' },
+  app2:   { title: 'app2', sub: ':8000' },
+  app3:   { title: 'app3', sub: ':8000' },
+  static: { title: '靜態檔', sub: '/var/www/static/…' },
+  spa:    { title: 'SPA', sub: '/var/www/spa/index.html' },
 }
-const TW = 140, NX = 170, NY = 126, NW = 110, NH = 80, NMID = NY + NH / 2
-const curve = (id) => { const t = T[id]; const my = t.y + t.h / 2; return `M${NX + NW} ${NMID} C 330 ${NMID}, 330 ${my}, ${t.x - 2} ${my}` }
+/* 兩套座標：wide 是桌機的橫式（Internet → nginx → 右欄五個目的地）；narrow 是手機用：Internet 在 nginx 上方、
+   目的地欄靠右，Host / X-Forwarded-For 與 TLS 說明移到圖的最下方，連不上 / 跳過的提示放在 nginx 下方。
+   T: [x, y, h]；err 有值時 attempt / skipped 標籤固定放那裡，否則放在該目的地的邊旁邊。 */
+const LAYOUT = {
+  wide: {
+    vb: '0 0 532 330', TW: 140, NX: 170, NY: 126, NW: 110, NH: 80, cx: 330,
+    T: { app1: [380, 36, 34], app2: [380, 82, 34], app3: [380, 128, 34], static: [380, 200, 40], spa: [380, 256, 40] },
+    inet: { x: 4, y: 146, w: 60, h: 40, cx: 34, ty: 163, sy: 177 },
+    inEdge: 'M64 166 H 168', getLbl: { x: 116, y: 136, anchor: 'middle' }, lock: { x: 102, y: 188 },
+    ok200: { x: 225, y: 222 }, hdr: { x: 170, y1: 222, y2: 234 },
+    frame: { x: 366, y: 14, width: 160, height: 162 }, frameLbl: { x: 374, y: 28 },
+    tlsLbl: { x: 330, y: 318 }, fs: { title: 14 },
+  },
+  narrow: {
+    vb: '0 0 352 424', TW: 150, NX: 20, NY: 112, NW: 110, NH: 80, cx: 162,
+    T: { app1: [196, 118, 34], app2: [196, 164, 34], app3: [196, 210, 34], static: [196, 282, 40], spa: [196, 338, 40] },
+    inet: { x: 8, y: 6, w: 72, h: 40, cx: 44, ty: 23, sy: 37 },
+    inEdge: 'M44 46 V 110', getLbl: { x: 52, y: 70, anchor: 'start' }, lock: { x: 52, y: 78 },
+    ok200: { x: 75, y: 208 }, hdr: { x: 20, y1: 384, y2: 396 }, err: { x: 75, y: 208 },
+    frame: { x: 182, y: 96, width: 166, height: 162 }, frameLbl: { x: 190, y: 110 },
+    tlsLbl: { x: 176, y: 414 }, fs: { title: 15 },
+  },
+}
 
-function Diagram({ path, hit, counts, app2Down, tls }) {
+function Diagram({ path, hit, counts, app2Down, tls, narrow = false }) {
+  const L = narrow ? LAYOUT.narrow : LAYOUT.wide
+  const { T, TW, NX, NY, NW, NH } = L
+  const NMID = NY + NH / 2
+  const mid = (id) => T[id][1] + T[id][2] / 2
+  const curve = (id) => `M${NX + NW} ${NMID} C ${L.cx} ${NMID}, ${L.cx} ${mid(id)}, ${T[id][0] - 2} ${mid(id)}`
+  const errAt = (id) => L.err || { x: 336, y: mid(id) - 8 }
   const active = hit?.target ?? null
   return (
-    <svg viewBox="0 0 532 330" role="img" aria-label="nginx 分派圖：Internet 到 nginx，再到 app1/app2/app3、靜態檔或 SPA">
+    <svg className={`ngx-svg${narrow ? ' narrow' : ''}`} viewBox={L.vb} role="img" aria-label="nginx 分派圖：Internet 到 nginx，再到 app1/app2/app3、靜態檔或 SPA">
       <defs>
         <marker id="ngx-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
           <path d="M0 0 L8 4 L0 8 z" style={{ fill: 'var(--ink-3)' }} />
@@ -190,65 +226,66 @@ function Diagram({ path, hit, counts, app2Down, tls }) {
       </defs>
 
       {/* Internet → nginx */}
-      <rect x="4" y={NMID - 20} width="60" height="40" rx="20" className="ngx-box" />
-      <text x="34" y={NMID - 3} className="svg-text" textAnchor="middle" style={{ fontWeight: 700 }}>Internet</text>
-      <text x="34" y={NMID + 11} className="svg-text small" textAnchor="middle">瀏覽器</text>
-      <path d={`M64 ${NMID} H ${NX - 2}`} className={`ngx-edge${hit ? ' on svg-flow' : ''}`} markerEnd="url(#ngx-arrow)" />
-      <text x="116" y={NMID - 30} className="ngx-lbl" textAnchor="middle">GET {PATHS[path].label}</text>
+      <rect x={L.inet.x} y={L.inet.y} width={L.inet.w} height={L.inet.h} rx="20" className="ngx-box" />
+      <text x={L.inet.cx} y={L.inet.ty} className="svg-text" textAnchor="middle" style={{ fontWeight: 700 }}>Internet</text>
+      <text x={L.inet.cx} y={L.inet.sy} className="svg-text small" textAnchor="middle">瀏覽器</text>
+      <path d={L.inEdge} className={`ngx-edge${hit ? ' on svg-flow' : ''}`} markerEnd="url(#ngx-arrow)" />
+      <text x={L.getLbl.x} y={L.getLbl.y} className="ngx-lbl" textAnchor={L.getLbl.anchor}>GET {PATHS[path].label}</text>
       {tls && (
         <g className="ngx-lock svg-pop">
-          <rect x="102" y={NMID + 22} width="12" height="9" rx="2" />
-          <path d={`M104.5 ${NMID + 22} v-3 a3.5 3.5 0 0 1 7 0 v3`} />
-          <text x="118" y={NMID + 30} className="ngx-lbl" style={{ fill: 'var(--good)' }}>https</text>
+          <rect x={L.lock.x} y={L.lock.y} width="12" height="9" rx="2" />
+          <path d={`M${L.lock.x + 2.5} ${L.lock.y} v-3 a3.5 3.5 0 0 1 7 0 v3`} />
+          <text x={L.lock.x + 16} y={L.lock.y + 8} className="ngx-lbl" style={{ fill: 'var(--good)' }}>https</text>
         </g>
       )}
 
       {/* nginx */}
       <rect x={NX} y={NY} width={NW} height={NH} rx="6" className={`ngx-box${hit ? ' on' : ''}`} />
-      <text x={NX + 12} y={NY + 22} className="svg-text" style={{ fontWeight: 700, fontSize: 14 }}>nginx</text>
+      <text x={NX + 12} y={NY + 22} className="svg-text" style={{ fontWeight: 700, fontSize: L.fs.title }}>nginx</text>
       <text x={NX + 12} y={NY + 40} className="svg-mono" style={{ fill: 'var(--ink-2)' }}>:443 ssl</text>
       <text x={NX + 12} y={NY + 58} className="svg-text small">比對 location</text>
       <text x={NX + 12} y={NY + 71} className="svg-text small">→ 分派</text>
       {hit?.target === 'nginx' && (
-        <text key={hit.id} x={NX + NW / 2} y={NY + NH + 16} className="ngx-ok svg-pop" textAnchor="middle">200 ok（不碰後端）</text>
+        <text key={hit.id} x={L.ok200.x} y={L.ok200.y} className="ngx-ok svg-pop" textAnchor="middle">200 ok（不碰後端）</text>
       )}
       {hit && hit.path === 'api' && (
         <g key={`h${hit.id}`} className="svg-pop">
-          <text x={NX} y={NY + NH + 16} className="ngx-lbl">+ Host: example.com</text>
-          <text x={NX} y={NY + NH + 28} className="ngx-lbl">+ X-Forwarded-For: 203.0.113.7</text>
+          <text x={L.hdr.x} y={L.hdr.y1} className="ngx-lbl">+ Host: example.com</text>
+          <text x={L.hdr.x} y={L.hdr.y2} className="ngx-lbl">+ X-Forwarded-For: 203.0.113.7</text>
         </g>
       )}
 
       {/* upstream 框 */}
-      <rect x="366" y="14" width="160" height="162" rx="6" className="ngx-frame" />
-      <text x="374" y="28" className="svg-text small">upstream api（round-robin）</text>
+      <rect {...L.frame} rx="6" className="ngx-frame" />
+      <text x={L.frameLbl.x} y={L.frameLbl.y} className="svg-text small">upstream api（round-robin）</text>
 
       {/* 邊 */}
       {Object.keys(T).map((id) => (
         <path key={id} d={curve(id)} className={`ngx-edge${active === id ? ' on svg-flow' : ''}${hit?.attempt === id ? ' dead' : ''}`}
               markerEnd={active === id ? 'url(#ngx-arrow)' : undefined} />
       ))}
-      {hit?.attempt && <text key={`x${hit.id}`} x="336" y={T[hit.attempt].y + T[hit.attempt].h / 2 - 8} className="ngx-err svg-pop" textAnchor="middle">✕ 連不上 → 換下一台</text>}
-      {hit?.skipped && <text key={`s${hit.id}`} x="336" y={T[hit.skipped].y + T[hit.skipped].h / 2 - 8} className="ngx-lbl svg-pop" textAnchor="middle">fail_timeout 內，跳過</text>}
-      {tls && <text x="330" y="318" className="ngx-lbl" textAnchor="middle" style={{ fill: 'var(--ink-2)' }}>nginx → app：http 明文（憑證只在 nginx）</text>}
+      {hit?.attempt && <text key={`x${hit.id}`} x={errAt(hit.attempt).x} y={errAt(hit.attempt).y} className="ngx-err svg-pop" textAnchor="middle">✕ 連不上 → 換下一台</text>}
+      {hit?.skipped && <text key={`s${hit.id}`} x={errAt(hit.skipped).x} y={errAt(hit.skipped).y} className="ngx-lbl svg-pop" textAnchor="middle">fail_timeout 內，跳過</text>}
+      {tls && <text x={L.tlsLbl.x} y={L.tlsLbl.y} className="ngx-lbl" textAnchor="middle" style={{ fill: 'var(--ink-2)' }}>nginx → app：http 明文（憑證只在 nginx）</text>}
 
       {/* 目的地 */}
-      {Object.entries(T).map(([id, t]) => {
+      {Object.entries(T).map(([id, [tx, ty, th]]) => {
+        const m = TMETA[id]
         const isApp = id.startsWith('app')
         const down = isApp && app2Down && id === 'app2'
         return (
           <g key={id} className={down ? 'ngx-down' : ''}>
-            <rect x={t.x} y={t.y} width={TW} height={t.h} rx="5" className={`ngx-box${active === id ? ' on' : ''}${down ? ' down' : ''}`} />
-            <text x={t.x + 10} y={t.y + (isApp ? 21 : 17)} className="svg-text" style={{ fontWeight: 700 }}>{t.title}</text>
+            <rect x={tx} y={ty} width={TW} height={th} rx="5" className={`ngx-box${active === id ? ' on' : ''}${down ? ' down' : ''}`} />
+            <text x={tx + 10} y={ty + (isApp ? 21 : 17)} className="svg-text" style={{ fontWeight: 700 }}>{m.title}</text>
             {isApp ? (
               <>
-                <text x={t.x + 46} y={t.y + 21} className="svg-mono" style={{ fill: 'var(--ink-2)' }}>{t.sub}</text>
+                <text x={tx + 46} y={ty + 21} className="svg-mono" style={{ fill: 'var(--ink-2)' }}>{m.sub}</text>
                 {down
-                  ? <text x={t.x + TW - 8} y={t.y + 21} className="ngx-err" textAnchor="end">down ✕</text>
-                  : <text x={t.x + TW - 8} y={t.y + 21} className={`ngx-count${active === id ? ' hot' : ''}`} textAnchor="end">×{counts[id]}</text>}
+                  ? <text x={tx + TW - 8} y={ty + 21} className="ngx-err" textAnchor="end">down ✕</text>
+                  : <text x={tx + TW - 8} y={ty + 21} className={`ngx-count${active === id ? ' hot' : ''}`} textAnchor="end">×{counts[id]}</text>}
               </>
-            ) : <text x={t.x + 10} y={t.y + 31} className="svg-text small">{t.sub}</text>}
-            {active === id && <text key={hit.id} x={t.x - 8} y={t.y + t.h / 2 - 5} className="ngx-ok svg-pop" textAnchor="end">200 OK</text>}
+            ) : <text x={tx + 10} y={ty + 31} className="svg-text small">{m.sub}</text>}
+            {active === id && <text key={hit.id} x={tx - 8} y={ty + th / 2 - 5} className="ngx-ok svg-pop" textAnchor="end">200 OK</text>}
           </g>
         )
       })}

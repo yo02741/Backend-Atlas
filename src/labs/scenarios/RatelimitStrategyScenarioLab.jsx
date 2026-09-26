@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, Stats, Stat, Caption, fmtN } from '../ui.jsx'
 
 /* 限流情境模擬器：三種流量來源 × 三種端點 × 四種做法，跑 60 秒看誰被擋、誰漏網
    固定視窗、每分鐘計數，數字全部示意。 */
@@ -115,12 +115,16 @@ export default function RatelimitStrategyScenarioLab() {
           <LabStage label="流量與限流層" caption={`端點「${E.name}」：${E.note}。綠＝放行、紅＝429；灰框＝這個做法沒用到的那一層。`}>
             <FlowSvg approach={approach} rows={rows} ipLimit={ipLimit} userLimit={userLimit} allow={allow} plan={!!E.plan} keyLabel={keyLabel} started={started} />
           </LabStage>
-          <div className="rls-stats">
-            <div><span>誤傷（辦公室 + 一般使用者被擋）</span><b className={started && hurt ? 'bad' : ''}>{started ? hurt.toLocaleString() : '—'}</b></div>
-            <div><span>漏網（攻擊者放行）</span><b className={started && leak > userLimit ? 'bad' : ''}>{started ? leak.toLocaleString() : '—'}</b></div>
-            <div><span>進到應用層</span><b>{started ? toApp.toLocaleString() : '—'}<small> / {grand.toLocaleString()}</small></b></div>
-            <div><span>結果</span>{!started ? <b className="muted">按「跑 60 秒」</b> : t < 60 ? <b className="muted">第 {t} 秒</b> : hurt === 0 && leak <= userLimit ? <Status ok>沒誤傷、擋住攻擊</Status> : hurt === 0 ? <Status warn>漏網 {leak.toLocaleString()}</Status> : leak <= userLimit ? <Status warn>誤傷 {hurt.toLocaleString()}</Status> : <Status>誤傷又漏網</Status>}</div>
-          </div>
+          <Stats min={150}>
+            <Stat label="誤傷（辦公室 + 一般使用者被擋）" value={started ? fmtN(hurt) : '—'} tone={started && hurt ? 'bad' : ''} />
+            <Stat label="漏網（攻擊者放行）" value={started ? fmtN(leak) : '—'} tone={started && leak > userLimit ? 'bad' : ''} />
+            <Stat label="進到應用層" value={started ? fmtN(toApp) : '—'} unit={`/ ${fmtN(grand)}`} />
+            {!started || t < 60
+              ? <Stat label="結果" value={<span className="muted">{!started ? '按「跑 60 秒」' : `第 ${t} 秒`}</span>} />
+              : <div className="lab-stat"><span className="l">結果</span>{/* Status 徽章直接放磚裡（Stat 的 value 會包進 mono 的 .v） */}
+                  {hurt === 0 && leak <= userLimit ? <Status ok>沒誤傷、擋住攻擊</Status> : hurt === 0 ? <Status warn>漏網 {fmtN(leak)}</Status> : leak <= userLimit ? <Status warn>誤傷 {fmtN(hurt)}</Status> : <Status>誤傷又漏網</Status>}
+                </div>}
+          </Stats>
           {started && (
             <div className="dtable-wrap">
               <table className="dtable">
@@ -130,12 +134,12 @@ export default function RatelimitStrategyScenarioLab() {
                   {final.map((r) => (
                     <tr key={r.id} className={r.blocked ? 'hit' : ''}>
                       <td>{r.name}</td><td>{r.key.kind}</td><td>{r.key.keys}</td><td>{Math.round(r.rpm / r.key.keys)}</td><td>{r.key.limit}</td>
-                      <td>{r.allowed.toLocaleString()}</td><td className={r.blocked ? 'rls-bad' : ''}>{r.blocked.toLocaleString()}</td>
+                      <td>{fmtN(r.allowed)}</td><td className={r.blocked ? 'rls-bad' : ''}>{fmtN(r.blocked)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <p className="lab-caption">每 key 次/分 = 來源總量 ÷ key 數；放行 = key 數 × min(每 key 次/分, 每 key 上限)。固定視窗、示意。</p>
+              <Caption>每 key 次/分 = 來源總量 ÷ key 數；放行 = key 數 × min(每 key 次/分, 每 key 上限)。固定視窗、示意。</Caption>
             </div>
           )}
           <HintPanel ep={ep} ipLimit={ipLimit} userLimit={userLimit} nginxOn={nginxOn} appOn={USES_APP[approach]} />
@@ -150,12 +154,7 @@ export default function RatelimitStrategyScenarioLab() {
         </div>
       </LabGrid>
       <style>{`
-        .rls-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-        .rls-stats > div { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 12px; display: grid; gap: 4px; align-content: start; }
-        .rls-stats span { font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.04em; }
-        .rls-stats b { font-family: var(--mono); font-size: 1.05rem; color: var(--ink-1); font-variant-numeric: tabular-nums; }
-        .rls-stats b small { font-size: 0.7rem; color: var(--ink-3); font-weight: 400; }
-        .rls-stats b.bad, .dtable td.rls-bad { color: var(--critical); }
+        .dtable td.rls-bad { color: var(--critical); }
         .rls-hint { border-left: 3px solid var(--hairline); padding: 4px 12px; display: grid; gap: 4px; font-size: 0.78rem; color: var(--ink-2); }
         .rls-hint b { font-family: var(--mono); color: var(--ink-1); font-weight: 600; }
         .rls-hint .bad { color: var(--critical); } .rls-hint .ok { color: var(--good); }
@@ -170,7 +169,7 @@ export default function RatelimitStrategyScenarioLab() {
         .rls-svg .off-t { fill: var(--ink-3); font-weight: 400; }
         .rls-svg rect.bar-ok, .rls-svg rect.bar-bad { transition: width 0.05s linear; }
         @media (prefers-reduced-motion: reduce) { .rls-svg rect.bar-ok, .rls-svg rect.bar-bad { transition: none; } }
-        @media (max-width: 640px) { .rls-hint { font-size: 0.74rem; } .rls-stats { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 640px) { .rls-hint { font-size: 0.74rem; } }
       `}</style>
     </Lab>
   )
@@ -204,9 +203,9 @@ function FlowSvg({ approach, rows, ipLimit, userLimit, allow, plan, keyLabel, st
             <rect className="bar-bg" x={BX} y={y + 8} width={BW} height={22} rx="3" />
             <rect className="bar-ok" x={BX} y={y + 8} width={Math.max(0, okW)} height={22} rx="3" />
             <rect className="bar-bad" x={BX + okW} y={y + 8} width={Math.max(0, badW)} height={22} />
-            <text className="n ok" x={BX + BW + 10} y={y + 15}>{started ? `放行 ${r.allowed.toLocaleString()}` : ''}</text>
-            <text className={`n${r.blocked > 0 ? ' bad' : ''}`} x={BX + BW + 10} y={y + 30}>{started ? `429 ${r.blocked.toLocaleString()}` : ''}</text>
-            <text className="svg-text small" x={BX} y={y + 44}>{started ? `到應用層 ${r.toApp.toLocaleString()} / ${r.total.toLocaleString()}` : '尚未送出'}</text>
+            <text className="n ok" x={BX + BW + 10} y={y + 15}>{started ? `放行 ${fmtN(r.allowed)}` : ''}</text>
+            <text className={`n${r.blocked > 0 ? ' bad' : ''}`} x={BX + BW + 10} y={y + 30}>{started ? `429 ${fmtN(r.blocked)}` : ''}</text>
+            <text className="svg-text small" x={BX} y={y + 44}>{started ? `到應用層 ${fmtN(r.toApp)} / ${fmtN(r.total)}` : '尚未送出'}</text>
           </g>
         )
       })}
@@ -233,7 +232,7 @@ function explainFor(approach, ep, final, ipLimit, userLimit, allow) {
   const o = final.find((r) => r.id === 'office'), a = final.find((r) => r.id === 'attacker')
   const p = []
   if (approach === 'ip-nginx') {
-    p.push(<p key="a">key 是來源 IP。辦公室 600 次全從同一個 IP 出來，{allow ? '目前在白名單裡不計數，全放；' : `上限 ${ipLimit} 就放 ${o.allowed} 擋 ${o.blocked}；`}攻擊者 50 個 IP 各 30 次，{a.blocked ? `每個都超過上限 ${ipLimit}，只放 ${a.allowed.toLocaleString()}。` : `每個都在上限 ${ipLimit} 內，${a.allowed.toLocaleString()} 次全部放行。`}把每 IP 上限拉到 600 以上辦公室才不會被誤傷，但那時攻擊者更是暢行無阻。</p>)
+    p.push(<p key="a">key 是來源 IP。辦公室 600 次全從同一個 IP 出來，{allow ? '目前在白名單裡不計數，全放；' : `上限 ${ipLimit} 就放 ${o.allowed} 擋 ${o.blocked}；`}攻擊者 50 個 IP 各 30 次，{a.blocked ? `每個都超過上限 ${ipLimit}，只放 ${fmtN(a.allowed)}。` : `每個都在上限 ${ipLimit} 內，${fmtN(a.allowed)} 次全部放行。`}把每 IP 上限拉到 600 以上辦公室才不會被誤傷，但那時攻擊者更是暢行無阻。</p>)
     p.push(<p key="b">好處是超量請求在 nginx 就結束，API 一個都不用處理。{ep === 'search' ? '公開搜尋沒有帳號，這已經是能做到最好的：擋得住少數 IP 狂抓，擋不住分散的爬蟲。' : '對登入與付費 API，IP 根本不是對的 key。'}{allow ? '白名單只救得了事先知道的那幾個 IP，救不了下一個從 NAT 出來的客戶。' : ''}</p>)
   } else if (approach === 'user-app') {
     p.push(<p key="a">{ep === 'search' ? '公開搜尋沒有帳號，應用層只能退回用 IP 當 key：結果和 nginx 每 IP 一樣，但每個請求都先進到 API、查一次 Redis 才被擋，白付成本。' : `key 是帳號 / API key。攻擊者不管換多少 IP，打同一個帳號就是同一個計數：上限 ${userLimit} 就只放 ${a.allowed} 次。辦公室 200 人各自算，每人 3 次遠低於上限，一個都不誤傷。`}</p>)
@@ -243,7 +242,7 @@ function explainFor(approach, ep, final, ipLimit, userLimit, allow) {
     p.push(<p key="a">{ep === 'paid' ? `同樣以 API key 計數，但上限查方案：free ×1、pro ×10、enterprise ×50（基準 ${userLimit}）。企業客戶那把 key 的上限是 ${userLimit * 50}，600 次全放；攻擊者拿的是 free key，上限 ${userLimit}，只放 ${a.allowed}。` : `這個端點沒有方案可查（${ep === 'login' ? '登入前不知道是誰' : '匿名'}），分級退化成${ep === 'login' ? '每帳號 flat 上限' : '每 IP'}，和上一個做法一樣。`}</p>)
     p.push(<p key="b">額度是產品規格：回應標頭直接告訴客戶端方案上限與何時重置。方案要快取在 Redis 或放進 token 裡，不然每個請求多一次 DB 查詢。攻擊流量的成本仍由 API 吸收。</p>)
   } else {
-    p.push(<p key="a">先過 nginx 每 IP（{allow ? `${ipLimit}，辦公室 IP 白名單` : ipLimit}），再過應用層每帳號（{userLimit}）。攻擊者 50 個 IP 各 30 次{a.toApp < a.total ? `在第一層先被擋掉 ${(a.total - a.toApp).toLocaleString()}` : '過得了第一層'}，到第二層撞同一個帳號，只放 {a.allowed}。{o.blocked > 0 ? `但辦公室的 600 次在第一層就被擋掉 ${o.blocked}：nginx 的每 IP 上限必須高於 NAT 後的合法流量，把它拉到 600 以上、或把辦公室 IP 加進白名單，再跑一次。` : `辦公室 600 次${allow ? '不進第一層的計數' : '在第一層內'}，第二層各自計數，零誤傷。`}</p>)
+    p.push(<p key="a">先過 nginx 每 IP（{allow ? `${ipLimit}，辦公室 IP 白名單` : ipLimit}），再過應用層每帳號（{userLimit}）。攻擊者 50 個 IP 各 30 次{a.toApp < a.total ? `在第一層先被擋掉 ${fmtN(a.total - a.toApp)}` : '過得了第一層'}，到第二層撞同一個帳號，只放 {a.allowed}。{o.blocked > 0 ? `但辦公室的 600 次在第一層就被擋掉 ${o.blocked}：nginx 的每 IP 上限必須高於 NAT 後的合法流量，把它拉到 600 以上、或把辦公室 IP 加進白名單，再跑一次。` : `辦公室 600 次${allow ? '不進第一層的計數' : '在第一層內'}，第二層各自計數，零誤傷。`}</p>)
     p.push(<p key="b">nginx 那層的意義是吸收最極端的暴衝（單一 IP 每秒上千次的掃描器），讓應用層只處理「合理範圍內」的請求再精準判斷。{ep === 'login' ? '登入端點兩層都要：每 IP 擋帳號枚舉、每帳號擋撞庫。' : ep === 'search' ? '公開搜尋沒有帳號，第二層無事可做，只剩 nginx 那層在算。' : '付費 API 的第二層應該換成依方案分級。'}</p>)
   }
   return p

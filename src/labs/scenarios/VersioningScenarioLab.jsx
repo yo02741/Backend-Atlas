@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Status } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Status, Stats, Stat } from '../ui.jsx'
 
 /* API 改版模擬器：
    左：GET /orders/42 的回應與四個變更開關（加欄位 / 拆欄位 / 改型別 / 刪欄位）
@@ -130,6 +130,7 @@ export default function VersioningScenarioLab() {
 
   const broken = rows.filter((r) => r.bad.length).length
   const versions = versioned ? 2 : 1
+  const stuck = approach === 'additive' && changes.remove      // 只加不改：刪不掉的欄位
   const explain = EXPLAIN[approach === 'expand' ? `expand${step}` : approach]
 
   return (
@@ -172,12 +173,11 @@ export default function VersioningScenarioLab() {
               </div>
             ))}
           </div>
-          <div className="vs-stat">
-            <span>壞掉的客戶端 <b>{broken} / 4</b></span>
-            <span>並存的版本 <b>{versions}</b></span>
-            <span>deprecated 欄位 <b>{shown.marks.length}</b></span>
-            {approach === 'additive' && changes.remove && <Status warn>internal_note 刪不掉</Status>}
-          </div>
+          <Stats min={120}>
+            <Stat label="壞掉的客戶端" value={`${broken} / 4`} />
+            <Stat label="並存的版本" value={versions} />
+            <Stat label="deprecated 欄位" value={shown.marks.length} tone={stuck ? 'warn' : ''} note={stuck ? 'internal_note 刪不掉' : ''} />
+          </Stats>
           <LabExplain title={explain.title}>{explain.body.map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
           <Callout title="什麼時候會真的踩到">改型別（字串 → 物件、數字 → 字串）與改名最常見，通常發生在「當初設計太簡單」的欄位上。刪欄位看起來無害，但沒寫在文件的欄位照樣有人在用；刪之前先用日誌或 gateway 統計誰還在讀。</Callout>
         </div>
@@ -196,8 +196,6 @@ export default function VersioningScenarioLab() {
         .vs-card .sub { font-size: 0.72rem; color: var(--ink-3); line-height: 1.4; }
         .vs-card .reads { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-2); word-break: break-all; }
         .vs-card .status { justify-self: start; font-size: 0.72rem; padding: 2px 8px; }
-        .vs-stat { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 0.76rem; color: var(--ink-3); }
-        .vs-stat b { color: var(--ink-1); font-family: var(--mono); }
       `}</style>
     </Lab>
   )

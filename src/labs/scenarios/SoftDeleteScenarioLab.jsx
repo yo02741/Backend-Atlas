@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Callout, Status } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Callout, Status, fmtN } from '../ui.jsx'
 
 /* 軟刪除情境模擬器：
    同一組操作（刪除 Alice → 列出使用者 → 同 email 重新註冊 → 30 天後 → 客服復原）
@@ -181,7 +181,7 @@ export default function SoftDeleteScenarioLab() {
                       <tr key={o.id} className={o.gone ? 'off sd-gone' : ''}>
                         <td>{o.id}</td>
                         <td className={o.user_id === null ? 'null' : ''}>{o.user_id === null ? 'NULL' : `${o.user_id} · ${nameOf(o.user_id) ?? '？'}`}</td>
-                        <td>{o.total.toLocaleString()}</td>
+                        <td>{fmtN(o.total)}</td>
                         <td>{o.invoice}{o.gone ? <span className="sd-b bad">CASCADE</span> : null}</td>
                       </tr>
                     ))}
@@ -231,9 +231,9 @@ export default function SoftDeleteScenarioLab() {
             <div className={`sd-report${lost > 0 ? ' bad' : orphan > 0 ? ' warn' : ''}`}>
               <span className="sd-rt">財務報表（示意）</span>
               <span>訂單 <b>{live.length}</b> / 3</span>
-              <span>營收 <b>NT$ {revenue.toLocaleString()}</b></span>
+              <span>營收 <b>NT$ {fmtN(revenue)}</b></span>
               <span>發票 <b>{live.length}</b> 張</span>
-              {lost > 0 && <Status>少了 NT$ {lost.toLocaleString()}、{3 - live.length} 張發票</Status>}
+              {lost > 0 && <Status>少了 NT$ {fmtN(lost)}、{3 - live.length} 張發票</Status>}
               {orphan > 0 && <Status warn>{orphan} 筆訂單不知道買家（要 JOIN users_archive）</Status>}
               {lost === 0 && orphan === 0 && done.del && <Status ok>報表完整</Status>}
             </div>

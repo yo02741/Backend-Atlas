@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, Stats, Stat, fmtN } from '../ui.jsx'
 
 /* 通知扇出情境模擬器（純前端、所有數字示意）：
    發文者 → API → 佇列 → worker → 推播 / email 服務 → 10 萬使用者（1,000 格，每格 100 人）
@@ -19,7 +19,6 @@ const MODES = [
   { value: 'fanout-read', label: 'Fan-out on read' },
   { value: 'hybrid', label: '混合（依追蹤者數）' },
 ]
-const fmt = (n) => Math.round(n).toLocaleString()
 const secs = (s) => (s >= 60 ? `${Math.floor(s / 60)} 分 ${Math.round(s % 60)} 秒` : `${Math.round(s * 10) / 10} 秒`)
 
 /* 固定種子的洗牌：fan-out on read 時使用者「隨機」打開 App 的順序 */
@@ -65,7 +64,7 @@ function compute(mode, s, workers, cap, crash, idem) {
     } else { f.sent = Math.min(N, T * p); f.done = 1 + N / T }
     f.emailSent = Math.min(EMAIL_N, EMAIL_CAP * p)
     f.queue = s >= 1 ? (N - f.sent) + (EMAIL_N - f.emailSent) : 0
-    f.bottleneck = workers * PER_WORKER > cap ? `推播服務上限 ${fmt(cap)}/s（worker 再多也沒用，多的只會拿到 429）` : `worker 數（${workers} × ${PER_WORKER}/s = ${fmt(T)}/s，還沒碰到推播上限）`
+    f.bottleneck = workers * PER_WORKER > cap ? `推播服務上限 ${fmtN(cap)}/s（worker 再多也沒用，多的只會拿到 429）` : `worker 數（${workers} × ${PER_WORKER}/s = ${fmtN(T)}/s，還沒碰到推播上限）`
   } else {
     f.apiS = 0.05
     f.opened = Math.round(N * (1 - Math.pow(0.985, s)))
@@ -119,7 +118,7 @@ export default function NotificationsFanoutScenarioLab() {
       </LabControls>
       <LabControls>
         <Slider label="worker 數" min={1} max={50} value={workers} onChange={setWorkers} format={(v) => `${v} 個`} />
-        <Slider label="推播服務上限" min={500} max={5000} step={100} value={cap} onChange={setCap} format={(v) => `${fmt(v)} 則/秒`} />
+        <Slider label="推播服務上限" min={500} max={5000} step={100} value={cap} onChange={setCap} format={(v) => `${fmtN(v)} 則/秒`} />
         <Toggle label="worker 送到一半當機重試" checked={crash} onChange={setCrash} />
         <Toggle label="冪等鍵（post_id + user_id 去重）" checked={idem} onChange={setIdem} />
         <span className="spacer" />
@@ -129,7 +128,7 @@ export default function NotificationsFanoutScenarioLab() {
 
       <LabGrid variant="wide">
         <div className="lab-stack">
-          <LabStage label="通知管線" caption={isRead ? '發文時只寫一列貼文；使用者打開 App 才查「我追蹤的人有什麼新貼文」' : mode === 'sync' ? '發文的請求裡直接迴圈呼叫推播服務，送完才回應' : `API 展開 ${fmt(N + EMAIL_N)} 筆工作進佇列後回 202；${workers} 個 worker 分批送`}>
+          <LabStage label="通知管線" caption={isRead ? '發文時只寫一列貼文；使用者打開 App 才查「我追蹤的人有什麼新貼文」' : mode === 'sync' ? '發文的請求裡直接迴圈呼叫推播服務，送完才回應' : `API 展開 ${fmtN(N + EMAIL_N)} 筆工作進佇列後回 202；${workers} 個 worker 分批送`}>
             <Pipeline mode={mode} f={f} s={s} workers={workers} cap={cap} started={started} />
             {mode === 'sync' && started && (
               <div className="nf-api">
@@ -152,13 +151,13 @@ export default function NotificationsFanoutScenarioLab() {
               <span className="pct">{isRead ? '已打開 App' : '已送達'} <b>{pct}%</b></span>
             </p>
           </LabStage>
-          <div className="nf-stats">
-            <div><span>發文 API 回應</span><b className={f.apiS > 1 ? 'bad' : 'ok'}>{f.apiS > 1 ? secs(f.apiS) : `${Math.round(f.apiS * 1000)} ms`}</b></div>
-            <div><span>送完時間（示意）</span><b className={f.done > 120 ? 'bad' : ''}>{isRead ? '不主動送' : secs(f.done)}</b></div>
-            <div><span>重複通知</span><b className={f.dups ? 'bad' : 'ok'}>{fmt(f.dups)}</b>{crash && !isRead && (idem ? <Status ok>冪等鍵擋掉</Status> : f.dups ? <Status>沒有去重</Status> : <Status warn>當機後才看得到</Status>)}</div>
-            <div><span>佇列最高深度</span><b>{fmt(f.queueMax)}</b>{mode === 'fanout-write' && started && <small>目前 {fmt(f.queue)}</small>}</div>
-          </div>
-          <p className="nf-bottleneck"><b>瓶頸：</b>{f.bottleneck}{isRead && <>；打開 App 的查詢已累計 <b>{fmt(f.opened)}</b> 次，每次示意 15 ms（追蹤 300 人的 JOIN）</>}</p>
+          <Stats min={150} className="nf-stats">
+            <Stat label="發文 API 回應" value={f.apiS > 1 ? secs(f.apiS) : `${Math.round(f.apiS * 1000)} ms`} tone={f.apiS > 1 ? 'bad' : 'ok'} />
+            <Stat label="送完時間（示意）" value={isRead ? '不主動送' : secs(f.done)} tone={f.done > 120 ? 'bad' : ''} />
+            <Stat label="重複通知" value={fmtN(f.dups)} tone={f.dups ? 'bad' : 'ok'} note={crash && !isRead && (idem ? <Status ok>冪等鍵擋掉</Status> : f.dups ? <Status>沒有去重</Status> : <Status warn>當機後才看得到</Status>)} />
+            <Stat label="佇列最高深度" value={fmtN(f.queueMax)} note={mode === 'fanout-write' && started ? `目前 ${fmtN(f.queue)}` : ''} />
+          </Stats>
+          <p className="nf-bottleneck"><b>瓶頸：</b>{f.bottleneck}{isRead && <>；打開 App 的查詢已累計 <b>{fmtN(f.opened)}</b> 次，每次示意 15 ms（追蹤 300 人的 JOIN）</>}</p>
         </div>
 
         <div className="lab-stack">
@@ -171,9 +170,9 @@ export default function NotificationsFanoutScenarioLab() {
           )}
           {mode === 'fanout-write' && (
             <LabExplain title="展開成工作，讓 worker 慢慢送">
-              <p>發文時一句 <code>INSERT … SELECT</code> 把 12 萬筆工作（10 萬推播 + 2 萬 email，已依偏好算好管道）寫進工作表，API 0.8 秒回 202。佇列深度瞬間到頂，然後被 worker 以每秒 {fmt(f.rate)} 則消化：{workers} 個 worker × 200 與推播上限 {fmt(cap)} 取小。</p>
+              <p>發文時一句 <code>INSERT … SELECT</code> 把 12 萬筆工作（10 萬推播 + 2 萬 email，已依偏好算好管道）寫進工作表，API 0.8 秒回 202。佇列深度瞬間到頂，然後被 worker 以每秒 {fmtN(f.rate)} 則消化：{workers} 個 worker × 200 與推播上限 {fmtN(cap)} 取小。</p>
               <p>把 worker 拉到 20 個：吞吐停在推播上限，多的 worker 只會拿到 429。真正的解法是提高上限或跟平台談配額，不是加機器。</p>
-              <p>開「當機重試」：送到 40% 時全部 worker 重啟，手上那批（{workers} × 200 筆）有一半已經送出但還沒標記 sent；5 秒後佇列把整批重新投遞。沒有冪等鍵 → {fmt(workers * PER_WORKER / 2)} 個人收到兩次（紅）；有 <code>UNIQUE (post_id, user_id)</code> 或推播服務的 idempotency key → 0 個。</p>
+              <p>開「當機重試」：送到 40% 時全部 worker 重啟，手上那批（{workers} × 200 筆）有一半已經送出但還沒標記 sent；5 秒後佇列把整批重新投遞。沒有冪等鍵 → {fmtN(workers * PER_WORKER / 2)} 個人收到兩次（紅）；有 <code>UNIQUE (post_id, user_id)</code> 或推播服務的 idempotency key → 0 個。</p>
             </LabExplain>
           )}
           {mode === 'fanout-read' && (
@@ -236,15 +235,7 @@ export default function NotificationsFanoutScenarioLab() {
         .nf-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--critical); }
         .nf-api-note { font-size: 0.74rem; color: var(--ink-3); }
         .nf-api-note.bad { color: var(--critical); }
-        .nf-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        @media (max-width: 640px) { .nf-stats { grid-template-columns: 1fr 1fr; } }
-        .nf-stats > div { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 10px; display: grid; gap: 4px; align-content: start; }
-        .nf-stats span { font-size: 0.7rem; color: var(--ink-3); letter-spacing: 0.04em; }
-        .nf-stats b { font-family: var(--mono); font-size: 1.05rem; font-variant-numeric: tabular-nums; color: var(--ink-1); }
-        .nf-stats b.bad { color: var(--critical); }
-        .nf-stats b.ok { color: var(--good); }
-        .nf-stats small { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-3); }
-        .nf-stats .status { justify-self: start; padding: 1px 8px; font-size: 0.66rem; }
+        .nf-stats .status { padding: 1px 8px; font-size: 0.66rem; }
         .nf-bottleneck { font-size: 0.78rem; color: var(--ink-2); line-height: 1.6; }
         .nf-bottleneck b { color: var(--ink-1); font-family: var(--mono); }
         @media (prefers-reduced-motion: reduce) { .nf-arr.on { animation: none; opacity: 1; } }
@@ -264,11 +255,11 @@ function Pipeline({ mode, f, s, workers, cap, started }) {
   const nodes = [
     { title: '發文者', sub: started ? (sync && s < f.done ? '等回應…' : '收到回應') : '按「發文」', arrow: active },
     { title: 'API', sub: !started ? '' : sync ? `卡住 ${Math.min(s, Math.ceil(f.done))} 秒` : write ? '0.8 秒回 202' : mode === 'hybrid' ? '10 萬 > 門檻 → read' : '50 ms 回 201', busy: sync && started && s < f.done, arrow: active && !read },
-    { title: '佇列', sub: write ? (started ? `${fmt(f.queue)} 筆` : '12 萬筆工作') : '—', off: !write, arrow: flowing,
+    { title: '佇列', sub: write ? (started ? `${fmtN(f.queue)} 筆` : '12 萬筆工作') : '—', off: !write, arrow: flowing,
       extra: write && <div className="nf-qtrack"><div className="nf-qbar" style={{ width: `${(f.queue / f.queueMax) * 100}%` }} /></div> },
-    { title: `worker × ${workers}`, sub: write ? (f.paused ? '當機，批次丟回佇列' : started && f.sent < N && s >= 1 ? `${fmt(f.rate)} 則/秒` : '閒置') : '—', off: !write, bad: f.paused, arrow: flowing,
+    { title: `worker × ${workers}`, sub: write ? (f.paused ? '當機，批次丟回佇列' : started && f.sent < N && s >= 1 ? `${fmtN(f.rate)} 則/秒` : '閒置') : '—', off: !write, bad: f.paused, arrow: flowing,
       extra: write && <div className="nf-wrow">{Array.from({ length: wCount }, (_, k) => <i key={k} className={f.paused ? 'dead' : active && s >= 1 ? 'on' : ''} />)}{workers > wCount && <span>…</span>}</div> },
-    { title: '推播服務', sub: `上限 ${fmt(cap)}/秒`, bad: write && workers * PER_WORKER > cap, off: read, arrow: flowing, plus: true },
+    { title: '推播服務', sub: `上限 ${fmtN(cap)}/秒`, bad: write && workers * PER_WORKER > cap, off: read, arrow: flowing, plus: true },
     { title: 'email 服務', sub: `上限 ${EMAIL_CAP}/秒`, off: !write, arrow: active && !read },
   ]
   return (
@@ -288,8 +279,8 @@ function Pipeline({ mode, f, s, workers, cap, started }) {
       </div>
       <p className="nf-note">
         {sync && '沒有佇列、沒有 worker：API 自己序列呼叫推播服務（每則 5 ms），送完才回應'}
-        {write && `API 一句 INSERT … SELECT 展開 ${fmt(N + EMAIL_N)} 筆工作（已依偏好算好管道），worker 分批取、推播與 email 各自受上限`}
-        {read && `發文時什麼都不做：只 INSERT 一列貼文（${mode === 'hybrid' ? '大 V 路徑' : 'read 路徑'}）；使用者打開 App → SELECT 我追蹤的人的新貼文 → 已查 ${fmt(f.opened)} 次`}
+        {write && `API 一句 INSERT … SELECT 展開 ${fmtN(N + EMAIL_N)} 筆工作（已依偏好算好管道），worker 分批取、推播與 email 各自受上限`}
+        {read && `發文時什麼都不做：只 INSERT 一列貼文（${mode === 'hybrid' ? '大 V 路徑' : 'read 路徑'}）；使用者打開 App → SELECT 我追蹤的人的新貼文 → 已查 ${fmtN(f.opened)} 次`}
       </p>
     </div>
   )

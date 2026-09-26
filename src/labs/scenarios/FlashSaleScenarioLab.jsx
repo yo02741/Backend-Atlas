@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status, useReducedMotion } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status, useReducedMotion, Stats, Stat, fmtN } from '../ui.jsx'
 
 /* 秒殺情境模擬器：
    ① 開賣：N 個請求同時衝向 DB / Redis / 佇列，看賣出、超賣、鎖等待堆積、回應時間、1 秒內有答案的比例
@@ -132,13 +132,15 @@ export default function FlashSaleScenarioLab() {
           <LabStage label="請求衝向後端的動畫" caption={`${n.toLocaleString()} 個請求在 100 ms 內到齊（示意）。綠＝搶到、紅＝超賣、灰＝沒搶到${n > 1000 ? `；每個點代表 ${Math.ceil(n / 1000)} 個請求` : ''}`}>
             <RushSvg key={runId} mode={mode} n={n} outcome={sim.outcome} run={ran} reduced={reduced} />
           </LabStage>
-          <div className="fs-stats" aria-live="polite">
-            <Tile label="賣出 / 庫存" value={ran ? `${sim.sold + sim.oversold} / ${stock}` : '—'} bad={ran && sim.oversold > 0} />
-            <Tile label="堆積峰值（等鎖 / 等連線）" value={ran ? sim.peak.toLocaleString() : '—'} bad={ran && sim.peak > POOL} note={ran && sim.peak > POOL ? `> 連線上限 ${POOL}` : ''} />
-            <Tile label="平均回應" value={ran ? fmt(sim.avg) : '—'} />
-            <Tile label="p95 回應" value={ran ? fmt(sim.p95) : '—'} bad={ran && sim.p95 > 1000} />
-            <Tile label="DB 寫入次數" value={ran ? sim.dbWrites.toLocaleString() : '—'} />
-            <Tile label={mode === 'redis' ? 'DECR 到負數補回' : mode === 'queue' ? '佇列最長' : '沒搶到'} value={ran ? (mode === 'redis' || mode === 'queue' ? sim.extra : n - sim.sold - sim.oversold).toLocaleString() : '—'} />
+          <div aria-live="polite">
+            <Stats min={140}>
+              <Stat label="賣出 / 庫存" value={ran ? `${sim.sold + sim.oversold} / ${stock}` : '—'} tone={ran && sim.oversold > 0 ? 'bad' : ''} />
+              <Stat label="堆積峰值（等鎖 / 等連線）" value={ran ? fmtN(sim.peak) : '—'} tone={ran && sim.peak > POOL ? 'bad' : ''} note={ran && sim.peak > POOL ? `> 連線上限 ${POOL}` : ''} />
+              <Stat label="平均回應" value={ran ? fmt(sim.avg) : '—'} />
+              <Stat label="p95 回應" value={ran ? fmt(sim.p95) : '—'} tone={ran && sim.p95 > 1000 ? 'bad' : ''} />
+              <Stat label="DB 寫入次數" value={ran ? fmtN(sim.dbWrites) : '—'} />
+              <Stat label={mode === 'redis' ? 'DECR 到負數補回' : mode === 'queue' ? '佇列最長' : '沒搶到'} value={ran ? fmtN(mode === 'redis' || mode === 'queue' ? sim.extra : n - sim.sold - sim.oversold) : '—'} />
+            </Stats>
           </div>
           <LabStage label="兩個請求搶最後一件的時序" caption={step.text}>
             <RaceSvg steps={RACE[mode]} cur={race.step} />
@@ -155,13 +157,6 @@ export default function FlashSaleScenarioLab() {
         </div>
       </LabGrid>
       <style>{`
-        .fs-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-        @media (max-width: 560px) { .fs-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        .fs-tile { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 10px; min-width: 0; }
-        .fs-tile .l { font-size: 0.68rem; color: var(--ink-3); letter-spacing: 0.03em; }
-        .fs-tile .v { font-family: var(--mono); font-size: 1.05rem; font-weight: 700; color: var(--ink-1); font-variant-numeric: tabular-nums; margin-top: 2px; }
-        .fs-tile.bad .v { color: var(--critical); }
-        .fs-tile .n { font-size: 0.68rem; color: var(--critical); }
         .fs-rush { width: 100%; }
         .fs-rush .box { fill: var(--surface-1); stroke: var(--hairline); stroke-width: 1.5; }
         .fs-rush .box.hot { stroke: var(--critical); }
@@ -186,10 +181,8 @@ export default function FlashSaleScenarioLab() {
   )
 }
 
+/* 回應時間：秒保留兩位小數（kit 的 fmtMs 是一位，輸出不同，故留本地版） */
 const fmt = (ms) => ms >= 1000 ? `${(ms / 1000).toFixed(2)} s` : `${Math.round(ms)} ms`
-function Tile({ label, value, bad = false, note = '' }) {
-  return <div className={`fs-tile${bad ? ' bad' : ''}`}><div className="l">{label}</div><div className="v">{value}</div>{note && <div className="n">{note}</div>}</div>
-}
 
 /* 請求衝向後端：最多畫 1,000 個點，起點在左側使用者區，終點排進目標框 */
 const rnd = (i, s) => { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v) }

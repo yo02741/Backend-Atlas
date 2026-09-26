@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, useReducedMotion, useWidth } from '../ui.jsx'
 
 /* 上傳情境模擬器：
    一個 100 MB 的檔案在「客戶端 / API / 物件儲存 / 縮圖 worker」之間怎麼流，三種做法各自經過哪些節點。
@@ -127,13 +127,13 @@ export default function UploadScenarioLab() {
           <LabStage label="資料流" caption="實線＝目前正在走的路；MB 數是示意。API 節點內的橫條是這個上傳占用的 API 記憶體。">
             <Flow tl={tl} at={at} active={active} mem={mem} narrow={narrow} />
           </LabStage>
-          <div className="up-stats">
-            <span>t = <b>{at.toFixed(1)} s</b></span>
-            <span>客戶端送出：<b className={sentNow > FILE + 1 ? 'bad' : ''}>{Math.round(sentNow)} MB</b>（檔案 100 MB）</span>
-            <span>API worker 占用：<b className={apiNow > 5 ? 'bad' : 'ok'}>{apiNow.toFixed(1)} s</b></span>
-            <span>API 記憶體峰值：<b className={tl.memPeak >= FILE ? 'bad' : 'ok'}>{tl.memPeak} MB</b></span>
-            <span>全部完成：<b>{tl.total.toFixed(1)} s</b></span>
-          </div>
+          <Stats min={120}>
+            <Stat label="t" value={`${at.toFixed(1)} s`} />
+            <Stat label="客戶端送出" value={`${Math.round(sentNow)} MB`} note="檔案 100 MB" tone={sentNow > FILE + 1 ? 'bad' : ''} />
+            <Stat label="API worker 占用" value={`${apiNow.toFixed(1)} s`} tone={apiNow > 5 ? 'bad' : 'ok'} />
+            <Stat label="API 記憶體峰值" value={`${tl.memPeak} MB`} tone={tl.memPeak >= FILE ? 'bad' : 'ok'} />
+            <Stat label="全部完成" value={`${tl.total.toFixed(1)} s`} />
+          </Stats>
           <div className="up-conc">
             <Slider label="同時上傳人數" min={1} max={50} value={conc} onChange={setConc} format={(v) => `${v} 人`} />
             <div className="up-meters">
@@ -193,9 +193,6 @@ export default function UploadScenarioLab() {
         .up-svg .cutx { stroke: var(--critical); stroke-width: 2.5; }
         .up-svg .gear { fill: none; stroke: var(--c-violet); stroke-width: 3; stroke-dasharray: 4 3; }
         .up-svg.narrow .nlabel { font-size: 17px; } .up-svg.narrow .nsub { font-size: 13.5px; } .up-svg.narrow .elabel { font-size: 15px; } .up-svg.narrow .cut { font-size: 15px; }
-        .up-stats { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--ink-3); }
-        .up-stats b { font-family: var(--mono); color: var(--ink-1); font-variant-numeric: tabular-nums; }
-        .up-stats b.bad { color: var(--critical); } .up-stats b.ok { color: var(--good); }
         .up-conc { border-top: 1px solid var(--hairline); padding-top: 12px; display: grid; gap: 10px; }
         .up-meters { display: grid; gap: 8px; }
         .up-meter { display: grid; grid-template-columns: 130px 1fr 92px; gap: 10px; align-items: center; font-size: 0.78rem; color: var(--ink-2); }

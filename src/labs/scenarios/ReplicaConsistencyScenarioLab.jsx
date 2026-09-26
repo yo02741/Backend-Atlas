@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useReducedMotion } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useReducedMotion, Stats, Stat, Caption, fmtMs } from '../ui.jsx'
 
 /* 讀寫分離情境模擬器：
    主庫 + 兩台副本。按「寫入然後立刻重整」跑一次時序：寫到主庫 → WAL 串流 → 使用者 gap ms 後按 F5 →
@@ -122,7 +122,7 @@ export default function ReplicaConsistencyScenarioLab() {
       <LabControls>
         <Seg value={exp} onChange={setExp} options={[{ value: 'profile', label: '① 更新個人資料然後立刻重整' }, { value: 'order', label: '② 訂單建立後跳轉' }]} />
         <Slider label="副本延遲" min={0} max={3000} step={50} value={effLag} onChange={setLag} format={(v) => `${v} ms`} />
-        <Slider label="寫後多久讀" min={100} max={6000} step={100} value={gap} onChange={setGap} format={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)} s` : `${v} ms`} />
+        <Slider label="寫後多久讀" min={100} max={6000} step={100} value={gap} onChange={setGap} format={fmtMs} />
         <Toggle label="尖峰（延遲固定 2 秒）" checked={peak} onChange={setPeak} />
       </LabControls>
       <LabControls>
@@ -164,12 +164,12 @@ export default function ReplicaConsistencyScenarioLab() {
               {step === 3 && (t.fresh ? <Status ok>{t.fallback ? '新值（改讀主庫）' : '新值'}</Status> : <Status>{isOrder ? '404' : '舊值'}</Status>)}
             </p>
           </LabStage>
-          <div className="rc-stats">
-            <span className="pill">讀取 <b>{stats.reads}</b> 次</span>
-            <span className={`pill${stats.stale ? ' bad' : ''}`}>{isOrder ? '404' : '讀到舊資料'} <b>{stats.stale}</b> 次{stats.reads ? <i>（{Math.round((stats.stale / stats.reads) * 100)}%）</i> : null}</span>
-            <span className="pill">主庫承受的讀 <b>{primaryPct}%</b></span>
-            {mode === 'lsn' && <span className="pill">副本沒追上改讀主庫 <b>{stats.fallback}</b> 次</span>}
-          </div>
+          <Stats min={140}>
+            <Stat label="讀取" value={stats.reads} unit="次" />
+            <Stat label={isOrder ? '404' : '讀到舊資料'} value={stats.stale} unit="次" note={stats.reads ? `（${Math.round((stats.stale / stats.reads) * 100)}%）` : ''} tone={stats.stale ? 'bad' : ''} />
+            <Stat label="主庫承受的讀" value={`${primaryPct}%`} />
+            {mode === 'lsn' && <Stat label="副本沒追上改讀主庫" value={stats.fallback} unit="次" />}
+          </Stats>
           {log.length > 0 && (
             <ol className="rc-log" aria-label="讀取記錄">
               {log.map((e) => (
@@ -199,7 +199,7 @@ export default function ReplicaConsistencyScenarioLab() {
               </tbody>
             </table>
           </div>
-          <p className="lab-caption">「尖峰 2 s 時」用同樣的「寫後多久讀」、延遲固定 2 秒重算；「寫後讀打到主庫」只算寫後那一次讀，不是全站讀流量。</p>
+          <Caption>「尖峰 2 s 時」用同樣的「寫後多久讀」、延遲固定 2 秒重算；「寫後讀打到主庫」只算寫後那一次讀，不是全站讀流量。</Caption>
         </div>
         <div className="lab-stack">
           <Code lang="python" title="讀取路由（示意）" highlight={hl} dim>{CODE}</Code>
@@ -228,10 +228,6 @@ export default function ReplicaConsistencyScenarioLab() {
         .rc-svg .s.bad { fill: var(--critical); font-weight: 700; }
         .rc-phase { margin-top: 10px; text-align: center; font-size: 0.8rem; color: var(--ink-3); min-height: 1.6em; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
         .rc-phase.on { color: var(--ink-1); font-weight: 600; }
-        .rc-stats { display: flex; flex-wrap: wrap; gap: 8px; }
-        .rc-stats b { font-family: var(--mono); color: var(--ink-1); font-weight: 600; }
-        .rc-stats i { font-style: normal; color: var(--ink-3); }
-        .rc-stats .pill.bad { border-color: var(--critical); color: var(--critical); }
         .rc-log { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-family: var(--mono); font-size: 0.76rem; color: var(--ink-2); }
         .rc-log li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 5px 10px; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); }
         .rc-log li:first-child { border-color: color-mix(in srgb, var(--lab-accent) 50%, var(--hairline)); }

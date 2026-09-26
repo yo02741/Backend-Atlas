@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Caption, fmtN } from '../ui.jsx'
 import { runSql, resetSchema } from '../../runtime/sql.js'
 import { PlanTree, RuntimeStatus } from '../../components/Output.jsx'
 
@@ -222,7 +222,7 @@ function Deep() {
         </LabControls>
         <LabStage>
           <div className="pgbar">
-            <div className="row"><span>OFFSET</span><div className="track"><div className="fill" style={{ width: `${Math.max(1, (offsetRows / max) * 100)}%`, background: 'var(--c-orange)' }} /></div><span className="n">掃 {offsetRows.toLocaleString()} 列</span></div>
+            <div className="row"><span>OFFSET</span><div className="track"><div className="fill" style={{ width: `${Math.max(1, (offsetRows / max) * 100)}%`, background: 'var(--c-orange)' }} /></div><span className="n">掃 {fmtN(offsetRows)} 列</span></div>
             <div className="row"><span>Cursor</span><div className="track"><div className="fill" style={{ width: `${Math.max(1, (size / max) * 100)}%`, background: 'var(--c-aqua)' }} /></div><span className="n">掃 {size} 列</span></div>
           </div>
           <div className="pgbench">
@@ -321,7 +321,7 @@ function Tie() {
               )
             })}
           </ul>
-          <p className="lab-caption">每頁 3 筆。黃底＝與其他列同一秒；紅框＝任何一頁都不會回傳。</p>
+          <Caption>每頁 3 筆。黃底＝與其他列同一秒；紅框＝任何一頁都不會回傳。</Caption>
         </LabStage>
       </div>
       <div className="lab-stack">

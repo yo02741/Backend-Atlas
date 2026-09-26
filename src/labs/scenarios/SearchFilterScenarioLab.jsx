@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, useWidth } from '../ui.jsx'
 
 /* 搜尋情境模擬器：
    30 件商品的小資料集，同一個關鍵字在 ILIKE / PostgreSQL 全文檢索 / 外部搜尋引擎三種做法下命中誰、怎麼排、示意延遲多少。
@@ -141,13 +141,17 @@ export default function SearchFilterScenarioLab() {
             {!terms.length && <code>（空：只套篩選）</code>}
             <span className="muted">{mode === 'like' ? '子字串，每個都要出現' : mode === 'fts' ? '詞位交集（&），查詞也要過同一個斷詞器' : '詞位 + 同義詞 + 錯字容忍（≥ 3 字才啟用）'}</span>
           </p>
-          <div className="sf-bar">
-            <span>命中 <b>{hits.length}</b> / {filtered.length} 件</span>
-            <span>延遲（示意，{fmtN(n)} 件）：<b className={ms > 200 ? 'bad' : ms > 50 ? 'warn' : 'ok'}>{ms < 10 ? ms.toFixed(1) : Math.round(ms)} ms</b></span>
-            {relNA && <Status warn>ILIKE 沒有相關度，改依上架時間</Status>}
-            {stale && <Status warn>引擎索引尚未同步：{staleLeft} 秒後才看得到新名稱</Status>}
-            {renamed && !stale && <Status ok>#7 的新名稱已在結果裡</Status>}
-          </div>
+          <Stats min={150}>
+            <Stat label="命中" value={hits.length} unit={`/ ${filtered.length} 件`} />
+            <Stat label={`延遲（示意，${fmtN(n)} 件）`} value={`${ms < 10 ? ms.toFixed(1) : Math.round(ms)} ms`} tone={ms > 200 ? 'bad' : ms > 50 ? 'warn' : 'ok'} />
+          </Stats>
+          {(relNA || stale || renamed) && (
+            <div className="sf-bar">
+              {relNA && <Status warn>ILIKE 沒有相關度，改依上架時間</Status>}
+              {stale && <Status warn>引擎索引尚未同步：{staleLeft} 秒後才看得到新名稱</Status>}
+              {renamed && !stale && <Status ok>#7 的新名稱已在結果裡</Status>}
+            </div>
+          )}
           <div className="dtable-wrap sf-tablewrap">
             <table className="dtable sf-table">
               <thead><tr><th>#</th><th>名稱</th><th>分類</th><th>價格</th><th>庫存</th><th>{mode === 'like' ? '排序鍵' : '相關度'}</th></tr></thead>
@@ -206,9 +210,7 @@ export default function SearchFilterScenarioLab() {
         .sf-tok code { font-family: var(--mono); font-size: 0.72rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--lab-accent); color: var(--ink-1); }
         .sf-tok code.syn { border-color: var(--c-violet); }
         .sf-tok .muted { font-size: 0.72rem; }
-        .sf-bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 0.78rem; color: var(--ink-3); }
-        .sf-bar b { font-family: var(--mono); color: var(--ink-1); font-variant-numeric: tabular-nums; }
-        .sf-bar b.bad { color: var(--critical); } .sf-bar b.warn { color: var(--serious, var(--c-orange)); } .sf-bar b.ok { color: var(--good); }
+        .sf-bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
         .sf-tablewrap { max-height: 300px; overflow: auto; }
         .sf-table td.name { white-space: normal; min-width: 180px; }
         .sf-table td.name mark { background: color-mix(in srgb, var(--lab-accent) 25%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }

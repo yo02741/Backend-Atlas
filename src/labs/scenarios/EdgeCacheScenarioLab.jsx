@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useWidth, Stats, Stat, Caption } from '../ui.jsx'
 
 /* 快取到期情境模擬器（純前端、所有數字示意）：
    ① 60 秒時間軸：每秒 10,000 次讀、N 個熱門 key 同時在 t=0 填入。切做法看到期瞬間打到原站的 QPS 尖峰
@@ -117,12 +117,12 @@ export default function EdgeCacheScenarioLab() {
           <LabStage label="原站每秒請求數時間軸" caption={`原站回應 ${sim.L} 秒；TTL ${ttl} 秒，60 秒內到期 ${Math.floor(61 / ttl)} 輪。DB 撐得住的上限約每秒 500（示意）。`}>
             <QpsChart bins={sim.bins} upto={t} playing={playing} peak={sim.peak} peakAt={sim.peakAt} />
           </LabStage>
-          <div className="ec-stats">
-            <div><span>尖峰（原站每秒）</span><b className={dbDown ? 'bad' : 'ok'}>{fmt(sim.peak)}</b>{dbDown ? <Status>DB 撐不住</Status> : <Status ok>DB 撐得住</Status>}</div>
-            <div><span>60 秒內打到原站</span><b>{fmt(sim.total)}</b></div>
-            <div><span>等原站回來的請求</span><b className={sim.waitTotal ? 'warn' : ''}>{fmt(sim.waitTotal)}</b></div>
-            <div><span>拿到舊值的請求</span><b className={sim.staleTotal ? 'warn' : ''}>{fmt(sim.staleTotal)}</b></div>
-          </div>
+          <Stats min={140} className="ec-stats">
+            <Stat label="尖峰（原站每秒）" value={fmt(sim.peak)} tone={dbDown ? 'bad' : 'ok'} note={dbDown ? <Status>DB 撐不住</Status> : <Status ok>DB 撐得住</Status>} />
+            <Stat label="60 秒內打到原站" value={fmt(sim.total)} />
+            <Stat label="等原站回來的請求" value={fmt(sim.waitTotal)} tone={sim.waitTotal ? 'warn' : ''} />
+            <Stat label="拿到舊值的請求" value={fmt(sim.staleTotal)} tone={sim.staleTotal ? 'warn' : ''} />
+          </Stats>
           <div className="dtable-wrap">
             <table className="dtable ec-table">
               <caption>同一組參數、四種做法並排（60 秒）</caption>
@@ -138,7 +138,7 @@ export default function EdgeCacheScenarioLab() {
           </div>
           <LabStage label="單一 key 的狀態機" plain>
             <StateMachine labels={STATES[mode]} current={state} />
-            <p className="ec-key">key #1 在 t={Math.floor(t)}s 這一秒：<b>{fmt(perKey.hit)}</b> 命中 · <b className={perKey.origin > 1 ? 'bad' : ''}>{fmt(perKey.origin)}</b> 打原站 · <b className={perKey.wait ? 'warn' : ''}>{fmt(perKey.wait)}</b> 等待 · <b className={perKey.stale ? 'warn' : ''}>{fmt(perKey.stale)}</b> 回舊值</p>
+            <Caption><span className="ec-key">key #1 在 t={Math.floor(t)}s 這一秒：<b>{fmt(perKey.hit)}</b> 命中 · <b className={perKey.origin > 1 ? 'bad' : ''}>{fmt(perKey.origin)}</b> 打原站 · <b className={perKey.wait ? 'warn' : ''}>{fmt(perKey.wait)}</b> 等待 · <b className={perKey.stale ? 'warn' : ''}>{fmt(perKey.stale)}</b> 回舊值</span></Caption>
           </LabStage>
         </div>
 
@@ -186,15 +186,7 @@ export default function EdgeCacheScenarioLab() {
         .ec-chart .hover { stroke: var(--ink-3); stroke-width: 1; }
         .ec-chart .dot { fill: var(--lab-accent); stroke: var(--page); stroke-width: 2; }
         .ec-chart .peak { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: var(--ink-1); }
-        .ec-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        @media (max-width: 640px) { .ec-stats { grid-template-columns: 1fr 1fr; } }
-        .ec-stats > div { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 10px; display: grid; gap: 4px; }
-        .ec-stats span { font-size: 0.7rem; color: var(--ink-3); letter-spacing: 0.04em; }
-        .ec-stats b { font-family: var(--mono); font-size: 1.15rem; font-variant-numeric: tabular-nums; color: var(--ink-1); }
-        .ec-stats b.bad, .ec-key b.bad { color: var(--critical); }
-        .ec-stats b.ok { color: var(--good); }
-        .ec-stats b.warn, .ec-key b.warn { color: var(--serious); }
-        .ec-stats .status { justify-self: start; padding: 1px 8px; font-size: 0.68rem; }
+        .ec-stats .status { padding: 1px 8px; font-size: 0.68rem; }
         .ec-table td.ec-bad { color: var(--critical); font-weight: 700; }
         .ec-sm { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr) auto); gap: 6px; align-items: center; }
         @media (max-width: 640px) { .ec-sm { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; } }
@@ -202,8 +194,9 @@ export default function EdgeCacheScenarioLab() {
         .ec-sm .node.on { border-color: var(--lab-accent); border-width: 2px; background: color-mix(in srgb, var(--lab-accent) 12%, var(--surface-1)); color: var(--ink-1); font-weight: 700; }
         .ec-sm .node .n { font-family: var(--mono); font-size: 0.68rem; color: var(--ink-3); border: 1px solid var(--hairline); border-radius: 999px; width: 18px; height: 18px; display: inline-grid; place-items: center; flex: none; }
         .ec-sm .arr { color: var(--ink-3); font-size: 0.9rem; }
-        .ec-key { font-size: 0.78rem; color: var(--ink-3); margin-top: 6px; text-align: center; }
         .ec-key b { font-family: var(--mono); color: var(--ink-1); }
+        .ec-key b.bad { color: var(--critical); }
+        .ec-key b.warn { color: var(--serious); }
       `}</style>
     </Lab>
   )

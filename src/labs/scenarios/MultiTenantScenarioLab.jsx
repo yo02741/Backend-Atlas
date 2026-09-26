@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, Stats, Stat, fmtN } from '../ui.jsx'
 
 /* 多租戶隔離模擬器：
    SVG 畫三種佈局（一張表多色列 / 多個 schema 框 / 多個 DB 桶）
@@ -137,12 +137,12 @@ export default function MultiTenantScenarioLab() {
           )}
         </div>
         <div className="lab-stack">
-          <div className="mt-stats">
-            <div><span className="k">隔離強度</span><Status ok={isolation[0] === 'ok'} warn={isolation[0] === 'warn'}>{isolation[1]}</Status></div>
-            <div><span className="k">每週 migration 次數</span><b>{migrations.toLocaleString()}</b><span className="muted">≈ {minutes < 60 ? `${minutes} 分` : `${(minutes / 60).toFixed(1)} 小時`}（每次 2 分，示意）</span></div>
-            <div><span className="k">大租戶暴衝影響</span><b>{affected} / {tenants}</b><span className="muted">家一起變慢</span></div>
-            <div><span className="k">每月成本（示意）</span><b>${cost.toLocaleString()}</b><span className="muted">{approach === 'shared' ? '1 台實例' : approach === 'schema' ? '1 台，但 relation 數 ×' + tenants : tenants + ' 個最小實例'}</span></div>
-          </div>
+          <Stats min={140}>
+            <Stat label="隔離強度" value={isolation[1]} tone={isolation[0]} />
+            <Stat label="每週 migration 次數" value={fmtN(migrations)} note={`≈ ${minutes < 60 ? `${minutes} 分` : `${(minutes / 60).toFixed(1)} 小時`}（每次 2 分，示意）`} />
+            <Stat label="大租戶暴衝影響" value={`${affected} / ${tenants}`} note="家一起變慢" />
+            <Stat label="每月成本（示意）" value={`$${fmtN(cost)}`} note={approach === 'shared' ? '1 台實例' : approach === 'schema' ? '1 台，但 relation 數 ×' + tenants : tenants + ' 個最小實例'} />
+          </Stats>
           <LabExplain title={APPROACHES.find((a) => a.value === approach).label}>{EXPLAIN[approach].map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
           <Callout title="什麼時候會真的踩到">共用表最常見的事故不是駭客，是一條漏了 tenant_id 的 ORM 查詢、或一支背景工作用了管理員連線——RLS 就是為那一天準備的。schema / database 版最常見的事故是 migration 跑到一半失敗，300 個租戶一半新一半舊。</Callout>
         </div>
@@ -165,12 +165,6 @@ export default function MultiTenantScenarioLab() {
         .mt-mig-track { height: 10px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--hairline); overflow: hidden; }
         .mt-mig-fill { height: 100%; transition: width 0.25s ease, background 0.3s ease; }
         .mt-mig .muted { font-size: 0.72rem; }
-        .mt-stats { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 10px 12px; display: grid; gap: 8px; }
-        .mt-stats > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 0.8rem; }
-        .mt-stats .k { color: var(--ink-3); font-weight: 600; min-width: 128px; }
-        .mt-stats b { font-family: var(--mono); font-size: 0.9rem; color: var(--ink-1); }
-        .mt-stats .status { font-size: 0.72rem; padding: 2px 8px; }
-        .mt-stats .muted { font-size: 0.72rem; }
         @media (prefers-reduced-motion: reduce) { .mt-rows li { animation: none; } }
       `}</style>
     </Lab>
@@ -186,7 +180,7 @@ function MigBar({ approach, tenants, progress, steps, done }) {
     <div className="mt-mig">
       <div className="mt-mig-h"><span>ALTER TABLE employees ADD COLUMN hired_at DATE</span><b>{done ? '完成' : `${pct}%`}</b></div>
       <div className="mt-mig-track"><div className="mt-mig-fill" style={{ width: `${pct}%`, background: done ? 'var(--good)' : 'var(--lab-accent)' }} /></div>
-      <p className="muted">套用 {approach === 'shared' ? '1 次' : `${total.toLocaleString()} 次`} · 已耗時約 {elapsed < 60 ? `${elapsed} 分` : `${(elapsed / 60).toFixed(1)} 小時`}（每次 2 分，示意；可平行，但 schema 版共用同一台 CPU 與 IO）</p>
+      <p className="muted">套用 {approach === 'shared' ? '1 次' : `${fmtN(total)} 次`} · 已耗時約 {elapsed < 60 ? `${elapsed} 分` : `${(elapsed / 60).toFixed(1)} 小時`}（每次 2 分，示意；可平行，但 schema 版共用同一台 CPU 與 IO）</p>
     </div>
   )
 }

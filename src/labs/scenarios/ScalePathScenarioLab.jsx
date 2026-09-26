@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Toggle, Stepper, Callout, Status } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Toggle, Stepper, Callout, Status, Stats, Stat, Caption } from '../ui.jsx'
 
 /* 擴展路徑情境模擬器（容量模擬器）：
    QPS 對數滑桿 100 → 100,000；右側六個元件各有示意容量。畫面算出每個元件的使用率、
@@ -150,13 +150,13 @@ export default function ScalePathScenarioLab() {
                 )
               })}
             </div>
-            <div className="sp-sum">
-              <span className="pill">目前配置可撐 <b>≈ {fmtN(r.holds)} QPS</b></span>
-              <span className={`pill${r.p95 > 300 ? ' bad' : ''}`}>p95 <b>≈ {Math.round(r.p95)} ms</b></span>
-              <span className={`pill${r.errRate > 0.01 ? ' bad' : ''}`}>錯誤率 <b>{r.errRate ? `${Math.max(1, Math.round(r.errRate * 100))}%` : '0%'}</b></span>
-              <span className="pill">每月 <b>≈ ${fmtN(r.cost)}</b></span>
-              <span className="muted sp-note">全部示意</span>
-            </div>
+            <Stats min={150}>
+              <Stat label="目前配置可撐" value={`≈ ${fmtN(r.holds)} QPS`} />
+              <Stat label="p95" value={`≈ ${Math.round(r.p95)} ms`} tone={r.p95 > 300 ? 'bad' : ''} />
+              <Stat label="錯誤率" value={r.errRate ? `${Math.max(1, Math.round(r.errRate * 100))}%` : '0%'} tone={r.errRate > 0.01 ? 'bad' : ''} />
+              <Stat label="每月" value={`≈ $${fmtN(r.cost)}`} />
+            </Stats>
+            <Caption>全部示意</Caption>
             {nextKey && <p className="sp-next">下一步該動的旋鈕：<b>{NEXT[nextKey]}</b></p>}
           </LabStage>
           <LabExplain title={plan.title}>
@@ -229,10 +229,6 @@ export default function ScalePathScenarioLab() {
         .sp-card.bad .sp-bar i { background: var(--critical); }
         .sp-num { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
         .sp-badge { justify-self: start; font-size: 0.66rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--critical); color: var(--critical); }
-        .sp-sum { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
-        .sp-sum b { font-family: var(--mono); color: var(--ink-1); font-weight: 600; }
-        .sp-sum .pill.bad { border-color: var(--critical); color: var(--critical); }
-        .sp-note { font-size: 0.72rem; }
         .sp-next { margin-top: 8px; font-size: 0.8rem; color: var(--ink-2); }
         .sp-next b { color: var(--ink-1); }
         .sp-ctl { display: grid; gap: 12px; padding: 12px 14px; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); }

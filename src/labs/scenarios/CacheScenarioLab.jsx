@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useTicker, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useTicker, useWidth, Stats, Stat, fmtN } from '../ui.jsx'
 
 /* 快取情境模擬器：
    ① 送 1,000 個請求：瀏覽器 → CDN → API → Redis → DB，每層擋掉多少、DB 收到幾個、多少人看到舊值
@@ -107,13 +107,13 @@ export default function CacheScenarioLab() {
           <LabStage label="請求路徑" caption="60 秒視窗、250 位使用者各 4 次請求、3 個 CDN 節點。灰色＝這層停用或不適用；紅字＝從這層拿到舊值的請求數。">
             <PathSvg res={res} prog={ran ? prog : 0} flags={{ browser, cdn: useCdn, redis, isPublic, ttl }} />
           </LabStage>
-          <div className="cs-stats">
-            <div><span>DB 請求</span><b>{ran ? Math.round(res.hit.db * prog).toLocaleString() : '—'}<small> / 1,000</small></b></div>
-            <div><span>命中率</span><b>{ran ? `${(res.hitRate * prog).toFixed(1)}%` : '—'}</b></div>
-            <div><span>看到舊值</span><b className={ran && res.staleTotal ? 'bad' : ''}>{ran ? Math.round(res.staleTotal * prog).toLocaleString() : '—'}<small> 個請求</small></b></div>
-            <div><span>平均延遲（示意）</span><b>{ran ? `${res.latency} ms` : '—'}</b></div>
-            <div><span>視窗內更新</span><b>{res.updates}<small> 次</small></b></div>
-          </div>
+          <Stats min={120}>
+            <Stat label="DB 請求" value={ran ? fmtN(Math.round(res.hit.db * prog)) : '—'} unit="/ 1,000" />
+            <Stat label="命中率" value={ran ? `${(res.hitRate * prog).toFixed(1)}%` : '—'} />
+            <Stat label="看到舊值" value={ran ? fmtN(Math.round(res.staleTotal * prog)) : '—'} unit="個請求" tone={ran && res.staleTotal ? 'bad' : ''} />
+            <Stat label="平均延遲（示意）" value={ran ? `${res.latency} ms` : '—'} />
+            <Stat label="視窗內更新" value={res.updates} unit="次" />
+          </Stats>
           <UpdatePanel flags={{ browser, cdn: useCdn, redis, purge, ttl }} />
         </div>
         <div className="lab-stack">
@@ -126,12 +126,6 @@ export default function CacheScenarioLab() {
         </div>
       </LabGrid>
       <style>{`
-        .cs-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-        .cs-stats > div { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 12px; display: grid; gap: 2px; }
-        .cs-stats span { font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.04em; }
-        .cs-stats b { font-family: var(--mono); font-size: 1.05rem; color: var(--ink-1); font-variant-numeric: tabular-nums; }
-        .cs-stats b small { font-size: 0.7rem; color: var(--ink-3); font-weight: 400; }
-        .cs-stats b.bad { color: var(--critical); }
         .cs-upd { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 12px 14px; display: grid; gap: 8px; }
         .cs-upd .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.8rem; color: var(--ink-2); }
         .cs-upd .head b { color: var(--ink-1); font-family: var(--mono); }
@@ -160,7 +154,7 @@ function PathSvg({ res, prog, flags }) {
   const ref = useRef(null)
   const w = useWidth(ref, 700)
   const vertical = w < 520
-  const n = (v) => Math.round(v * prog).toLocaleString()
+  const n = (v) => fmtN(Math.round(v * prog))
   // 進到每一層的請求數
   const into = [res.total, res.total - res.hit.browser, res.total - res.hit.browser - res.hit.cdn]
   into.push(into[2], res.hit.db)
@@ -274,6 +268,6 @@ function explainFor({ isPublic, browser, cdn, redis, purge, ttl, res, ran }) {
     else if (!purge) p.push(<p key="c">沒有主動失效，Redis{cdn ? '與 CDN ' : ''}只能等 TTL 到期，更新頻率越高、TTL 越長，看到舊值的請求越多。</p>)
     else p.push(<p key="c">寫入時 DEL key{cdn ? '並 purge CDN' : ''}，更新之後的第一個請求就會重建新值，舊值幾乎為零；代價是每次更新都多一次 DB 查詢。</p>)
   }
-  if (ran) p.push(<p key="d">這一批：DB 收到 <b>{res.hit.db.toLocaleString()}</b> 個、命中率 <b>{res.hitRate}%</b>、拿到舊值 <b>{res.staleTotal.toLocaleString()}</b> 個。調 TTL 或更新頻率再送一次，比較兩個數字怎麼一起動。</p>)
+  if (ran) p.push(<p key="d">這一批：DB 收到 <b>{fmtN(res.hit.db)}</b> 個、命中率 <b>{res.hitRate}%</b>、拿到舊值 <b>{fmtN(res.staleTotal)}</b> 個。調 TTL 或更新頻率再送一次，比較兩個數字怎麼一起動。</p>)
   return p
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, useReducedMotion, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Stats, Stat, useReducedMotion, useWidth } from '../ui.jsx'
 
 /* 長任務情境模擬器：
    一批人同時按「匯出」，三種做法下「客戶端 / API worker 池 / 背景 worker」三條泳道各自發生什麼。
@@ -114,15 +114,15 @@ export default function LongTaskScenarioLab() {
           <LabStage label="時序泳道" caption="橘＝API worker 執行匯出 · 紅＝客戶端已收到 504、worker 仍在跑（白做） · 青＝202 / 輪詢 · 紫＝背景 worker · 虛線＝客戶端在等">
             <Lanes sim={sim} at={at} narrow={narrow} />
           </LabStage>
-          <div className="lt-stats">
-            <span>t = <b>{fmt(at)}</b></span>
-            <span>逾時 504：<b className={m.timeouts ? 'bad' : ''}>{m.timeouts}</b></span>
-            <span>拿到結果：<b className="ok">{m.done}</b> / {users}</span>
-            <span>API worker 占用：<b className={m.util > 70 ? 'bad' : ''}>{m.util}%</b></span>
-            {mode === 'sync' && <span>白做：<b className={m.waste ? 'bad' : ''}>{fmt(m.waste)}</b></span>}
-            {mode === 'poll' && <span>輪詢次數：<b>{m.polls}</b></span>}
-            <span>最後一人{mode === 'sync' && m.timeouts ? '得到回應' : '拿到檔案'}：<b>{fmt(last)}</b></span>
-          </div>
+          <Stats min={130}>
+            <Stat label="t" value={fmt(at)} />
+            <Stat label="逾時 504" value={m.timeouts} tone={m.timeouts ? 'bad' : ''} />
+            <Stat label="拿到結果" value={m.done} unit={`/ ${users}`} tone="ok" />
+            <Stat label="API worker 占用" value={`${m.util}%`} tone={m.util > 70 ? 'bad' : ''} />
+            {mode === 'sync' && <Stat label="白做" value={fmt(m.waste)} tone={m.waste ? 'bad' : ''} />}
+            {mode === 'poll' && <Stat label="輪詢次數" value={m.polls} />}
+            <Stat label={`最後一人${mode === 'sync' && m.timeouts ? '得到回應' : '拿到檔案'}`} value={fmt(last)} />
+          </Stats>
           <div className="lt-tablewrap">
             <JobsTable sim={sim} at={at} />
           </div>
@@ -155,10 +155,6 @@ export default function LongTaskScenarioLab() {
         .lt-svg .head { stroke: var(--ink-1); stroke-width: 1.5; }
         .lt-svg .headlabel { font-family: var(--mono); font-size: 10px; fill: var(--ink-1); font-weight: 700; }
         .lt-svg .note { font-family: var(--sans); font-size: 10.5px; fill: var(--ink-3); }
-        .lt-stats { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.78rem; color: var(--ink-3); }
-        .lt-stats b { font-family: var(--mono); color: var(--ink-1); font-variant-numeric: tabular-nums; }
-        .lt-stats b.bad { color: var(--critical); }
-        .lt-stats b.ok { color: var(--good); }
         .lt-tablewrap { max-height: 230px; overflow: auto; border-radius: var(--radius); }
         .lt-tablewrap .dtable td.q { color: var(--ink-3); }
         .lt-tablewrap .dtable td.run { color: var(--c-orange); }

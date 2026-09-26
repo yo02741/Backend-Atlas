@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status, Stats, Stat, fmtN } from '../ui.jsx'
 
 /* 資料庫擴展情境模擬器：Stepper 逐階段疊上去——現況 → pgbouncer → 讀寫分離 → 表分割 → 分片。
    每一階段看：連線數（客戶端 / DB 端）、每台的 CPU、能撐的 QPS、複雜度；後兩階段另外看掃了幾個分區、打了幾台。
@@ -93,14 +93,14 @@ export default function DbScalingScenarioLab() {
           <LabStage label="拓樸與負載" caption={`${STAGES[step]}：${m.nodes.length}${step === 4 ? ` 種節點 × ${SHARDS} 片` : ' 個節點'}（CPU、連線、QPS 皆為示意）`}>
             <TopoSvg step={step} api={api} per={per} m={m} />
           </LabStage>
-          <div className="dbs-stats">
-            <Tile label="客戶端連線" value={`${m.clientConns} 條`} note={step >= 1 ? '接到 pgbouncer' : '直連 DB'} />
-            <Tile label={`DB 端連線 / 上限${step === 4 ? '（每片）' : ''}`} value={`${m.dbConns} / ${MAX_CONN}`} bad={m.connOver} note={m.connOver ? `${m.dbConns - MAX_CONN} 條拿不到，請求失敗` : ''} />
-            <Tile label="最忙節點 CPU" value={`${Math.round(m.maxCpu)}%`} bad={m.maxCpu >= 75} warn={m.maxCpu >= 55 && m.maxCpu < 75} note={m.saturated ? '飽和：請求排隊、延遲飆高' : ''} />
-            <Tile label="能撐的 QPS（示意）" value={m.qps.toLocaleString()} note={`現況 ${NOW_QPS.toLocaleString()}`} />
-            <Tile label="複雜度" value={COMPLEXITY[step]} bad={step === 4} />
-            <Tile label={step === 4 ? '一個查詢打幾片' : '一個查詢掃幾個分區'} value={step >= 3 ? (step === 4 ? `${m.shardsHit} / ${SHARDS}` : `${m.partsHit} / ${PARTS}`) : '—'} bad={step === 4 ? m.shardsHit > 1 : m.partsHit > 1} />
-          </div>
+          <Stats min={140}>
+            <Stat label="客戶端連線" value={`${m.clientConns} 條`} note={step >= 1 ? '接到 pgbouncer' : '直連 DB'} />
+            <Stat label={`DB 端連線 / 上限${step === 4 ? '（每片）' : ''}`} value={`${m.dbConns} / ${MAX_CONN}`} tone={m.connOver ? 'bad' : ''} note={m.connOver ? `${m.dbConns - MAX_CONN} 條拿不到，請求失敗` : ''} />
+            <Stat label="最忙節點 CPU" value={`${Math.round(m.maxCpu)}%`} tone={m.maxCpu >= 75 ? 'bad' : m.maxCpu >= 55 ? 'warn' : ''} note={m.saturated ? '飽和：請求排隊、延遲飆高' : ''} />
+            <Stat label="能撐的 QPS（示意）" value={fmtN(m.qps)} note={`現況 ${fmtN(NOW_QPS)}`} />
+            <Stat label="複雜度" value={COMPLEXITY[step]} tone={step === 4 ? 'bad' : ''} />
+            <Stat label={step === 4 ? '一個查詢打幾片' : '一個查詢掃幾個分區'} value={step >= 3 ? (step === 4 ? `${m.shardsHit} / ${SHARDS}` : `${m.partsHit} / ${PARTS}`) : '—'} tone={(step === 4 ? m.shardsHit > 1 : m.partsHit > 1) ? 'bad' : ''} />
+          </Stats>
           <div className="dbs-math" aria-label="這一階段的算式">
             {lines.map((l, i) => <div key={i}><span className="k">{i + 1}</span>{l}</div>)}
           </div>
@@ -132,15 +132,6 @@ export default function DbScalingScenarioLab() {
         </div>
       </LabGrid>
       <style>{`
-        .dbs-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-        @media (max-width: 560px) { .dbs-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        .dbs-tile { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 10px; min-width: 0; }
-        .dbs-tile .l { font-size: 0.68rem; color: var(--ink-3); letter-spacing: 0.03em; }
-        .dbs-tile .v { font-family: var(--mono); font-size: 1.0rem; font-weight: 700; color: var(--ink-1); font-variant-numeric: tabular-nums; margin-top: 2px; }
-        .dbs-tile.bad .v { color: var(--critical); }
-        .dbs-tile.warn .v { color: var(--serious); }
-        .dbs-tile .n { font-size: 0.68rem; color: var(--ink-3); }
-        .dbs-tile.bad .n { color: var(--critical); }
         .dbs-math { font-family: var(--mono); font-size: 0.76rem; color: var(--ink-2); display: grid; gap: 4px; border-left: 3px solid var(--hairline); padding-left: 10px; }
         .dbs-math div { display: flex; gap: 8px; align-items: baseline; }
         .dbs-math .k { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--surface-2); color: var(--ink-3); font-size: 0.64rem; display: inline-flex; align-items: center; justify-content: center; }
@@ -164,10 +155,6 @@ export default function DbScalingScenarioLab() {
       `}</style>
     </Lab>
   )
-}
-
-function Tile({ label, value, bad = false, warn = false, note = '' }) {
-  return <div className={`dbs-tile${bad ? ' bad' : warn ? ' warn' : ''}`}><div className="l">{label}</div><div className="v">{value}</div>{note && <div className="n">{note}</div>}</div>
 }
 
 const cpuColor = (c) => c >= 75 ? 'var(--critical)' : c >= 55 ? 'var(--warning)' : 'var(--good)'

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Callout, Status } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Callout, Status, Stats, Stat } from '../ui.jsx'
 
 /* 冪等情境模擬器：時序圖（客戶端 / API / DB），純示意、沒有真的後端
    ① 回應在網路上遺失後客戶端重送：DB 多幾筆、扣款幾次、客戶端最後拿到什麼
@@ -155,15 +155,16 @@ export default function IdempotencyScenarioLab() {
               </table>
             </div>
           </div>
-          <div className="idm-stats">
-            <div><span>扣款次數</span><b>{snap.charges}</b></div>
-            <div><span>重複扣款</span><b className={dup ? 'bad' : ''}>{dup} 筆</b></div>
-            <div><span>客戶端拿到</span><b>{snap.client.length ? snap.client.join(' · ') : '—'}</b></div>
-            <div><span>結果一致嗎</span>
-              {consistent === null ? <b className="muted">{done ? '只有一個回應' : '…'}</b>
-                : consistent === 'same' ? <Status ok>一致</Status> : consistent === 'p1' ? <Status warn>同一筆，狀態碼不同</Status> : consistent === 'retry' ? <Status warn>一個 409，要重送</Status> : <Status>不一致</Status>}
-            </div>
-          </div>
+          <Stats min={130}>
+            <Stat label="扣款次數" value={snap.charges} />
+            <Stat label="重複扣款" value={`${dup} 筆`} tone={dup ? 'bad' : ''} />
+            <Stat label="客戶端拿到" value={snap.client.length ? snap.client.join(' · ') : '—'} />
+            {consistent === null
+              ? <Stat label="結果一致嗎" value={<span className="muted">{done ? '只有一個回應' : '…'}</span>} />
+              : <div className="lab-stat"><span className="l">結果一致嗎</span>{/* Status 徽章直接放磚裡（Stat 的 value 會包進 mono 的 .v） */}
+                  {consistent === 'same' ? <Status ok>一致</Status> : consistent === 'p1' ? <Status warn>同一筆，狀態碼不同</Status> : consistent === 'retry' ? <Status warn>一個 409，要重送</Status> : <Status>不一致</Status>}
+                </div>}
+          </Stats>
         </div>
         <div className="lab-stack">
           <LabExplain title={TITLES[approach]}>
@@ -185,11 +186,6 @@ export default function IdempotencyScenarioLab() {
         .idm-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         @media (max-width: 760px) { .idm-tables { grid-template-columns: 1fr; } }
         .idm-tables tr.idm-dup td { background: color-mix(in srgb, var(--critical) 12%, transparent); }
-        .idm-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-        .idm-stats > div { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 12px; display: grid; gap: 4px; align-content: start; }
-        .idm-stats span { font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.04em; }
-        .idm-stats b { font-family: var(--mono); font-size: 0.95rem; color: var(--ink-1); font-variant-numeric: tabular-nums; }
-        .idm-stats b.bad { color: var(--critical); }
         .idm-svg .lbl { font-family: var(--mono); font-size: 11px; fill: var(--ink-2); }
         .idm-svg .lbl.on { fill: var(--ink-1); font-weight: 700; }
         .idm-svg .lbl.ok { fill: var(--good); } .idm-svg .lbl.bad { fill: var(--critical); } .idm-svg .lbl.warn { fill: var(--serious); }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Callout, Status, useReducedMotion } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Callout, Status, useReducedMotion, Stats, Stat } from '../ui.jsx'
 
 /* 登入方案模擬器：
    左上：三種客戶端 × 四種做法的矩陣，點一格看細節
@@ -213,10 +213,12 @@ export default function AuthSchemeScenarioLab() {
             </ul>
             <div className="as-delay">
               <span className="k">登出所有裝置後，舊憑證最多還能用</span>
-              {APPROACHES.map((a) => {
-                const d = delayOf(a.id)
-                return <span key={a.id} className={`d ${d > 1 ? 'bad' : 'ok'}`}>{a.short} <b>{d === 0 ? '0 秒' : `${d} 分`}</b></span>
-              })}
+              <Stats min={80}>
+                {APPROACHES.map((a) => {
+                  const d = delayOf(a.id)
+                  return <Stat key={a.id} label={a.short} value={d === 0 ? '0 秒' : `${d} 分`} tone={d > 1 ? 'bad' : 'ok'} />
+                })}
+              </Stats>
               <span className="muted">需求：≤ 1 分鐘。JWT / OAuth 要達標，效期得拉到 1，或各服務查 revoked_at。</span>
             </div>
           </div>
@@ -263,11 +265,10 @@ export default function AuthSchemeScenarioLab() {
         .as-props .t { grid-column: 2; font-size: 0.72rem; color: var(--ink-3); line-height: 1.45; }
         .as-props .cx { font-family: var(--mono); font-weight: 700; color: var(--ink-1); }
         .as-props .status { justify-self: start; font-size: 0.72rem; padding: 2px 8px; }
-        .as-delay { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 0.74rem; border-top: 1px solid var(--hairline); padding-top: 10px; }
-        .as-delay .k { width: 100%; color: var(--ink-3); font-weight: 600; }
-        .as-delay .d b { font-family: var(--mono); }
-        .as-delay .d.bad b { color: var(--critical); } .as-delay .d.ok b { color: var(--good); }
-        .as-delay .muted { width: 100%; font-size: 0.7rem; }
+        .as-delay { display: grid; gap: 6px; font-size: 0.74rem; border-top: 1px solid var(--hairline); padding-top: 10px; }
+        .as-delay .k { color: var(--ink-3); font-weight: 600; }
+        .as-delay .lab-stats { margin-top: 0; }
+        .as-delay .muted { font-size: 0.7rem; }
       `}</style>
     </Lab>
   )

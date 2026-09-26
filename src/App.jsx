@@ -1,5 +1,9 @@
 import React, { Suspense, lazy, useEffect, useState, useTransition } from 'react'
 import Home from './pages/Home.jsx'
+import { findSkill, findDomain } from './content/roadmap.js'
+import { findScenario } from './content/scenarios/index.js'
+import { findExercise } from './content/exercises/index.js'
+import { LAB_META } from './labs/index.js'
 
 /* 首頁以外的頁面都懶載入：CodeMirror、題庫、課綱 markdown 只在真的進到那一頁時才下載。
    換頁走 startTransition：舊頁面留在畫面上直到新 chunk 到齊，不會閃出「載入中」；等待期間頂端顯示進度條。 */
@@ -48,6 +52,20 @@ function parseHash(hash) {
 }
 
 
+/* 每頁的瀏覽器分頁標題：書籤與歷史紀錄才分得出是哪一頁 */
+const SITE = 'Backend Atlas'
+const SECTION_TITLES = { roadmap: '技能盤點', labs: '實驗室', exercises: '練習題', curriculum: '課綱', scenarios: '設計情境', playground: 'Playground' }
+function titleFor(route) {
+  switch (route.view) {
+    case 'skill': return findSkill(route.id)?.title
+    case 'domain': return findDomain(route.id)?.title
+    case 'lab': return LAB_META[route.name]?.title
+    case 'scenario': return findScenario(route.id)?.title
+    case 'exercise': return findExercise(route.id)?.title
+    default: return SECTION_TITLES[route.view]
+  }
+}
+
 function useTheme() {
   const [theme, setTheme] = useState(() => {
     try {
@@ -69,7 +87,9 @@ export default function App() {
   useEffect(() => {
     // 技能頁自己處理捲動（要停在頁首）；其他頁換路由回到頂端
     if (!['skill', 'lab', 'exercise', 'scenario'].includes(route.view)) window.scrollTo({ top: 0 })
-  }, [route.view, route.id, route.name])
+    const t = titleFor(route)
+    document.title = t ? `${t} · ${SITE}` : `${SITE} · 後端學習地圖`
+  }, [route.view, route.id, route.name, route.lang])
 
   let page
   switch (route.view) {

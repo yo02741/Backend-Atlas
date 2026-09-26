@@ -23,12 +23,14 @@ t('home does not load CodeMirror chunk', !homeChunks.some((n) => /^CodeEditor-/.
 t('home does not load Curriculum chunk', !homeChunks.some((n) => /^Curriculum-/.test(n)))
 t('home does not load page chunks', !homeChunks.some((n) => /^(Skill|Exercises|Scenarios|Playground|Roadmap)-/.test(n)))
 t('home does not load skill body chunks', !homeChunks.some((n) => /^d\d-[a-z]+-/.test(n)))
+t('home title', await page.title() === 'Backend Atlas · 後端學習地圖', await page.title())
 
 // 技能頁：只載自己領域的內文 chunk；同領域換課不再下載；換領域才多載一個
 const bodyChunks = () => [...loaded].filter((n) => /^d\d-[a-z]+-/.test(n))
 await page.goto(base + '#/skill/sql-joins', { waitUntil: 'networkidle' })
 await page.waitForSelector('.points li')
 t('skill page renders body (points)', (await page.$$('.points li')).length >= 2)
+t('skill page title', await page.title() === 'JOIN 七兄弟 · Backend Atlas', await page.title())
 t('skill page loads exactly its domain body chunk', bodyChunks().length === 1 && /^d3-data-/.test(bodyChunks()[0]), bodyChunks().join(','))
 const h1Before = await page.textContent('h1')
 await page.click('.lesson-nav a.next')
@@ -59,6 +61,7 @@ t('previous page stays visible', during.h1 === homeHeading, during.h1)
 await page.waitForFunction(() => /課綱/.test(document.querySelector('h1')?.textContent || ''), null, { timeout: 30000 })
 await page.waitForFunction(() => !document.querySelector('.route-progress'), null, { timeout: 5000 })
 t('curriculum rendered', /課綱|週/.test(await page.textContent('h1')), await page.textContent('h1'))
+t('curriculum title', await page.title() === '課綱 · Backend Atlas', await page.title())
 t('curriculum chunk loaded on demand', [...loaded].some((n) => /^Curriculum-/.test(n)))
 t('nav active state follows route', await page.$eval('.topnav-links a[href="#/curriculum"]', (a) => a.classList.contains('active')))
 
@@ -67,6 +70,7 @@ await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0,
 await page.goto(base + '#/scenario/cache', { waitUntil: 'networkidle' })
 await page.waitForSelector('section.lab', { timeout: 30000 })
 t('deep link to lazy page renders', /API 快取/.test(await page.textContent('h1')))
+t('scenario title', await page.title() === 'API 快取 · Backend Atlas', await page.title())
 
 console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'no page/console errors')
 await browser.close()

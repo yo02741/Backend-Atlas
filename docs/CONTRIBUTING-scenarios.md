@@ -65,6 +65,7 @@ node e2e/shot.mjs "http://localhost:<PORT>/?lab=<Name>ScenarioLab" e2e/shots/<Na
 node e2e/shot.mjs "http://localhost:<PORT>/?lab=<Name>ScenarioLab" e2e/shots/<Name>-dark.png 1100 dark
 node e2e/shot.mjs "http://localhost:<PORT>/?lab=<Name>ScenarioLab" e2e/shots/<Name>-mobile.png 390 light
 node e2e/shot.mjs "http://localhost:<PORT>/#/scenario/<id>" e2e/shots/<id>-page.png 1200 light
+E2E_BASE=http://localhost:<PORT>/ LAB=<Name>ScenarioLab node e2e/labs-smoke.mjs   # 每個控制項都動過，無錯誤
 ```
 用 Read 看每張圖，PAGEERROR / CONSOLE 必須為空。寫個小 playwright 腳本按過每個按鈕、切過每個做法，確認狀態會變、不會炸。完成後殺掉 dev server。
 

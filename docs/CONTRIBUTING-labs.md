@@ -57,6 +57,9 @@ cd e2e
 node shot.mjs "http://localhost:<PORT>/?lab=<Name>Lab" shots/<Name>-light.png 1100 light
 node shot.mjs "http://localhost:<PORT>/?lab=<Name>Lab" shots/<Name>-dark.png 1100 dark
 node shot.mjs "http://localhost:<PORT>/?lab=<Name>Lab" shots/<Name>-mobile.png 390 light
+cd ..
+# 4. smoke：把 lab 上每個控制項都動過一遍（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤且畫面有變化才算過
+E2E_BASE=http://localhost:<PORT>/ LAB=<Name>Lab node e2e/labs-smoke.mjs
 ```
 用 Read 工具打開 png 看圖。也可以寫小段 playwright 腳本點按鈕、切步驟後再截圖，確認互動狀態正常（例如切到最後一步）。
 完成後把 dev server 殺掉（`pkill -f "vite --port <PORT>"`）。

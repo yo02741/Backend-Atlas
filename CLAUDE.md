@@ -15,7 +15,7 @@
 - 技能：`src/content/dN-*.js`；id 全站唯一，`lab` 對應 `src/labs/index.js` 的 key。
 - 程式題：`src/content/exercises/`；**改完必跑** `npm run build && npm run preview` + `npm run e2e:verify`（解答必須通過、起始碼應該不通過）。
 - 選擇題：`src/content/quizzes/`；**改完必跑** `npm run validate:quizzes`。
-- 實驗室：照 `docs/CONTRIBUTING-labs.md` 的合約；用 `?lab=XxxLab` 單獨預覽。
+- 實驗室：照 `docs/CONTRIBUTING-labs.md` 的合約；用 `?lab=XxxLab` 單獨預覽；**改完必跑** `LAB=XxxLab npm run e2e:labs`（改 `src/labs/ui.jsx` 則跑全部 `npm run e2e:labs`）。
 - 設計情境：`src/content/scenarios/` + `src/labs/scenarios/`，照 `docs/CONTRIBUTING-scenarios.md`；**改完必跑** `npm run validate:scenarios`。
 
 ## 交付前

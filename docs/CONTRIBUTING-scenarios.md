@@ -38,6 +38,8 @@ export default {
 }
 ```
 
+內容欄位不可含超連結；只有 `implementation[].code` 例外（nginx `proxy_pass http://…`、範例 URL 之類本來就是程式碼的一部分）。
+
 ## 模擬器規則
 
 與實驗室合約（`docs/CONTRIBUTING-labs.md`）相同：只 import React 與 `../ui.jsx`（路徑多一層）、顏色只用 CSS token、inline SVG 或 `.dtable`、繁體中文、無超連結、手機 390px 不溢出、專屬 CSS 加前綴。另外：

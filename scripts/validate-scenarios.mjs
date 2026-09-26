@@ -50,8 +50,9 @@ for (const f of readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'index
   }
   if ((s.decisions || []).length >= 3 && answers.size === 1) errors.push(`${tag}: 所有決策題正解都一樣，請設計不同情境`)
   for (const c of s.implementation || []) if (!c.title || !c.lang || !c.code) errors.push(`${tag}: implementation 每項需 title / lang / code`)
-  const text = JSON.stringify({ ...s, refs: undefined })
-  if (/https?:\/\//.test(text)) errors.push(`${tag}: 內容不可含超連結（refs 除外）`)
+  // 落地程式碼（implementation[].code）本來就會出現 http:// （nginx proxy_pass、範例 URL），不算超連結；其餘欄位一律不可
+  const text = JSON.stringify({ ...s, refs: undefined, implementation: (s.implementation || []).map((c) => ({ ...c, code: undefined })) })
+  if (/https?:\/\//.test(text)) errors.push(`${tag}: 內容不可含超連結（refs 與落地程式碼除外）`)
   if (/為什麼要學|為什麼重要|你工作上|給前端工程師|你已經會/.test(text)) errors.push(`${tag}: 含不符合語氣規範的措辭`)
 }
 console.log(`情境 ${count} 個`)

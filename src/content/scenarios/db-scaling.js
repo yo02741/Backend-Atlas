@@ -118,6 +118,6 @@ async def list_orders(user: User):
         rows = await conn.execute(select_orders, {"user_id": user.id})
         return rows.mappings().all()` },
   ],
-  exercise: null,
+  exercise: 'scaling-1',
   refs: [],
 }

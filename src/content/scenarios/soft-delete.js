@@ -104,6 +104,6 @@ CREATE VIEW active_users AS
 --             with_loader_criteria(User, User.deleted_at.is_(None), include_aliases=True))
 -- 需要看已刪除的地方（客服後台）明確傳 execution_options(include_deleted=True)` },
   ],
-  exercise: null,
+  exercise: 'sql-advanced-4',
   refs: [],
 }

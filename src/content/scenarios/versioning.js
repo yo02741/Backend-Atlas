@@ -139,6 +139,6 @@ ALTER TABLE orders
   DROP COLUMN customer_name,
   DROP COLUMN internal_note;` },
   ],
-  exercise: null,
+  exercise: 'rest-design-1',
   refs: [],
 }

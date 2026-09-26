@@ -94,6 +94,6 @@ FROM pg_stat_replication;` },
     { title: '前端樂觀更新（只擋 SPA 內的畫面，擋不住 F5）', lang: 'js', code: `const saved = await api.patch('/me', { name })   // 回應就是主庫剛寫入的列
 setProfile(saved)                                 // 直接用回應渲染，不再 GET /me` },
   ],
-  exercise: null,
+  exercise: 'scaling-1',
   refs: [],
 }

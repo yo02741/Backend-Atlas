@@ -114,6 +114,6 @@ head = s3.get_object(Bucket=BUCKET, Key=key, Range="bytes=0-4095")["Body"].read(
 if sniff(head) is None:
     s3.delete_object(Bucket=BUCKET, Key=key)        # 不合法就刪，並把 uploads 標成 rejected` },
   ],
-  exercise: null,
+  exercise: 'input-validation-1',
   refs: [],
 }

@@ -5,8 +5,9 @@ import auth from './auth.js'
 import security from './security.js'
 import algo from './algo.js'
 import web from './web.js'
+import scenarios from './scenarios.js'
 
-export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...algo]
+export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...algo, ...scenarios]
 
 export const KINDS = {
   sql: { label: 'SQL', runtime: 'sql' },

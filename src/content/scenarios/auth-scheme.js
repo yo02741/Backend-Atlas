@@ -123,6 +123,6 @@ Content-Type: application/json
 
 BFF 把回應原樣轉回瀏覽器；token 從頭到尾沒出現在瀏覽器` },
   ],
-  exercise: null,
+  exercise: 'cors-cookies-1',
   refs: [],
 }

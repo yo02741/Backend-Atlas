@@ -125,6 +125,6 @@ CREATE INDEX idx_jobs_created_by ON jobs (created_by, created_at DESC);` },
 for job_id in queue.consume("exports"):
     run_export(job_id)` },
   ],
-  exercise: null,
+  exercise: 'queues-workers-2',
   refs: [],
 }

@@ -119,6 +119,6 @@ CREATE TABLE idempotency_keys (
 -- 排程清掉過期的 key，去重資料不必永久保存
 DELETE FROM idempotency_keys WHERE expires_at < now();` },
   ],
-  exercise: null,
+  exercise: 'api-patterns-2',
   refs: [],
 }

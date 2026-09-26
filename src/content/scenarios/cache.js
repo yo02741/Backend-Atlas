@@ -90,6 +90,6 @@ def add_item(user_id: int, product_id: int, qty: int) -> None:
     redis.delete(f"cart:{user_id}")                 # 再刪 key，下一次讀會重建
     # 順序很重要：先刪再寫，中間若有人讀到舊值回寫，快取就會卡著舊資料直到 TTL 到` },
   ],
-  exercise: null,
+  exercise: 'redis-cache-1',
   refs: [],
 }

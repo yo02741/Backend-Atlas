@@ -95,6 +95,6 @@ async def try_buy(user_id: int, item_id: int) -> bool:
 # worker：真正建訂單、扣 DB 庫存（用條件 UPDATE 當第二道防線）
 # 對帳 job：每分鐘比對 100 - Redis 餘量 與 orders 筆數，不一致就補單或退還庫存` },
   ],
-  exercise: null,
+  exercise: 'transactions-3',
   refs: [],
 }

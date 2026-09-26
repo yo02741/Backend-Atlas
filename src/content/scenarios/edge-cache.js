@@ -107,6 +107,6 @@ remaining = entry["expires_at"] - time.time()
 if remaining < 0.2 * BASE_TTL and random.random() < (1 - remaining / (0.2 * BASE_TTL)):
     background_refresh(key)` },
   ],
-  exercise: null,
+  exercise: 'http-caching-1',
   refs: [],
 }

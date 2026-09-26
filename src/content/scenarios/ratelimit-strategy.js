@@ -108,6 +108,6 @@ def check_rate_limit(key: str, plan: str = "free") -> tuple[bool, dict]:
 # 付費 API：key 用 API key，上限查方案
 # allowed, headers = check_rate_limit(f"api:{api_key}", plan=plan_of(api_key))` },
   ],
-  exercise: null,
+  exercise: 'rate-limiting-2',
   refs: [],
 }

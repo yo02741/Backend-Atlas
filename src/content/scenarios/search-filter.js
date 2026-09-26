@@ -97,6 +97,6 @@ LIMIT 24 OFFSET 0;
 -- @@ 走 GIN；ts_rank 對每個命中列算完才能排序，命中數萬列時是主要成本
 -- 搜尋結果通常只翻前幾頁，這裡用 OFFSET 可以接受` },
   ],
-  exercise: null,
+  exercise: 'sql-advanced-3',
   refs: [],
 }

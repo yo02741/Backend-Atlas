@@ -67,104 +67,112 @@ export default function PaginationScenarioLab() {
   )
 }
 
-/* ① 翻頁時有新資料 */
+/* ① 翻頁時有新資料
+   模擬真實客戶端：畫面上是「上次 fetch 回來的那一頁」（快照），資料庫（db）在背後被插入 / 刪除；
+   按「下一頁」才重新查詢，這時才看得到重複或跳過。 */
+function fetchOffset(db, pageNo) { return db.slice(pageNo * SIZE, pageNo * SIZE + SIZE) }
+function fetchCursor(db, cursor) {
+  const after = cursor ? db.filter((r) => r.t < cursor.t || (r.t === cursor.t && r.id < cursor.id)) : db
+  return after.slice(0, SIZE)
+}
 function Drift() {
-  const [rows, setRows] = useState(() => makeRows(18))
-  const [page, setPage] = useState(0)              // offset 的頁碼
-  const [cursor, setCursor] = useState(null)       // { t, id } 最後看過的一筆
-  const [seenOff, setSeenOff] = useState(() => new Set())
-  const [seenCur, setSeenCur] = useState(() => new Set())
-  const [lastOffId, setLastOffId] = useState(null)
-  const [newIds, setNewIds] = useState(() => new Set())
-  const [log, setLog] = useState([])
+  const [state, setState] = useState(() => {
+    const db = makeRows(18)
+    const first = fetchOffset(db, 0)
+    return {
+      db, log: [], dirty: false,
+      off: { pageNo: 1, rows: first.map((r) => ({ r, dup: false })), skipped: [], seen: new Set(first.map((r) => r.id)), lastId: first[first.length - 1].id },
+      cur: { rows: first.map((r) => ({ r, dup: false })), seen: new Set(first.map((r) => r.id)), cursor: { t: first[first.length - 1].t, id: first[first.length - 1].id } },
+    }
+  })
+  const { db, off, cur, log, dirty } = state
 
-  const offPage = rows.slice(page * SIZE, page * SIZE + SIZE)
-  const curPage = useMemo(() => {
-    const after = cursor ? rows.filter((r) => r.t < cursor.t || (r.t === cursor.t && r.id < cursor.id)) : rows
-    return after.slice(0, SIZE)
-  }, [rows, cursor])
-  // offset 跳過的列：上一頁最後一筆之後、這一頁第一筆之前，且從沒被看過
-  const skipped = useMemo(() => {
-    if (lastOffId === null) return []
-    const li = rows.findIndex((r) => r.id === lastOffId)
-    const start = page * SIZE
-    if (li < 0 || start <= li + 1) return []
-    return rows.slice(li + 1, start).filter((r) => !seenOff.has(r.id))
-  }, [rows, page, lastOffId, seenOff])
-
-  const nextPage = () => {
-    setSeenOff((s) => new Set([...s, ...offPage.map((r) => r.id)]))
-    setSeenCur((s) => new Set([...s, ...curPage.map((r) => r.id)]))
-    if (offPage.length) setLastOffId(offPage[offPage.length - 1].id)
-    if (curPage.length) setCursor({ t: curPage[curPage.length - 1].t, id: curPage[curPage.length - 1].id })
-    setPage((p) => p + 1)
-    setNewIds(new Set())
-  }
-  const insert = () => {
-    const id = Math.max(...rows.map((r) => r.id)) + 1
-    setRows((rs) => [{ id, t: 1000 + id, body: `評論 #${id}（新）` }, ...rs])
-    setNewIds((s) => new Set([...s, id]))
-    setLog((l) => [`插入評論 #${id}（排在最前面）`, ...l].slice(0, 4))
-  }
-  const remove = () => {
-    if (!rows.length) return
-    const victim = rows[Math.min(1, rows.length - 1)]
-    setRows((rs) => rs.filter((r) => r.id !== victim.id))
-    setLog((l) => [`刪除評論 #${victim.id}（第 2 新的那筆）`, ...l].slice(0, 4))
-  }
-  const reset = () => { setRows(makeRows(18)); setPage(0); setCursor(null); setSeenOff(new Set()); setSeenCur(new Set()); setLastOffId(null); setNewIds(new Set()); setLog([]) }
-  const dupOff = offPage.filter((r) => seenOff.has(r.id)).length
-  const dupCur = curPage.filter((r) => seenCur.has(r.id)).length
+  const nextPage = () => setState((st) => {
+    // OFFSET：用頁碼重查；重複＝已看過；跳過＝上一頁最後一筆之後、這頁第一筆之前、從沒看過的列
+    const rowsO = fetchOffset(st.db, st.off.pageNo)
+    const li = st.db.findIndex((r) => r.id === st.off.lastId)
+    const startIdx = st.off.pageNo * SIZE
+    const skipped = li >= 0 && startIdx > li + 1 ? st.db.slice(li + 1, startIdx).filter((r) => !st.off.seen.has(r.id)) : []
+    const offRows = rowsO.map((r) => ({ r, dup: st.off.seen.has(r.id) }))
+    const seenO = new Set([...st.off.seen, ...rowsO.map((r) => r.id)])
+    // Cursor：用最後看過的鍵重查
+    const rowsC = fetchCursor(st.db, st.cur.cursor)
+    const curRows = rowsC.map((r) => ({ r, dup: st.cur.seen.has(r.id) }))
+    const seenC = new Set([...st.cur.seen, ...rowsC.map((r) => r.id)])
+    const lastC = rowsC[rowsC.length - 1]
+    return {
+      ...st, dirty: false,
+      off: { pageNo: st.off.pageNo + 1, rows: offRows, skipped, seen: seenO, lastId: rowsO.length ? rowsO[rowsO.length - 1].id : st.off.lastId },
+      cur: { rows: curRows, seen: seenC, cursor: lastC ? { t: lastC.t, id: lastC.id } : st.cur.cursor },
+    }
+  })
+  const insert = () => setState((st) => {
+    const id = Math.max(...st.db.map((r) => r.id)) + 1
+    return { ...st, dirty: true, db: [{ id, t: 1000 + id, body: `評論 #${id}（新）` }, ...st.db], log: [`插入評論 #${id}，排在最前面`, ...st.log].slice(0, 4) }
+  })
+  const remove = () => setState((st) => {
+    if (st.db.length < 2) return st
+    const victim = st.db[1]
+    return { ...st, dirty: true, db: st.db.filter((r) => r.id !== victim.id), log: [`刪除評論 #${victim.id}（第 2 新的那筆）`, ...st.log].slice(0, 4) }
+  })
+  const reset = () => setState(() => {
+    const db = makeRows(18); const first = fetchOffset(db, 0)
+    return { db, log: [], dirty: false,
+      off: { pageNo: 1, rows: first.map((r) => ({ r, dup: false })), skipped: [], seen: new Set(first.map((r) => r.id)), lastId: first[first.length - 1].id },
+      cur: { rows: first.map((r) => ({ r, dup: false })), seen: new Set(first.map((r) => r.id)), cursor: { t: first[first.length - 1].t, id: first[first.length - 1].id } } }
+  })
+  const dupOff = off.rows.filter((x) => x.dup).length
+  const dupCur = cur.rows.filter((x) => x.dup).length
+  const exhausted = off.pageNo * SIZE >= db.length && fetchCursor(db, cur.cursor).length === 0
 
   return (
     <LabGrid variant="wide">
       <div className="lab-stack">
         <LabControls>
-          <button className="btn small" onClick={nextPage} disabled={!offPage.length && !curPage.length}>下一頁 →</button>
+          <button className="btn small" onClick={nextPage} disabled={exhausted}>下一頁 →</button>
           <button className="btn ghost small" onClick={insert}>插入一筆新評論</button>
           <button className="btn ghost small" onClick={remove}>刪除一筆</button>
           <span className="spacer" />
+          {dirty && <span className="muted" style={{ fontSize: '0.78rem' }}>資料庫已變動，按「下一頁」看效果</span>}
           <button className="btn ghost small" onClick={reset}>重來</button>
         </LabControls>
         <div className="pg2">
           <div className="pgcol">
-            <h5><span className="tag a">A</span> OFFSET · 第 {page + 1} 頁 {dupOff > 0 && <Status>重複 {dupOff} 筆</Status>}</h5>
-            <p className="q">{`ORDER BY created_at DESC, id DESC\nOFFSET ${page * SIZE} LIMIT ${SIZE}`}</p>
+            <h5><span className="tag a">A</span> OFFSET · 第 {off.pageNo} 頁 {dupOff > 0 && <Status>重複 {dupOff} 筆</Status>}</h5>
+            <p className="q">{`ORDER BY created_at DESC, id DESC\nOFFSET ${(off.pageNo - 1) * SIZE} LIMIT ${SIZE}`}</p>
             <ul className="pgrows">
-              {offPage.map((r) => (
-                <li key={r.id} className={seenOff.has(r.id) ? 'dup' : newIds.has(r.id) ? 'new' : ''}>
-                  <span>{r.body}</span>
-                  {seenOff.has(r.id) ? <span className="b">重複</span> : newIds.has(r.id) ? <span className="b">新</span> : null}
+              {off.rows.map(({ r, dup }) => (
+                <li key={r.id} className={dup ? 'dup' : ''}>
+                  <span>{r.body}</span>{dup && <span className="b">重複</span>}
                 </li>
               ))}
-              {!offPage.length && <li className="muted">（沒有更多）</li>}
+              {!off.rows.length && <li className="muted">（沒有更多）</li>}
             </ul>
-            {skipped.length > 0 && <p className="pgskip">✕ 被跳過、永遠看不到：{skipped.map((r) => `#${r.id}`).join('、')}</p>}
+            {off.skipped.length > 0 && <p className="pgskip">✕ 被跳過、永遠看不到：{off.skipped.map((r) => `#${r.id}`).join('、')}</p>}
           </div>
           <div className="pgcol">
-            <h5><span className="tag b">B</span> Cursor · 已看 {seenCur.size} 筆 {dupCur > 0 ? <Status>重複 {dupCur} 筆</Status> : <Status ok>不重複不漏</Status>}</h5>
-            <p className="q">{cursor ? `WHERE (created_at, id) < (t${cursor.t}, ${cursor.id})\nORDER BY created_at DESC, id DESC LIMIT ${SIZE}` : `ORDER BY created_at DESC, id DESC\nLIMIT ${SIZE}`}</p>
+            <h5><span className="tag b">B</span> Cursor · 已看 {cur.seen.size} 筆 {dupCur > 0 ? <Status>重複 {dupCur} 筆</Status> : <Status ok>不重複不漏</Status>}</h5>
+            <p className="q">{`WHERE (created_at, id) < (t${cur.cursor.t}, ${cur.cursor.id})\nORDER BY created_at DESC, id DESC LIMIT ${SIZE}`}</p>
             <ul className="pgrows">
-              {curPage.map((r) => (
-                <li key={r.id} className={seenCur.has(r.id) ? 'dup' : newIds.has(r.id) ? 'new' : ''}>
-                  <span>{r.body}</span>
-                  {seenCur.has(r.id) ? <span className="b">重複</span> : null}
+              {cur.rows.map(({ r, dup }) => (
+                <li key={r.id} className={dup ? 'dup' : ''}>
+                  <span>{r.body}</span>{dup && <span className="b">重複</span>}
                 </li>
               ))}
-              {!curPage.length && <li className="muted">（沒有更多）</li>}
+              {!cur.rows.length && <li className="muted">（沒有更多）</li>}
             </ul>
           </div>
         </div>
         <div className="pgstat">
-          <span>資料共 <b>{rows.length}</b> 筆</span>
-          <span>OFFSET 已看 <b>{seenOff.size}</b> 筆</span>
-          <span>Cursor 已看 <b>{seenCur.size}</b> 筆</span>
+          <span>資料庫共 <b>{db.length}</b> 筆</span>
+          <span>OFFSET 已看 <b>{off.seen.size}</b> 筆</span>
+          <span>Cursor 已看 <b>{cur.seen.size}</b> 筆</span>
           {log.map((l, i) => <span key={i}>· {l}</span>)}
         </div>
       </div>
       <div className="lab-stack">
         <LabExplain title="同一個「下一頁」，兩種截然不同的結果">
-          <p>先按幾次「下一頁」，再按「插入一筆新評論」然後繼續翻。新評論排在最前面，把後面所有列往後推一格；OFFSET 用「跳過幾筆」定位，所以上一頁的最後一筆會再出現一次。刪除則相反：後面的列往前補，OFFSET 會直接跳過一筆，使用者永遠看不到它。</p>
+          <p>畫面上是「上次查回來的那一頁」，資料庫在背後被插入或刪除，按「下一頁」重新查詢時才看得到差別。先按「插入一筆新評論」再按「下一頁」：新評論排在最前面，把後面所有列往後推一格，OFFSET 用「跳過幾筆」定位，所以上一頁的最後一筆會再出現一次。刪除則相反：後面的列往前補，OFFSET 直接跳過一筆，使用者永遠看不到它。</p>
           <p>Cursor 記的是「最後看過那一筆的排序鍵」，下一頁查的是「比它更舊的」。前面插入、刪除，都動不到這個邊界。</p>
         </LabExplain>
         <Callout title="什麼時候會真的踩到">列表越活躍越明顯：留言、動態、通知、訂單流水。後台冷資料的表格幾乎不會遇到，所以那裡用 OFFSET 沒關係。</Callout>

@@ -16,7 +16,8 @@
 - 程式題：`src/content/exercises/`；**改完必跑** `npm run build && npm run preview` + `npm run e2e:verify`（解答必須通過、起始碼應該不通過）。
 - 選擇題：`src/content/quizzes/`；**改完必跑** `npm run validate:quizzes`。
 - 實驗室：照 `docs/CONTRIBUTING-labs.md` 的合約；用 `?lab=XxxLab` 單獨預覽。
+- 設計情境：`src/content/scenarios/` + `src/labs/scenarios/`，照 `docs/CONTRIBUTING-scenarios.md`；**改完必跑** `npm run validate:scenarios`。
 
 ## 交付前
 
-`npm run validate:quizzes` → `npm run build` → `npm run preview`（另一終端）→ `npm run e2e`。全綠再 commit。
+`npm run validate` → `npm run build` → `npm run preview`（另一終端）→ `npm run e2e`。全綠再 commit。

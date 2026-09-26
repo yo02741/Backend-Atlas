@@ -12,6 +12,7 @@
 | 互動實驗室 | 19（SQL JOIN、B-tree 索引、JWT、OAuth、RBAC/ABAC、SQL injection、Docker 層、compose 拓樸、nginx、CI 管線、Big-O、token bucket…） |
 | 程式題 | 30（SQL 14 / Python 13 / JS 3），解答全部經真實執行環境驗證 |
 | 選擇題 | 189（每課 3 題，含程式碼判讀與情境題） |
+| 設計情境 | 19（API 設計 8、資料與身分 4、高流量 6）：情境與限制、模擬器、做法優缺點、取捨表、換條件的決策題、落地程式碼 |
 | 課綱 | `docs/CURRICULUM.md`：獨立盤點的技能樹、差距分析、16 週課綱、驗收設計 |
 
 ## 執行環境（全部在瀏覽器）
@@ -37,23 +38,25 @@ src/
     schemas.js       SQL 練習與 Playground 共用的電商範例資料庫
     exercises/       程式題（sql / python / js），index.js 匯總
     quizzes/         選擇題題庫，每領域一檔（extra.js 放跨領域補題），index.js 以 glob 自動收集
+    scenarios/       設計情境，每個一檔，index.js 以 glob 自動收集（分組定義也在這）
   labs/            互動實驗室：ui.jsx（共用元件）、lab.css、index.js（登錄表）、*Lab.jsx
+    scenarios/       情境模擬器 *ScenarioLab.jsx（index.js 懶載入）
   runtime/         py.js + py.worker.js（Pyodide）、sql.js（PGlite）、js.js + js.worker.js、check.js（評分）
-  pages/           Home / Roadmap / Domain / Skill / Labs / Exercises / Playground / Curriculum
-  components/      MetroMap、HeroArt、bits、CodeEditor、ExerciseRunner、Quiz、Output、Markdown
+  pages/           Home / Roadmap / Domain / Skill / Labs / Exercises / Playground / Curriculum / Scenarios
+  components/      MetroMap、HeroArt、bits、CodeEditor、ExerciseRunner、Quiz、Decisions、Output、Markdown
   assess.js        一個技能的驗收狀態（程式題 + 選擇題）
   progress.js      localStorage 進度
   styles.css       站台樣式與 design tokens
   harness.jsx      開發用：?lab=JwtLab 只渲染該實驗室
   verify.jsx       開發用：?verify=1 把每題解答與起始碼丟進真實執行環境評分
-docs/              CURRICULUM.md、CONTRIBUTING-labs.md、CONTRIBUTING-quizzes.md
-scripts/           copy-pyodide.mjs、validate-quizzes.mjs
+docs/              CURRICULUM.md、AUDIT.md、CONTRIBUTING-labs.md、CONTRIBUTING-quizzes.md、CONTRIBUTING-scenarios.md
+scripts/           copy-pyodide.mjs、validate-quizzes.mjs、validate-scenarios.mjs
 e2e/               Playwright 腳本（見下）
 ```
 
 ## 路由
 
-hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/skill/sql-joins`、`#/labs`、`#/lab/SqlJoinLab`、`#/exercises`、`#/exercise/sql-joins-1`、`#/playground?lang=sql`。
+hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/skill/sql-joins`、`#/labs`、`#/lab/SqlJoinLab`、`#/scenarios`、`#/scenario/pagination`、`#/exercises`、`#/exercise/sql-joins-1`、`#/playground?lang=sql`。
 
 ## 新增內容
 
@@ -61,11 +64,12 @@ hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/
 - **實驗室**：見 `docs/CONTRIBUTING-labs.md`（合約、共用元件 API、驗證流程）。
 - **程式題**：在 `content/exercises/<領域>.js` 加一筆：`kind` 為 `sql`（`setup` + `expect: { columns, rows, ordered }`，或 `expect.query` 指定驗證查詢）或 `python` / `js`（`tests: [{ name, code }]`，測試碼與使用者程式碼在同一命名空間；JS 內建 `assert` / `assertEqual`）。寫完跑 `npm run e2e:verify` 確認解答通過、起始碼不通過。
 - **選擇題**：見 `docs/CONTRIBUTING-quizzes.md`；寫完跑 `npm run validate:quizzes`。
+- **設計情境**：見 `docs/CONTRIBUTING-scenarios.md`（內容格式、模擬器規則）；寫完跑 `npm run validate:scenarios`。
 
 ## 驗證
 
 ```bash
-npm run validate:quizzes         # 題庫結構
+npm run validate                 # 題庫與情境結構
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
 npm run e2e:runtime              # Playground 的 Python / SQL / JS 真的能跑
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過

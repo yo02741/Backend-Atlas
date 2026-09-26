@@ -9,7 +9,7 @@ const routes = [
   '#/', '#/roadmap', '#/roadmap?kw=JWT', '#/labs', '#/curriculum', '#/exercises',
   '#/exercise/sql-joins-1', '#/exercise/jwt-1', '#/exercise/http-basics-1',
   '#/playground', '#/playground?lang=sql', '#/playground?lang=js',
-  '#/scenarios', '#/scenario/pagination',
+  '#/scenarios', ...['pagination', 'cache', 'idempotency', 'ratelimit-strategy', 'long-task', 'upload', 'search-filter', 'versioning', 'auth-scheme', 'multi-tenant', 'soft-delete', 'replica-consistency', 'scale-path', 'flash-sale', 'queue-backpressure', 'db-scaling', 'edge-cache', 'notifications-fanout'].map((id) => `#/scenario/${id}`),
   '#/domain/data', '#/domain/auth',
   '#/skill/python-backend', '#/skill/sql-joins', '#/skill/jwt', '#/skill/docker-basics', '#/skill/linux-basics', '#/skill/crypto-toolbox',
   ...labs.map((l) => `#/lab/${l}`),

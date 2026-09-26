@@ -6,6 +6,7 @@ import { ProgressRing, LabIcon } from '../components/bits.jsx'
 import MetroMap from '../components/MetroMap.jsx'
 import HeroArt from '../components/HeroArt.jsx'
 import { EXERCISES } from '../content/exercises/index.js'
+import { SCENARIOS, groupOf } from '../content/scenarios/index.js'
 
 const FEATURED_LABS = ['SqlJoinLab', 'JwtLab', 'IndexLab', 'OAuthLab', 'DockerLab', 'NginxLab']
 
@@ -38,6 +39,7 @@ export default function Home() {
             <div className="stat"><b>{skills.length}</b><span>技能</span></div>
             <div className="stat"><b>{labCount}</b><span>互動實驗室</span></div>
             <div className="stat"><b>{EXERCISES.length}</b><span>程式題</span></div>
+            <div className="stat"><b>{SCENARIOS.length}</b><span>設計情境</span></div>
             <div className="stat"><b>{done.length}</b><span>已完成</span></div>
           </div>
         </div>
@@ -95,6 +97,27 @@ export default function Home() {
           {KEYWORDS.map((k) => (
             <a key={k} href={`#/roadmap?kw=${encodeURIComponent(k)}`}>{k}<small>{skillsByKeyword(k).length} 課</small></a>
           ))}
+        </div>
+      </section>
+
+      <section className="home-section">
+        <div className="section-head">
+          <h2 className="section-title">設計情境</h2>
+          <a href="#/scenarios" className="muted" style={{ fontSize: '0.88rem' }}>全部 {SCENARIOS.length} 個 →</a>
+        </div>
+        <p className="muted" style={{ fontSize: '0.88rem', marginTop: -8, marginBottom: 14 }}>一段限制、幾種做法、一個能親手玩後果的模擬器，最後在換了條件的變體裡做決定。</p>
+        <div className="scen-grid">
+          {SCENARIOS.slice(0, 6).map((sc) => {
+            const g = groupOf(sc)
+            return (
+              <a key={sc.id} href={`#/scenario/${sc.id}`} className="scen-card" style={{ '--tint': `var(--c-${g.color})` }}>
+                <div className="scen-card-head"><span className="kicker tinted" style={{ '--tint': `var(--c-${g.color})` }}>{g.title}</span></div>
+                <h3>{sc.title}</h3>
+                <p>{sc.summary}</p>
+                <div className="scen-card-opts">{sc.options.map((o) => <span key={o.id}>{o.name}</span>)}</div>
+              </a>
+            )
+          })}
         </div>
       </section>
 

@@ -15,7 +15,9 @@
     "e2e:verify": "node e2e/verify-exercises.mjs",
     "e2e:sweep": "node e2e/sweep.mjs",
     "e2e:ui": "node e2e/ui-exercise.mjs && node e2e/ui-quiz.mjs",
-    "e2e": "npm run e2e:runtime && npm run e2e:verify && npm run e2e:ui && npm run e2e:sweep"
+    "e2e": "npm run e2e:runtime && npm run e2e:verify && npm run e2e:ui && npm run e2e:sweep",
+    "validate:scenarios": "node scripts/validate-scenarios.mjs",
+    "validate": "npm run validate:quizzes && npm run validate:scenarios"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",

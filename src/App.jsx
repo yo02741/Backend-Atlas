@@ -7,6 +7,7 @@ import Labs, { LabPage } from './pages/Labs.jsx'
 import Playground from './pages/Playground.jsx'
 import Exercises, { ExercisePage } from './pages/Exercises.jsx'
 import Curriculum from './pages/Curriculum.jsx'
+import Scenarios, { ScenarioPage } from './pages/Scenarios.jsx'
 
 /* hash 路由：#/、#/roadmap（?kw=）、#/domain/:id、#/skill/:id、#/labs、#/lab/:Name */
 function useHashRoute() {
@@ -28,6 +29,8 @@ function useHashRoute() {
   if (seg[0] === 'lab' && seg[1]) return { view: 'lab', name: seg[1] }
   if (seg[0] === 'exercises') return { view: 'exercises' }
   if (seg[0] === 'curriculum') return { view: 'curriculum' }
+  if (seg[0] === 'scenarios') return { view: 'scenarios' }
+  if (seg[0] === 'scenario' && seg[1]) return { view: 'scenario', id: seg[1] }
   if (seg[0] === 'exercise' && seg[1]) return { view: 'exercise', id: seg[1] }
   if (seg[0] === 'playground') return { view: 'playground', lang: params.get('lang') || seg[1] || 'python' }
   return { view: 'home' }
@@ -53,7 +56,7 @@ export default function App() {
   const [theme, toggleTheme] = useTheme()
   useEffect(() => {
     // 技能頁自己處理捲動（要停在頁首）；其他頁換路由回到頂端
-    if (!['skill', 'lab', 'exercise'].includes(route.view)) window.scrollTo({ top: 0 })
+    if (!['skill', 'lab', 'exercise', 'scenario'].includes(route.view)) window.scrollTo({ top: 0 })
   }, [route.view, route.id, route.name])
 
   let page
@@ -65,6 +68,8 @@ export default function App() {
     case 'lab': page = <LabPage name={route.name} />; break
     case 'exercises': page = <Exercises />; break
     case 'curriculum': page = <Curriculum />; break
+    case 'scenarios': page = <Scenarios />; break
+    case 'scenario': page = <ScenarioPage id={route.id} />; break
     case 'exercise': page = <ExercisePage id={route.id} />; break
     case 'playground': page = <Playground key={route.lang} initialLang={route.lang} />; break
     default: page = <Home />
@@ -99,6 +104,7 @@ function Shell({ theme, toggleTheme, view, children }) {
           {link('#/roadmap', '技能盤點', view === 'roadmap' || view === 'domain' || view === 'skill')}
           {link('#/curriculum', '課綱', view === 'curriculum')}
           {link('#/labs', '實驗室', view === 'labs' || view === 'lab')}
+          {link('#/scenarios', '設計情境', view === 'scenarios' || view === 'scenario')}
           {link('#/exercises', '練習題', view === 'exercises' || view === 'exercise')}
           {link('#/playground', 'Playground', view === 'playground')}
         </div>

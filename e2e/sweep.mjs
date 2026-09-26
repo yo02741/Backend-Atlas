@@ -9,11 +9,12 @@ const routes = [
   '#/', '#/roadmap', '#/roadmap?kw=JWT', '#/labs', '#/curriculum', '#/exercises',
   '#/exercise/sql-joins-1', '#/exercise/jwt-1', '#/exercise/http-basics-1',
   '#/playground', '#/playground?lang=sql', '#/playground?lang=js',
+  '#/scenarios', '#/scenario/pagination',
   '#/domain/data', '#/domain/auth',
   '#/skill/python-backend', '#/skill/sql-joins', '#/skill/jwt', '#/skill/docker-basics', '#/skill/linux-basics', '#/skill/crypto-toolbox',
   ...labs.map((l) => `#/lab/${l}`),
 ]
-const shotFor = { '#/': 'home', '#/curriculum': 'curriculum', '#/exercises': 'exercises', '#/skill/sql-joins': 'skill-joins', '#/labs': 'labs', '#/lab/JwtLab': 'lab-jwt', '#/playground?lang=sql': 'playground-sql' }
+const shotFor = { '#/scenarios': 'scenarios', '#/scenario/pagination': 'scenario-pagination', '#/': 'home', '#/curriculum': 'curriculum', '#/exercises': 'exercises', '#/skill/sql-joins': 'skill-joins', '#/labs': 'labs', '#/lab/JwtLab': 'lab-jwt', '#/playground?lang=sql': 'playground-sql' }
 mkdirSync('e2e/shots', { recursive: true })
 
 const browser = await chromium.launch()

@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react'
 import { LEVELS } from '../content/roadmap.js'
 import { loadLab, LAB_META } from '../labs/index.js'
+import { loadScenarioLab } from '../labs/scenarios/index.js'
 
 export function Level({ level }) {
   return (
@@ -36,8 +37,8 @@ export function ProgressRing({ value, total, color }) {
 }
 
 /* 嵌入實驗室：懶載入 chunk，失敗時顯示訊息而非整頁炸掉 */
-export function LabEmbed({ name }) {
-  const Comp = loadLab(name)
+export function LabEmbed({ name, scenario = false }) {
+  const Comp = scenario ? loadScenarioLab(name) : loadLab(name)
   if (!Comp) return <p className="status-msg">實驗室 {name} 尚未上線。</p>
   return (
     <ErrorBoundary name={name}>

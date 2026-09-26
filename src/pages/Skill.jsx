@@ -6,6 +6,7 @@ import { Callout } from '../labs/ui.jsx'
 import ExerciseRunner from '../components/ExerciseRunner.jsx'
 import Quiz from '../components/Quiz.jsx'
 import { assessmentFor } from '../assess.js'
+import { scenariosForSkill } from '../content/scenarios/index.js'
 
 export default function Skill({ id }) {
   const s = findSkill(id)
@@ -21,6 +22,7 @@ export default function Skill({ id }) {
   const checkState = checks(s.id, s.checklist.length)
   const checkedN = checkState.filter(Boolean).length
   const assess = assessmentFor(s.id, progress)
+  const related = scenariosForSkill(s.id)
 
   return (
     <article className="lesson fade-swap" style={{ '--tint': color }}>
@@ -93,6 +95,15 @@ export default function Skill({ id }) {
           </ul>
           {checkedN === s.checklist.length && !done && (
             <Callout tone="good" title="全部打勾了">可以按上方的「標記完成」把這一站點亮。</Callout>
+          )}
+
+          {related.length > 0 && (
+            <>
+              <h2 id="scenarios">相關設計情境</h2>
+              <ul className="refs">
+                {related.map((sc) => <li key={sc.id}><a href={`#/scenario/${sc.id}`}>{sc.title} →</a></li>)}
+              </ul>
+            </>
           )}
 
           {s.refs?.length > 0 && (

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 /* 學習進度：只存在這個瀏覽器（localStorage），每個讀寫都包 try/catch。
-   結構：{ done: [skillId], checks: { skillId: [bool] }, exercises: { exId: 'pass' }, quizzes: { skillId: 'pass' } } */
+   結構：{ done, checks, exercises, quizzes, scenarios: { scenarioId: 'pass' }, rationales: { 'scenarioId:decisionId': text } } */
 const KEY = 'atlas-progress-v1'
 
 function load() {
@@ -14,10 +14,12 @@ function load() {
       checks: p.checks && typeof p.checks === 'object' ? p.checks : {},
       exercises: p.exercises && typeof p.exercises === 'object' ? p.exercises : {},
       quizzes: p.quizzes && typeof p.quizzes === 'object' ? p.quizzes : {},
+      scenarios: p.scenarios && typeof p.scenarios === 'object' ? p.scenarios : {},
+      rationales: p.rationales && typeof p.rationales === 'object' ? p.rationales : {},
     }
   } catch { return empty() }
 }
-function empty() { return { done: [], checks: {}, exercises: {}, quizzes: {} } }
+function empty() { return { done: [], checks: {}, exercises: {}, quizzes: {}, scenarios: {}, rationales: {} } }
 function save(p) {
   try { localStorage.setItem(KEY, JSON.stringify(p)) } catch { /* 私密模式等情況忽略 */ }
 }
@@ -58,6 +60,13 @@ export function useProgress() {
     if (state.quizzes[skillId] === 'pass' && status !== 'pass') return
     set({ ...state, quizzes: { ...state.quizzes, [skillId]: status } })
   }, [])
+  const scenarioStatus = useCallback((id) => p.scenarios[id] || null, [p])
+  const setScenario = useCallback((id, status) => {
+    if (state.scenarios[id] === 'pass' && status !== 'pass') return
+    set({ ...state, scenarios: { ...state.scenarios, [id]: status } })
+  }, [])
+  const rationale = useCallback((key) => p.rationales[key] || '', [p])
+  const setRationale = useCallback((key, text) => { set({ ...state, rationales: { ...state.rationales, [key]: text } }) }, [])
   const reset = useCallback(() => set(empty()), [])
-  return { done: p.done, isDone, toggleDone, checks, toggleCheck, exerciseStatus, setExercise, quizStatus, setQuiz, exercises: p.exercises, quizzes: p.quizzes, reset }
+  return { done: p.done, isDone, toggleDone, checks, toggleCheck, exerciseStatus, setExercise, quizStatus, setQuiz, scenarioStatus, setScenario, rationale, setRationale, exercises: p.exercises, quizzes: p.quizzes, scenarios: p.scenarios, reset }
 }

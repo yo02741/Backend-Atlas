@@ -2,11 +2,11 @@ import React, { Suspense, lazy, useMemo } from 'react'
 
 /* 開發用 harness：網址帶 ?lab=IndexLab 就只渲染該 lab（隔離開發與截圖用）。
    main.jsx 偵測到 ?lab= 參數時走這裡，正式站不受影響。 */
-const modules = import.meta.glob('./labs/*Lab.jsx')
+const modules = { ...import.meta.glob('./labs/*Lab.jsx'), ...import.meta.glob('./labs/scenarios/*Lab.jsx') }
 
 export default function LabHarness({ name }) {
   const Comp = useMemo(() => {
-    const key = `./labs/${name}.jsx`
+    const key = modules[`./labs/${name}.jsx`] ? `./labs/${name}.jsx` : `./labs/scenarios/${name}.jsx`
     return modules[key] ? lazy(modules[key]) : null
   }, [name])
   return (

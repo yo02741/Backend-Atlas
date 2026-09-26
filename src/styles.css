@@ -106,6 +106,11 @@ code, pre, kbd { font-family: var(--mono); }
 .reading { max-width: 720px; }
 
 /* ============ 頂欄 ============ */
+/* 換頁時（懶載入 chunk 下載中）頂端的細進度條 */
+.route-progress { position: fixed; top: 0; left: 0; height: 2px; width: 100%; z-index: 50; background: var(--accent); transform-origin: left; animation: route-progress 1.2s ease-out forwards; }
+@keyframes route-progress { from { transform: scaleX(0); } to { transform: scaleX(0.9); } }
+@media (prefers-reduced-motion: reduce) { .route-progress { animation: none; transform: scaleX(0.9); } }
+
 .topnav {
   display: flex; justify-content: space-between; align-items: center; gap: 16px;
   padding: 14px 0; border-bottom: 1px solid var(--hairline); font-size: 0.9rem;

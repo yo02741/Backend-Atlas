@@ -52,6 +52,7 @@ t('scenario passes when all correct', st?.scenarios?.pagination === 'pass')
 await page.screenshot({ path: 'e2e/shots/scenario-decide.png' })
 // 總覽頁反映狀態
 await page.goto(base + '#/scenarios', { waitUntil: 'networkidle' })
+await page.waitForSelector('.scen-grid')   // 只換 hash 不會重新載入，要等懶載入的頁面 chunk 到
 t('scenarios list shows pass', (await page.$$('.scen-card .status.ok')).length === 1)
 console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'no page/console errors')
 await browser.close()

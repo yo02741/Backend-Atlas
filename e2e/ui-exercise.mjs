@@ -45,6 +45,7 @@ t('solution shown', (await page.$$('.ex-solution .cm-editor')).length === 1)
 
 // 列表頁反映狀態
 await page.goto(base + '#/exercises', { waitUntil: 'networkidle' })
+await page.waitForSelector('.ex-list')   // 只換 hash 不會重新載入，要等懶載入的頁面 chunk 到
 t('exercises list shows pass', (await page.$$eval('.ex-list .status.ok', (es) => es.length)) === 1)
 
 // Python：貼解答交卷
@@ -57,6 +58,7 @@ t('python tests pass in UI', (await page.textContent('.tests-sum')).includes('�
 
 // 技能頁：驗收徽章
 await page.goto(base + '#/skill/python-backend', { waitUntil: 'networkidle' })
+await page.waitForSelector('.lesson-meta')
 t('skill page shows assess progress', /驗收 1\/\d/.test(await page.textContent('.lesson-meta')))
 console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'no page/console errors')
 await browser.close()

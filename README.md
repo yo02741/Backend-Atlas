@@ -43,6 +43,7 @@ src/
     scenarios/       情境模擬器 *ScenarioLab.jsx（index.js 懶載入）
   runtime/         py.js + py.worker.js（Pyodide）、sql.js（PGlite）、js.js + js.worker.js、check.js（評分）
   pages/           Home / Roadmap / Domain / Skill / Labs / Exercises / Playground / Curriculum / Scenarios
+  App.jsx          hash 路由與外殼；首頁以外的頁面 React.lazy 懶載入（CodeMirror、題庫、課綱各自成 chunk），換頁走 startTransition
   components/      MetroMap、HeroArt、bits、CodeEditor、ExerciseRunner、Quiz、Decisions、Output、Markdown
   assess.js        一個技能的驗收狀態（程式題 + 選擇題）
   progress.js      localStorage 進度
@@ -73,7 +74,7 @@ npm run validate                 # 題庫與情境結構
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
 npm run e2e:runtime              # Playground 的 Python / SQL / JS 真的能跑
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
-npm run e2e:ui                   # 練習題、選擇題、設計情境的 UI 流程
+npm run e2e:ui                   # 練習題、選擇題、設計情境的 UI 流程；路由懶載入（首頁不載 CodeMirror、換頁不閃載入中）
 npm run e2e:labs                 # 37 個實驗室：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
 ```

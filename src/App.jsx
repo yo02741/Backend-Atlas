@@ -1,22 +1,33 @@
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, lazy, useEffect, useState, useTransition } from 'react'
 import Home from './pages/Home.jsx'
-import Roadmap from './pages/Roadmap.jsx'
-import Domain from './pages/Domain.jsx'
-import Skill from './pages/Skill.jsx'
-import Labs, { LabPage } from './pages/Labs.jsx'
-import Playground from './pages/Playground.jsx'
-import Exercises, { ExercisePage } from './pages/Exercises.jsx'
-import Curriculum from './pages/Curriculum.jsx'
-import Scenarios, { ScenarioPage } from './pages/Scenarios.jsx'
+
+/* 首頁以外的頁面都懶載入：CodeMirror、題庫、課綱 markdown 只在真的進到那一頁時才下載。
+   換頁走 startTransition：舊頁面留在畫面上直到新 chunk 到齊，不會閃出「載入中」；等待期間頂端顯示進度條。 */
+const Roadmap = lazy(() => import('./pages/Roadmap.jsx'))
+const Domain = lazy(() => import('./pages/Domain.jsx'))
+const Skill = lazy(() => import('./pages/Skill.jsx'))
+const Labs = lazy(() => import('./pages/Labs.jsx'))
+const LabPage = lazy(() => import('./pages/Labs.jsx').then((m) => ({ default: m.LabPage })))
+const Playground = lazy(() => import('./pages/Playground.jsx'))
+const Exercises = lazy(() => import('./pages/Exercises.jsx'))
+const ExercisePage = lazy(() => import('./pages/Exercises.jsx').then((m) => ({ default: m.ExercisePage })))
+const Curriculum = lazy(() => import('./pages/Curriculum.jsx'))
+const Scenarios = lazy(() => import('./pages/Scenarios.jsx'))
+const ScenarioPage = lazy(() => import('./pages/Scenarios.jsx').then((m) => ({ default: m.ScenarioPage })))
 
 /* hash 路由：#/、#/roadmap（?kw=）、#/domain/:id、#/skill/:id、#/labs、#/lab/:Name */
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash)
+  const [pending, startTransition] = useTransition()
   useEffect(() => {
-    const on = () => setHash(window.location.hash)
+    const on = () => startTransition(() => setHash(window.location.hash))
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
   }, [])
+  return { ...parseHash(hash), pending }
+}
+
+function parseHash(hash) {
   const raw = hash.replace(/^#\/?/, '')
   const [path, query = ''] = raw.split('?')
   const params = new URLSearchParams(query)
@@ -35,6 +46,7 @@ function useHashRoute() {
   if (seg[0] === 'playground') return { view: 'playground', lang: params.get('lang') || seg[1] || 'python' }
   return { view: 'home' }
 }
+
 
 function useTheme() {
   const [theme, setTheme] = useState(() => {
@@ -76,13 +88,13 @@ export default function App() {
   }
 
   return (
-    <Shell theme={theme} toggleTheme={toggleTheme} view={route.view}>
-      {page}
+    <Shell theme={theme} toggleTheme={toggleTheme} view={route.view} pending={route.pending}>
+      <Suspense fallback={<p className="status-msg">載入中…</p>}>{page}</Suspense>
     </Shell>
   )
 }
 
-function Shell({ theme, toggleTheme, view, children }) {
+function Shell({ theme, toggleTheme, view, pending, children }) {
   const [open, setOpen] = useState(false)
   useEffect(() => { setOpen(false) }, [view])
   const link = (href, label, active) => (
@@ -91,6 +103,7 @@ function Shell({ theme, toggleTheme, view, children }) {
   return (
     <div className="page">
       <div className="bg-aurora" aria-hidden="true"><span /><span /><span /></div>
+      {pending && <div className="route-progress" role="progressbar" aria-label="載入頁面中" />}
       <nav className="topnav">
         <a href="#/" className="brand" aria-label="Backend Atlas 首頁">
           <svg className="brand-mark" viewBox="0 0 24 24" aria-hidden="true">

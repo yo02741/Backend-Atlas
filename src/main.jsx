@@ -1,8 +1,8 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import LabHarness from './harness.jsx'
-import VerifyHarness from './verify.jsx'
+const VerifyHarness = lazy(() => import('./verify.jsx'))   // 開發用，不進正式站的主 chunk
 import './styles.css'
 import './labs/lab.css'
 
@@ -12,4 +12,4 @@ import './labs/lab.css'
 const params = new URLSearchParams(window.location.search)
 const labName = params.get('lab')
 const root = createRoot(document.getElementById('root'))
-root.render(labName ? <LabHarness name={labName} /> : params.get('verify') ? <VerifyHarness /> : <App />)
+root.render(labName ? <LabHarness name={labName} /> : params.get('verify') ? <Suspense fallback={null}><VerifyHarness /></Suspense> : <App />)

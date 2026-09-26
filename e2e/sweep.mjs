@@ -28,6 +28,8 @@ for (const [w, theme] of [[1200, 'light'], [1200, 'dark'], [390, 'light']]) {
   await page.evaluate((t) => { try { localStorage.setItem('theme', t) } catch {} }, theme)
   for (const r of routes) {
     await page.goto(base + r, { waitUntil: 'networkidle' })
+    // 頁面與實驗室都是懶載入：等「載入中…」類的佔位訊息消失（頁面 chunk、lab chunk 都到齊）再量
+    await page.waitForFunction(() => !document.querySelector('.status-msg'), null, { timeout: 30000 }).catch(() => problems.push(`[${w}/${theme}] STILL-LOADING ${r}`))
     await page.waitForTimeout(400)
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     if (over > 2) problems.push(`[${w}/${theme}] OVERFLOW ${r} by ${over}px`)

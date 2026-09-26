@@ -72,6 +72,13 @@ await page.waitForSelector('section.lab', { timeout: 30000 })
 t('deep link to lazy page renders', /API 快取/.test(await page.textContent('h1')))
 t('scenario title', await page.title() === 'API 快取 · Backend Atlas', await page.title())
 
+// 課綱：每週標題下掛該週的情境；?week=10 會捲到第 10 週
+await page.goto(base + '#/curriculum?week=10', { waitUntil: 'networkidle' })
+await page.waitForSelector('#week-10')
+t('curriculum week 10 has scenario chips', (await page.$$('#week-10 + .curri-week-links a')).length >= 3, String((await page.$$('#week-10 + .curri-week-links a')).length))
+t('curriculum ?week= scrolls to the week', await page.evaluate(() => { const r = document.getElementById('week-10').getBoundingClientRect(); return r.top >= -5 && r.top < 200 }))
+t('scenario page week pill links to curriculum week', (await (await (await page.goto(base + '#/scenario/pagination', { waitUntil: 'networkidle' }), page.waitForSelector('.lesson-meta a.mono')), page.getAttribute('.lesson-meta a.mono', 'href'))) === '#/curriculum?week=10')
+
 console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'no page/console errors')
 await browser.close()
 process.exit(failed || errs.length ? 1 : 0)

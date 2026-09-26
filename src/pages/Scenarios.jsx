@@ -82,7 +82,7 @@ export function ScenarioPage({ id }) {
             <a href="#/scenarios" className="pill tint" style={{ '--tint': color }}>{g.title}</a>
             {status === 'pass' && <span className="pill assess-ok">✓ 決策題通過</span>}
             {(s.skills || []).map((k) => { const sk = findSkill(k); return sk ? <a key={k} href={`#/skill/${k}`} className="pill">{sk.title}</a> : null })}
-            {s.week && <a href="#/curriculum" className="pill mono">第 {s.week} 週</a>}
+            {s.week && <a href={`#/curriculum?week=${s.week}`} className="pill mono" title="到課綱的這一週">第 {s.week} 週</a>}
           </div>
           <p className="lede">{s.summary}</p>
         </header>

@@ -519,6 +519,10 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .curri-toc li.lv2 a { font-weight: 700; color: var(--ink-1); margin-top: 6px; }
 .curri-toc a:hover { border-left-color: var(--accent); color: var(--accent); }
 .curri-body { min-width: 0; max-width: 860px; }
+.curri-body .mdoc h2, .curri-body .mdoc h3, .curri-body .mdoc h4 { scroll-margin-top: 76px; }
+.curri-week-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 18px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); }
+.curri-week-links .kicker { margin: 0 4px 0 0; }
+.curri-week-links .pill { gap: 6px; }
 @media (max-width: 900px) { .curri { grid-template-columns: minmax(0, 1fr); } .curri-toc { position: static; max-height: none; border: 1px solid var(--hairline); border-radius: var(--radius); padding: 12px 14px; background: var(--surface-1); } }
 .mdoc { font-size: 0.95rem; color: var(--ink-2); line-height: 1.75; }
 .mdoc h1 { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; color: var(--ink-1); margin: 0 0 12px; line-height: 1.3; }

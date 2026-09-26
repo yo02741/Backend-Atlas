@@ -104,13 +104,19 @@ function List({ items }) {
   )
 }
 
-export default function Markdown({ text, className = '' }) {
+/* idFor(block, defaultId)：自訂標題的 id；after(block)：在某個區塊後面插入額外內容（例如課綱每週標題下掛本站的情境連結） */
+export default function Markdown({ text, className = '', idFor, after }) {
   const blocks = React.useMemo(() => parse(text), [text])
   return (
     <div className={`mdoc ${className}`}>
       {blocks.map((b, i) => {
         switch (b.type) {
-          case 'h': { const Tag = `h${Math.min(6, b.level)}`; return <Tag key={i} id={slug(b.text)}>{inline(b.text)}</Tag> }
+          case 'h': {
+            const Tag = `h${Math.min(6, b.level)}`
+            const id = idFor ? idFor(b, slug(b.text)) : slug(b.text)
+            const extra = after ? after(b) : null
+            return <React.Fragment key={i}><Tag id={id}>{inline(b.text)}</Tag>{extra}</React.Fragment>
+          }
           case 'hr': return <hr key={i} />
           case 'quote': return <blockquote key={i}>{b.lines.map((l, j) => <p key={j}>{inline(l)}</p>)}</blockquote>
           case 'code': return <Code key={i} lang={b.lang || 'text'} title="">{b.text}</Code>
@@ -131,6 +137,6 @@ export default function Markdown({ text, className = '' }) {
 }
 
 /* 從標題產生目錄（## 與 ###） */
-export function toc(md) {
-  return parse(md).filter((b) => b.type === 'h' && b.level >= 2 && b.level <= 3).map((b) => ({ level: b.level, text: b.text, id: slug(b.text) }))
+export function toc(md, idFor) {
+  return parse(md).filter((b) => b.type === 'h' && b.level >= 2 && b.level <= 3).map((b) => ({ level: b.level, text: b.text, id: idFor ? idFor(b, slug(b.text)) : slug(b.text) }))
 }

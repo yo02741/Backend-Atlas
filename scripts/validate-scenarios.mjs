@@ -39,6 +39,7 @@ for (const f of readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'index
     if (!optIds.has(r.option)) errors.push(`${tag}: tradeoffs 引用不存在的 option "${r.option}"`)
     if (r.cells?.length !== s.tradeoffs.axes.length) errors.push(`${tag}/${r.option}: cells 數量要等於 axes 數量`)
   }
+  if (s.week != null && !(Number.isInteger(s.week) && s.week >= 1 && s.week <= 16)) errors.push(`${tag}: week 要是 1–16 的整數（或省略）`)
   if (!Array.isArray(s.decisions) || s.decisions.length < 3) errors.push(`${tag}: decisions 至少 3 題`)
   const answers = new Set()
   for (const d of s.decisions || []) {

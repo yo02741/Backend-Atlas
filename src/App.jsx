@@ -43,7 +43,7 @@ function parseHash(hash) {
   if (seg[0] === 'labs') return { view: 'labs' }
   if (seg[0] === 'lab' && seg[1]) return { view: 'lab', name: seg[1] }
   if (seg[0] === 'exercises') return { view: 'exercises' }
-  if (seg[0] === 'curriculum') return { view: 'curriculum' }
+  if (seg[0] === 'curriculum') return { view: 'curriculum', week: params.get('week') || '' }
   if (seg[0] === 'scenarios') return { view: 'scenarios' }
   if (seg[0] === 'scenario' && seg[1]) return { view: 'scenario', id: seg[1] }
   if (seg[0] === 'exercise' && seg[1]) return { view: 'exercise', id: seg[1] }
@@ -86,7 +86,8 @@ export default function App() {
   const [theme, toggleTheme] = useTheme()
   useEffect(() => {
     // 技能頁自己處理捲動（要停在頁首）；其他頁換路由回到頂端
-    if (!['skill', 'lab', 'exercise', 'scenario'].includes(route.view)) window.scrollTo({ top: 0 })
+    // 課綱帶 ?week= 時由課綱頁自己捲到那一週
+    if (!['skill', 'lab', 'exercise', 'scenario'].includes(route.view) && !(route.view === 'curriculum' && route.week)) window.scrollTo({ top: 0 })
     const t = titleFor(route)
     document.title = t ? `${t} · ${SITE}` : `${SITE} · 後端學習地圖`
   }, [route.view, route.id, route.name, route.lang])
@@ -99,7 +100,7 @@ export default function App() {
     case 'labs': page = <Labs />; break
     case 'lab': page = <LabPage name={route.name} />; break
     case 'exercises': page = <Exercises />; break
-    case 'curriculum': page = <Curriculum />; break
+    case 'curriculum': page = <Curriculum week={route.week} />; break
     case 'scenarios': page = <Scenarios />; break
     case 'scenario': page = <ScenarioPage id={route.id} />; break
     case 'exercise': page = <ExercisePage id={route.id} />; break

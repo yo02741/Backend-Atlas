@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { DOMAINS, LEVELS, WORK_KEYWORDS } from '../content/roadmap.js'
+import { DOMAINS, LEVELS, KEYWORDS } from '../content/roadmap.js'
 import { useProgress } from '../progress.js'
 import { Level } from '../components/bits.jsx'
 import { assessmentFor } from '../assess.js'
@@ -28,14 +28,13 @@ export default function Roadmap({ initialKw = '' }) {
         <p className="kicker">SKILL INVENTORY · 後端工程師技能盤點</p>
         <h1 className="display">後端技能盤點</h1>
         <p className="lede">
-          依 roadmap.sh 的 Backend Developer 路線整理，配合你工作上常聽到的技術（Python、uv、PostgreSQL、MongoDB、nginx、Docker、CI/CD、JWT、OAuth、RBAC/ABAC、OWASP）。
-          每個技能標示一項範例技術與常見替代品、難度、工作關鍵字；有實驗室的可以直接動手。
+          依 roadmap.sh 的 Backend Developer 路線整理。每個技能標示一項範例技術與常見替代品、難度、相關關鍵字；有實驗室的可以直接動手。
         </p>
       </header>
 
       <div className="toolbar" role="group" aria-label="篩選">
         <button className={`chip${!kw ? ' on' : ''}`} onClick={() => setKw('')}>全部</button>
-        {WORK_KEYWORDS.map((k) => (
+        {KEYWORDS.map((k) => (
           <button key={k} className={`chip${kw === k ? ' on' : ''}`} onClick={() => setKw(kw === k ? '' : k)}>{k}</button>
         ))}
         <input className="search" type="search" placeholder="搜尋技能…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="搜尋技能" />

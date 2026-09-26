@@ -1,26 +1,18 @@
-# 後端工程師技能樹與 16 週課綱（獨立版本）
+# 後端工程師技能樹與 16 週課綱
 
-> 對象：前端 5 年（React / TypeScript 熟）、工作上正在寫 Python API、後端從未系統學過的工程師。
-> 目標：16 週後能獨立負責一個 API 服務，從設計、實作、測試、上線到維運。
-> 撰寫日期：2026-09-25。第一、三、四節獨立撰寫；第二節再與 `learn/src/content/` 現有內容對照。
-
-## 0. 前提、來源與標記
-
-- 現有內容：`learn/src/content/roadmap.js`（12 站學習路線 `PATH`）與 `d1-language.js` … `d8-algo.js`（8 領域 / 59 技能）。已全部讀過，本文件不照抄其結構。
-- 外部路線圖：`https://roadmap.sh/backend` 在本環境被網路代理封鎖，無法讀取。以下對照依據我對該路線圖（2025 年版）的既有認識：Internet / 語言 / 版本控制 / 關聯式與 NoSQL / API / 快取 / Web 安全 / 測試 / CI-CD / 架構模式 / 訊息代理 / 容器 / Web 伺服器 / 搜尋引擎 / 擴展與可觀測性。另參考 Google SRE Book（四個黃金訊號、SLO、postmortem）、OWASP Top 10 與 API Security Top 10、The Twelve-Factor App。有時效性的說法我會標「需查證」。
-- 技術選型沿用學習者的工作棧：Python 3.12+、uv、FastAPI、SQLAlchemy 2.0 + Alembic、PostgreSQL 16+、MongoDB、Redis、Docker Compose、nginx、GitHub Actions 與 GitLab CI。概念可搬到其他語言與框架。
-- 標記：**必學** = 沒有它無法獨立負責一個服務；**應會** = 上線後三個月內一定會碰到；**選修** = 視產品需求。「第 N 週」是建議進入的週次（見第三節）。
-- 官方文件只列這幾個網域：docs.python.org、docs.astral.sh、postgresql.org/docs、owasp.org、docs.docker.com、nginx.org、docs.github.com、docs.gitlab.com。其他工具請自行搜尋官方站。
+> 對象：已有程式開發經驗（任何語言，或前端背景）、想系統地補後端基礎、目標是能獨立負責一個 API 服務從設計到上線的工程師。
+> 技術選型：Python 3.12+、uv、FastAPI、SQLAlchemy 2.0 + Alembic、PostgreSQL 16+、MongoDB、Redis、Docker Compose、nginx、GitHub Actions 與 GitLab CI。概念可搬到其他語言與框架。
+> 標記：**必學** = 沒有它無法獨立負責一個服務；**應會** = 上線後三個月內一定會碰到；**選修** = 視產品需求。「第 N 週」是建議進入的週次（見第二節）。
 
 ---
 
-## 一、技能樹（獨立版本）
+## 一、技能樹
 
 共 9 個領域、89 個技能（必學 43 / 應會 35 / 選修 11）。每個技能下列子技能，是驗收時要能「做到」的顆粒度。
 
 ### 領域 A：Python 後端與工程實踐
 
-為什麼重要：你有五年 TypeScript 的型別直覺與工程習慣，缺的只是把它搬到 Python 與伺服器端——專案怎麼長、依賴怎麼鎖、測試怎麼在沒有瀏覽器的地方跑。這一區是後面所有作業的地基，第 1–2 週就要建好，而且立刻能改善你手上的工作專案。
+為什麼重要：後端語言的工程習慣——專案怎麼長、依賴怎麼鎖、測試怎麼在沒有瀏覽器的地方跑——是後面所有作業的地基，第 1–2 週就要建好。有其他語言（尤其 TypeScript）經驗的人，型別與工程直覺都能直接搬過來。
 
 - **A1 Python 後端心智模型** — 必學 · 第 1 週
   - 型別提示當文件與防線：`int | None`、`list[str]`、`TypedDict`、`Protocol`；pyright 在存檔時就抓錯
@@ -64,7 +56,7 @@
 
 ### 領域 B：網路、HTTP 與 API 設計
 
-為什麼重要：你用了五年 HTTP，但都是「消費者」。現在換你決定狀態碼、標頭、錯誤格式與分頁方式；前端同事（也就是以前的你）用起來會不會罵，全看這一區。而且 FastAPI 自動產出的 OpenAPI 能直接變成 TypeScript client，這是你最快能「用得上」的地方。
+為什麼重要：從 HTTP 的「消費者」換到「提供者」：狀態碼、標頭、錯誤格式與分頁方式都由你決定，API 好不好用全看這一區。FastAPI 自動產出的 OpenAPI 能直接變成 TypeScript client，是最快能「用得上」的地方。
 
 - **B1 HTTP 請求的一生** — 必學 · 第 2 週
   - DNS → TCP → TLS → 請求 → 回應 → 快取；無狀態；keep-alive / HTTP/2 多工與連線池
@@ -98,7 +90,7 @@
 
 ### 領域 C：資料儲存
 
-為什麼重要：這是後端最難自學、也最保值的一塊，因為引擎的行為看不見。你工作上同時有 PostgreSQL 與 MongoDB，兩套心智模型都要有，還要知道什麼時候該用哪個。ORM 幫你寫 SQL，但效能問題與報表需求會逼你看懂它產生了什麼。
+為什麼重要：這是後端最難自學、也最保值的一塊，因為引擎的行為看不見。PostgreSQL 與 MongoDB 兩套心智模型都要有，還要知道什麼時候該用哪個。ORM 幫你寫 SQL，但效能問題與報表需求會逼你看懂它產生了什麼。
 
 - **C1 SQL 基礎** — 必學 · 第 3 週
   - 邏輯執行順序（FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT）；PostgreSQL 允許 ORDER BY 用 SELECT 別名
@@ -139,7 +131,7 @@
 
 ### 領域 D：驗證與授權
 
-為什麼重要：工作上聽到的 Token / JWT / OAuth / RBAC / ABAC 其實分屬四層——怎麼證明身分、怎麼把身分帶在請求裡、怎麼委託第三方、怎麼決定能做什麼。OWASP 把「存取控制失效」列第一名不是巧合：這是 API 最常見、也最容易在 code review 漏掉的漏洞。
+為什麼重要：Token / JWT / OAuth / RBAC / ABAC 其實分屬四層——怎麼證明身分、怎麼把身分帶在請求裡、怎麼委託第三方、怎麼決定能做什麼。OWASP 把「存取控制失效」列第一名不是巧合：這是 API 最常見、也最容易在 code review 漏掉的漏洞。
 
 - **D1 Session vs Token** — 必學 · 第 5 週
   - 伺服器端 session（Redis）+ HttpOnly cookie；Bearer token；撤銷能力的差異；攻擊面對照（cookie 防 CSRF、Bearer 防 XSS）
@@ -165,7 +157,7 @@
 
 ### 領域 E：應用資安
 
-為什麼重要：你聽到的 OWASP 是「攻擊者最常從哪裡進來」的統計；對寫 API 的人，OWASP API Security Top 10 更貼身。這一區的技能不是加功能，是每個端點的預設姿勢；學會的判準是「先親手打穿、再親手擋住」。
+為什麼重要：OWASP Top 10 是「攻擊者最常從哪裡進來」的統計；對寫 API 的人，OWASP API Security Top 10 更貼身。這一區的技能不是加功能，是每個端點的預設姿勢；學會的判準是「先親手打穿、再親手擋住」。
 
 - **E1 OWASP Top 10 與 API Security Top 10** — 必學 · 第 5 週
   - Web Top 10：2021 版類別，以及 2025 版的變動（供應鏈失效、例外狀況處理不當新入榜；SSRF 併入存取控制）——版本要標清楚
@@ -192,7 +184,7 @@
 
 ### 領域 F：Linux、容器與部署
 
-為什麼重要：「在我電腦可以跑」到「跑在機器上」中間隔著 Linux、容器與反向代理。你天天 `docker compose up` 卻不清楚層與網路怎麼運作，出事就只能重開。能獨立上線的人，一定能 ssh 進機器看 port、看 log、看磁碟。
+為什麼重要：「在我電腦可以跑」到「跑在機器上」中間隔著 Linux、容器與反向代理。很多人會 `docker compose up` 卻不清楚層與網路怎麼運作，出事就只能重開。能獨立上線的人，一定能 ssh 進機器看 port、看 log、看磁碟。
 
 - **F1 Linux 與 shell 基礎** — 必學 · 第 1 週（當工具）/ 第 13 週（當維運）
   - ssh 與金鑰、檔案權限、環境變數、`ps / top / ss / lsof / df / du / journalctl`、pipe 與 `grep / awk / jq`
@@ -219,7 +211,7 @@
 
 ### 領域 G：CI/CD、可觀測性與可靠性
 
-為什麼重要：你已經會用 GitHub Actions / GitLab CI 做前端 build，後端多了資料庫、image、migration 與「部署中新舊版並存」的問題。上線之後，log / metrics / trace 是你唯一的眼睛；備份還原則是唯一的保險——沒還原過的備份不算備份。
+為什麼重要：相較於前端的 build 管線，後端的 CI/CD 多了資料庫、image、migration 與「部署中新舊版並存」的問題。上線之後，log / metrics / trace 是你唯一的眼睛；備份還原則是唯一的保險——沒還原過的備份不算備份。
 
 - **G1 Git 工作流（複習）** — 應會 · 第 12 週
   - trunk-based、保護 main、Conventional Commits、`bisect` / `reflog` / `cherry-pick` 救急
@@ -279,89 +271,9 @@
 
 ---
 
-## 二、與現有 8 領域 / 59 技能的差距分析
-
-現有內容整體品質高：每個技能都有 why / points / checklist / refs，PATH 12 站的敘事對前端背景很友善。差距主要在三處：(1) 缺「維運與 Linux」「密碼學工具箱」「外部呼叫韌性」「帳號生命週期」等能不能獨立上線的關鍵技能；(2) PATH 完全略過語言與工具域，測試與 migration 出現太晚；(3) 幾處說法有誤或過時，見 2.4。
-
-### 2.1 缺少的（現有沒有、或只在別的技能裡一句帶過）
-
-| 我的技能 | 等級 | 現有狀況 | 為什麼要補 |
-|---|---|---|---|
-| F1 Linux 與 shell 基礎 | 必學 | 完全沒有 | 上線後第一個問題永遠是「ssh 進去看 port / log / 磁碟」，沒有這個無法獨立負責服務。 |
-| E3 密碼學工具箱 | 必學 | 只有 `password-storage` 講雜湊 | JWT 簽章、webhook HMAC、TLS、`secrets` 隨機數都靠同一組概念，分散學會各懂一半。 |
-| H4 呼叫外部服務的韌性 | 必學 | 散在 `process-servers`（超時）與 `reliability`（斷路器）各一句 | 沒有 timeout 的外部呼叫是 API 卡死的第一名原因，值得獨立一週動手做。 |
-| C11 資料庫維運基礎 | 必學 | `db-choice` / `reliability` 提到「備份要演練」但無動手 | 能獨立上線就要能 `pg_dump` / `pg_restore`、看慢查詢 log、知道 autovacuum 在幹嘛。 |
-| D2 帳號生命週期 | 必學 | 無 | 重設密碼 token、防帳號枚舉、登入鎖定是最常寫錯的 auth 流程，比 SAML 重要得多。 |
-| E1 的 API Security Top 10 / B4 `response_model` | 必學 | API Top 10 只列為 alt；mass assignment / excessive data exposure 未提 | 對寫 API 的人，BOLA / BOPLA 比 Web XSS 更貼身；`response_model` 是 FastAPI 一行就能擋的漏洞。 |
-| H1 效能量測與壓測 | 必學 | `scaling` 提到 k6 一句 | 沒有量測就沒有優化；k6 在第 9 週就該進來，不該等到擴展章節。 |
-| A2 專案結構與模組 | 必學 | 無 | 循環 import、src layout、`python -m` 是轉職者每天卡住的地方。 |
-| A9 除錯與剖析 | 應會 | 無 | 讀 traceback、`breakpoint()`、`py-spy` 是後端沒有 devtools 之後的替代品。 |
-| A8 時間、金額、ID 與序列化 | 應會 | 散在 `python-backend`、`sql-basics`、`data-modeling` | 值得集中成一個「資料表示」技能，附一張型別對照表。 |
-| B11 網路基礎（TCP/UDP、port、NAT、Docker 網路） | 應會 | `compose` 提服務名 DNS 一句 | 「為什麼容器裡 localhost 連不到 DB」是新手必踩的坑。 |
-| C9 PostgreSQL 特色功能（JSONB、partial index、FTS） | 應會 | `db-choice` 提 JSONB 一句 | 選 PostgreSQL 當預設的理由就是這些能力，學了才知道什麼時候不用 Mongo。 |
-| F9 物件儲存與 presigned URL | 應會 | `cloud-basics` 一句 | 檔案上傳流程（E6）少了它做不完整。 |
-| H6 排程任務 | 應會 | 無 | 每個服務都有排程，多實例只跑一次是常見事故。 |
-| D8 稽核日誌 | 應會 | 無 | RBAC 落地後客戶第一個問的是「誰改了這筆」。 |
-| I3 基礎演算法練習 | 應會 | d8 只講概念，無題目 | 至少一組 12 題讓「直覺」有地方驗證。 |
-| I7 設計文件與 ADR | 應會 | 無 | 「獨立負責」包含把設計講給人聽並留下決策紀錄。 |
-| C16 多租戶 / RLS、E9 威脅建模、G7 feature flag | 選修 | 無或一句 | 視產品需求，列出讓學習者知道有這條路。 |
-
-### 2.2 多餘或可降級的
-
-| 現有技能 id | 建議 | 一句話理由 |
-|---|---|---|
-| `lru-cache`（d8） | 併入 `redis-cache` / `data-structures`，OrderedDict 實作降為選修練習 | 單獨成技能太薄，實務上只需知道 `maxmemory-policy` 與 `lru_cache` 限制。 |
-| `db-choice`（d3） | 降選修，併入系統設計一節；CAP 敘述改為「實務解讀」 | 教科書式 CAP 容易誤導（單機 PG 也會分割）；選型是設計會議的產物不是獨立技能。 |
-| `beyond-rest`（d2） | 拆開：Webhook 升應會獨立成技能；GraphQL / gRPC / WebSocket 留選修 | Webhook 是他工作上真的會實作的東西，不該和 gRPC 綁在 level 3。 |
-| `api-keys-mfa`（d4） | 拆開：API key / client credentials 應會；MFA / SSO 選修 | 機器身分是服務對服務必備；SAML 對這位學習者近期用不到。 |
-| `cloud-basics`（d6） | 拆開：受管 DB / 物件儲存升應會；Kubernetes / serverless 留選修 | 「DB 不要自己裝在 VM」是上線前必須知道的，其他是選項。 |
-| `scaling`（d8）的分片 | 分片降選修，其餘（無狀態、LB、讀寫分離）保留應會 | 分片是最後手段，16 週內不會做到。 |
-| `git-workflow`（d7） | 不佔週次，改為 30 分鐘複習清單 + `bisect` / `reflog` | 前端 5 年應已熟 PR / rebase；把時間留給後端特有的東西。 |
-| `data-structures`（d8）的 B-tree / 圖理論 | 精簡到「認得出來、選得對」 | 目標是後端直覺不是資結課；B-tree 細節在 `indexes` 已足夠。 |
-| `logging-config`、`config-12factor`、`secrets`、`environments-secrets` 的環境變數 / secret 重複 | 合併為一條「設定與秘密：本機 / CI / 正式」主線，其餘互相引用 | 四處各講一遍會讓學習者以為是四件事。 |
-| `orm-migrations` 的 expand / contract | 只在 `cd-strategies` 深講，`orm-migrations` 引用 | 同一件事講兩次，且脈絡在部署那邊才完整。 |
-| `http-caching`（d2） | 保留但延後、標應會 | 對個人化 API 服務多半是 `private, no-cache`；ETag 是加分不是基礎。 |
-| `system-design`（d8） | 保留，但 refs 移除 roadmap.sh 的連結、改為自家六步驟 | 對外連結不是官方文件，且路線圖與六步驟框架不是同一件事。 |
-
-### 2.3 順序建議
-
-| 現有技能 id | 現況 | 建議 | 理由 |
-|---|---|---|---|
-| `testing` | level 2、不在 PATH | 提前到第 2 週 | 他正在改工作上的 API，沒有測試的重構是賭博；測試也是後端的「眼睛」。 |
-| `python-backend`、`uv-packaging`、`code-quality`、`web-framework` | PATH 完全略過 | 全部進第 1 週 | 這四個是他每天在用的東西，立刻能改善工作專案，也是後續作業的地基。 |
-| `docker-basics`、`compose` | PATH 第 11 站 | 第 1 週先「會用」（起 PostgreSQL / Redis），第 11 週再「懂層與網路」 | 沒有 compose 起真資料庫，第 2–4 週的測試與 SQL 作業做不了。 |
-| `orm-migrations` | level 2、不在 PATH | 緊接 `data-modeling` 之後（第 4 週） | 里程碑 1 需要 migration；schema 建模與 migration 是同一件事的兩面。 |
-| `openapi` | level 2 | 提前到第 2 週 | 前端背景的人用規格產 TypeScript client 會立刻有感，也是契約思維的入口。 |
-| `injection`、`input-validation`、`password-storage` | PATH 把 `injection` 放在 RBAC 之後 | 與 `authn-basics` 同週（第 5 週） | 寫登入就會寫查詢與存密碼，三者一起學才不會先寫錯再修。 |
-| `python-async` | level 2、無明確位置 | 延後到第 9 週 | 先懂阻塞 I/O、DB 連線、測試，再學 async 才知道它在解什麼；太早學會寫出「在 async 裡呼叫同步 driver」。 |
-| `logging-config` | level 2 | 提前到第 4 週（里程碑 1 之前） | 沒有結構化 log 與統一錯誤處理的服務不算可交付。 |
-| `redis-cache` | 無明確位置 | 放在 `indexes` / `transactions` 之後（第 9 週） | 快取是效能的第二個答案；先索引再快取，順序反了會養成壞習慣。 |
-| `oauth-oidc` | PATH 沒有 | 放在 `jwt` → `auth-in-practice` → `rbac-abac` 之後（第 7 週） | 先把自家登入做對，再接第三方；OAuth 依賴對 token 與 redirect 的理解。 |
-| `http-caching`、`tls-dns` | level 2 | 延到第 11–13 週 | 兩者都在部署階段才有場景（nginx 終結 TLS、CDN）。 |
-| `big-o` | level 1、d8 第一個 | 第 8 週配 `indexes` 的 EXPLAIN 一起學 | Seq Scan vs Index Scan 就是 O(n) vs O(log n) 最好的教材。 |
-| `data-structures`、`system-design` | d8 | 留到第 15–16 週 | 是前面所有技能的組合題，放最後才有材料。 |
-
-### 2.4 內容準確性疑慮
-
-| 檔案 / 技能 id | 疑慮 | 建議修正 |
-|---|---|---|
-| `d1-language.js` / `uv-packaging` | 「`uv sync --frozen` 嚴格依 lock 安裝、lock 過期就失敗」——**描述的是 `--locked` 的行為**。`--frozen` 是「不檢查 lock 是否過期、不更新 lock，直接照 lock 裝」，lock 過期不會失敗。 | 改為：CI 用 `uv sync --locked`（lock 與 pyproject 不一致就失敗）；Docker 用 `--frozen`（不檢查、最快）。checklist 第 3 條同步修。 |
-| `d5-security.js` / `owasp-top10` | 全篇用 2021 版編號（A05 設定錯誤 / A06 過時元件 / A10 SSRF）。OWASP Top 10:2025 已於 2025 年 11 月發布候選版：A02 安全設定錯誤上升、A03 軟體供應鏈失效（新）、A10 例外狀況處理不當（新）、SSRF 併入 A01。 | example.primary 標明「2021 版」，並加一段「2025 版的變動」；或直接改用 2025 版編號（正式版細節需查證 owasp.org）。 |
-| `d6-deploy.js` / `nginx` | 「`=` 精確 > `^~` 前綴停止 > regex > 最長前綴」把 `^~` 說成全域高於 regex。實際演算法是：先找**最長**前綴匹配，若它是 `^~` 才跳過 regex；一個較短的 `^~ /a` 不會贏過較長的 `/a/b` 加 regex。 | 改寫為四步：最長前綴 → 若為 `=` / `^~` 停止 → 依序試 regex → 都沒中回最長前綴。checklist「四種修飾詞優先序」改為「能走一遍匹配演算法」。 |
-| `d1-language.js` / `python-async` | 「CPython 同一時間只有一個執行緒在跑 Python bytecode」——Python 3.13 起有 free-threaded build（3.14 已非實驗性），敘述需限定「預設 build」。 | 加「（預設 build；free-threaded build 另計）」。結論（I/O 密集用 thread / async、CPU 密集用多程序）目前仍成立。 |
-| `d4-auth.js` / `oauth-oidc` | 「真正的 token 由你的後端用 code 換」只對 confidential client / BFF 成立；SPA 走 PKCE 的 public client 是瀏覽器自己換 token。 | 分兩種部署講：有後端的用 client_secret（或 BFF）；純 SPA 用 PKCE 且 token 存記憶體。 |
-| `d2-web.js` / `tls-dns` | 「Let's Encrypt 憑證 90 天」仍正確，但 CA/Browser Forum 已通過憑證壽命逐步縮短（2026-03 起上限 200 天、2027-03 起 100 天、2029 起 47 天；Let's Encrypt 亦提供 6 天短效憑證）。 | 補一句「憑證壽命正在縮短，自動續期從建議變必須」。確切日期需查證。 |
-| `d6-deploy.js` / `compose` 與領域標題 | 「docker-compose」是 v1 的獨立二進位名稱（已停止維護）；現行是 `docker compose` 子命令、檔名 `compose.yaml`。 | 內文已用 v2 語法，術語統一為「Docker Compose / `docker compose`」，標題可保留學習者熟悉的寫法但加註。 |
-| `d6-deploy.js` / `dockerfile-python` | `HEALTHCHECK` 在 Kubernetes 會被忽略（K8s 用 liveness / readiness probes），只有 Docker / Compose / Swarm 讀它。 | 加註，避免學習者以為寫了 HEALTHCHECK 就等於有探針。 |
-| `d5-security.js` / `secrets` | 「build arg 傳 secret 會留在層裡」正確，但沒給正解。 | 補 `RUN --mount=type=secret,id=...`（BuildKit），secret 不進任何層。 |
-| `d3-data.js` / `sql-basics` | 「WHERE 裡不能用 SELECT 的別名」正確；但 PostgreSQL 的 ORDER BY 與 GROUP BY 可以用輸出欄位別名（PG 擴充），學習者實驗時會困惑。 | 加一句 PostgreSQL 的例外。 |
-| `d3-data.js` / `data-modeling` | UUIDv7 敘述正確，可補 PostgreSQL 18（2025-09）內建 `uuidv7()`，不必靠應用層產生。 | 補一句。 |
-| `d7-cicd.js` / `ci-pipeline` | 對照表「`on:` ↔ `rules:`」不精確：GitLab pipeline 層級觸發是 `workflow:rules`，job 層級才是 `rules:`。 | 對照表改為 `on:` ↔ `workflow:rules`，`if:` ↔ job `rules:`。 |
-| `d8-algo.js` / `data-structures` | 「Redis 的 sorted set 是跳躍表」——是跳躍表 + hash table 雙結構；「索引是 B-tree」——嚴格說是 B+tree（葉節點串連才能做範圍掃描）。 | 名詞精度問題，不影響結論；順手修。 |
-
 ---
 
-## 三、16 週課綱
+## 二、16 週課綱
 
 - 每週預估 10–12 小時（平日 3 晚 × 2 小時 + 週末半天），16 週合計約 185 小時。
 - 前 4 週的作業直接對準他工作上正在寫的 API：可以用工作專案的匿名化版本，或本課綱的範例「訂單服務」。
@@ -573,9 +485,11 @@
 
 ---
 
-## 四、驗收方式設計
+---
 
-### 4.1 各領域適合的形式
+## 三、驗收方式設計
+
+### 3.1 各領域適合的形式
 
 | 領域 | 主要形式 | 次要形式 | 執行方式與備註 |
 |---|---|---|---|
@@ -589,7 +503,7 @@
 | H 效能與非同步 | 程式題（限流器、cache-aside）、預測（阻塞 async 的耗時） | 量測題（給 k6 報告解讀 p95） | 程式題附測資與時間限制 |
 | I 演算法與設計 | 程式題（heap top-k、拓樸排序、LRU） | 口頭系統設計（20–45 分鐘白板） | 系統設計用固定 rubric：需求釐清 / 估算 / API / 資料 / 架構 / 瓶頸 / 取捨各 0–3 分 |
 
-### 4.2 題庫格式（給量產用）
+### 3.2 題庫格式（給量產用）
 
 每題一個物件，欄位固定：
 
@@ -604,7 +518,7 @@ rubric: 評分重點（每點配分，總分 10）
 pitfalls: 常見錯答與為什麼錯（給出題者與講師）
 ```
 
-### 4.3 十個範例題
+### 3.3 十個範例題
 
 #### Q1｜A · 預測輸出 · 難度 1 · 3 分鐘
 
@@ -850,7 +764,7 @@ class SlidingWindowLimiter:
 - **評分重點**：deque 兩端 O(1) 且先清過期再判斷（3 分）；邊界用 `>=`（1 分）；per-key 隔離（1 分）；測資全過（3 分）；說出多實例限制與 Redis 解法（2 分）。
 - **常見錯答**：用 list 的 `pop(0)`（O(n)）；先 append 再判斷導致多放一次；把 `window` 當固定視窗（每 10 秒歸零）而非滑動。
 
-### 4.4 量產題庫的幾點提醒
+### 3.4 量產題庫的幾點提醒
 
 - 每個技能至少 3 題：1 題「認得出」（選擇 / 預測）、1 題「做得出」（程式 / 設定檔）、1 題「講得清」（口頭）。三題都過才算該技能完成。
 - 預測輸出題的價值在於「陷阱」；沒有陷阱的預測題只是在考記憶，不要出。

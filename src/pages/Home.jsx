@@ -1,5 +1,5 @@
 import React from 'react'
-import { DOMAINS, PATH, WORK_KEYWORDS, allSkills, findSkill, skillsByKeyword } from '../content/roadmap.js'
+import { DOMAINS, PATH, KEYWORDS, allSkills, findSkill, skillsByKeyword } from '../content/roadmap.js'
 import { LAB_META } from '../labs/index.js'
 import { useProgress } from '../progress.js'
 import { ProgressRing, LabIcon } from '../components/bits.jsx'
@@ -20,11 +20,11 @@ export default function Home() {
     <div className="fade-swap">
       <section className="hero">
         <div className="hero-copy">
-          <p className="kicker">BACKEND ATLAS · 給前端工程師的後端地圖</p>
+          <p className="kicker">BACKEND ATLAS · 看得見的後端基礎</p>
           <h1 className="display">看得見的<br />後端基礎</h1>
           <p className="lede">
             JOIN 用文氏圖動、索引用 B-tree 走、JWT 真的算簽章、Docker 的層一層層疊起來。
-            八個領域、{skills.length} 個技能、{labCount} 個互動實驗室，加上在瀏覽器裡真的執行的 SQL / Python 練習題與 Playground——從你工作上天天聽到的詞開始，把後端的地基打實。
+            {DOMAINS.length} 個領域、{skills.length} 個技能、{labCount} 個互動實驗室，練習題在瀏覽器裡真的執行。
           </p>
           <div className="hero-actions">
             <a className="btn" href={`#/skill/${nextStation.id}`}>
@@ -88,11 +88,11 @@ export default function Home() {
 
       <section className="home-section">
         <div className="section-head">
-          <h2 className="section-title">你工作上聽到的詞</h2>
-          <p>每個關鍵字對應到會用到它的課，從熟悉的詞切進去最快。</p>
+          <h2 className="section-title">從技術名詞找課</h2>
+          <p>每個名詞對應到會用到它的課。</p>
         </div>
         <div className="kw-cloud">
-          {WORK_KEYWORDS.map((k) => (
+          {KEYWORDS.map((k) => (
             <a key={k} href={`#/roadmap?kw=${encodeURIComponent(k)}`}>{k}<small>{skillsByKeyword(k).length} 課</small></a>
           ))}
         </div>
@@ -120,14 +120,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-section">
-        <div className="section-head"><h2 className="section-title">這個地圖怎麼用</h2></div>
-        <div className="principles">
-          <div className="principle"><div className="num">01</div><h4>先動手，再讀字</h4><p>每課有實驗室的先玩實驗室：切開關、拉滑桿、看畫面怎麼變。概念在畫面裡形成，文字只是把它說清楚。</p></div>
-          <div className="principle"><div className="num">02</div><h4>一項技術當範例，概念是通用的</h4><p>PostgreSQL 教的索引在 MySQL 一樣；FastAPI 的依賴注入在 NestJS 也有。學的是模型，不是某個工具的按鈕。</p></div>
-          <div className="principle"><div className="num">03</div><h4>用檢核表確認自己真的會了</h4><p>每課末尾的自我檢核是「能不能講給同事聽」的標準。三題都能答再標完成——進度只存在你的瀏覽器。</p></div>
-        </div>
-      </section>
     </div>
   )
 }

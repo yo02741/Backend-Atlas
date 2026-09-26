@@ -42,11 +42,6 @@ export default function Skill({ id }) {
           <p className="lede">{s.summary}</p>
         </header>
 
-        <div className="why">
-          <p className="kicker">為什麼要學</p>
-          <p>{s.why}</p>
-        </div>
-
         <div className="example-box">
           <span>範例技術 <b>{s.example.primary}</b></span>
           {s.example.alts?.length > 0 && <span className="alts">也常見：{s.example.alts.join('、')}</span>}

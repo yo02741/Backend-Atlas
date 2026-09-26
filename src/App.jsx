@@ -113,7 +113,7 @@ function Shell({ theme, toggleTheme, view, children }) {
       </nav>
       {children}
       <footer className="colophon">
-        <span>Backend Atlas — 給前端工程師的後端學習地圖。進度只存在你的瀏覽器。</span>
+        <span>Backend Atlas — 看得見的後端基礎。進度只存在你的瀏覽器。</span>
         <span><a href="https://github.com/yo02741/Backend-Atlas" target="_blank" rel="noreferrer">GitHub</a> · <a href="https://roadmap.sh/backend" target="_blank" rel="noreferrer">roadmap.sh/backend</a></span>
       </footer>
       <BackToTop />

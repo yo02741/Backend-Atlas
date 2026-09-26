@@ -10,7 +10,7 @@ export default function Curriculum() {
       <header className="masthead">
         <p className="kicker">CURRICULUM · 技能樹與 16 週課綱</p>
         <h1 className="display">課綱</h1>
-        <p className="lede">由另一位「資深後端主管」角色獨立盤點的技能樹（9 領域、89 技能）、與本站 8 領域 / 59 技能的差距分析、16 週課綱（含三個里程碑專案與每週驗收標準），以及題庫的量產格式。本站的技能盤點與練習題會持續依它修正。</p>
+        <p className="lede">完整的技能樹、16 週課綱（每週有可驗證的目標、動手作業與驗收標準，三個里程碑專案）與驗收方式設計。以已有程式開發經驗、想系統地補後端基礎的工程師為對象。</p>
       </header>
       <div className="curri">
         <aside className="curri-toc">

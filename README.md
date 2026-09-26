@@ -1,6 +1,6 @@
 # Backend Atlas — 看得見的後端基礎
 
-給前端工程師的後端學習地圖。JOIN 用文氏圖動、索引用 B-tree 走、JWT 真的算簽章、Docker 的層一層層疊起來；練習題在瀏覽器裡真的執行（PostgreSQL、Python、JavaScript），不需要任何後端。
+看得見的後端基礎學習地圖。JOIN 用文氏圖動、索引用 B-tree 走、JWT 真的算簽章、Docker 的層一層層疊起來；練習題在瀏覽器裡真的執行（PostgreSQL、Python、JavaScript），不需要任何後端。
 
 - **線上**：https://yo02741.github.io/Backend-Atlas/
 - **本機**：`npm install && npm run dev`（第一次會把 Pyodide 複製到 `public/pyodide/`）
@@ -8,7 +8,7 @@
 | 內容 | 數量 |
 |---|---|
 | 領域 | 8（語言與工程實踐、HTTP 與 API、資料儲存、驗證與授權、資安、容器與部署、CI/CD、演算法與系統設計） |
-| 技能（課） | 63，每課有摘要、為什麼要學、範例技術、重點、自我檢核、官方文件 |
+| 技能（課） | 63，每課有摘要、範例技術、重點、自我檢核、官方文件 |
 | 互動實驗室 | 19（SQL JOIN、B-tree 索引、JWT、OAuth、RBAC/ABAC、SQL injection、Docker 層、compose 拓樸、nginx、CI 管線、Big-O、token bucket…） |
 | 程式題 | 30（SQL 14 / Python 13 / JS 3），解答全部經真實執行環境驗證 |
 | 選擇題 | 189（每課 3 題，含程式碼判讀與情境題） |
@@ -33,7 +33,7 @@
 src/
   content/         內容（純資料，改這裡不用碰元件）
     roadmap.js       領域索引、學習路線 PATH、工作關鍵字 WORK_KEYWORDS、查詢 helper
-    d1-language.js … d8-algo.js   每個領域一檔：skills[] 各有 summary / why / example / keywords / points / checklist / refs / lab
+    d1-language.js … d8-algo.js   每個領域一檔：skills[] 各有 summary / example / keywords / points / checklist / refs / lab
     schemas.js       SQL 練習與 Playground 共用的電商範例資料庫
     exercises/       程式題（sql / python / js），index.js 匯總
     quizzes/         選擇題題庫，每領域一檔（extra.js 放跨領域補題），index.js 以 glob 自動收集

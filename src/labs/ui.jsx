@@ -284,3 +284,100 @@ export function useLatest(value) {
   ref.current = value
   return ref
 }
+
+/* ============================================================
+   情境 lab 共用元件：統計磚、流向列、折線圖、說明列、數字格式。
+   目的：18 個情境模擬器不再各自實作同一批小元件；樣式在 lab.css 的「情境 lab 共用」段。
+   ============================================================ */
+
+/* 統計數字磚格：<Stats min={130}><Stat label="賣出 / 庫存" value="1000 / 100" tone="bad" note="> 上限 100" /></Stats>
+   tone: '' | 'bad'（critical）| 'warn'（serious）| 'ok'（good）。value 可以是任何 node。 */
+export function Stats({ children, min = 120, className = '' }) {
+  return <div className={`lab-stats${className ? ' ' + className : ''}`} style={{ '--min': `${min}px` }}>{children}</div>
+}
+export function Stat({ label, value, unit, note, tone = '' }) {
+  return (
+    <div className={`lab-stat${tone ? ' ' + tone : ''}`}>
+      <span className="l">{label}</span>
+      <b className="v">{value}{unit && <small> {unit}</small>}</b>
+      {note && <span className="n">{note}</span>}
+    </div>
+  )
+}
+
+/* 流向列：一排節點加箭頭（HTML flex，手機自動換行）。
+   steps: [{ label, value, hot, bad }]；back：往回走的那條（逾時 / 503 …），notes：底下的小字說明 */
+export function Flow({ title, steps, back, notes = [], ariaLabel }) {
+  return (
+    <div className="lab-flow" aria-label={ariaLabel || title}>
+      {title && <div className="lab-flow-title">{title}</div>}
+      <div className="lab-flow-row">
+        {steps.map((b, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <span className="lab-flow-arrow" aria-hidden="true">→</span>}
+            <div className={`lab-flow-box${b.hot ? ' hot' : ''}${b.bad ? ' bad' : ''}`}>
+              <div className="l">{b.label}</div>
+              {b.value !== undefined && <div className="s">{b.value}</div>}
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+      {back && <div className="lab-flow-back">↩ {back}</div>}
+      {notes.filter(Boolean).map((n, i) => <div key={i} className="lab-flow-note">{n}</div>)}
+    </div>
+  )
+}
+
+/* 單一 y 軸折線圖：線 2px、hairline 格線。
+   series: [{ key, label, color: 'var(--c-blue)', values: [...] }]；x 軸是 0..xMax 的索引，畫到 upto 為止（動畫用）；
+   thresholds: [{ v, label }] 畫虛線；mark 畫一條直立標線；onScrub(x|null) 游標移過去回報位置。 */
+export function LineChart({ title, series, xMax, yMax, upto = xMax, xTicks, fmtY = (v) => v, fmtX = (v) => `${v}`, thresholds = [], mark = null, onScrub, width = 320, height = 128, left = 38, ariaLabel }) {
+  const W = width, H = height, L = left, R = 8, T = 10, B = 18
+  const x = (i) => L + (i / xMax) * (W - L - R)
+  const y = (v) => T + (1 - Math.min(v, yMax) / yMax) * (H - T - B)
+  const path = (vals) => vals.slice(0, upto + 1).map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
+  const ticks = xTicks || [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(xMax * f))
+  const onMove = onScrub ? (e) => {
+    const b = e.currentTarget.getBoundingClientRect()
+    const xv = ((e.clientX - b.left) / b.width) * W
+    onScrub(Math.max(0, Math.min(xMax, Math.round(((xv - L) / (W - L - R)) * xMax))))
+  } : undefined
+  return (
+    <div className="lab-chart">
+      {(title || series.length > 1) && (
+        <div className="lab-chart-head">
+          <span>{title}</span>
+          {series.length > 1 && <span className="lab-legend">{series.map((s) => <i key={s.key} style={{ '--c': s.color }}>{s.label}</i>)}</span>}
+        </div>
+      )}
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel || title} onPointerMove={onMove} onPointerLeave={onScrub ? () => onScrub(null) : undefined} className={onScrub ? 'scrub' : ''}>
+        {mark !== null && <line x1={x(mark)} x2={x(mark)} y1={T} y2={H - B} className="mark" />}
+        {[0, 0.5, 1].map((f) => (
+          <g key={f}>
+            <line x1={L} x2={W - R} y1={y(yMax * f)} y2={y(yMax * f)} className="grid" />
+            <text x={L - 4} y={y(yMax * f) + 3.5} textAnchor="end" className="svg-text small">{fmtY(yMax * f)}</text>
+          </g>
+        ))}
+        {ticks.map((i) => <text key={i} x={x(i)} y={H - 4} textAnchor="middle" className="svg-text small">{fmtX(i)}</text>)}
+        {thresholds.filter((th) => th.v <= yMax).map((th) => (
+          <g key={th.label}>
+            <line x1={L} x2={W - R} y1={y(th.v)} y2={y(th.v)} className="thr" />
+            <text x={W - R} y={y(th.v) - 3} textAnchor="end" className="svg-text small">{th.label}</text>
+          </g>
+        ))}
+        {series.map((s) => <path key={s.key} d={path(s.values)} className="line" style={{ stroke: s.color }} />)}
+        {upto < xMax && <line x1={x(upto)} x2={x(upto)} y1={T} y2={H - B} className="head" />}
+      </svg>
+    </div>
+  )
+}
+
+/* 圖下方的一行說明（示意數字的註記放這裡） */
+export function Caption({ children }) {
+  return <p className="lab-caption">{children}</p>
+}
+
+/* 數字格式：千分位、k 縮寫、毫秒 */
+export const fmtN = (n) => Number(n).toLocaleString('en-US')
+export const kfmt = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n % 1000 ? 1 : 0)}k` : String(n))
+export const fmtMs = (ms) => (ms >= 1000 ? `${(ms / 1000).toFixed(ms >= 10000 ? 0 : 1)} s` : `${Math.round(ms)} ms`)

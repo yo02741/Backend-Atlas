@@ -50,6 +50,18 @@ export default {
 - 說明文字跟著目前做法變；一個 `<Callout title="什麼時候會真的踩到">`。
 - 長度 250–450 行。
 
+### 共用元件（`../ui.jsx`，樣式在 `lab.css`「情境 lab 共用」段）——**不要在 lab 裡重做這些**
+
+| 元件 | 用途 | 用法 |
+|---|---|---|
+| `Stats` / `Stat` | 統計數字磚格 | `<Stats min={130}><Stat label="賣出 / 庫存" value="1000 / 100" tone="bad" note="> 上限 100" /></Stats>`；`tone`：`bad`（critical）/ `warn`（serious）/ `ok`（good）；`unit` 會以小字接在數字後 |
+| `Flow` | 一排節點加箭頭的流向列（HTML flex，手機自動換行） | `<Flow title="t = 22s 的流向（示意）" steps={[{ label: '客戶端', value: '5,000 req/s' }, { label: '佇列', value: '深度 4,000', hot: true }]} back="逾時 4,200/s，客戶端放棄" notes={['佇列沒有上限…']} />`；`hot` 用 lab 主色框起、`bad` 用紅框 |
+| `LineChart` | 單一 y 軸折線圖（線 2px、hairline 格線、可畫到 `upto` 為止、虛線門檻、游標刷圖） | `<LineChart title="每秒請求" xMax={60} yMax={6000} upto={t} xTicks={[0, 15, 30, 45, 60]} fmtX={(s) => `${s}s`} fmtY={kfmt} thresholds={[{ v: 5, label: '逾時 5 s' }]} mark={scrub} onScrub={setScrub} series={[{ key: 'in', label: '進來', color: 'var(--c-blue)', values }]} />`；對數 y 軸、長條圖、有特殊標註的圖仍自己畫 |
+| `Caption` | 圖下方一行小字（示意數字的註記放這裡） | `<Caption>1,000 個請求在 100 ms 內到齊（示意）</Caption>` |
+| `fmtN` / `kfmt` / `fmtMs` | 千分位、k 縮寫、毫秒轉秒 | `fmtN(12345)` → `12,345`；`kfmt(2500)` → `2.5k`；`fmtMs(1500)` → `1.5 s` |
+
+範本：`src/labs/scenarios/QueueBackpressureScenarioLab.jsx`（四張 `LineChart`、一列 `Flow`、六塊 `Stat`）。lab 自己的 `<style>` 只放這個 lab 特有的東西（SVG 圖、特殊版面），統計磚、流向列、折線圖的樣式不要再寫一份。
+
 ## 語氣
 
 直接、精簡、講事實。**不寫**「為什麼要學」「為什麼重要」「你工作上」「給前端工程師」這類段落或措辭。取捨用「好 / 差 / 中」加一句原因，不用形容詞堆疊。

@@ -169,6 +169,40 @@
 .tag.a { border-color: var(--c-blue); color: var(--c-blue); }
 .tag.b { border-color: var(--c-orange); color: var(--c-orange); }
 
+/* ---- 情境 lab 共用：統計磚 / 流向列 / 折線圖 / 說明列（ui.jsx 的 Stats、Stat、Flow、LineChart、Caption） ---- */
+.lab-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--min, 120px), 1fr)); gap: 10px; margin-top: 12px; }
+.lab-stat { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 12px; display: grid; gap: 2px; align-content: start; min-width: 0; }
+.lab-stat .l { font-size: 0.72rem; color: var(--ink-3); letter-spacing: 0.04em; }
+.lab-stat .v { font-family: var(--mono); font-size: 1.05rem; font-weight: 700; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.lab-stat .v small { font-size: 0.7rem; color: var(--ink-3); font-weight: 400; }
+.lab-stat .n { font-size: 0.72rem; color: var(--ink-3); }
+.lab-stat.bad .v, .lab-stat.bad .n { color: var(--critical); }
+.lab-stat.warn .v, .lab-stat.warn .n { color: var(--serious); }
+.lab-stat.ok .v { color: var(--good); }
+.lab-flow { margin-top: 12px; }
+.lab-flow-title { font-size: 0.7rem; color: var(--ink-3); margin-bottom: 6px; letter-spacing: 0.03em; }
+.lab-flow-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; }
+.lab-flow-box { flex: 1 1 96px; min-width: 0; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 6px 8px; text-align: center; transition: border-color 0.2s ease; }
+.lab-flow-box.hot { border-color: var(--lab-accent); box-shadow: inset 0 0 0 1px var(--lab-accent); }
+.lab-flow-box.bad { border-color: var(--critical); box-shadow: inset 0 0 0 1px var(--critical); }
+.lab-flow-box .l { font-size: 0.74rem; color: var(--ink-1); }
+.lab-flow-box .s { font-family: var(--mono); font-size: 0.72rem; color: var(--ink-2); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.lab-flow-arrow { align-self: center; color: var(--ink-3); font-size: 0.9rem; }
+.lab-flow-back { margin-top: 6px; font-family: var(--mono); font-size: 0.74rem; font-weight: 700; color: var(--critical); }
+.lab-flow-note { margin-top: 4px; font-size: 0.72rem; color: var(--ink-3); }
+.lab-chart { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 10px 4px; min-width: 0; }
+.lab-chart svg { width: 100%; height: auto; display: block; }
+.lab-chart svg.scrub { cursor: crosshair; touch-action: pan-y; }
+.lab-chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 0.74rem; font-weight: 700; color: var(--ink-2); letter-spacing: 0.03em; margin-bottom: 2px; }
+.lab-legend { display: inline-flex; gap: 10px; font-weight: 500; color: var(--ink-3); }
+.lab-legend i { font-style: normal; display: inline-flex; align-items: center; gap: 4px; }
+.lab-legend i::before { content: ''; width: 12px; height: 2px; background: var(--c); border-radius: 1px; }
+.lab-chart .grid { stroke: var(--hairline); stroke-width: 1; }
+.lab-chart .thr { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0.8; }
+.lab-chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.lab-chart .head { stroke: var(--ink-3); stroke-width: 1; opacity: 0.6; }
+.lab-chart .mark { stroke: var(--ink-1); stroke-width: 1; opacity: 0.5; }
+
 @media (prefers-reduced-motion: reduce) {
   .dtable tr.row-in td, .svg-flow, .svg-pulse, .svg-pop { animation: none; }
   .lab * { transition-duration: 0.01ms !important; }

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, useLabVisible } from './ui.jsx'
 
 /* ============================================================
    Rate limiting：token bucket（真的用 setInterval 補 token）
@@ -67,14 +67,15 @@ export default function RateLimitLab() {
     tokRef.current = Math.min(tokRef.current, capacity); setTokens(tokRef.current)
   }, [capacity])
 
+  const visible = useLabVisible()   // 捲出畫面或切走分頁時，補 token 與自動送都暫停
   useEffect(() => {
-    if (mode !== 'bucket') return
+    if (mode !== 'bucket' || !visible) return
     const id = setInterval(() => {
       tokRef.current = Math.min(capRef.current, tokRef.current + rateRef.current / 10)
       setTokens(tokRef.current)
     }, 100)
     return () => clearInterval(id)
-  }, [mode])
+  }, [mode, visible])
 
   const send = useCallback((k) => {
     const now = Date.now() - t0.current
@@ -92,10 +93,10 @@ export default function RateLimitLab() {
   }, [])
 
   useEffect(() => {
-    if (!auto || mode !== 'bucket') return
+    if (!auto || mode !== 'bucket' || !visible) return
     const id = setInterval(() => send(1), 1000 / rps)
     return () => clearInterval(id)
-  }, [auto, rps, mode, send])
+  }, [auto, rps, mode, send, visible])
 
   const reset = () => { tokRef.current = capacity; setTokens(capacity); setLog([]); setStats({ ok: 0, bad: 0 }); setFlash(null); setAuto(false) }
 

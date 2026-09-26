@@ -10,7 +10,7 @@
 2. 只能 `import React…` 與 `import { … } from './ui.jsx'`。**不得新增 npm 依賴**，不得 import 其他 lab。
 3. **不得修改**共用檔：`ui.jsx`、`lab.css`、`styles.css`、`App.jsx`、`main.jsx`、`harness.jsx`、`SqlJoinLab.jsx`。缺的小元件就在自己的檔案裡寫。
 4. 顏色**只能**用 CSS token：`var(--lab-accent)`、`var(--c-blue|orange|aqua|yellow|magenta|green|violet|red)`、`var(--ink-1|2|3)`、`var(--hairline)`、`var(--surface-1|2)`、`var(--page)`、`var(--good|warning|serious|critical)`。**不寫死 hex**。亮/暗主題都要好看。
-5. 視覺用 **inline SVG**（帶 `viewBox`，寬度 100% 自適應）或 `.dtable` 表格；動畫用 CSS transition / keyframes；step-through 用 `usePlayer` + `<Stepper>`。
+5. 視覺用 **inline SVG**（帶 `viewBox`，寬度 100% 自適應；每張 `<svg>` 給 `role="img"` 與一句 `aria-label`）或 `.dtable` 表格；動畫用 CSS transition / keyframes；step-through 用 `usePlayer` + `<Stepper>`。手機 390px 下 SVG 文字實際渲染要 ≥ 9px：SVG 會被縮到約 0.55 倍，字級要跟著 `narrow` 模式放大、換直式版面，或最後手段包 `overflow-x: auto`。
 6. Lab 專屬 CSS 寫在元件最後的 `<style>{`…`}</style>`，class 一律加獨特前綴（如 `.idx-`），避免互相污染。可參考 `SqlJoinLab.jsx` 的做法。
 7. 文案：**繁體中文（台灣用語）**，技術名詞保留英文。每個 lab 要有：kicker、標題、一句 blurb、舞台（視覺）、說明（`<LabExplain>`：每個狀態/步驟 2–4 句，講「發生了什麼、為什麼」）、一個 `<Callout title="工作上什麼時候用">`。內容要**正確**，不確定的不要寫。**不放任何超連結**。
 8. 手機（390px 寬）不得橫向溢出：SVG 靠 viewBox 縮放；表格包在 `.dtable-wrap`；控制列會自動換行。
@@ -21,7 +21,7 @@
 ## 共用元件（`./ui.jsx`）
 
 ```jsx
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Status, useWidth, useTicker, useReducedMotion } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Status, useWidth, useTicker, useReducedMotion, useLabVisible } from './ui.jsx'
 
 <Lab accent="violet" kicker="SQL LAB" title="…" blurb="…">           // accent: blue|orange|aqua|yellow|magenta|green|violet|red
   <LabControls> <Seg label="模式" tinted value={v} onChange={setV} options={[{value,label,title?}]}/> <Toggle label checked onChange/> <Slider label min max step value onChange format?/> <span className="spacer"/> <Stepper step total onStep playing onPlay labels?/> </LabControls>
@@ -34,6 +34,8 @@ import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, S
 const { step, setStep, playing, toggle } = usePlayer(total, intervalMs)   // 自動播放 step-through
 <Stepper step={step} total={total} onStep={setStep} playing={playing} onPlay={toggle} />
 <Status ok>有效</Status> <Status>無效</Status> <Status warn>過期</Status>
+const [tick, resetTick] = useTicker(running, intervalMs)   // 連續動畫；lab 捲出畫面或分頁到背景時自動暫停
+const visible = useLabVisible()   // 自己用 setInterval / requestAnimationFrame 的 lab，用它把計時器一起停掉（effect 條件加 !visible 就 return）
 ```
 
 SVG 可用 class：`.svg-text`（12px ink-1）`.svg-text.small`（10.5px ink-3）`.svg-mono`、`.svg-node`（surface 底＋hairline 框；`.on` 用 accent）、`.svg-edge`（`.on` 加粗 accent）、`.svg-flow`（虛線流動動畫）、`.svg-pulse`、`.svg-pop`、`.svg-dash`。

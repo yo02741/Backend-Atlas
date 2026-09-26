@@ -14,7 +14,7 @@
     "e2e:runtime": "node e2e/runtime.mjs",
     "e2e:verify": "node e2e/verify-exercises.mjs",
     "e2e:sweep": "node e2e/sweep.mjs",
-    "e2e:ui": "node e2e/ui-exercise.mjs && node e2e/ui-quiz.mjs && node e2e/ui-scenario.mjs && node e2e/ui-routing.mjs",
+    "e2e:ui": "node e2e/ui-exercise.mjs && node e2e/ui-quiz.mjs && node e2e/ui-scenario.mjs && node e2e/ui-routing.mjs && node e2e/ui-visibility.mjs",
     "e2e:labs": "node e2e/labs-smoke.mjs",
     "e2e": "npm run e2e:runtime && npm run e2e:verify && npm run e2e:ui && npm run e2e:labs && npm run e2e:sweep",
     "validate:scenarios": "node scripts/validate-scenarios.mjs",

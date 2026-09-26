@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Toggle, Slider, Code, Callout, Status, useReducedMotion } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Toggle, Slider, Code, Callout, Status, useReducedMotion, useLabVisible } from './ui.jsx'
 
 /* ============================================================
    Cache-aside：Redis 擋在 PostgreSQL 前面，但所有邏輯都在 API 裡
@@ -93,15 +93,16 @@ export default function CacheLab() {
   }, [flow, reduced])
 
   /* TTL 倒數：真的用 interval，時間到 key 消失 */
+  const visible = useLabVisible()
   useEffect(() => {
-    if (!cache) return
+    if (!cache || !visible) return
     const id = setInterval(() => {
       const t = Date.now()
       setNow(t)
       if (t >= cache.expiresAt) { setCache(null); pushLog({ kind: 'expire' }) }
     }, 100)
     return () => clearInterval(id)
-  }, [cache])
+  }, [cache, visible])
 
   const busy = !!flow
   const get = () => { const kind = cache ? 'hit' : 'miss'; setLastKind(kind); setFlow({ kind, step: 0, inv: invalidate }) }

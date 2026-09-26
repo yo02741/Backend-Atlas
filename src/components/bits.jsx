@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react'
 import { LEVELS } from '../content/roadmap.js'
 import { loadLab, LAB_META } from '../labs/index.js'
+import { LabVisibility } from '../labs/ui.jsx'
 import { loadScenarioLab } from '../labs/scenarios/index.js'
 
 export function Level({ level }) {
@@ -43,7 +44,7 @@ export function LabEmbed({ name, scenario = false }) {
   return (
     <ErrorBoundary name={name}>
       <Suspense fallback={<div className="lab" style={{ minHeight: 240 }}><p className="status-msg">載入實驗室…</p></div>}>
-        <Comp />
+        <LabVisibility><Comp /></LabVisibility>
       </Suspense>
     </ErrorBoundary>
   )

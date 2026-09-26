@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useWidth, Stats, Stat, Caption } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useWidth, useLabVisible, Stats, Stat, Caption } from '../ui.jsx'
 
 /* 快取到期情境模擬器（純前端、所有數字示意）：
    ① 60 秒時間軸：每秒 10,000 次讀、N 個熱門 key 同時在 t=0 填入。切做法看到期瞬間打到原站的 QPS 尖峰
@@ -70,15 +70,16 @@ export default function EdgeCacheScenarioLab() {
   const sim = useMemo(() => simulate(mode, ttl, keys, slow), [mode, ttl, keys, slow])
   const all = useMemo(() => MODES.map((m) => ({ mode: m.value, ...simulate(m.value, ttl, keys, slow) })), [ttl, keys, slow])
 
+  const visible = useLabVisible()
   useEffect(() => {
-    if (!playing) return
+    if (!playing || !visible) return
     if (reduced) { setT(T_END - 1); setPlaying(false); return }
     const id = setInterval(() => setT((x) => {
       if (x >= T_END - 1) { setPlaying(false); return x }
       return x + 0.5
     }), 45)
     return () => clearInterval(id)
-  }, [playing, reduced])
+  }, [playing, reduced, visible])
   const expire = () => { setT(0); setPlaying(true) }
 
   /* key #0 在播放頭時刻的狀態 */

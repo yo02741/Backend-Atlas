@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 /* ============================================================
    互動實驗室共用元件
@@ -14,6 +14,37 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
    ============================================================ */
 
 const ACCENTS = ['blue', 'orange', 'aqua', 'yellow', 'magenta', 'green', 'violet', 'red']
+
+/* lab 是否「看得見」：分頁在前景 且 這個 lab 至少有一部分在視窗內（多留 120px 邊）。
+   useTicker / usePlayer 會在看不見時暫停計時器，捲出畫面或切到別的分頁就不再燒 CPU；lab 自己開的計時器可用 useLabVisible() 一起處理。
+   注意：lab 元件是在自己的函式本體呼叫這些 hook，再渲染 <Lab>，所以 Provider 必須包在 lab 元件「外面」——
+   由掛載 lab 的地方（LabEmbed、開發用 harness）用 <LabVisibility> 包住。 */
+const LabVisibleContext = createContext(true)
+export function useLabVisible() { return useContext(LabVisibleContext) }
+
+export function LabVisibility({ children }) {
+  const ref = useRef(null)
+  const visible = useVisibility(ref)
+  return <div ref={ref} className="lab-visibility" data-visible={visible ? "1" : "0"}><LabVisibleContext.Provider value={visible}>{children}</LabVisibleContext.Provider></div>
+}
+
+function useVisibility(ref) {
+  const [inView, setInView] = useState(true)
+  const [pageVisible, setPageVisible] = useState(() => typeof document === 'undefined' || document.visibilityState !== 'hidden')
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { rootMargin: '120px 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [ref])
+  useEffect(() => {
+    const on = () => setPageVisible(document.visibilityState !== 'hidden')
+    document.addEventListener('visibilitychange', on)
+    return () => document.removeEventListener('visibilitychange', on)
+  }, [])
+  return inView && pageVisible
+}
 
 export function Lab({ accent = 'blue', kicker, title, blurb, aside, children, className = '' }) {
   const color = ACCENTS.includes(accent) ? `var(--c-${accent})` : accent
@@ -129,12 +160,13 @@ export function usePlayer(total, interval = 1400) {
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
   const reduced = useReducedMotion()
+  const visible = useLabVisible()
   useEffect(() => {
-    if (!playing) return
+    if (!playing || !visible) return   // 看不見時暫停計時，playing 狀態不變，回到畫面自動續播
     if (step >= total - 1) { setPlaying(false); return }
     const t = setTimeout(() => setStep((s) => Math.min(total - 1, s + 1)), reduced ? 600 : interval)
     return () => clearTimeout(t)
-  }, [playing, step, total, interval, reduced])
+  }, [playing, step, total, interval, reduced, visible])
   const toggle = useCallback(() => {
     if (step >= total - 1 && !playing) { setStep(0); setPlaying(true); return }
     setPlaying((p) => !p)
@@ -271,11 +303,12 @@ export function useWidth(ref, fallback = 600) {
 export function useTicker(running, interval = 1000) {
   const [tick, setTick] = useState(0)
   const reduced = useReducedMotion()
+  const visible = useLabVisible()
   useEffect(() => {
-    if (!running) return
+    if (!running || !visible) return   // 看不見時暫停
     const id = setInterval(() => setTick((t) => t + 1), reduced ? interval * 2 : interval)
     return () => clearInterval(id)
-  }, [running, interval, reduced])
+  }, [running, interval, reduced, visible])
   return [tick, () => setTick(0)]
 }
 

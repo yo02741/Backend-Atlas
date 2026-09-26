@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useMemo } from 'react'
+import { LabVisibility } from './labs/ui.jsx'
 
 /* 開發用 harness：網址帶 ?lab=IndexLab 就只渲染該 lab（隔離開發與截圖用）。
    main.jsx 偵測到 ?lab= 參數時走這裡，正式站不受影響。 */
@@ -14,7 +15,7 @@ export default function LabHarness({ name }) {
       <div className="bg-aurora" aria-hidden="true"><span /><span /><span /></div>
       <div style={{ padding: '40px 0' }}>
         {Comp
-          ? <Suspense fallback={<p className="status-msg">載入 {name}…</p>}><Comp /></Suspense>
+          ? <Suspense fallback={<p className="status-msg">載入 {name}…</p>}><LabVisibility><Comp /></LabVisibility></Suspense>
           : <p className="status-msg">找不到 lab：{name}。可用：{Object.keys(modules).map((k) => k.split('/').pop().replace('.jsx', '')).join('、')}</p>}
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, Stats, Stat, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useLabVisible, Stats, Stat, fmtN } from '../ui.jsx'
 
 /* 通知扇出情境模擬器（純前端、所有數字示意）：
    發文者 → API → 佇列 → worker → 推播 / email 服務 → 10 萬使用者（1,000 格，每格 100 人）
@@ -90,12 +90,13 @@ export default function NotificationsFanoutScenarioLab() {
   const f = useMemo(() => compute(mode, s, workers, cap, crash, idem), [mode, s, workers, cap, crash, idem])
   const endAt = Math.min(S_MAX, mode === 'sync' ? S_MAX : isRead ? S_MAX : Math.ceil(f.done))
 
+  const visible = useLabVisible()
   useEffect(() => {
-    if (!playing) return
+    if (!playing || !visible) return
     if (reduced) { setS(endAt); setPlaying(false); return }
     const id = setInterval(() => setS((x) => { if (x >= endAt) { setPlaying(false); return x } return x + 1 }), 40)
     return () => clearInterval(id)
-  }, [playing, reduced, endAt])
+  }, [playing, reduced, endAt, visible])
   const post = () => { setS(0); setStarted(true); setPlaying(true) }
   const reset = () => { setS(0); setStarted(false); setPlaying(false) }
   useEffect(() => { reset() }, [mode])   // 換做法就歸零

@@ -2,7 +2,7 @@
 
 看得見的後端基礎學習地圖。JOIN 用文氏圖動、索引用 B-tree 走、JWT 真的算簽章、Docker 的層一層層疊起來；練習題在瀏覽器裡真的執行（PostgreSQL、Python、JavaScript），不需要任何後端。
 
-- **線上**：https://yo02741.github.io/Backend-Atlas/（GitHub Pages）、https://backend-atlas.web.app/（Firebase Hosting，設定好部署金鑰後啟用）
+- **線上**：[backend-atlas.web.app](https://backend-atlas.web.app/)（Firebase Hosting）、[yo02741.github.io/Backend-Atlas](https://yo02741.github.io/Backend-Atlas/)（GitHub Pages），每次 push 到 `main` 兩邊同時更新
 - **本機**：`npm install && npm run dev`（第一次會把 Pyodide 複製到 `public/pyodide/`）
 
 | 內容 | 數量 |
@@ -106,7 +106,7 @@ npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Em
 1. [Firebase Console](https://console.firebase.google.com/) 建一個新專案（例如 `backend-atlas`，Google Analytics 可關）。
 2. 專案設定 → 一般 → 新增「網頁」應用程式，記下 `firebaseConfig` 裡的 `apiKey`、`authDomain`、`projectId`、`appId`。
 3. Authentication → 開始使用 → Sign-in method → 啟用 Google（填支援 email）。
-4. Authentication → 設定 → 授權網域 → 新增 `yo02741.github.io`（`localhost` 預設已在）。
+4. Authentication → 設定 → 授權網域 → 新增 `yo02741.github.io`（`localhost`、`<專案 id>.web.app`、`<專案 id>.firebaseapp.com` 預設已在）。
 5. Firestore Database → 建立資料庫（正式版模式，區域 `asia-east1`）→ 規則分頁貼上 `firestore.rules` 的內容 → 發布。或用 CLI：`npx firebase-tools deploy --only firestore:rules --project <專案 id>`。
 6. repo 根目錄的 `.env.production`（已設定為 `backend-atlas` 專案；這些值本來就會出現在前端程式裡，資料安全靠規則）：
    ```
@@ -116,7 +116,7 @@ npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Em
    VITE_FIREBASE_APP_ID=...
    ```
    push 之後 CI 的 build 就會帶上登入。只想在本機試可以改放 `.env.local`（已 gitignore）。
-7. （建議）Google Cloud Console → API 和服務 → 憑證 → 這把 Browser key 加上網站限制：`https://yo02741.github.io/*`、`https://<專案 id>.firebaseapp.com/*`、`http://localhost:*`。
+7. （建議）Google Cloud Console → API 和服務 → 憑證 → 這把 Browser key 加上網站限制：`https://yo02741.github.io/*`、`https://<專案 id>.web.app/*`、`https://<專案 id>.firebaseapp.com/*`、`http://localhost:*`。
 
 ### 測試
 

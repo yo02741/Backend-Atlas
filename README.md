@@ -130,12 +130,12 @@ push 到 `main` 觸發 `.github/workflows/deploy.yml`：`npm ci` → 校驗內�
 
 `firebase.json` 的 `hosting` 以 `dist/` 為根目錄（hash 路由，不需要 rewrite）；`/assets/**` 檔名帶 hash，快取一年；`/pyodide/**` 快取一天；`index.html` 不快取。`.firebaserc` 的預設專案是 `backend-atlas`。
 
-workflow 的 `firebase-hosting` job 拿 Pages 那份 build 產物，用 `FirebaseExtended/action-hosting-deploy` 部署到 live。需要 repo secret `FIREBASE_SERVICE_ACCOUNT_BACKEND_ATLAS`，沒設定時這個 job 只印一行提示就結束：
+workflow 的 `firebase-hosting` job 拿 Pages 那份 build 產物，用 `FirebaseExtended/action-hosting-deploy` 部署到 live。需要 repo secret `FIREBASE_SERVICE_ACCOUNT`，沒設定時這個 job 只印一行提示就結束：
 
-1. [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts?project=backend-atlas) → IAM 與管理 → 服務帳戶 → 建立服務帳戶（例如 `github-deploy`）。
-2. 角色：**Firebase Hosting 管理員**、**服務使用情形消費者**（Service Usage Consumer）、**API 金鑰檢視者**（API Keys Viewer）。這是 `firebase init hosting:github` 會給的角色扣掉 Cloud Run 與預覽頻道用的兩個。
-3. 建好後點進該帳戶 → 金鑰 → 新增金鑰 → JSON，下載。
-4. GitHub repo → Settings → Secrets and variables → Actions → New repository secret，名稱 `FIREBASE_SERVICE_ACCOUNT_BACKEND_ATLAS`，值貼上整份 JSON。下載的檔案貼完就刪掉。
+1. Firebase 控制台 → 專案 `backend-atlas` → 左上齒輪「專案設定」→「服務帳戶」分頁 →「產生新的私密金鑰」，下載 JSON。
+2. GitHub repo → Settings → Secrets and variables → Actions → New repository secret，名稱 `FIREBASE_SERVICE_ACCOUNT`，值貼上整份 JSON。下載的檔案貼完就刪掉。
+
+這把是 Admin SDK 的金鑰，權限比部署需要的大（也能讀寫 Firestore、管理登入帳號）。想縮小權限的話，改到 [Google Cloud 控制台的服務帳戶頁](https://console.cloud.google.com/iam-admin/serviceaccounts?project=backend-atlas) 另建一個帳戶，只給 **Firebase Hosting 管理員**、**服務使用情形消費者**、**API 金鑰檢視者** 三個角色，再用它的 JSON 金鑰。workflow 只在 push 到 `main` 時執行，fork 來的 PR 拿不到這個 secret。
 
 手動部署（本機有 Node）：`npm run build && npx firebase-tools deploy --only hosting`。
 

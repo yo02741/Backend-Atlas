@@ -1,7 +1,7 @@
 name: Deploy（GitHub Pages + Firebase Hosting）
 
 # 同一份 build 部署到兩個地方：GitHub Pages（yo02741.github.io/Backend-Atlas/）與 Firebase Hosting（backend-atlas.web.app）。
-# Firebase 那一段需要 repo secret FIREBASE_SERVICE_ACCOUNT_BACKEND_ATLAS（服務帳戶 JSON 金鑰），沒設定就跳過，不會讓整個 workflow 失敗。
+# Firebase 那一段需要 repo secret FIREBASE_SERVICE_ACCOUNT（服務帳戶 JSON 金鑰），沒設定就跳過，不會讓整個 workflow 失敗。
 
 on:
   push:
@@ -61,11 +61,11 @@ jobs:
     permissions:
       contents: read
     env:
-      FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BACKEND_ATLAS }}
+      FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
     steps:
       - name: 沒有部署金鑰就跳過
         if: env.FIREBASE_SA == ''
-        run: echo "::notice::沒有設定 FIREBASE_SERVICE_ACCOUNT_BACKEND_ATLAS，略過 Firebase Hosting 部署（README「Firebase Hosting」有設定步驟）"
+        run: echo "::notice::沒有設定 FIREBASE_SERVICE_ACCOUNT，略過 Firebase Hosting 部署（README「Firebase Hosting」有設定步驟）"
 
       - uses: actions/checkout@v4
         if: env.FIREBASE_SA != ''
@@ -84,6 +84,6 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         if: env.FIREBASE_SA != ''
         with:
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BACKEND_ATLAS }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: backend-atlas
           channelId: live

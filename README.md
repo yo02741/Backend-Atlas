@@ -2,7 +2,7 @@
 
 看得見的後端基礎學習地圖。JOIN 用文氏圖動、索引用 B-tree 走、JWT 真的算簽章、Docker 的層一層層疊起來；練習題在瀏覽器裡真的執行（PostgreSQL、Python、JavaScript），不需要任何後端。
 
-- **線上**：https://yo02741.github.io/Backend-Atlas/
+- **線上**：https://yo02741.github.io/Backend-Atlas/（GitHub Pages）、https://backend-atlas.web.app/（Firebase Hosting，設定好部署金鑰後啟用）
 - **本機**：`npm install && npm run dev`（第一次會把 Pyodide 複製到 `public/pyodide/`）
 
 | 內容 | 數量 |
@@ -124,4 +124,20 @@ npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Em
 
 ## 部署
 
-push 到 `main` 觸發 `.github/workflows/deploy.yml`：`npm ci` → 校驗內容與題庫、進度合併單元測試 → build（有 `.env.production` 就帶上登入）→ 上 GitHub Pages。第一次需要在 repo Settings → Pages 把 Source 設為 GitHub Actions（workflow 也會嘗試自動啟用）。
+push 到 `main` 觸發 `.github/workflows/deploy.yml`：`npm ci` → 校驗內容與題庫、進度合併單元測試 → build（有 `.env.production` 就帶上登入）→ 同一份產物部署到 GitHub Pages 與 Firebase Hosting。第一次需要在 repo Settings → Pages 把 Source 設為 GitHub Actions（workflow 也會嘗試自動啟用）。
+
+### Firebase Hosting
+
+`firebase.json` 的 `hosting` 以 `dist/` 為根目錄（hash 路由，不需要 rewrite）；`/assets/**` 檔名帶 hash，快取一年；`/pyodide/**` 快取一天；`index.html` 不快取。`.firebaserc` 的預設專案是 `backend-atlas`。
+
+workflow 的 `firebase-hosting` job 拿 Pages 那份 build 產物，用 `FirebaseExtended/action-hosting-deploy` 部署到 live。需要 repo secret `FIREBASE_SERVICE_ACCOUNT_BACKEND_ATLAS`，沒設定時這個 job 只印一行提示就結束：
+
+1. [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts?project=backend-atlas) → IAM 與管理 → 服務帳戶 → 建立服務帳戶（例如 `github-deploy`）。
+2. 角色：**Firebase Hosting 管理員**、**服務使用情形消費者**（Service Usage Consumer）、**API 金鑰檢視者**（API Keys Viewer）。這是 `firebase init hosting:github` 會給的角色扣掉 Cloud Run 與預覽頻道用的兩個。
+3. 建好後點進該帳戶 → 金鑰 → 新增金鑰 → JSON，下載。
+4. GitHub repo → Settings → Secrets and variables → Actions → New repository secret，名稱 `FIREBASE_SERVICE_ACCOUNT_BACKEND_ATLAS`，值貼上整份 JSON。下載的檔案貼完就刪掉。
+
+手動部署（本機有 Node）：`npm run build && npx firebase-tools deploy --only hosting`。
+
+流量：整站約 32 MB，其中 Pyodide 約 13 MB、PGlite 約 17 MB，只有用到 Python / SQL 的頁面才下載。Firebase 免費的 Spark 方案 Hosting 傳輸量有每日上限（以 Firebase 定價頁為準），第一次跑 Python + SQL 的訪客一次就用掉約 30 MB；流量大時要改 Blaze 方案，或把 Pyodide 改從 CDN 載入。
+

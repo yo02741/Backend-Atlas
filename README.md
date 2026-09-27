@@ -108,7 +108,7 @@ npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Em
 3. Authentication → 開始使用 → Sign-in method → 啟用 Google（填支援 email）。
 4. Authentication → 設定 → 授權網域 → 新增 `yo02741.github.io`（`localhost` 預設已在）。
 5. Firestore Database → 建立資料庫（正式版模式，區域 `asia-east1`）→ 規則分頁貼上 `firestore.rules` 的內容 → 發布。或用 CLI：`npx firebase-tools deploy --only firestore:rules --project <專案 id>`。
-6. repo 根目錄新增 `.env.production` 並 commit（這些值本來就會出現在前端程式裡，資料安全靠規則）：
+6. repo 根目錄的 `.env.production`（已設定為 `backend-atlas` 專案；這些值本來就會出現在前端程式裡，資料安全靠規則）：
    ```
    VITE_FIREBASE_API_KEY=...
    VITE_FIREBASE_AUTH_DOMAIN=<專案 id>.firebaseapp.com

@@ -100,6 +100,7 @@ async function device(tag, account, width = 1200) {
   const open = async (hash = '') => {
     const page = await ctx.newPage()
     page.on('pageerror', (e) => errs.push(`[${tag}] PAGEERROR ${e.message}\n${(e.stack || '').split('\n').slice(0, 6).join('\n')}`))
+    page.on('response', (r) => { if (r.status() >= 400) errs.push(`[${tag}] HTTP ${r.status()} ${r.request().method()} ${r.url().slice(0, 160)}`) })
     page.on('console', (m) => {
       if (m.type() !== 'error' || (offlineWindow && expectedOffline.test(m.text()))) return
       errs.push(`[${tag}] CONSOLE ${m.text().slice(0, 200)}`)
@@ -120,6 +121,8 @@ async function waitPushed(page) {
 }
 async function signInVia(page) {
   await page.click('.account-btn')
+  await page.waitForSelector('.account-pop .login-google:not([disabled])', { timeout: 15000 })
+  await page.click('.account-pop .login-google')
   await waitSynced(page)
 }
 async function menu(page, label) {
@@ -134,6 +137,14 @@ let a = await A.open()
 t('signed-out visitor sees 登入 button', (await a.textContent('.account-btn')) === '登入')
 t('signed-out visitor does not download the Firebase SDK', !hasFirebase(A), [...A.chunks].join(','))
 t('footer mentions account sync', /登入後同步到你的帳號/.test(await a.textContent('.colophon')))
+// 按「登入」只打開面板（同時在背景載 SDK）；面板裡的 Google 按鈕等 SDK 就緒才能按，按下去視窗才能在同一個點擊裡開出來
+await a.click('.account-btn')
+t('登入 opens a panel instead of signing in right away', !!(await a.$('.account-pop[aria-label="登入"]')) && (await a.getAttribute('.account', 'data-status')) === 'signed-out')
+await a.waitForSelector('.account-pop .login-google:not([disabled])', { timeout: 15000 })
+t('panel button becomes ready after the SDK loads', (await a.textContent('.account-pop .login-google')) === '使用 Google 帳號登入')
+t('opening the panel loads the SDK', hasFirebase(A))
+await a.keyboard.press('Escape')
+t('Escape closes the panel', !(await a.$('.account-pop')))
 const localA = { done: ['sql-joins', 'http-basics'], checks: { 'sql-joins': [true, false, true] }, exercises: { 'sql-joins-1': 'fail' }, quizzes: { jwt: 'pass' }, scenarios: {}, rationales: { 'cache:d1': 'A 的理由' } }
 await seed(a, localA)
 await a.reload({ waitUntil: 'networkidle' })

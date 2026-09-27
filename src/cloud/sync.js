@@ -48,6 +48,7 @@ function unlink() {
 let snap = {
   status: !cloudEnabled ? 'off' : meta.uid ? 'restoring' : 'signed-out',
   user: null, sync: 'idle', syncedAt: 0, error: '', notice: '',
+  ready: false,   // SDK 已載入、登入視窗要用的 iframe 已備好：這之後按登入，視窗會在同一個點擊裡開出來
 }
 const subs = new Set()
 function update(patch) {
@@ -66,8 +67,17 @@ function loadFirebase() {
   }
   return loading
 }
-/* 滑到、聚焦「登入」按鈕時先載 SDK：按下去時可以同步開出登入視窗，Safari 才不會當成廣告視窗擋掉 */
-export function preloadCloud() { if (cloudEnabled && !fb) loadFirebase().catch(() => {}) }
+/* 滑到、聚焦、點「登入」時先載 SDK。Firebase 在手機與 Safari 上初始化時會順便把登入視窗要用的 iframe 備好，
+   完成後才回報第一次登入狀態；其他瀏覽器由 warmUp 補做。都好了 ready 才是 true，面板裡的登入按鈕才能按 */
+let warming = null
+export function preloadCloud() {
+  if (!cloudEnabled || warming) return
+  if (snap.error && !snap.user) update({ error: '' })
+  warming = loadFirebase()
+    .then((m) => m.warmUp())
+    .then(() => update({ ready: true }))
+    .catch(() => { warming = null; update({ error: '連不上登入服務，請確認網路後再試。' }) })
+}
 
 let chain = Promise.resolve()
 function queue(op) {
@@ -162,7 +172,7 @@ function fail(e) {
 }
 function describe(e) {
   const code = e?.code || ''
-  if (code === 'auth/popup-blocked') return '瀏覽器擋下了登入視窗。允許這個網站開彈出視窗後，再按一次登入。'
+  if (code === 'auth/popup-blocked') return '瀏覽器擋下了登入視窗。再按一次「使用 Google 帳號登入」；還是不行的話，請允許這個網站開彈出視窗。'
   if (code === 'auth/unauthorized-domain') return '這個網址還沒加進 Firebase 的授權網域，暫時無法登入。'
   if (code === 'auth/operation-not-allowed') return 'Firebase 專案還沒啟用 Google 登入。'
   if (code === 'auth/network-request-failed' || code === 'unavailable') return '連不上網路，稍後再試。'

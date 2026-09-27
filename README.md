@@ -99,7 +99,7 @@ npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Em
 - **怎麼合併**：每次同步是一個 transaction：讀雲端、與本機做三方合併、有差才寫回。base 是這台上次同步完成時的內容（`atlas-sync-base-v1`）：本機沒改的項目取雲端，本機改過的留本機；兩邊都改了，題目狀態取較好的，理由留本機。所以另一台「取消完成」會傳過來，離線時的取消也不會被加回來；兩台同時上傳時，後到的會拿到對方的版本重新合併。這台第一次登入某個帳號時沒有 base，等於聯集，兩邊都不丟。實作與測試：`src/progressData.js`、`scripts/test-progress.mjs`。
 - **何時同步**：登入或開站還原登入、改動後 1.5 秒、切回分頁、恢復連線、帳號選單的「立即同步」。離線或失敗時保留「未上傳」標記（`atlas-sync-v1`），下次補上。
 - **帳號選單**：同步狀態、登出（本機進度保留）、登出並清除這台裝置的進度（共用電腦用）、刪除雲端進度（其他仍登入的裝置下次同步時也會登出，各自的本機進度保留）。
-- **登入方式**：`signInWithPopup`。不用 redirect，因為 Safari 與新版 Chrome 擋第三方儲存，`authDomain` 跟站台不同網域時 redirect 會失敗。滑到或聚焦「登入」按鈕時先預載 SDK，讓按下時能直接開出視窗；手機第一次點若被擋，會提示再按一次。
+- **登入方式**：`signInWithPopup`。不用 redirect，因為 Safari 與新版 Chrome 擋第三方儲存，`authDomain` 跟站台不同網域時 redirect 會失敗。手機瀏覽器（尤其 Safari）只放行「點擊後立刻開」的視窗，所以「登入」先打開一個說明面板、同時在背景載 SDK 並備好登入 iframe（`warmUp`），面板裡的「使用 Google 帳號登入」就緒才能按；按下時 `signInWithPopup` 到 `window.open` 之間沒有網路等待，視窗在同一個點擊裡開出來。
 
 ### 啟用步驟
 

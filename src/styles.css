@@ -163,6 +163,8 @@ code, pre, kbd { font-family: var(--mono); }
 .account-sync .sync-dot.idle { display: inline-block; }
 .account-err { color: var(--critical); }
 .account-note { font-size: 0.76rem; color: var(--ink-3); line-height: 1.55; }
+.account-title { color: var(--ink-1); font-size: 0.92rem; }
+.btn.login-google { width: 100%; justify-content: center; }
 .account-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 10px; border-top: 1px solid var(--hairline); }
 .linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .linklike.danger { color: var(--critical); }

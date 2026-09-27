@@ -3,7 +3,7 @@
 import { initializeApp } from 'firebase/app'
 import {
   initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver,
-  GoogleAuthProvider, signInWithPopup, signInWithCredential, signOut as fbSignOut, onAuthStateChanged, connectAuthEmulator,
+  GoogleAuthProvider, signInWithPopup, signInWithCredential, signOut as fbSignOut, onAuthStateChanged, connectAuthEmulator, getRedirectResult,
 } from 'firebase/auth'
 import { getFirestore, doc, runTransaction, deleteDoc, serverTimestamp, connectFirestoreEmulator } from 'firebase/firestore/lite'
 import { firebaseConfig, emulatorHost } from './config.js'
@@ -38,6 +38,14 @@ export async function signIn() {
   await signInWithPopup(auth, provider)
 }
 export const signOut = () => fbSignOut(auth)
+
+/* 按下登入前先把登入視窗要用的 iframe 備好：手機與 Safari 在 Auth 初始化時就會做（等 authStateReady 即可），
+   其他瀏覽器由 getRedirectResult 觸發（沒有進行中的 redirect 時它只回 null）。
+   備好之後 signInWithPopup 到 window.open 之間只剩 microtask，視窗會在同一個點擊裡開出來，不會被當成廣告擋掉。 */
+export function warmUp() {
+  if (emulatorHost) return auth.authStateReady()   // e2e 走假 id token、不開視窗，也連不到 apis.google.com
+  return auth.authStateReady().then(() => getRedirectResult(auth)).catch(() => null)
+}
 
 const ref = (uid) => doc(db, 'users', uid)
 

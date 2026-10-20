@@ -12,8 +12,9 @@ import devops from './devops.js'
 import devopsConfig from './devops-config.js'
 import ai from './ai.js'
 import knowledge from './knowledge.js'
+import project from './project.js'
 
-export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...scenarios]
+export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...scenarios, ...project]
 
 export const KINDS = {
   sql: { label: 'SQL', runtime: 'sql' },
@@ -24,4 +25,6 @@ export const KINDS = {
 }
 
 export function findExercise(id) { return EXERCISES.find((e) => e.id === id) || null }
-export function exercisesForSkill(skillId) { return EXERCISES.filter((e) => e.skill === skillId) }
+// 實作路線的題（帶 project）放在實作路線頁，不出現在技能頁的驗收區
+export function exercisesForSkill(skillId) { return EXERCISES.filter((e) => e.skill === skillId && !e.project) }
+export function exercisesForStage(stageId) { return EXERCISES.filter((e) => e.project === stageId) }

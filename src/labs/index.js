@@ -24,6 +24,16 @@ export const LAB_META = {
   AsyncLab:          { title: '同步 vs 執行緒 vs async', blurb: '六個請求的甘特圖，I/O 等待時 CPU 在幹嘛一目瞭然。', skill: 'python-async' },
   RestLab:           { title: 'REST 資源設計', blurb: '選一個意圖，看正確的方法、路徑、狀態碼與冪等性。', skill: 'rest-design' },
   UvLab:             { title: 'uv 從零到能跑', blurb: '七個指令，檔案樹與 pyproject 跟著長出來。', skill: 'uv-packaging' },
+  TxnLab:            { title: '兩個交易搶最後一件', blurb: '切隔離等級與扣庫存做法，逐步看兩個交易看到什麼、誰在等鎖、最後成立幾張訂單。', skill: 'transactions' },
+  NetPathLab:        { title: '網路壞在哪一層', blurb: '在 DNS、防火牆、TLS、負載平衡任一層製造故障，看 dig、nc、curl 各自吐出什麼。', skill: 'network-troubleshooting' },
+  CertChainLab:      { title: '憑證鏈驗證', blurb: '缺中繼、網域不符、過期、自簽、院內 CA：逐關檢查，看瀏覽器與 curl 的錯誤訊息。', skill: 'https-certificates' },
+  CapacityLab:       { title: '容量估算', blurb: '從尖峰人數推到 RPS、核心數、記憶體與磁碟；切到 Kubernetes 看 requests 換算成幾個 Pod。', skill: 'capacity-planning' },
+  K8sLab:            { title: 'Deployment 與滾動更新', blurb: '調副本數、部署新版、讓 readiness 失敗、關掉一台節點，看 Pod 與流量怎麼移動。', skill: 'k8s-readiness' },
+  SloLab:            { title: 'SLO 與錯誤預算', blurb: '選可用性目標與事故，看錯誤預算怎麼燒、燃燒率多少、哪一天燒完。', skill: 'slo-error-budget' },
+  DeviceCodeLab:     { title: '三種授權流程', blurb: 'Device Code、授權碼 + PKCE、Client Credentials 的時序圖與 HTTP 原文，PKCE 真的算 SHA-256。', skill: 'oauth-device-pkce' },
+  ToolPoisoningLab:  { title: 'Tool Poisoning', blurb: '使用者看到的工具摘要 vs 模型讀到的完整描述；一道道打開防禦，看在哪一層擋下。', skill: 'tool-poisoning' },
+  ChunkingLab:       { title: 'RAG 的切段與檢索', blurb: '調段落大小與重疊，看一條跨兩句的答案怎麼被切開、檢索取回了什麼。', skill: 'rag-basics' },
+  WikiGraphLab:      { title: 'wikilink 長成知識圖譜', blurb: '編輯幾頁 markdown，即時畫出連結圖、反向連結、孤兒頁與斷鏈，找兩頁之間的路徑。', skill: 'knowledge-graph' },
 }
 
 export const LAB_NAMES = Object.keys(LAB_META)

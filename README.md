@@ -7,59 +7,71 @@
 
 | 內容 | 數量 |
 |---|---|
-| 領域 | 8（語言與工程實踐、HTTP 與 API、資料儲存、驗證與授權、資安、容器與部署、CI/CD、演算法與系統設計） |
-| 技能（課） | 63，每課有摘要、範例技術、重點、自我檢核、官方文件 |
-| 互動實驗室 | 19（SQL JOIN、B-tree 索引、JWT、OAuth、RBAC/ABAC、SQL injection、Docker 層、compose 拓樸、nginx、CI 管線、Big-O、token bucket…） |
-| 程式題 | 42（SQL 17 / Python 18 / JS 7），解答全部經真實執行環境驗證；13 個設計情境各連到一道對應的題 |
-| 選擇題 | 189（每課 3 題，含程式碼判讀與情境題） |
-| 設計情境 | 18（API 設計 8、資料與身分 4、高流量 6）：情境與限制、模擬器、做法優缺點、取捨表、換條件的決策題、落地程式碼 |
-| 課綱 | `docs/CURRICULUM.md`：獨立盤點的技能樹、差距分析、16 週課綱、驗收設計 |
+| 領域 | 11（語言與工程實踐、HTTP 與 API、資料儲存、驗證與授權、資安、容器與部署、CI/CD、演算法與系統設計、DevOps 與基礎建設、AI 時代的開發與 Agent 安全、知識系統） |
+| 技能（課） | 112，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
+| 互動實驗室 | 29（SQL JOIN、B-tree 索引、交易交錯、JWT、OAuth、Device Code、Docker 層、nginx、網路排查、憑證鏈、K8s 滾動更新、錯誤預算、Tool Poisoning、RAG 切段、wiki 連結圖…） |
+| 程式題 | 120（Python 68 / SQL 29 / config 13 / JS 10），含實作路線的 14 道驗收題；解答全部經真實執行環境驗證 |
+| 選擇題 | 336（每課 3 題，含程式碼判讀與情境題） |
+| 設計情境 | 25（API 設計 8、資料與身分 4、高流量 6、維運與基礎建設 4、AI 與 Agent 安全 3） |
+| 實作路線 | 從零做完一個門診掛號後端：8 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |
+| 課綱 | `docs/CURRICULUM.md`：獨立盤點的技能樹、16 週課綱、第 17–22 週延伸週次、實作路線對照、驗收設計 |
 
 ## 內容總覽
 
 以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照。
 
-### 技能課程（8 領域、63 課）
+### 技能課程（11 領域、112 課）
 
-每課有摘要、範例技術、重點、自我檢核清單、官方文件連結。★ 表示附互動實驗室。
+每課有重點卡（摘要、範例技術、重點、自我檢核清單、官方文件連結）與深入內容。★ 表示附互動實驗室。
 
 | 領域 | 課程 |
 |---|---|
-| 1. 語言與工程實踐 | Python 後端心智模型、uv 與專案管理★、同步／多執行緒與 async★、Web 框架與請求生命週期、測試金字塔與 pytest、型別檢查／lint／格式化、日誌／錯誤處理與設定 |
-| 2. 網路、HTTP 與 API 設計 | 一個 HTTP 請求的一生★、REST API 設計★、分頁／篩選／版本與冪等鍵、外部呼叫韌性（timeout、重試、斷路器）、OpenAPI 與 API 契約、CORS／Cookie 與同源、HTTP 快取與條件請求、DNS／TLS 與憑證、GraphQL／gRPC／WebSocket／Webhook |
-| 3. 資料儲存 | SQL 基礎、JOIN 七兄弟★、資料建模與正規化、索引與查詢計畫★、交易／ACID 與隔離等級、子查詢／CTE／視窗函數、ORM 與 migration、資料庫維運、MongoDB 文件模型★、MongoDB 查詢／聚合／索引、Redis 與快取策略★、關聯式 vs 非關聯式怎麼選 |
-| 4. 驗證與授權 | Session vs Token、JWT 解剖★、OAuth 2.0 與 OIDC★、RBAC 與 ABAC★、驗證授權落地（middleware、dependency）、API key／服務間驗證／MFA／SSO |
-| 5. 資安 | OWASP Top 10、SQL 注入與相關攻擊★、密碼儲存（編碼、雜湊、加密）★、密碼學工具箱、XSS／CSRF 與安全標頭、輸入驗證與檔案上傳、秘密管理、依賴與供應鏈安全 |
-| 6. 容器與部署 | Linux 與 shell、Docker image／container／layer★、Python 專案的 Dockerfile、docker-compose 開發環境★、nginx 反向代理★、12-factor、應用伺服器與程序管理、雲端與主機基礎 |
+| 1. 語言與工程實踐 | Python 後端心智模型、電腦怎麼跑你的程式、資料表示（編碼、序列化、時間與金額）、uv 與專案管理★、同步／多執行緒與 async★、Web 框架與請求生命週期、專案分層與依賴注入、錯誤設計（錯誤碼與 Problem Details）、測試金字塔與 pytest、型別檢查／lint／格式化、日誌／錯誤處理與設定 |
+| 2. 網路、HTTP 與 API 設計 | 一個 HTTP 請求的一生★、TCP/IP 與連線、REST API 設計★、分頁／篩選／版本與冪等鍵、外部呼叫韌性（timeout、重試、斷路器）、OpenAPI 與 API 契約、CORS／Cookie 與同源、HTTP 快取與條件請求、DNS／TLS 與憑證、HTTP/2 與 HTTP/3、即時通訊怎麼選（輪詢、SSE、WebSocket）、GraphQL／gRPC／WebSocket／Webhook |
+| 3. 資料儲存 | SQL 基礎、JOIN 七兄弟★、資料建模與正規化、Schema 設計實戰、索引與查詢計畫★、全文檢索、交易／ACID 與隔離等級★、鎖與死結、子查詢／CTE／視窗函數、ORM 與 migration、資料庫維運、MongoDB 文件模型★、MongoDB 查詢／聚合／索引、Redis 與快取策略★、關聯式 vs 非關聯式怎麼選 |
+| 4. 驗證與授權 | Session vs Token、JWT 解剖★、OAuth 2.0 與 OIDC★、RBAC 與 ABAC★、驗證授權落地（middleware、dependency）、帳號生命週期（註冊、驗證、重設密碼、鎖定）、API key／服務間驗證／MFA／SSO |
+| 5. 資安 | OWASP Top 10、SQL 注入與相關攻擊★、密碼儲存（編碼、雜湊、加密）★、密碼學工具箱、XSS／CSRF 與安全標頭、輸入驗證與檔案上傳、秘密管理、日誌與稽核紀錄裡的個資、依賴與供應鏈安全 |
+| 6. 容器與部署 | Linux 與 shell、Docker image／container／layer★、Python 專案的 Dockerfile、docker-compose 開發環境★、nginx 反向代理★、負載平衡、12-factor、應用伺服器與程序管理、物件儲存、雲端與主機基礎 |
 | 7. CI/CD 與交付 | Git 工作流、CI 管線（lint、test、build）★、環境／secrets／artifact、部署策略與資料庫遷移、可觀測性（log、metrics、trace）、健康檢查、備份與事故處理 |
-| 8. 演算法與系統設計 | Big-O★、後端常用資料結構、限流演算法★、LRU 與快取淘汰、訊息佇列與背景工作、擴展（無狀態、負載平衡、讀寫分離）、系統設計思考框架 |
+| 8. 演算法與系統設計 | Big-O★、後端常用資料結構、限流演算法★、LRU 與快取淘汰、並發問題（race condition、死結）、訊息佇列與背景工作、排程工作（cron、重複執行與遺漏）、擴展（無狀態、負載平衡、讀寫分離）、分散式基礎（CAP、一致性與時間）、系統設計思考框架 |
+| 9. DevOps 與基礎建設 | DevOps 會議詞彙對照、網路通不通（DNS 到防火牆）★、HTTPS 憑證（要買哪種、怎麼續）★、硬體資源與容量規劃★、GitLab CI/CD 實戰、導入 Kubernetes 前要準備什麼★、地端／雲端還是混合雲、數據中台之前：資料治理、SLI／SLO 與錯誤預算★、事故處理與 postmortem、受監管環境的變更管理 |
+| 10. AI 時代的開發與 Agent 安全 | ADR、垂直切片拆票、規範變成測試（AI 協作下的 TDD）、AI 改程式的品質閘門、Skill 與 MCP、多 agent 協作與工作區隔離、Device Code／PKCE／Client Credentials★、MCP 的授權、MCP Gateway、集中式身分閘道、CLI 與 Agent 的 token 存哪裡、金鑰的範圍與壽命、OWASP MCP Top 10、Tool Poisoning 與 rug pull★、credential 隔離與執行邊界、行為層的供應鏈管理 |
+| 11. 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作與限制★、LLM Wiki（模型維護的 markdown 知識庫）、知識圖譜（wikilink、反向連結、GraphRAG）★、RAG／LLM Wiki／知識圖譜怎麼選、原始資料下毒與間接提示注入 |
 
-### 互動實驗室（19 個）
+### 互動實驗室（29 個）
 
-可以拖、切、點的小教具：JOIN 用文氏圖呈現、索引實際走一遍 B-tree、JWT 真的計算簽章、OAuth 流程逐步播放、Docker 映像的層一層層疊上去、token bucket 限流即時跑。另有 HTTP、REST、async、uv、密碼雜湊、SQL 注入、RBAC/ABAC、Redis 快取、MongoDB vs 關聯式、compose、nginx、CI 管線、Big-O。
+可以拖、切、點的小教具：JOIN 用文氏圖呈現、索引實際走一遍 B-tree、兩個交易交錯執行看各隔離等級讀到什麼、JWT 真的計算簽章、OAuth 與 Device Code 流程逐步播放、Docker 映像的層一層層疊上去、token bucket 限流即時跑。DevOps 有網路排查（在任一層製造故障看錯誤長怎樣）、憑證鏈驗證、容量估算、K8s 副本與滾動更新、錯誤預算燃燒；Agent 安全有 Tool Poisoning（介面上看到的描述 vs 模型讀到的描述）；知識系統有 RAG 切段與 wiki 連結圖。
 
-### 設計情境（18 個）
+### 設計情境（25 個）
 
 每個情境有背景與限制、可操作的模擬器、幾種做法的優缺點、取捨表、換條件後重新選做法的決策題、落地程式碼。
 
 - **API 設計（8）**：列表分頁、API 快取、付款的冪等與重試、限流放哪與用什麼當 key、三分鐘長任務匯出、使用者上傳檔案、商品搜尋與篩選、API 改版不弄壞客戶端
 - **資料與身分（4）**：多租戶資料隔離、刪除使用者要留下什麼（軟刪除與稽核）、讀寫分離後「剛存的怎麼不見了」、SPA 加手機 App 的登入方案
 - **高流量（6）**：從 100 到 10 萬 QPS、秒殺 1,000 人搶 100 件、削峰與背壓、資料庫撐不住（連線池、讀寫分離、分片）、快取雪崩與擊穿、一則貼文通知 10 萬個追蹤者
+- **維運與基礎建設（4）**：地端、雲端還是混合、數據中台之前先治理什麼、含 schema 變更的週末上線、事故處理（各自救火、事故指揮、自動化優先）
+- **AI 與 Agent 安全（3）**：Agent 怎麼接上內部工具（MCP Gateway）、CLI／Agent／服務的身分怎麼統一、從一個容器到正式資料庫（依 Zeabur 2026 年 8 月事件報告改寫的縱深防禦）
+
+### 實作路線：從零做完一個門診掛號後端
+
+`#/project`。資料表與約束 → 掛號規則寫成程式與測試 → REST 介面與狀態碼 → 登入與角色權限 → 同時搶最後一個號 → 快取與限流 → 打包與持續整合（Dockerfile、GitLab CI）→ 日誌、指標與追蹤。每階段一份說明，連回相關的課，驗收題在瀏覽器裡跑（SQL 約束、Python 規則與測試、Dockerfile 與 `.gitlab-ci.yml` 檢查）。
 
 ### 練習題
 
-- **程式題 42 道**（SQL 17、Python 18、JavaScript 7）：在瀏覽器裡真的執行並跑測試——SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker。13 個設計情境各有一道對應的題（cache-aside、冪等鍵、滑動視窗限流、秒殺扣庫存、ETag/304…）。
-- **選擇題 189 道**：每課 3 題，含程式碼判讀與情境題。
+- **程式題 120 道**（Python 68、SQL 29、config 13、JavaScript 10）：在瀏覽器裡真的執行並跑測試——SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證。
+- **選擇題 336 道**：每課 3 題，含程式碼判讀與情境題。
 
-### 課綱（16 週、3 個里程碑）
+### 課綱（16 週 + 延伸 6 週）
 
 | 週 | 主題 |
 |---|---|
-| 1–4 | Python 工程底盤、HTTP/REST 與 OpenAPI、SQL 與資料建模、ORM 與 migration → 里程碑 M1 |
-| 5–7 | 驗證、密碼儲存、JWT、RBAC/ABAC、OAuth/OIDC、XSS/CSRF、秘密與供應鏈 |
-| 8–10 | 索引與查詢計畫、交易與鎖、並發、快取、限流、佇列、冪等、分頁、Webhook → 里程碑 M2 |
-| 11–13 | Docker、Compose、nginx、CI/CD、部署策略、Linux 維運、TLS/DNS、雲端 |
-| 14–16 | 可觀測性、資料庫維運與備份、演算法補強、擴展與壓測、系統設計 → 里程碑 M3 |
+| 1–4 | Python 工程底盤、程式怎麼跑與資料表示、HTTP/REST 與 OpenAPI、錯誤設計、SQL 與資料建模、ORM 與 migration → 里程碑 M1 |
+| 5–7 | 驗證、帳號生命週期、密碼儲存、JWT、RBAC/ABAC、OAuth/OIDC、XSS/CSRF、秘密與供應鏈、日誌裡的個資 |
+| 8–10 | 索引與查詢計畫、交易與鎖、並發問題、快取、限流、佇列、排程、冪等、分頁、Webhook、即時通訊 → 里程碑 M2 |
+| 11–13 | TCP 與 HTTP/2/3、Docker、Compose、nginx、負載平衡、CI/CD、部署策略、Linux 維運、TLS/DNS、雲端、物件儲存 |
+| 14–16 | 可觀測性、資料庫維運與備份、演算法補強、擴展與壓測、分散式基礎、系統設計 → 里程碑 M3 |
+| 17–19（延伸） | 網路排查、HTTPS 憑證、容量規劃、GitLab CI/CD、導入 K8s、地端與雲端、變更管理、資料治理、SLO、事故處理 |
+| 20–22（延伸） | AI 時代的團隊開發、Agent 的身分授權與資安、從 RAG 到 LLM Wiki |
 
 每週標題下列出該週對應的設計情境；情境頁的「第 N 週」可直接跳回課綱。全文在 `docs/CURRICULUM.md`。
 
@@ -87,17 +99,19 @@
 src/
   content/         內容（純資料，改這裡不用碰元件）
     roadmap.js       領域索引、學習路線 PATH、工作關鍵字 WORK_KEYWORDS、查詢 helper
-    d1-language.js … d8-algo.js   每個領域一檔的「索引」：skills[] 各有 id / title / en / level / summary / example / keywords / lab（跟著主 chunk）
-    body/d1-language.js … d8-algo.js   每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs（技能頁才懶載入，每領域一個 chunk）
+    d1-language.js … d11-knowledge.js   每個領域一檔的「索引」：skills[] 各有 id / title / en / level / summary / example / keywords / lab（跟著主 chunk）
+    body/d1-language.js … d11-knowledge.js   每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs（技能頁才懶載入，每領域一個 chunk）
+    deep/<skill-id>.md   每課的深入內容（markdown，技能頁逐課懶載入；格式見 docs/CONTRIBUTING-lessons.md）
+    project/         實作路線：stages.js（階段定義）、<stage-id>.md（各階段說明，懶載入）
     skillBody.js     內文的 Suspense 載入器（readSkillBody / preloadSkillBody）
     schemas.js       SQL 練習與 Playground 共用的電商範例資料庫
-    exercises/       程式題（sql / python / js），index.js 匯總
+    exercises/       程式題（sql / python / js / config），index.js 匯總；project.js 是實作路線的驗收題
     quizzes/         選擇題題庫，每領域一檔（extra.js 放跨領域補題），index.js 以 glob 自動收集
     scenarios/       設計情境，每個一檔，index.js 以 glob 自動收集（分組定義也在這）
   labs/            互動實驗室：ui.jsx（共用元件）、lab.css、index.js（登錄表）、*Lab.jsx
     scenarios/       情境模擬器 *ScenarioLab.jsx（index.js 懶載入）
   runtime/         py.js + py.worker.js（Pyodide）、sql.js（PGlite）、js.js + js.worker.js、check.js（評分）
-  pages/           Home / Roadmap / Domain / Skill / Labs / Exercises / Playground / Curriculum / Scenarios
+  pages/           Home / Roadmap / Domain / Skill / Labs / Exercises / Playground / Curriculum / Scenarios / Project
   App.jsx          hash 路由與外殼；首頁以外的頁面 React.lazy 懶載入（CodeMirror、題庫、課綱各自成 chunk），換頁走 startTransition
   components/      MetroMap、HeroArt、bits、CodeEditor、ExerciseRunner、Quiz、Decisions、Output、Markdown、Account（登入按鈕與帳號選單）
   assess.js        一個技能的驗收狀態（程式題 + 選擇題）
@@ -106,8 +120,8 @@ src/
   cloud/           選配的登入同步：config.js（讀 VITE_FIREBASE_*）、sync.js（同步狀態機，主 chunk）、firebase.js（SDK，懶載入）
   styles.css       站台樣式與 design tokens
   harness.jsx      開發用：?lab=JwtLab 只渲染該實驗室
-  verify.jsx       開發用：?verify=1 把每題解答與起始碼丟進真實執行環境評分
-docs/              CURRICULUM.md、AUDIT.md、CONTRIBUTING-labs.md、CONTRIBUTING-quizzes.md、CONTRIBUTING-scenarios.md
+  verify.jsx       開發用：?verify=1 把每題解答與起始碼丟進真實執行環境評分；?verify=deep 執行深入內容的每個 run 區塊
+docs/              CURRICULUM.md、PLAN-2026Q4.md、AUDIT.md、CONTRIBUTING-lessons.md、CONTRIBUTING-labs.md、CONTRIBUTING-quizzes.md、CONTRIBUTING-scenarios.md
 scripts/           copy-pyodide.mjs、validate-content.mjs、validate-quizzes.mjs、validate-scenarios.mjs、test-progress.mjs
 firestore.rules    雲端進度的存取規則（本人才能讀寫、文件形狀固定）；firebase.json 是 emulator 設定
 .env.e2e           e2e 用的 Firebase 設定（指向 emulator 的 demo 專案）
@@ -116,26 +130,28 @@ e2e/               Playwright 腳本（見下）
 
 ## 路由
 
-hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/skill/sql-joins`、`#/labs`、`#/lab/SqlJoinLab`、`#/scenarios`、`#/scenario/pagination`、`#/exercises`、`#/exercise/sql-joins-1`、`#/playground?lang=sql`。
+hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/skill/sql-joins`、`#/labs`、`#/lab/SqlJoinLab`、`#/scenarios`、`#/scenario/pagination`、`#/exercises`、`#/exercise/sql-joins-1`、`#/project`、`#/project/concurrency`、`#/playground?lang=sql`（課程的「在 Playground 開啟」會帶 `&code=`）。
 
 ## 新增內容
 
 - **技能**：分兩處——`content/dN-*.js` 的 `skills` 加索引物件（id 全站唯一），`content/body/dN-*.js` 加同一個 id 的內文（`points` / `checklist` / `refs`）；`refs` 只放確定存在的官方文件。寫完跑 `npm run validate:content`（索引與內文的 id 必須一一對應）。
+- **深入內容**：見 `docs/CONTRIBUTING-lessons.md`（段落結構、語氣、可執行區塊的限制、新課的完整清單）；寫完跑 `npm run validate:content` 與 `npm run e2e:deep`。
 - **實驗室**：見 `docs/CONTRIBUTING-labs.md`（合約、共用元件 API、驗證流程）。
-- **程式題**：在 `content/exercises/<領域>.js` 加一筆：`kind` 為 `sql`（`setup` + `expect: { columns, rows, ordered }`，或 `expect.query` 指定驗證查詢）或 `python` / `js`（`tests: [{ name, code }]`，測試碼與使用者程式碼在同一命名空間；JS 內建 `assert` / `assertEqual`）。寫完跑 `npm run e2e:verify` 確認解答通過、起始碼不通過。
+- **程式題**：在 `content/exercises/<領域>.js` 加一筆：`kind` 為 `sql`（`setup` + `expect: { columns, rows, ordered }`，或 `expect.query` 指定驗證查詢）、`python` / `js`（`tests: [{ name, code }]`，測試碼與使用者程式碼在同一命名空間；JS 內建 `assert` / `assertEqual`）或 `config`（使用者的設定檔成為 `source` / `lines`，交給 JS 測試檢查）。寫完跑 `npm run e2e:verify` 確認解答通過、起始碼不通過。
 - **選擇題**：見 `docs/CONTRIBUTING-quizzes.md`；寫完跑 `npm run validate:quizzes`。
 - **設計情境**：見 `docs/CONTRIBUTING-scenarios.md`（內容格式、模擬器規則）；寫完跑 `npm run validate:scenarios`。
 
 ## 驗證
 
 ```bash
-npm run validate                 # 技能索引與內文對應、題庫、情境結構
+npm run validate                 # 技能索引與內文對應、深入內容、實作路線、題庫、情境結構
 npm run test:unit                # 進度合併規則（兩台裝置、離線、取消完成）
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
 npm run e2e:runtime              # Playground 的 Python / SQL / JS 真的能跑
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
+npm run e2e:deep                 # 深入內容的每個 run 區塊都能執行（ONLY=transactions 只驗指定的課）
 npm run e2e:ui                   # 練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停
-npm run e2e:labs                 # 37 個實驗室：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
+npm run e2e:labs                 # 54 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
 npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Emulator 與 preview；需要 Java 11+）
 ```

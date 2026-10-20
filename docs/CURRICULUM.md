@@ -276,13 +276,13 @@
 ## 二、16 週課綱
 
 - 每週預估 10–12 小時（平日 3 晚 × 2 小時 + 週末半天），16 週合計約 185 小時。
-- 前 4 週的作業直接對準他工作上正在寫的 API：可以用工作專案的匿名化版本，或本課綱的範例「訂單服務」。
+- 前 4 週的作業可以用實際專案的匿名化版本，或本課綱的範例「訂單服務」。
 - 三個里程碑：第 4 週 M1「本機可跑、有測試、有契約」；第 10 週 M2「多使用者、資安硬化、非同步化、有 CI」；第 16 週 M3「上線、可觀測、有備份演練與設計文件」。
 - 每週格式：主題 / 對應技能（我的編號 + 現有 id）/ 學習目標（能做到…）/ 動手作業 / 驗收標準 / 時數。
 
 ### 第 1 週｜Python 後端工程底盤：uv、專案結構、品質工具、FastAPI 生命週期
 
-- **對應技能**：A1–A5、F1（工具層）、F2 / F4（會用即可）。現有：`python-backend`、`uv-packaging`、`code-quality`、`web-framework`、`compose`
+- **對應技能**：A1–A5、F1（工具層）、F2 / F4（會用即可）。現有：`python-backend`、`uv-packaging`、`code-quality`、`web-framework`、`compose`；新增：`how-programs-run`、`data-representation`、`project-layering`
 - **學習目標**
   1. 能從零 `uv init` 一個 src layout 專案，加依賴、分 dev group、`uv run` 執行，並說明 `--locked` 與 `--frozen` 的差別
   2. 能用 pydantic v2 定義請求 / 回應模型，並讓 pyright 在 `basic` 模式零錯誤
@@ -294,7 +294,7 @@
 
 ### 第 2 週｜HTTP 與 REST 契約、OpenAPI、測試
 
-- **對應技能**：A6、B1–B4。現有：`http-basics`、`rest-design`、`openapi`、`input-validation`（基本）、`testing`
+- **對應技能**：A6、B1–B4。現有：`http-basics`、`rest-design`、`openapi`、`input-validation`（基本）、`testing`；新增：`error-design`
 - **學習目標**
   1. 能為常見情境挑對狀態碼（找不到 / 沒登入 / 沒權限 / 驗證失敗 / 衝突 / 伺服器錯），並解釋 PUT 冪等而 POST 不是
   2. 能為「訂單」設計 6 個 endpoint（方法、路徑、成功狀態碼、錯誤格式）並寫成 RFC 9457 統一錯誤
@@ -306,7 +306,7 @@
 
 ### 第 3 週｜SQL 與資料建模（PostgreSQL 為主、MongoDB 對照）
 
-- **對應技能**：A8、C1–C3、C12。現有：`sql-basics`、`sql-joins`、`data-modeling`、`mongodb`
+- **對應技能**：A8、C1–C3、C12。現有：`sql-basics`、`sql-joins`、`data-modeling`、`mongodb`；新增：`schema-design-practice`、`full-text-search`
 - **學習目標**
   1. 能寫出 users / products / orders / order_items 的 DDL，含 PK / FK / UNIQUE / CHECK / NOT NULL，型別用 `NUMERIC` / `TIMESTAMPTZ` / `BIGINT`
   2. 能解釋 `WHERE status != 'paid'` 為何漏掉 NULL、`NOT IN` 含 NULL 為何整個變空
@@ -331,7 +331,7 @@
 
 ### 第 5 週｜驗證基礎、帳號生命週期、密碼儲存、注入
 
-- **對應技能**：D1、D2、E1–E4。現有：`authn-basics`、`password-storage`、`injection`、`owasp-top10`、`input-validation`
+- **對應技能**：D1、D2、E1–E4。現有：`authn-basics`、`password-storage`、`injection`、`owasp-top10`、`input-validation`；新增：`account-lifecycle`
 - **學習目標**
   1. 能畫出 session 與 token 兩種登入的時序圖，說出各自怎麼撤銷、各防什麼攻擊
   2. 能實作註冊 / 登入 / 登出 / 重設密碼，密碼用 argon2id，重設 token 一次性且 30 分鐘到期
@@ -355,7 +355,7 @@
 
 ### 第 7 週｜OAuth / OIDC、XSS / CSRF / 安全標頭、秘密與供應鏈
 
-- **對應技能**：D6、E5–E8。現有：`oauth-oidc`、`xss-csrf`、`secrets`、`supply-chain`
+- **對應技能**：D6、E5–E8。現有：`oauth-oidc`、`xss-csrf`、`secrets`、`supply-chain`；新增：`logs-pii`
 - **學習目標**
   1. 能畫出授權碼 + PKCE 流程 8 步，標出哪步在瀏覽器、哪步在後端，說明 state 與 PKCE 各防什麼
   2. 能區分 access_token 與 id_token，並說明 confidential 與 public client 誰換 token
@@ -367,7 +367,7 @@
 
 ### 第 8 週｜索引、查詢計畫、交易與鎖、進階 SQL、Big-O
 
-- **對應技能**：C6–C9、C13、I1。現有：`indexes`、`transactions`、`sql-advanced`、`mongodb-ops`、`big-o`
+- **對應技能**：C6–C9、C13、I1。現有：`indexes`、`transactions`、`sql-advanced`、`mongodb-ops`、`big-o`；新增：`locks-deadlocks`
 - **學習目標**
   1. 能對一條慢查詢跑 `EXPLAIN (ANALYZE, BUFFERS)`，指出瓶頸節點、建對索引、量出前後差異
   2. 能解釋複合索引欄位順序怎麼決定，列出三種「有索引但用不到」的情況
@@ -379,7 +379,7 @@
 
 ### 第 9 週｜並發模型、量測、快取、限流、外部呼叫韌性
 
-- **對應技能**：A9、A10、C14、H1–H4。現有：`python-async`、`redis-cache`、`rate-limiting`、`lru-cache`
+- **對應技能**：A9、A10、C14、H1–H4。現有：`python-async`、`redis-cache`、`rate-limiting`、`lru-cache`；新增：`concurrency-bugs`
 - **學習目標**
   1. 能用數字示範「在 async handler 裡呼叫同步 sleep」如何卡死所有請求，並用 `to_thread` 或 async driver 修好
   2. 能用 k6 量出 p95，並在加快取前後給出對照數字
@@ -391,7 +391,7 @@
 
 ### 第 10 週｜佇列與背景工作、冪等鍵、分頁、Webhook、機器身分 → 里程碑 M2
 
-- **對應技能**：B5、B6、B8、D7、D8、H5、H6。現有：`queues-workers`、`api-patterns`、`beyond-rest`（Webhook）、`api-keys-mfa`（API key）
+- **對應技能**：B5、B6、B8、D7、D8、H5、H6。現有：`queues-workers`、`api-patterns`、`beyond-rest`（Webhook）、`api-keys-mfa`（API key）；新增：`job-scheduling`、`realtime-choice`
 - **學習目標**
   1. 能把「註冊後寄歡迎信」改成佇列 + worker，重複投遞不會寄兩封（消費者冪等）
   2. 能實作 `Idempotency-Key`，同 key 重送回同結果且不重複建單
@@ -404,7 +404,7 @@
 
 ### 第 11 週｜Docker 原理、正式 Dockerfile、Compose 進階、nginx、網路基礎
 
-- **對應技能**：B9、B11、F2–F5。現有：`docker-basics`、`dockerfile-python`、`compose`、`nginx`、`http-caching`
+- **對應技能**：B9、B11、F2–F5。現有：`docker-basics`、`dockerfile-python`、`compose`、`nginx`、`http-caching`；新增：`tcp-connections`、`http2-http3`、`load-balancing`
 - **學習目標**
   1. 能解釋 layer 快取，重排 Dockerfile 讓改程式碼不重裝依賴，並用 `docker image history` 指出可瘦身處
   2. 能寫多階段、非 root、exec 形式 CMD、有 HEALTHCHECK 的 Python Dockerfile，image < 250MB
@@ -428,7 +428,7 @@
 
 ### 第 13 週｜上線：Linux 維運、TLS / DNS、程序管理、雲端與物件儲存
 
-- **對應技能**：B10、C10、F1（維運層）、F7–F9。現有：`tls-dns`、`process-servers`、`cloud-basics`
+- **對應技能**：B10、C10、F1（維運層）、F7–F9。現有：`tls-dns`、`process-servers`、`cloud-basics`；新增：`object-storage`
 - **學習目標**
   1. 能 ssh 進一台 VM，用 `ss / top / df / journalctl / lsof` 回答「哪個程序佔 port、磁碟剩多少、剛才為何重啟」
   2. 能設定網域 A 紀錄、用 ACME 自動取得憑證、nginx 終結 TLS 並把 HTTP 導向 HTTPS
@@ -464,7 +464,7 @@
 
 ### 第 16 週｜系統設計、設計文件、選型 → 里程碑 M3
 
-- **對應技能**：C15、I5–I7、E9（走一遍）。現有：`system-design`、`db-choice`
+- **對應技能**：C15、I5–I7、E9（走一遍）。現有：`system-design`、`db-choice`；新增：`distributed-basics`
 - **學習目標**
   1. 能用六步驟（需求 → 估算 → API → 資料 → 架構 → 瓶頸 → 取捨）在 45 分鐘內設計「通知系統」並講給同事聽
   2. 能寫一頁設計文件與 3 份 ADR，說明本專案每個元件為何在那裡
@@ -482,6 +482,95 @@
 | M1 訂單 API v1 | 第 4 週 | 本機可跑、有測試、有契約的 CRUD API | compose、Alembic、≥ 25 測試、openapi.json、README、JSON log |
 | M2 多使用者訂單服務 | 第 10 週 | 有驗證授權、資安硬化、快取與背景工作的服務 | 登入 / OAuth / RBAC、限流、上傳、cache-aside、worker + outbox、冪等鍵、Webhook、API key、稽核、OWASP 自評 |
 | M3 上線 | 第 16 週 | 部署到公開網域、看得見、救得回、講得清 | Dockerfile、nginx + TLS、CI/CD、metrics / trace / 錯誤追蹤、備份演練、runbook、postmortem、設計文件 + ADR |
+
+
+### 實作路線與週次對照
+
+本站的[實作路線](#/project)把前 16 週的課組成一個門診掛號後端，八個階段各有在瀏覽器裡跑的驗收題，可以和課綱並行：
+
+| 階段 | 建議週次 | 對應課 |
+|---|---|---|
+| 1 資料表與約束 | 第 3 週 | `data-modeling`、`sql-basics`、`transactions` |
+| 2 掛號規則寫成程式與測試 | 第 2–4 週 | `python-backend`、`testing` |
+| 3 REST 介面與狀態碼 | 第 2 週 | `rest-design`、`api-patterns`、`openapi` |
+| 4 登入與角色權限 | 第 5–6 週 | `authn-basics`、`rbac-abac`、`auth-in-practice` |
+| 5 同時搶最後一個號 | 第 8 週 | `transactions`、`indexes` |
+| 6 快取與限流 | 第 9 週 | `redis-cache`、`rate-limiting` |
+| 7 打包與持續整合 | 第 11–12 週 | `dockerfile-python`、`ci-pipeline` |
+| 8 日誌、指標與追蹤 | 第 14 週 | `logging-config`、`observability` |
+
+### 延伸週次（第 17–22 週）
+
+前 16 週之後的延伸模組，對應本站領域 9–11。每週約 8–10 小時，可依需要挑選，不必依序。
+
+### 第 17 週｜基礎建設：網路排查、HTTPS 憑證、容量規劃
+
+- **對應技能**：`devops-glossary`、`network-troubleshooting`、`https-certificates`、`capacity-planning`
+- **學習目標**
+  1. 能依 DNS → TCP → TLS → HTTP 的順序排查「連不上」，並從錯誤訊息判斷是哪一層
+  2. 能說明憑證鏈、DV / OV / EV、萬用字元憑證、院內 CA 與公開 CA 的差別，並規劃自動續約
+  3. 能從尖峰流量估算 CPU、記憶體、磁碟與 IOPS，並換算成 K8s 的 requests / limits
+- **動手作業**：對一個服務寫排查 runbook（每一層一個指令與預期輸出）；列出組織內所有對外網域的憑證到期日與續約方式；為一個服務寫容量估算表。
+- **驗收標準**：runbook 能讓另一人照著定位一個注入的故障；憑證清單沒有遺漏且每張都有負責人；容量估算附假設與安全係數。
+- **預估時數**：9 小時
+
+### 第 18 週｜GitLab CI/CD、導入 K8s、主機放哪裡、變更管理
+
+- **對應技能**：`gitlab-cicd`、`k8s-readiness`、`hosting-models`、`change-management`
+- **學習目標**
+  1. 能寫出含 stages、受保護變數、environments、MR pipeline 的 `.gitlab-ci.yml`
+  2. 能列出導入 K8s 前要準備的元件（Ingress、儲存、映像倉庫、監控、秘密管理），並指出地端要自己補哪些
+  3. 能用成本、彈性、合規、維運人力比較地端、雲端與混合
+  4. 能為一次含 schema 變更的上線寫變更單、回滾計畫與 go / no-go 檢核點
+- **動手作業**：把一個服務的 CI 改成 GitLab CI 並加上部署到測試環境的 job；寫一頁 K8s 導入準備清單；為一次週末上線寫變更單。
+- **驗收標準**：pipeline 在 MR 與 main 上各跑一次且秘密不出現在日誌；變更單包含回滾步驟與每一步的負責人。
+- **預估時數**：10 小時
+
+### 第 19 週｜資料治理、SLO 與事故處理
+
+- **對應技能**：`data-governance`、`slo-error-budget`、`incident-response`
+- **學習目標**
+  1. 能說明做數據中台之前要先完成的治理工作：盤點、資料目錄、負責人、品質規則、主資料、血緣、權限與去識別化
+  2. 能為一個服務定義 SLI 與 SLO，並用錯誤預算決定何時暫停上線
+  3. 能在事故中分出指揮、溝通、紀錄的角色，事後寫一份不究責的 postmortem
+- **動手作業**：對一個資料來源寫品質規則（SQL）並列出負責人；為一個 API 定義兩個 SLO 與告警；做一次事故演練並寫 postmortem。
+- **驗收標準**：品質規則能抓出注入的髒資料；SLO 告警在模擬故障時觸發；postmortem 有時間線、影響、根因與追蹤項目。
+- **預估時數**：9 小時
+
+### 第 20 週｜AI 時代的團隊開發：ADR、垂直切片、規範變測試、品質閘門
+
+- **對應技能**：`ai-adr`、`ai-vertical-slices`、`ai-spec-to-tests`、`ai-quality-gates`、`ai-skills-mcp`、`ai-multi-agent`
+- **學習目標**
+  1. 能寫 ADR 記錄設計決策，並讓 AI 協作時引用它
+  2. 能把一個需求拆成垂直切片的票，標出阻擋關係
+  3. 能把規範寫成測試（red → green → refactor），讓 AI 改的程式碼有明確的完成條件
+  4. 能為 AI 修改的程式碼設 lint、型別、相依檢查等品質閘門
+- **動手作業**：為一個功能寫 ADR 與切片票；用測試先行完成其中一片；在 CI 加上品質閘門。
+- **驗收標準**：每張票都能獨立交付與驗收；閘門能擋下一個刻意加入的違規。
+- **預估時數**：9 小時
+
+### 第 21 週｜Agent 的身分、授權與資安
+
+- **對應技能**：`oauth-device-pkce`、`mcp-authorization`、`mcp-gateway`、`identity-gateway`、`cli-token-storage`、`key-scope-lifetime`、`owasp-mcp-top10`、`tool-poisoning`、`agent-credential-isolation`、`agent-supply-chain`
+- **學習目標**
+  1. 能依客戶端型態選 Device Code、Authorization Code + PKCE 或 Client Credentials
+  2. 能說明 MCP Authorization 的流程，以及 gateway 與集中式身分閘道各解決什麼問題
+  3. 能檢查一把金鑰的範圍、期限與撤銷方式，並把 CLI token 存進 OS keyring
+  4. 能說明 Tool Poisoning 與 rug pull，並設計憑證隔離與工具版本鎖定
+- **動手作業**：盤點團隊使用的 AI 工具與 MCP server，列出各自拿到的憑證、範圍與期限；依 OWASP MCP Top 10 做一次自評。
+- **驗收標準**：盤點表沒有「沒有期限、沒有範圍」的憑證，或每一筆都有替換計畫。
+- **預估時數**：10 小時
+
+### 第 22 週｜知識系統：從 RAG 到 LLM Wiki
+
+- **對應技能**：`rag-basics`、`llm-wiki`、`knowledge-graph`、`knowledge-choice`、`knowledge-poisoning`
+- **學習目標**
+  1. 能說明 RAG 的切段、嵌入、檢索流程與限制
+  2. 能說明 LLM Wiki 的三層（原始資料、LLM 維護的 wiki、規範文件）與知識圖譜的用途
+  3. 能依規模、權限、即時性、可追溯性選擇做法，並防範原始資料下毒與間接提示注入
+- **動手作業**：把一組團隊文件整理成有 `[[連結]]` 的 wiki，找出孤兒頁與斷鏈；寫一個反向連結索引。
+- **驗收標準**：每個 wiki 頁都能追溯到原始資料；反向連結索引與實際連結一致。
+- **預估時數**：8 小時
 
 ---
 

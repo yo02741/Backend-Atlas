@@ -32,7 +32,8 @@ export async function resetSchema(setupSql = '', key = null, force = false) {
   const db = await ensureSql()
   const k = key || setupSql
   if (!force && currentSetupKey === k) return db
-  await db.exec('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;')
+  // RESET ALL：前一段程式的 SET（例如 TimeZone）不留到下一段
+  await db.exec('RESET ALL; DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;')
   if (setupSql) await db.exec(setupSql)
   currentSetupKey = k
   return db

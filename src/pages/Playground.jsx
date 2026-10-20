@@ -3,7 +3,7 @@ import { decodePlaygroundCode } from '../playgroundLink.js'
 import CodeEditor from '../components/CodeEditor.jsx'
 import { ConsoleOut, ResultTable, PlanTree, RuntimeStatus } from '../components/Output.jsx'
 import { runPython, ensurePython } from '../runtime/py.js'
-import { runSql, resetSchema, explain, ensureSql } from '../runtime/sql.js'
+import { runSql, resetSchema, explain, ensureSql, invalidateSchema } from '../runtime/sql.js'
 import { runJs } from '../runtime/js.js'
 import { SHOP_SCHEMA, SHOP_TABLES } from '../content/schemas.js'
 
@@ -137,6 +137,8 @@ export default function Playground({ initialLang = 'python', initialCode = '' })
   const [lang, setLang] = useState(LANGS.some((l) => l.id === initialLang) ? initialLang : 'python')
   // 從課程的「在 Playground 開啟」進來：載入那段程式碼；使用者改過之前不覆蓋原本的草稿
   const linked = React.useRef(decodePlaygroundCode(initialCode))
+  // 課程範例假設資料庫是初始狀態：之前在 Playground 建的表或改的資料不能留著
+  useEffect(() => { if (linked.current != null) invalidateSchema() }, [])
   const [code, setCode] = useState(() => linked.current ?? loadDraft(lang) ?? SAMPLES[lang][0].code)
   const [out, setOut] = useState(null)
   const [busy, setBusy] = useState(false)

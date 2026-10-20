@@ -1,17 +1,29 @@
 // 全站掃描：每個路由在 亮 / 暗 / 390px 下載入，收集 pageerror、console error/warning、橫向溢出，並截幾張圖到 e2e/shots/
 // 前置：npm run build && npm run preview（或設 E2E_BASE 指向 dev server）
 import { chromium } from 'playwright'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 const base = process.env.E2E_BASE || 'http://localhost:4173/'
-const labs = ['SqlJoinLab', 'IndexLab', 'DocVsRelLab', 'CacheLab', 'JwtLab', 'OAuthLab', 'AccessControlLab', 'SqlInjectionLab', 'HashingLab', 'HttpLab', 'DockerLab', 'ComposeLab', 'NginxLab', 'PipelineLab', 'BigOLab', 'RateLimitLab', 'AsyncLab', 'RestLab', 'UvLab']
+// 實驗室、情境、領域、實作路線階段直接從內容讀，新增的頁面不會漏掃
+const src = (p) => fileURLToPath(new URL(`../src/${p}`, import.meta.url))
+const labs = readdirSync(src('labs')).filter((f) => /Lab\.jsx$/.test(f)).map((f) => f.replace('.jsx', ''))
+const scenarios = readdirSync(src('content/scenarios')).filter((f) => f.endsWith('.js') && f !== 'index.js').map((f) => f.replace('.js', ''))
+const { ALL_DOMAINS } = await import(src('content/roadmap.js'))
+const { STAGES } = await import(src('content/project/stages.js'))
+const domains = ALL_DOMAINS.filter((d) => d.skills.length).map((d) => d.id)
 const routes = [
-  '#/', '#/roadmap', '#/roadmap?kw=JWT', '#/labs', '#/curriculum', '#/exercises',
-  '#/exercise/sql-joins-1', '#/exercise/jwt-1', '#/exercise/http-basics-1',
+  '#/', '#/roadmap', '#/roadmap?kw=JWT', '#/labs', '#/curriculum', '#/curriculum?week=21', '#/exercises',
+  '#/exercise/sql-joins-1', '#/exercise/jwt-1', '#/exercise/http-basics-1', '#/exercise/gitlab-cicd-1', '#/exercise/project-schema-1',
   '#/playground', '#/playground?lang=sql', '#/playground?lang=js',
-  '#/scenarios', ...['pagination', 'cache', 'idempotency', 'ratelimit-strategy', 'long-task', 'upload', 'search-filter', 'versioning', 'auth-scheme', 'multi-tenant', 'soft-delete', 'replica-consistency', 'scale-path', 'flash-sale', 'queue-backpressure', 'db-scaling', 'edge-cache', 'notifications-fanout'].map((id) => `#/scenario/${id}`),
-  '#/domain/data', '#/domain/auth',
-  '#/skill/python-backend', '#/skill/sql-joins', '#/skill/jwt', '#/skill/docker-basics', '#/skill/linux-basics', '#/skill/crypto-toolbox',
+  '#/scenarios', ...scenarios.map((id) => `#/scenario/${id}`),
+  ...domains.map((id) => `#/domain/${id}`),
+  '#/project', ...STAGES.map((s) => `#/project/${s.id}`),
+  // 每個領域挑一兩課（深入內容的表格、程式碼區塊最容易在手機上撐破版面）
+  '#/skill/python-backend', '#/skill/how-programs-run', '#/skill/sql-joins', '#/skill/transactions', '#/skill/indexes', '#/skill/jwt',
+  '#/skill/cors-cookies', '#/skill/docker-basics', '#/skill/linux-basics', '#/skill/cloud-basics', '#/skill/crypto-toolbox',
+  '#/skill/git-workflow', '#/skill/system-design', '#/skill/https-certificates', '#/skill/data-governance', '#/skill/k8s-readiness',
+  '#/skill/mcp-gateway', '#/skill/key-scope-lifetime', '#/skill/agent-credential-isolation', '#/skill/rag-basics', '#/skill/llm-wiki',
   ...labs.map((l) => `#/lab/${l}`),
 ]
 const shotFor = { '#/scenarios': 'scenarios', '#/scenario/pagination': 'scenario-pagination', '#/': 'home', '#/curriculum': 'curriculum', '#/exercises': 'exercises', '#/skill/sql-joins': 'skill-joins', '#/labs': 'labs', '#/lab/JwtLab': 'lab-jwt', '#/playground?lang=sql': 'playground-sql' }

@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const { DOMAINS } = await import(pathToFileURL(resolve(here, '../src/content/roadmap.js')).href)
 const skillIds = new Set(DOMAINS.flatMap((d) => d.skills.map((s) => s.id)))
-const GROUPS = new Set(['api', 'data', 'traffic'])
+const GROUPS = new Set(['api', 'data', 'traffic', 'ops', 'agent'])
 const dir = resolve(here, '../src/content/scenarios')
 const labDir = resolve(here, '../src/labs/scenarios')
 const errors = []
@@ -20,7 +20,7 @@ for (const f of readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'index
   if (!s.id || ids.has(s.id)) errors.push(`${tag}: id 缺少或重複 (${s.id})`)
   ids.add(s.id)
   if (s.id && f !== `${s.id}.js`) errors.push(`${tag}: 檔名應為 ${s.id}.js`)
-  if (!GROUPS.has(s.group)) errors.push(`${tag}: group 必須是 api / data / traffic`)
+  if (!GROUPS.has(s.group)) errors.push(`${tag}: group 必須是 api / data / traffic / ops / agent`)
   if (!s.title || !s.summary || !s.situation) errors.push(`${tag}: title / summary / situation 必填`)
   if (![1, 2, 3].includes(s.level)) errors.push(`${tag}: level 必須是 1–3`)
   if (!Array.isArray(s.constraints) || s.constraints.length < 3) errors.push(`${tag}: constraints 至少 3 條`)

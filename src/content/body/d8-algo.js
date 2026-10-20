@@ -62,6 +62,25 @@ export default {
       { label: 'Redis：Key eviction', url: 'https://redis.io/docs/latest/develop/reference/eviction/' },
     ],
   },
+  'concurrency-bugs': {
+    points: [
+      { b: '兩種基本形狀', t: 'check-then-act（「沒有就建立」「餘額夠就扣」）與 read-modify-write（`count += 1`）。只要「查」和「做」之間能插進別人，就會出現重複建立與 lost update。' },
+      { b: '程式內：執行緒與 async', t: 'GIL 不保證 `x += 1` 是原子的；asyncio 只在 `await` 切換，所以兩個 `await` 之間的程式不會被同一個 loop 的其他 task 打斷，但「查」和「做」中間隔著 `await` 就會出事。用 `threading.Lock` / `asyncio.Lock` 把整段包起來。' },
+      { b: '跨程序、跨主機：交給唯一的仲裁者', t: '多個 worker、多台主機時程式內的鎖沒用。讓資料庫判斷：條件更新（`UPDATE … WHERE stock > 0`）、唯一約束 + `ON CONFLICT`、`SELECT … FOR UPDATE`、樂觀鎖的 version 欄位。' },
+      { b: '重複提交用冪等鍵', t: '連點兩次、逾時重試、佇列重送都會讓同一個動作到達兩次。客戶端為每個動作產生一個 key，伺服器用唯一約束記住它，第二次直接回第一次的結果。' },
+      { b: '死結：四個條件缺一不可', t: '互斥、持有並等待、不可搶占、循環等待。實務上破壞循環等待最簡單：一律依固定順序（例如 id 由小到大）上鎖；再加上鎖等待逾時，讓卡住的一方失敗重試。' },
+    ],
+    checklist: [
+      '能在一段程式裡指出 check-then-act 或 read-modify-write，並說明在多 worker 下為什麼程式內的鎖不夠',
+      '能用條件更新、唯一約束或冪等鍵改寫一個「重複建立」的 bug',
+      '能說出死結的四個條件，並用固定上鎖順序修好一個轉帳死結',
+    ],
+    refs: [
+      { label: 'Python：asyncio Synchronization Primitives', url: 'https://docs.python.org/3/library/asyncio-sync.html' },
+      { label: 'PostgreSQL：Explicit Locking', url: 'https://www.postgresql.org/docs/current/explicit-locking.html' },
+      { label: 'PostgreSQL：INSERT（ON CONFLICT）', url: 'https://www.postgresql.org/docs/current/sql-insert.html' },
+    ],
+  },
   'queues-workers': {
     points: [
       { b: '生產者 / 佇列 / 消費者', t: 'API 把任務（含參數）放進佇列就回 202；worker 程序取出執行；狀態存 DB 讓前端輪詢或推播。' },
@@ -76,6 +95,24 @@ export default {
     ],
     refs: [],
   },
+  'job-scheduling': {
+    points: [
+      { b: 'cron 五個欄位', t: '分、時、日、月、星期；`*/15` 每 15 分、`1-5` 範圍、`0,30` 列舉。cron 用的是主機（容器通常是 UTC）的時區；日與星期都指定時，傳統 cron 是「任一個符合就跑」。' },
+      { b: '多台主機會重複執行', t: '排程寫在 web 程序裡、開三個副本就跑三次。解法：獨立只跑一份的排程程序、Kubernetes CronJob、資料庫 advisory lock，或最穩的「執行紀錄表 + 唯一約束」——誰先插入 (job, 排定時間) 誰執行。' },
+      { b: '錯過的不會自己補', t: '主機停機、部署中的那一刻過了就過了（systemd timer 的 `Persistent=true`、CronJob 的 `startingDeadlineSeconds` 各有自己的規則）。更好的設計是處理「上次成功之後的所有資料」，而不是「昨天」。' },
+      { b: '工作要冪等', t: '重複觸發與重試一定會發生。用「排定時間」而不是「實際開始時間」決定處理範圍，結果用 upsert 寫入，寄信等副作用記錄 (對象, 期間) 防重送。' },
+      { b: '時區、逾時與 heartbeat', t: '有夏令時間的時區，某些當地時間一年會不存在一次、重複一次；排程盡量用 UTC 寫。長工作要設逾時與防重疊（CronJob `concurrencyPolicy: Forbid`），成功時送 heartbeat，監控在「該到沒到」時告警。' },
+    ],
+    checklist: [
+      '能讀寫 cron 表達式，並說出它是用哪個時區解讀',
+      '能為部署成多副本的服務設計「同一時間只執行一次」的排程，並說明主機在執行中掛掉時會怎樣',
+      '能為一個每日工作設計補跑與冪等策略，以及「根本沒跑」時的告警',
+    ],
+    refs: [
+      { label: 'Kubernetes：CronJob', url: 'https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/' },
+      { label: 'PostgreSQL：System Administration Functions（Advisory Lock Functions）', url: 'https://www.postgresql.org/docs/current/functions-admin.html' },
+    ],
+  },
   'scaling': {
     points: [
       { b: 'API 無狀態', t: 'session 放 Redis、檔案放物件儲存、程序內不存跨請求資料——任何一台都能服務任何請求，前面放負載平衡器就能加台。' },
@@ -89,6 +126,25 @@ export default {
       '能畫出一主多讀的架構並說明延遲問題怎麼處理',
     ],
     refs: [],
+  },
+  'distributed-basics': {
+    points: [
+      { b: '逾時不等於失敗', t: '呼叫另一個服務逾時，可能是請求沒到、對方做完但回應丟了、或對方還在做。三種情況從呼叫端看起來一樣，所以重試的操作必須冪等。' },
+      { b: 'CAP：分區時的取捨', t: '網路分區一定會發生，分區期間只能選：拒絕部分請求以維持一致（C），或照常回應但可能回舊資料（A）。沒有分區時兩者都能有，取捨變成延遲與一致性。不是「三選二任選」。' },
+      { b: '一致性有很多層級', t: '強一致（像只有一份資料）、讀己所寫、單調讀、最終一致。非同步複製的副本有延遲，「寫完立刻讀」要讀主庫或帶版本讀，見設計情境「讀寫分離後的我剛存的怎麼不見了」。' },
+      { b: '時鐘不能拿來排序', t: '各主機的時鐘會漂移、NTP 校正時可能往回跳。用不同主機的時間戳做「最後寫入者勝」會吃掉更新；量時間間隔用 monotonic clock，排序用資料庫序號、版本號或邏輯時鐘。' },
+      { b: '跨服務交易：saga 而不是 2PC', t: '兩階段提交在協調者掛掉時會讓參與者握著鎖等待，而且多數訊息系統與外部 API 不支援。saga 把流程拆成一串本地交易，失敗時依反向順序執行補償動作；中間狀態看得見，要有明確的狀態欄位。' },
+    ],
+    checklist: [
+      '能用 CAP 說明一個服務在網路分區時會拒絕請求還是回舊資料，並解釋「三選二」錯在哪',
+      '能指出一個系統裡依賴不同主機時鐘排序的地方，並改用版本號或資料庫序號',
+      '能把「建立訂單 → 扣庫存 → 付款」設計成 saga，寫出每一步的補償動作',
+    ],
+    refs: [
+      { label: 'PostgreSQL：High Availability, Load Balancing, and Replication', url: 'https://www.postgresql.org/docs/current/high-availability.html' },
+      { label: 'PostgreSQL：PREPARE TRANSACTION', url: 'https://www.postgresql.org/docs/current/sql-prepare-transaction.html' },
+      { label: 'The Raft Consensus Algorithm', url: 'https://raft.github.io/' },
+    ],
   },
   'system-design': {
     points: [

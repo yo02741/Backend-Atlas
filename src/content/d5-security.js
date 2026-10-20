@@ -80,6 +80,16 @@ export default {
       lab: null,
     },
     {
+      id: 'logs-pii',
+      title: '日誌與稽核紀錄裡的個資',
+      en: 'PII in logs & audit trails',
+      level: 2,
+      summary: '請求 body、query string、Authorization 標頭、例外訊息都會把個資與 token 帶進日誌；用欄位白名單與遮罩擋在寫入前，稽核紀錄另外設計、另外管。',
+      example: { primary: 'Python logging Filter + 結構化日誌', alts: ['structlog processor', 'OpenTelemetry Collector 的屬性遮罩'] },
+      keywords: ['Python', 'OWASP'],
+      lab: null,
+    },
+    {
       id: 'supply-chain',
       title: '依賴與供應鏈安全',
       en: 'Supply chain',

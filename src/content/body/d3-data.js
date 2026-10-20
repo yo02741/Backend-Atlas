@@ -50,6 +50,26 @@ export default {
       { label: 'PostgreSQL：Constraints', url: 'https://www.postgresql.org/docs/current/ddl-constraints.html' },
     ],
   },
+  'schema-design-practice': {
+    points: [
+      { b: '先從需求句子找名詞與規則', t: '名詞是候選實體（病患、醫師、診次、掛號），「每個…只能…」是唯一約束，「必須是…之一」是 CHECK，「…屬於…」是外鍵。規則寫進 DDL，任何程式路徑都繞不過。' },
+      { b: '主鍵：bigint identity 或 UUID', t: '`bigint GENERATED ALWAYS AS IDENTITY` 小、有序、索引友善；需要在用戶端先產生 id、或不想讓 id 透露數量時用 UUID（有時間序的 UUIDv7 對索引比較友善）。業務上的編號（病歷號）另設唯一約束，不拿來當主鍵。' },
+      { b: '外鍵的 ON DELETE 是業務決定', t: '掛號紀錄不該因為刪醫師而消失：用預設的 `NO ACTION` / `RESTRICT` 擋下；只有「從屬且沒有獨立意義」的資料（例如草稿的附件）才用 `CASCADE`。' },
+      { b: '時間用 timestamptz、狀態用受限文字', t: '`timestamptz` 存的是絕對時間點，顯示時才轉時區；狀態欄位用 `text` + `CHECK (status IN (...))`，比 enum 好改。「同一病患同一診次只能有一筆有效掛號」用部分唯一索引（`WHERE status <> \'cancelled\'`）。' },
+      { b: 'migration 分步走', t: '加必填欄位：先加 nullable 欄位 → 部署會寫入的程式 → 分批回填 → 加 `CHECK … NOT VALID` 再 `VALIDATE` → `SET NOT NULL`。每一步都能單獨上線、單獨回退。' },
+    ],
+    checklist: [
+      '能把一段需求拆成資料表，並指出每條業務規則落在哪個約束',
+      '能說明某個外鍵為什麼選 RESTRICT 而不是 CASCADE',
+      '能規劃「替大表加一個必填欄位」的分步 migration',
+    ],
+    refs: [
+      { label: 'PostgreSQL：Constraints', url: 'https://www.postgresql.org/docs/current/ddl-constraints.html' },
+      { label: 'PostgreSQL：Partial Indexes', url: 'https://www.postgresql.org/docs/current/indexes-partial.html' },
+      { label: 'PostgreSQL：Date/Time Types', url: 'https://www.postgresql.org/docs/current/datatype-datetime.html' },
+      { label: 'PostgreSQL：ALTER TABLE', url: 'https://www.postgresql.org/docs/current/sql-altertable.html' },
+    ],
+  },
   'indexes': {
     points: [
       { b: '索引是排序好的副本', t: 'B-tree 把欄位值排序存在樹裡，查一個值只要走樹高（幾層），不用掃整張表。代價：每次寫入要同步更新索引。' },
@@ -69,6 +89,25 @@ export default {
       { label: 'Use The Index, Luke', url: 'https://use-the-index-luke.com/' },
     ],
   },
+  'full-text-search': {
+    points: [
+      { b: '前置萬用字元用不到 B-tree', t: "`LIKE '%keyword%'` 只能逐列比對字串，資料量變大時成本線性成長；而且子字串比對分不出詞的邊界（`%log%` 會命中 `catalog`、`blog`），也沒有相關度可以排序。" },
+      { b: 'tsvector 是斷詞後的詞位清單', t: "`to_tsvector('english', 'Indexes are rebuilt')` 得到 `'index':1 'rebuilt':3`：轉小寫、去掉停用詞（are）、還原字根（indexes → index），並記下位置。查詢端的 `to_tsquery` 也做同樣處理，兩邊才對得上。" },
+      { b: '@@ 比對、GIN 索引加速', t: '`WHERE tsv @@ query` 判斷是否命中；在 tsvector 欄位（或 `to_tsvector(...)` 表達式）建 GIN 索引，查詢就不用掃全表。建索引與查詢用的設定（english / simple）必須一致，表達式索引才用得上。' },
+      { b: 'ts_rank 排序、setweight 加權', t: '`ts_rank(tsv, query)` 依詞頻與權重算分數；標題用 `setweight(..., \'A\')`、內文用 B，標題命中排前面。分數只用來排序，不同查詢之間的數字不能比。' },
+      { b: '中文沒有內建斷詞', t: "PostgreSQL 內建的設定不會切中文：`to_tsvector('simple', '全文檢索很好用')` 整句變成一個詞。可行的路：應用層先斷詞再寫入、zhparser 這類擴充、`pg_trgm` 三元組比對，或改用 Elasticsearch / OpenSearch。" },
+    ],
+    checklist: [
+      "能解釋 `LIKE '%x%'` 為什麼用不到 B-tree 索引",
+      '能建一個 tsvector 產生欄位 + GIN 索引，並用 ts_rank 排出結果',
+      '能說出中文全文檢索有哪幾種做法與各自的代價',
+    ],
+    refs: [
+      { label: 'PostgreSQL：Full Text Search', url: 'https://www.postgresql.org/docs/current/textsearch.html' },
+      { label: 'PostgreSQL：Controlling Text Search', url: 'https://www.postgresql.org/docs/current/textsearch-controls.html' },
+      { label: 'PostgreSQL：pg_trgm', url: 'https://www.postgresql.org/docs/current/pgtrgm.html' },
+    ],
+  },
   'transactions': {
     points: [
       { b: 'ACID 四個字', t: '原子性（全做或全不做）、一致性（約束永遠成立）、隔離性（並發交易互不干擾的程度）、持久性（COMMIT 後斷電也在）。' },
@@ -84,6 +123,25 @@ export default {
     ],
     refs: [
       { label: 'PostgreSQL：Transaction Isolation', url: 'https://www.postgresql.org/docs/current/transaction-iso.html' },
+    ],
+  },
+  'locks-deadlocks': {
+    points: [
+      { b: '列鎖四種強度', t: '`FOR UPDATE`（要改或刪）> `FOR NO KEY UPDATE`（一般 UPDATE 自動拿的）> `FOR SHARE`（只要確保別人不能改）> `FOR KEY SHARE`（外鍵檢查用）。一般讀取不拿列鎖，MVCC 讓讀不被寫擋住。' },
+      { b: 'NOWAIT 與 SKIP LOCKED', t: '`NOWAIT` 拿不到鎖立刻報錯（55P03）；`SKIP LOCKED` 跳過被鎖的列，多個 worker 同時 `SELECT … LIMIT 1 FOR UPDATE SKIP LOCKED` 就能各拿到不同的工作，是用資料表做工作佇列的標準寫法。' },
+      { b: 'DDL 會拿表鎖', t: '多數 `ALTER TABLE` 要 ACCESS EXCLUSIVE，連 SELECT 都擋；更麻煩的是它在排隊時，後面所有查詢也跟著排隊。`CREATE INDEX` 擋寫入，`CREATE INDEX CONCURRENTLY` 不擋讀寫但比較慢、不能放在交易裡。' },
+      { b: '先設 lock_timeout', t: "migration 開頭 `SET lock_timeout = '3s'`：拿不到鎖就失敗重試，不會卡住整個服務。`statement_timeout` 限制單句執行時間，`idle_in_transaction_session_timeout` 收掉開著不動的交易。" },
+      { b: '死結：偵測得到，但要靠固定順序避免', t: '兩個交易互等對方的鎖時，PostgreSQL 等 `deadlock_timeout`（預設 1 秒）後檢查，中止其中一個並回 `deadlock detected`（40P01）。重試能救單次，根治是所有程式以相同順序上鎖（例如依 id 由小到大）。' },
+    ],
+    checklist: [
+      '能用 FOR UPDATE SKIP LOCKED 寫出一個多 worker 安全的取工作查詢',
+      '能說出 ALTER TABLE 為什麼會讓整個服務卡住，以及 lock_timeout 怎麼救',
+      '能用 pg_stat_activity 與 pg_blocking_pids() 找出誰擋住誰',
+    ],
+    refs: [
+      { label: 'PostgreSQL：Explicit Locking', url: 'https://www.postgresql.org/docs/current/explicit-locking.html' },
+      { label: 'PostgreSQL：pg_locks', url: 'https://www.postgresql.org/docs/current/view-pg-locks.html' },
+      { label: 'PostgreSQL：Client Connection Defaults（lock_timeout 等）', url: 'https://www.postgresql.org/docs/current/runtime-config-client.html' },
     ],
   },
   'sql-advanced': {

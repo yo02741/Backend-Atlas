@@ -122,6 +122,25 @@ export default {
       { label: 'OWASP：Secrets Management Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html' },
     ],
   },
+  'logs-pii': {
+    points: [
+      { b: '外洩點比想像的多', t: '整包記下的請求 body、URL 的 query string（`?token=…`）、`Authorization` 與 `Cookie` 標頭、例外訊息裡的輸入值、ORM 印出的 SQL 參數。這些經常不是誰刻意寫的，是框架或預設設定帶進來的。' },
+      { b: '白名單優於黑名單', t: '結構化日誌只輸出明列的欄位（method、path、status、duration、request_id）；黑名單式遮罩（看到 password 就遮）永遠漏新欄位。白名單之外，再加一層 pattern 遮罩當保險（身分證字號、email、Bearer token）。' },
+      { b: '遮罩要在寫出之前', t: '在 logging Filter / processor 裡處理，日誌一離開程式就會被複製到收集器、搜尋引擎、備份，事後刪不乾淨。' },
+      { b: '稽核紀錄是另一種東西', t: '稽核紀錄回答「誰、何時、對哪筆資料、做了什麼、結果如何」，要完整、不可竄改、保存較久、存取受限；一般日誌是除錯用，可以抽樣、可以較短保存。兩者分開存、分開授權。' },
+      { b: '保存期限與假名化', t: '依個資法與主管機關規範訂保存期限並自動刪除；需要追蹤同一人的行為時，用帶金鑰的 HMAC 產生假名 id，而不是記 email 或身分證字號。假名化資料仍屬個資，只是降低風險。' },
+    ],
+    checklist: [
+      '能列出自己服務的日誌裡可能出現個資或 token 的五個位置',
+      '能寫一個 logging Filter 遮罩 email、身分證字號與 Bearer token',
+      '能說明稽核紀錄與一般日誌在內容、保存與權限上的差別',
+    ],
+    refs: [
+      { label: 'OWASP：Logging Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html' },
+      { label: 'Python：logging', url: 'https://docs.python.org/3/library/logging.html' },
+      { label: 'Python：Logging Cookbook', url: 'https://docs.python.org/3/howto/logging-cookbook.html' },
+    ],
+  },
   'supply-chain': {
     points: [
       { b: 'lock 檔固定版本與 hash', t: '沒有 lock，今天跟明天裝到的東西不同；有 hash 才能確定沒被掉包。' },

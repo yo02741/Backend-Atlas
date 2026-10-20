@@ -141,6 +141,52 @@ GROUP BY u.id;`,
     ],
   },
   {
+    skill: 'schema-design-practice',
+    questions: [
+      {
+        q: '需求是「同一位病患在同一個診次只能有一筆有效掛號；取消後可以重掛」。哪個約束最準確地表達這條規則？',
+        options: [
+          'UNIQUE (session_id, patient_id)——一位病患一個診次只會有一列，取消時把那一列刪掉即可',
+          'CREATE UNIQUE INDEX … ON appointments (session_id, patient_id) WHERE status <> \'cancelled\'——只對有效掛號要求唯一',
+          'CHECK (status <> \'cancelled\')——不允許取消狀態存在，就不會有重複的有效掛號',
+          '不用約束，應用程式在 INSERT 前先 SELECT 檢查有沒有有效掛號，沒有才寫入',
+        ],
+        answer: 1,
+        explain: '部分唯一索引只對符合 WHERE 條件的列檢查唯一性：取消的掛號不在範圍內，所以可以重掛，同時兩筆有效掛號會被擋下。一般 UNIQUE 會讓取消的那筆永遠佔住位置，改成「取消就刪除」則丟失了取消紀錄。CHECK 只看單一列，表達不了跨列的唯一性。應用層先查再寫在並行時會被兩個請求同時通過檢查，資料庫約束才是任何路徑都繞不過的保證。',
+      },
+      {
+        q: '這段 DDL 的設計，哪一點最可能在上線後造成資料遺失？',
+        code: `CREATE TABLE appointments (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  session_id bigint NOT NULL REFERENCES clinic_sessions (id) ON DELETE CASCADE,
+  patient_id bigint NOT NULL REFERENCES patients (id),
+  status     text   NOT NULL CHECK (status IN ('booked', 'checked_in', 'cancelled', 'no_show')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);`,
+        lang: 'sql',
+        options: [
+          'status 用 text 加 CHECK，之後新增狀態必須改約束，應該改用 integer 代碼',
+          'id 用 identity 而不是 UUID，資料量大時序列會用完導致寫入失敗',
+          'created_at 用 timestamptz，換時區後歷史資料的時間會被改寫',
+          'session_id 的 ON DELETE CASCADE：誤刪一個診次（或連帶刪醫師）會默默帶走所有歷史掛號',
+        ],
+        answer: 3,
+        explain: '掛號是有獨立意義、需要保留的紀錄，CASCADE 讓刪除診次時資料庫自動刪掉所有相關掛號，而且不會有任何錯誤提示。預設的 NO ACTION / RESTRICT 會拒絕刪除，逼使用者先處理掛號，或改用停用標記。bigint 序列的上限約 9.2 × 10^18，實務上不會用完；timestamptz 存的是絕對時間點，換時區只影響顯示，不會改寫資料；text + CHECK 改狀態只要換約束，比整數代碼可讀。',
+      },
+      {
+        q: '大表 appointments 要新增必填欄位 source，舊資料的值要依其他欄位推算，服務不能停。哪個步驟順序正確？',
+        options: [
+          '直接 ADD COLUMN source text NOT NULL，PostgreSQL 會自動依其他欄位推算舊資料的值',
+          '加 nullable 欄位 → 部署會寫入 source 的程式 → 分批回填 → 加 CHECK (source IS NOT NULL) NOT VALID 再 VALIDATE → SET NOT NULL',
+          '先 SET NOT NULL 鎖住欄位、再加欄位、最後一次 UPDATE 整張表回填，全部包在同一個交易裡',
+          '建一張新表複製全部資料並填好 source，再用 RENAME 一次切換，舊表留著備用',
+        ],
+        answer: 1,
+        explain: '分步 migration 讓每一步都短、都能單獨上線：nullable 欄位只改系統目錄；新程式先開始寫入；分批回填避免一個大交易長時間鎖列；NOT VALID 讓新寫入立刻受檢查但不掃舊資料，VALIDATE 掃表時只拿不擋讀寫的鎖；PostgreSQL 12 起，有驗證過的 CHECK 時 SET NOT NULL 不必再掃表。直接加 NOT NULL 而沒有預設值，在已有資料的表上會失敗；全部包進一個交易會長時間持有強鎖；複製整張表在切換前後的寫入要另外同步，風險更高。',
+      },
+    ],
+  },
+  {
     skill: 'indexes',
     questions: [
       {
@@ -187,6 +233,50 @@ EXPLAIN SELECT * FROM users WHERE LOWER(email) = 'amy@example.com';
     ],
   },
   {
+    skill: 'full-text-search',
+    questions: [
+      {
+        q: '文章表有 20 萬列，`WHERE body ILIKE \'%vacuum%\'` 很慢，body 上已經有 B-tree 索引。為什麼用不到？',
+        options: [
+          'ILIKE 不分大小寫，B-tree 只能服務 LIKE；改成 LIKE 就能用索引',
+          'B-tree 依字串開頭排序，前面有 % 時不知道從哪裡開始找，只能逐列比對',
+          'B-tree 索引對 text 欄位有長度上限，超過的列不會被索引，所以規劃器放棄使用',
+          '只要先跑 ANALYZE 更新統計資訊，規劃器就會改用 B-tree 索引',
+        ],
+        answer: 1,
+        explain: 'B-tree 適合等值、範圍與前綴比對（LIKE \'vac%\' 在適當的運算子類別下可以用），因為這些都能從排序好的樹裡定位起點。前置 % 讓起點不確定，只能掃全表。換成 LIKE 一樣有前置 %；統計資訊影響的是估計，不會讓索引突然能處理子字串。真正的解法是全文檢索（tsvector + GIN）或 pg_trgm 的 trigram 索引。',
+      },
+      {
+        q: '下面兩句的結果分別是什麼？',
+        code: `SELECT to_tsvector('english', 'Indexes are rebuilt nightly')
+       @@ to_tsquery('english', 'index');
+
+SELECT to_tsvector('simple', '全文檢索很好用')
+       @@ to_tsquery('simple', '檢索');`,
+        lang: 'sql',
+        options: [
+          'true、true——兩句都是全文檢索，詞都在原文裡出現過',
+          'false、true——english 不處理複數，simple 會逐字切中文',
+          'true、false——english 把 indexes 還原成 index；內建設定不會切中文，整句是一個詞位',
+          'false、false——to_tsquery 只接受完整句子，單一詞查不到任何東西',
+        ],
+        answer: 2,
+        explain: 'english 設定會去掉停用詞並把 indexes 還原成詞位 index，查詢端同樣處理後兩者相符。PostgreSQL 內建的 parser 依空白與標點切 token，沒有空白的一段中文會變成單一詞位「全文檢索很好用」，所以查「檢索」配不到。中文全文檢索要靠應用層先斷詞、中文斷詞擴充、pg_trgm 或外部搜尋引擎。to_tsquery 接受單一詞沒有問題。',
+      },
+      {
+        q: '部落格的搜尋框直接把使用者輸入傳給 to_tsquery，輸入「connection pool」時 API 回 500。怎麼改最合適？',
+        options: [
+          '改用 websearch_to_tsquery：接受一般文字與雙引號、- 排除等語法，不會因為輸入格式報錯',
+          '在應用層把空白換成 &，其他字元保持原樣再交給 to_tsquery',
+          '改回 ILIKE \'%connection pool%\'，子字串比對不會有語法錯誤',
+          '捕捉例外後回空結果，告訴使用者搜尋語法錯誤',
+        ],
+        answer: 0,
+        explain: 'to_tsquery 會解析 & | ! <-> 等運算子，兩個詞之間沒有運算子就是語法錯誤。websearch_to_tsquery（或 plainto_tsquery）專門處理一般使用者輸入，任何字串都能轉成合法的 tsquery。自己把空白換成 & 仍然擋不住使用者輸入的括號、驚嘆號等運算子字元；退回 ILIKE 會失去索引與相關度；把語法錯誤丟給使用者則是把實作細節變成使用者的問題。',
+      },
+    ],
+  },
+  {
     skill: 'transactions',
     questions: [
       {
@@ -226,6 +316,46 @@ if qty > 0:
         ],
         answer: 3,
         explain: '交易要短：開著的交易握有鎖、快照與一條連線，外部 API 的延遲（甚至逾時）會直接放大成整個資料庫的阻塞。正確拆法是「開交易 → 只做 DB 操作 → commit」，把等待放在交易外，用狀態欄位（pending / paid / failed）記錄流程進度，並設計成可重試或補償。資料庫交易本來就無法把外部系統納入原子性，換隔離等級也不會改變這點；把 API 搬到最前面則會在扣款成功後才發現訂單建不起來。',
+      },
+    ],
+  },
+  {
+    skill: 'locks-deadlocks',
+    questions: [
+      {
+        q: '多個 worker 從 jobs 表取工作，希望每個 worker 拿到不同的工作、也不要互相等待。取工作的子查詢該怎麼寫？',
+        options: [
+          'SELECT id FROM jobs WHERE status = \'queued\' ORDER BY id LIMIT 1 FOR UPDATE NOWAIT',
+          'SELECT id FROM jobs WHERE status = \'queued\' ORDER BY id LIMIT 1，再在應用程式裡判斷有沒有被別人取走',
+          'SELECT id FROM jobs WHERE status = \'queued\' ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED',
+          'SELECT id FROM jobs WHERE status = \'queued\' ORDER BY id LIMIT 1 FOR SHARE',
+        ],
+        answer: 2,
+        explain: 'SKIP LOCKED 讓被其他 worker 鎖住的列直接被跳過，每個 worker 拿到下一個沒被鎖的工作，不重複也不等待。NOWAIT 遇到被鎖的列會直接報錯，所有 worker 都在搶第一列時大部分會失敗。不加鎖的 SELECT 會讓多個 worker 讀到同一列、重複處理。FOR SHARE 彼此不衝突，兩個 worker 可以同時對同一列拿到共享鎖，擋不住重複取用。',
+      },
+      {
+        q: '部署時這段 migration 只花了幾毫秒，卻讓 orders 相關的 API 全部卡住 40 秒。最可能的原因是什麼？',
+        code: `ALTER TABLE orders ADD COLUMN note text;`,
+        lang: 'sql',
+        options: [
+          'ADD COLUMN 會重寫整張表，40 秒就是複製所有列的時間',
+          'ALTER TABLE 要 ACCESS EXCLUSIVE 鎖，在等一個長交易釋放鎖時，後面所有讀寫 orders 的查詢也排在它後面',
+          'ALTER TABLE 會讓 PostgreSQL 重新啟動連線池，所有連線重連需要 40 秒',
+          '新欄位沒有索引，之後的 SELECT 都變成全表掃描',
+        ],
+        answer: 1,
+        explain: 'PostgreSQL 11 起，加沒有預設值或預設值是常數的欄位只改系統目錄，執行本身很快。但它要 ACCESS EXCLUSIVE 鎖，必須等所有正在用 orders 的交易結束；排隊期間，後面連 SELECT 都會排在它後面，因為鎖請求是排隊的。解法是 migration 開頭設 lock_timeout，拿不到鎖就失敗重試，同時找出長時間不結束的交易。PostgreSQL 沒有「重啟連線池」這回事，新欄位沒索引也不會影響既有查詢。',
+      },
+      {
+        q: '轉帳功能偶爾出現 deadlock detected（40P01）。兩筆方向相反的轉帳同時進行時最容易發生。根治的做法是什麼？',
+        options: [
+          '把隔離等級調成 SERIALIZABLE，資料庫就會自動排好順序不再死結',
+          '把 deadlock_timeout 調大，讓資料庫有更多時間等鎖釋放',
+          '每次轉帳前用 LOCK TABLE accounts 鎖整張表，就不可能有兩筆同時進行',
+          '不論轉帳方向，一律依帳戶 id 由小到大上鎖（例如 SELECT … WHERE id IN (a, b) ORDER BY id FOR UPDATE），被中止的交易再整個重試',
+        ],
+        answer: 3,
+        explain: '死結來自「A 握 1 等 2、B 握 2 等 1」這種交叉的上鎖順序；所有交易都依同一個順序拿鎖就不可能形成環，40P01 再以重試處理偶發情況。SERIALIZABLE 不會改變列鎖的取得順序，還會多出序列化失敗。deadlock_timeout 只是決定等多久才開始檢查，調大只會讓死結晚一點被發現。鎖整張表確實避免死結，但把所有轉帳變成一個一個排隊，吞吐量直接掉到單線程。',
       },
     ],
   },

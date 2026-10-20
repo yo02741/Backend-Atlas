@@ -271,6 +271,51 @@ CMD ["uvicorn", "app.main:app"]`,
     ],
   },
   {
+    skill: 'logs-pii',
+    questions: [
+      {
+        q: '團隊要防止個資進入應用程式日誌。哪個做法應該是主要防線？',
+        options: [
+          '維護一份敏感欄位名稱的黑名單（password、id_no…），寫日誌時遇到就遮罩',
+          '日誌平台設定顯示時遮罩，原始資料保留以備調查使用',
+          '結構化日誌只輸出明列的欄位白名單，再加 pattern 遮罩當第二層保險',
+          '日誌全部加密存放，只有資安團隊能解密閱讀',
+        ],
+        answer: 2,
+        explain: '白名單決定「只記哪些欄位」，新增的欄位預設不會被記錄；黑名單則永遠漏掉沒想到的名稱（passwd、pin、secret_answer）。pattern 遮罩抓的是混進訊息字串的值，適合當第二層。顯示時遮罩代表原始資料已經被儲存、備份、可以被匯出。加密存放解決不了「不該記的東西被記了」，而且日誌失去日常除錯的用途。',
+      },
+      {
+        q: '這個 logging Filter 掛在 logger "app" 上，但 "app.payments" 送出的紀錄沒有被遮罩。原因是什麼？',
+        code: `logger = logging.getLogger("app")
+logger.addFilter(PiiFilter())
+handler = logging.StreamHandler()
+logger.addHandler(handler)
+
+logging.getLogger("app.payments").info("card holder %s", "alice@example.com")`,
+        lang: 'python',
+        options: [
+          '掛在 logger 上的 filter 只處理直接送到該 logger 的紀錄，子 logger 傳上來的不經過它；要掛在 handler 上',
+          'PiiFilter 的 filter() 必須回傳 False 才會套用遮罩',
+          '子 logger 預設 propagate = False，紀錄根本沒有到達 "app"',
+          'info 等級低於 Filter 的預設等級，所以 Filter 被略過',
+        ],
+        answer: 0,
+        explain: 'Python logging 的規則是：logger 上的 filter 只在紀錄直接送到該 logger 時檢查，子 logger 往上傳遞（propagate）的紀錄會直接交給父 logger 的 handler，不經過父 logger 的 filter。掛在 handler 上，所有從這個出口寫出的紀錄都會被處理。propagate 預設是 True；filter 回傳 False 代表丟棄這筆紀錄；Filter 沒有等級的概念。',
+      },
+      {
+        q: '客服系統要記錄「誰查看了哪位病患的病歷」，以便日後調查。哪個設計最合適？',
+        options: [
+          '在一般應用程式日誌加一行 INFO，內容包含查看者姓名與完整病歷內容，方便事後比對',
+          '寫入獨立、只能新增的稽核紀錄：行為者 id、動作、對象類型與 id、時間、結果、調閱理由，讀取權限只給少數角色',
+          '在病歷表加一個 last_viewed_by 欄位，每次查看就更新',
+          '用 DEBUG 等級記錄，平常關閉，需要調查時再打開',
+        ],
+        answer: 1,
+        explain: '稽核紀錄要完整、不可修改、保存較久、權限受限，所以跟一般日誌分開。內容記「誰、何時、對哪一筆、做了什麼、結果」，對象只記類型與 id，不複製病歷內容，否則稽核紀錄本身就成了另一個個資庫。一般日誌可能被抽樣、保存較短、工程師都能讀。last_viewed_by 每次都被覆蓋，只留最後一筆。DEBUG 平常關閉，等到要調查時過去的紀錄根本不存在。',
+      },
+    ],
+  },
+  {
     skill: 'supply-chain',
     questions: [
       {

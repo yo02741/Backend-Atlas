@@ -60,6 +60,16 @@ export default {
       lab: 'NginxLab',
     },
     {
+      id: 'load-balancing',
+      title: '負載平衡',
+      en: 'Load balancing',
+      level: 2,
+      summary: 'L4 分配連線、L7 看懂請求；演算法決定誰接、健康檢查決定誰不接；TLS 在哪終結、真實 IP 怎麼傳要先想清楚。',
+      example: { primary: 'nginx upstream', alts: ['HAProxy', '雲端負載平衡器', 'Kubernetes Service / Ingress'] },
+      keywords: ['nginx'],
+      lab: null,
+    },
+    {
       id: 'config-12factor',
       title: '環境設定與 12-factor',
       en: 'Configuration',
@@ -77,6 +87,16 @@ export default {
       summary: 'uvicorn / gunicorn 的 worker 模型、要開幾個、graceful shutdown、health / readiness 探針。',
       example: { primary: 'uvicorn（多 worker）', alts: ['gunicorn + uvicorn worker', 'granian'] },
       keywords: ['Python', 'Docker'],
+      lab: null,
+    },
+    {
+      id: 'object-storage',
+      title: '物件儲存：檔案不要放在應用程式主機上',
+      en: 'Object storage',
+      level: 2,
+      summary: '檔案以 key 存進 bucket，透過 S3 相容 API 存取；presigned URL 讓瀏覽器直傳直下，權限、版本控制與生命週期規則一開始就設好。',
+      example: { primary: 'S3 相容 API（boto3）', alts: ['Google Cloud Storage', 'Cloudflare R2', 'Azure Blob Storage', '地端自建（MinIO、Ceph RGW）'] },
+      keywords: ['Python'],
       lab: null,
     },
     {

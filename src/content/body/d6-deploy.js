@@ -87,6 +87,26 @@ export default {
       { label: 'nginx：ngx_http_proxy_module', url: 'https://nginx.org/en/docs/http/ngx_http_proxy_module.html' },
     ],
   },
+  'load-balancing': {
+    points: [
+      { b: 'L4 vs L7', t: 'L4 只看 IP 與埠、轉的是 TCP 連線；L7 看得懂 HTTP，能依 Host、路徑、標頭分派，但要先解開 TLS。長連線（HTTP/2、gRPC、WebSocket）在 L4 下是「一條連線綁一台」，請求數會分不平均。' },
+      { b: '演算法跟著負載特性選', t: 'round-robin 適合請求成本相近；least connections 適合處理時間差很多或長連線；加權處理機器規格不同；一致性雜湊讓同一個 key 固定落在同一台，加減節點時只搬動一小部分 key。' },
+      { b: '健康檢查決定誰不接', t: '被動檢查看真實請求失敗（nginx 開源版的 `max_fails` / `fail_timeout`），主動檢查定期打 `/ready`。部署時先讓 readiness 失敗、等連線排空再停程序，才不會噴 502。' },
+      { b: 'sticky session 是技術債', t: '黏著讓負載不均、主機掛掉時那批使用者的 session 一起消失、擴容也分不到舊流量。session 放 Redis 或用 token，讓每台都能接任何請求。' },
+      { b: '真實 IP 要有信任邊界', t: '`X-Forwarded-For` 每經過一層代理往後加一個位址，最前面的值客戶端可以偽造；只信任自己代理加上的部分（nginx `set_real_ip_from`、uvicorn `--forwarded-allow-ips`）。L4 沒有 HTTP 標頭，要靠 PROXY protocol，兩端設定必須一致。' },
+    ],
+    checklist: [
+      '能說出 L4 與 L7 負載平衡各看得到什麼、各適合放在哪',
+      '能為一個服務設定健康檢查與部署時的連線排空，並解釋 502 從哪來',
+      '能設定讓後端拿到真實客戶端 IP 與 scheme，且客戶端偽造的 X-Forwarded-For 不會被採信',
+    ],
+    refs: [
+      { label: 'nginx：Using nginx as HTTP load balancer', url: 'https://nginx.org/en/docs/http/load_balancing.html' },
+      { label: 'nginx：ngx_http_upstream_module', url: 'https://nginx.org/en/docs/http/ngx_http_upstream_module.html' },
+      { label: 'nginx：ngx_http_realip_module', url: 'https://nginx.org/en/docs/http/ngx_http_realip_module.html' },
+      { label: 'Kubernetes：Service', url: 'https://kubernetes.io/docs/concepts/services-networking/service/' },
+    ],
+  },
   'config-12factor': {
     points: [
       { b: '設定從環境讀，且要驗證', t: '`class Settings(BaseSettings): database_url: PostgresDsn; debug: bool = False`——啟動時缺值就失敗，不要等第一個請求才炸。' },
@@ -118,6 +138,26 @@ export default {
     ],
     refs: [
       { label: 'Uvicorn：Deployment', url: 'https://www.uvicorn.org/deployment/' },
+    ],
+  },
+  'object-storage': {
+    points: [
+      { b: 'bucket、key、物件', t: 'bucket 是容器，物件以 key（一個字串）定址，內容加上 metadata 整包讀寫；「資料夾」只是 key 裡 `/` 的慣例，用前綴列舉。一般的 S3 API 沒有「改中間幾個位元組」，改就是整個物件重寫。' },
+      { b: '不放應用程式主機的磁碟', t: '兩台主機各存各的，負載平衡把請求送到另一台就 404；容器重建可寫層就消失；磁碟滿、備份、擴容都變成你的事。主機只存 key，檔案交給物件儲存。' },
+      { b: 'presigned URL 讓瀏覽器直傳直下', t: 'API 先檢查權限，再用自己的憑證簽出限時、綁定方法與 key 的網址；瀏覽器直接 PUT / GET 物件儲存，檔案不經過 API。網址在到期前誰拿到誰能用，到期時間要短，資料庫存 key 不存網址。' },
+      { b: '預設私有，公開是例外', t: '公開 bucket 被搜到、整批資料外洩是反覆發生的事故。上傳用的 bucket 永遠私有、開啟 Block Public Access；要公開的靜態檔放另一個 bucket 走 CDN；應用程式的憑證只給需要的 bucket 與動作。' },
+      { b: '版本控制、生命週期、分段上傳', t: '版本控制讓覆寫與刪除可以救回；生命週期規則把舊資料轉便宜的儲存層、到期刪除、清掉未完成的分段上傳；大檔用 multipart upload 分段傳、斷線只補缺的段。' },
+    ],
+    checklist: [
+      '能說明為什麼使用者上傳的檔案不該存在應用程式主機上，以及改用物件儲存後資料庫要存什麼',
+      '能畫出 presigned URL 直傳的流程，並說出到期時間、方法、key 各自限制了什麼',
+      '能為一個 bucket 設定私有存取、版本控制，以及清除未完成分段上傳的生命週期規則',
+    ],
+    refs: [
+      { label: 'Amazon S3：Working with presigned URLs', url: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html' },
+      { label: 'Amazon S3：Blocking public access', url: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html' },
+      { label: 'Amazon S3：Multipart upload', url: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html' },
+      { label: 'Amazon S3：Lifecycle', url: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html' },
     ],
   },
   'cloud-basics': {

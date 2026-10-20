@@ -19,6 +19,24 @@ export default {
       { label: 'RFC 9110：HTTP Semantics', url: 'https://datatracker.ietf.org/doc/html/rfc9110' },
     ],
   },
+  'tcp-connections': {
+    points: [
+      { b: '一條連線由四元組決定', t: '來源 IP、來源 port、目的 IP、目的 port。客戶端的來源 port 從臨時 port 範圍挑（Linux 預設 32768–60999），所以一台機器連同一個目的地的連線數有上限；每條連線也佔一個檔案描述子。' },
+      { b: '握手要花來回', t: 'TCP 三次握手 1 RTT，TLS 1.2 再 2 RTT、TLS 1.3 再 1 RTT。新的 HTTPS 連線拿到第一個回應要 3–4 RTT，重用的連線只要 1 RTT。' },
+      { b: 'TIME-WAIT 與 CLOSE-WAIT', t: '主動關閉的一方進 TIME-WAIT（Linux 60 秒），大量出現代表沒重用連線；CLOSE-WAIT 是對方關了、自己的程式還沒 close，持續增加通常是連線洩漏。' },
+      { b: 'keep-alive 與連線池', t: 'HTTP/1.1 預設持久連線；HTTP client 與資料庫驅動用連線池重用連線。池子的閒置逾時要比對方的 keep-alive 逾時短，否則會撞到剛被關掉的連線。' },
+      { b: '先算總連線數', t: '機器數 × 每台行程數 × 每池上限，要小於資料庫的 `max_connections`（PostgreSQL 預設 100）。不夠時加 PgBouncer，而不是把池子和 `max_connections` 一起調大。' },
+    ],
+    checklist: [
+      '能畫出 TCP 三次握手與四次揮手，並標出 TIME-WAIT、CLOSE-WAIT 出現在哪一方',
+      '能用 `ss -tan` 統計各狀態的連線數，並判斷問題在「沒重用連線」還是「連線沒關」',
+      '能算出自己服務在最大擴展時對資料庫的總連線數',
+    ],
+    refs: [
+      { label: 'RFC 9293：Transmission Control Protocol', url: 'https://www.rfc-editor.org/rfc/rfc9293' },
+      { label: 'PostgreSQL：Connections and Authentication', url: 'https://www.postgresql.org/docs/current/runtime-config-connection.html' },
+    ],
+  },
   'rest-design': {
     points: [
       { b: '先畫資源樹', t: '`/orders`、`/orders/{id}`、`/orders/{id}/items`。動作用 HTTP 方法表達，不要 `/getOrders`、`/orders/delete/42`。' },
@@ -128,6 +146,46 @@ export default {
     refs: [
       { label: "Let's Encrypt 文件", url: 'https://letsencrypt.org/docs/' },
       { label: 'RFC 8446：TLS 1.3', url: 'https://datatracker.ietf.org/doc/html/rfc8446' },
+    ],
+  },
+  'http2-http3': {
+    points: [
+      { b: '語意不變，線路格式改變', t: '方法、路徑、狀態碼、標頭在三個版本都一樣；改的是怎麼編碼與傳輸。後端程式通常不用改，要改的是伺服器、proxy、負載平衡器的設定。' },
+      { b: 'HTTP/2：一條連線多工', t: '二進位分幀，每個請求是一條 stream，不同 stream 的幀交錯傳送；HPACK 壓縮重複的標頭。解決 HTTP/1.1 一次一個請求的隊頭阻塞。伺服器推送已被主要瀏覽器移除。' },
+      { b: 'TCP 的隊頭阻塞還在', t: '所有 stream 共用一條 TCP 連線，一個封包遺失，後面所有 stream 都要等重傳。丟包多的行動網路上最明顯。' },
+      { b: 'HTTP/3 跑在 QUIC（UDP）上', t: 'stream 在傳輸層就獨立、TLS 1.3 內建在握手裡、用連線 ID 支援網路切換時的連線遷移。瀏覽器透過 `Alt-Svc` 或 DNS HTTPS 紀錄得知，UDP 不通時退回 TCP。' },
+      { b: '邊界終結，後端 HTTP/1.1', t: 'CDN / nginx 對外講 HTTP/2、HTTP/3，往後端用 HTTP/1.1 加 keep-alive。gRPC 例外：整條路徑都要 HTTP/2，而且長連線需要 L7 或 client 端負載平衡。' },
+    ],
+    checklist: [
+      '能說明 HTTP 層與 TCP 層兩種隊頭阻塞的差別，以及各由哪一版解決',
+      '能用 curl 或瀏覽器開發者工具確認一個網站實際協商到的 HTTP 版本',
+      '能說出開 HTTP/3 時防火牆與負載平衡器要多放行什麼',
+    ],
+    refs: [
+      { label: 'RFC 9113：HTTP/2', url: 'https://www.rfc-editor.org/rfc/rfc9113' },
+      { label: 'RFC 9114：HTTP/3', url: 'https://www.rfc-editor.org/rfc/rfc9114' },
+      { label: 'RFC 9000：QUIC', url: 'https://www.rfc-editor.org/rfc/rfc9000' },
+      { label: 'nginx：ngx_http_v2_module', url: 'https://nginx.org/en/docs/http/ngx_http_v2_module.html' },
+    ],
+  },
+  'realtime-choice': {
+    points: [
+      { b: '先問能接受多少延遲', t: '幾十秒可以接受就短輪詢；要即時、只有伺服器推就 SSE；客戶端也要頻繁送資料才用 WebSocket。長輪詢是受限環境的退路。' },
+      { b: 'SSE：單向、純 HTTP、自動重連', t: '回應 `Content-Type: text/event-stream` 且不結束；事件由 `data` / `event` / `id` 欄位加空行組成。瀏覽器的 `EventSource` 斷線會自動重連並帶 `Last-Event-ID`。' },
+      { b: 'WebSocket：雙向，但重連與補送要自己做', t: '從 HTTP/1.1 `Upgrade` 握手（101 Switching Protocols）換協定。不受 CORS 限制，握手時要檢查 `Origin`；重連要加退避與抖動。' },
+      { b: 'proxy 三件事：逾時、緩衝、升級標頭', t: 'nginx `proxy_read_timeout` 預設 60 秒，要加心跳；SSE 要關 `proxy_buffering`；WebSocket 要轉送 `Upgrade` / `Connection` 並用 `proxy_http_version 1.1`。' },
+      { b: '多台伺服器要 pub/sub', t: '事件可能在 A 機器產生、使用者連在 B 機器。每台訂閱共用頻道（Redis Pub/Sub 不保存訊息；要補送就用 Streams 之類有保存的日誌），客戶端重連後重新取一次完整狀態。' },
+    ],
+    checklist: [
+      '能為「匯出進度」「聊天」「後台每分鐘更新的統計」各選一種做法並說明理由',
+      '能寫出 nginx 轉送 SSE 與 WebSocket 各自需要的設定',
+      '能說明擴到多台伺服器後，推送要怎麼送到正確的連線',
+    ],
+    refs: [
+      { label: 'MDN：Server-sent events', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events' },
+      { label: 'MDN：The WebSocket API', url: 'https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API' },
+      { label: 'RFC 6455：The WebSocket Protocol', url: 'https://www.rfc-editor.org/rfc/rfc6455' },
+      { label: 'nginx：WebSocket proxying', url: 'https://nginx.org/en/docs/http/websocket.html' },
     ],
   },
   'beyond-rest': {

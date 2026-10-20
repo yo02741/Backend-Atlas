@@ -362,4 +362,140 @@ Content-Type: application/json
       },
     ],
   },
+  {
+    skill: 'tcp-connections',
+    questions: [
+      {
+        q: '在一台 Linux 伺服器上看到上萬條 TIME-WAIT 連線，對端都是同一個外部 API 的 443 port，最可能的原因是？',
+        options: [
+          '外部 API 回應太慢，連線卡在等待回應的狀態',
+          '程式沒有重用連線：每次呼叫都新開連線、用完由自己這端主動關閉，每條關閉的連線都要在 TIME-WAIT 停留一段時間',
+          '對方伺服器先關了連線，自己的程式沒有呼叫 close',
+          '資料庫連線池設太大，佔用了所有臨時 port',
+        ],
+        answer: 1,
+        explain: 'TIME-WAIT 出現在主動關閉的一方，Linux 會讓它停留 60 秒。每秒新開又關掉幾百條連線，就會累積上萬條並佔住臨時 port，嚴重時出現 `Cannot assign requested address`。解法是共用一個有連線池的 HTTP client。「對方關了、自己沒 close」是 CLOSE-WAIT，不是 TIME-WAIT；等待回應中的連線是 ESTAB；對端是 443 而不是 5432，與資料庫池無關。',
+      },
+      {
+        q: '服務擴到 6 個 Pod 後，PostgreSQL 開始拒絕連線。根據下面的設定，最大可能同時開的連線數與問題是？',
+        code: `# 每個 Pod：gunicorn --workers 4
+engine = create_engine(DB_URL, pool_size=5, max_overflow=10)
+
+# PostgreSQL
+SHOW max_connections;   -- 100`,
+        lang: 'python',
+        options: [
+          '最多 30 條（6 × 5），遠低於上限，問題在別處',
+          '最多 120 條（6 × 4 × 5），只要把 max_overflow 調成 0 就一定不會超過',
+          '最多 360 條（6 × 4 × 15），超過 max_connections，資料庫回 `sorry, too many clients already`',
+          '最多 90 條（6 × 15），在上限內，應該是網路問題',
+        ],
+        answer: 2,
+        explain: '每個 worker 行程各有自己的連線池，池子上限是 pool_size + max_overflow = 15，所以總數是 Pod 數 × worker 數 × 15 = 360。只算 Pod 或漏掉 overflow 都會低估。max_overflow=0 時是 6 × 4 × 5 = 120，仍超過 100。修法是縮小每個池、加 PgBouncer 這類連線池代理，讓總連線數低於 max_connections 扣掉保留連線。',
+      },
+      {
+        q: '服務透過連線池呼叫內部 API，偶爾出現 `Connection reset by peer`，而且多半發生在閒置一陣子之後的第一個請求。最可能的原因與修法是？',
+        options: [
+          '對方的 keep-alive 逾時比自己連線池的閒置時間短，池子借出了一條對方已關閉的連線；把池子的閒置逾時調得比對方短，冪等請求可以重試一次',
+          'TLS 憑證過期，對方拒絕握手；更新憑證即可',
+          '連線池太小，請求排隊太久；把 max_connections 調大',
+          '對方的 port 沒有服務在 listen；確認服務有啟動',
+        ],
+        answer: 0,
+        explain: '「閒置後的第一個請求失敗」是 keep-alive 逾時不一致的典型症狀：對方已經關掉閒置連線，自己的池子不知道，把請求送上去就收到 RST。池子的閒置逾時要短於對方的 keep-alive 逾時，或在借出前檢查連線。憑證過期會在握手時失敗、而且每次都失敗；池子太小的症狀是 PoolTimeout；沒有服務 listen 是 `Connection refused`。',
+      },
+    ],
+  },
+  {
+    skill: 'http2-http3',
+    questions: [
+      {
+        q: 'HTTP/2 已經在一條連線上多工，為什麼還需要 HTTP/3？',
+        options: [
+          'HTTP/2 不支援加密，HTTP/3 才強制使用 TLS',
+          'HTTP/2 的多工只在 HTTP 層：所有 stream 共用一條 TCP 連線，一個封包遺失會讓所有 stream 一起等重傳；HTTP/3 用 QUIC 讓每條 stream 在傳輸層各自獨立',
+          'HTTP/2 改變了 HTTP 的方法與狀態碼，舊的 API 不相容，HTTP/3 恢復了 HTTP/1.1 的語意',
+          'HTTP/2 一條連線只能有一個請求，HTTP/3 才能並行',
+        ],
+        answer: 1,
+        explain: 'TCP 保證位元組依序交付，遺失一個封包時，後面已到的封包（即使屬於別的 stream）都卡在核心緩衝裡，這是 TCP 層的隊頭阻塞。QUIC 在 UDP 上自己做可靠傳輸，每條 stream 獨立重組，所以只有遺失封包的那條 stream 要等。三個版本的 HTTP 語意相同；HTTP/2 在瀏覽器上實際也都跑在 TLS 上；一條連線多個請求正是 HTTP/2 的特點。',
+      },
+      {
+        q: '這份 nginx 設定已經讓瀏覽器用 HTTP/2 連線。關於 nginx 與後端之間，哪個敘述正確？',
+        code: `server {
+    listen 443 ssl;
+    http2 on;
+    location / {
+        # proxy_pass 到 upstream app（略）
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+    }
+}`,
+        lang: 'nginx',
+        options: [
+          'nginx 會把瀏覽器的 HTTP/2 stream 原封不動轉給後端，後端必須支援 HTTP/2',
+          '設定錯了：對外開 HTTP/2 時，往後端也必須是 HTTP/2，否則請求會失敗',
+          'nginx 在邊界終結 HTTP/2，往後端用 HTTP/1.1；搭配 upstream 的 keepalive，後端可以是只支援 HTTP/1.1 的應用伺服器',
+          '`proxy_http_version 1.1` 會讓瀏覽器也退回 HTTP/1.1',
+        ],
+        answer: 2,
+        explain: '對外與對內是兩段獨立的連線：nginx 把瀏覽器的 HTTP/2 請求解開，再用 HTTP/1.1 送給後端。多工與標頭壓縮的好處主要在高延遲的公開網路上，機房內用 HTTP/1.1 加 keep-alive 就足夠，很多 Python 應用伺服器也只支援 HTTP/1.1。`proxy_http_version` 只影響 nginx 到後端那一段。gRPC 是例外，需要整條路徑都是 HTTP/2（nginx 用 `grpc_pass`）。',
+      },
+      {
+        q: '一個 gRPC 服務從 1 台擴到 5 台，前面是只看 TCP 連線的 L4 負載平衡器，結果流量幾乎都還在第一台。最合理的解釋與處理是？',
+        options: [
+          'gRPC 不支援多台部署，只能垂直擴充',
+          'L4 負載平衡器有快取，等 TTL 過期就會平均',
+          '新機器的憑證不同，client 拒絕連線；統一憑證即可',
+          'gRPC client 通常對服務維持一條長的 HTTP/2 連線，所有呼叫都在上面多工；L4 只分配連線，所以流量黏在原本那台。改用逐請求分配的 L7 負載平衡或 client 端負載平衡',
+        ],
+        answer: 3,
+        explain: 'HTTP/2 的多工讓一條連線承載大量請求，L4 負載平衡器只在建立連線時選一次後端，之後那條連線上的所有 RPC 都去同一台。看得懂 HTTP/2 的 L7 負載平衡器可以把每個請求分到不同後端；也可以讓 client 對每台後端各開連線自己分配，或讓伺服器定期關閉過久的連線促使重連。gRPC 完全可以水平擴充；L4 負載平衡器沒有這種快取；憑證不符會直接連不上，而不是流量不均。',
+      },
+    ],
+  },
+  {
+    skill: 'realtime-choice',
+    questions: [
+      {
+        q: '匯出報表要跑 1–3 分鐘，頁面只需要顯示進度，使用者不會從這個頁面送其他資料。哪個做法最合適？',
+        options: [
+          'WebSocket：雙向且最即時，之後要加功能也方便',
+          'Server-Sent Events：伺服器單向推送、走一般 HTTP、瀏覽器內建自動重連，斷線後還能用 Last-Event-ID 補送',
+          '每 200 毫秒短輪詢一次，確保進度條流暢',
+          '請使用者自己重新整理頁面',
+        ],
+        answer: 1,
+        explain: '需求是「只有伺服器 → 客戶端」的即時更新，SSE 剛好對應：純 HTTP 回應、經過 proxy 與 HTTP/2 都是一般請求，`EventSource` 斷線會自動重連並帶 `Last-Event-ID`。WebSocket 也做得到，但要自己寫重連、補送、Origin 檢查與 proxy 升級設定，在不需要雙向時是多出來的成本。200 毫秒的短輪詢會讓請求數暴增，大部分回答都是「沒變」。',
+      },
+      {
+        q: 'SSE 端點在本機正常，放到這份 nginx 設定後面就出現「事件延遲很久才一次湧出，而且剛好每 60 秒斷線」。要補的是？',
+        code: `location /events/ {
+    # proxy_pass 到 upstream app（略）
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+}`,
+        lang: 'nginx',
+        options: [
+          '加上 `proxy_set_header Upgrade $http_upgrade;`，SSE 需要升級協定',
+          '把回應的 Content-Type 改成 application/json，nginx 才不會緩衝',
+          '`proxy_buffering off;`（或後端回 `X-Accel-Buffering: no`）讓事件立即送出；伺服器定期送心跳註解（例如 `: ping`），必要時調長 `proxy_read_timeout`（預設 60 秒）',
+          '改用 HTTP/1.0 連後端，避免 keep-alive 干擾串流',
+        ],
+        answer: 2,
+        explain: 'nginx 預設緩衝後端回應，攢夠了才送出，SSE 的事件就會延遲成一批；`proxy_read_timeout` 預設 60 秒，後端 60 秒沒送任何位元組就斷線。關緩衝加心跳是標準解法。SSE 是普通的 HTTP 回應，不需要 Upgrade（那是 WebSocket）；Content-Type 必須是 `text/event-stream`，改成 JSON 會讓 `EventSource` 直接放棄連線；HTTP/1.0 不會解決緩衝或逾時。',
+      },
+      {
+        q: '聊天服務從 1 台擴到 3 台後，部分使用者收不到別人傳的訊息。最可能的原因與修法是？',
+        options: [
+          'WebSocket 不支援多台伺服器，只能改回輪詢',
+          '負載平衡器沒開 sticky session，WebSocket 連線會在每則訊息時換到別台',
+          '瀏覽器對同一個網域的 WebSocket 數量有上限，超過的訊息被丟掉',
+          '訊息只在收到它的那台伺服器內部轉發，連在其他台的使用者收不到；每台訂閱共用的 pub/sub 頻道（例如 Redis），收到後推給自己手上的連線',
+        ],
+        answer: 3,
+        explain: '一台伺服器時，所有連線都在同一個行程的記憶體裡；擴到多台後，傳訊者與收訊者可能連在不同機器上，需要 pub/sub 把訊息廣播到每一台。WebSocket 連上後整段期間都在同一台，不會逐則訊息換機器，所以問題不在 sticky session。多台部署很常見，不需要退回輪詢。Redis Pub/Sub 不保存訊息，需要補送時改用有保存的日誌（例如 Redis Streams）。',
+      },
+    ],
+  },
 ]

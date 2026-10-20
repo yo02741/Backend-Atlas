@@ -5,6 +5,8 @@ export const SCENARIO_GROUPS = [
   { id: 'api', title: 'API 設計', en: 'API DESIGN', color: 'aqua', blurb: '分頁、快取、冪等、限流、長任務、上傳、搜尋、版本——每個 API 都會遇到的設計決定。' },
   { id: 'data', title: '資料與身分', en: 'DATA & IDENTITY', color: 'violet', blurb: '多租戶隔離、軟刪除與稽核、讀寫分離的一致性、SPA 與 App 的認證方案。' },
   { id: 'traffic', title: '高流量', en: 'HIGH TRAFFIC', color: 'red', blurb: '流量上來之後每一層怎麼撐：擴展路徑、秒殺、削峰、資料庫擴展、邊緣快取、通知扇出。' },
+  { id: 'ops', title: '維運與基礎建設', en: 'OPERATIONS', color: 'slate', blurb: '主機放哪裡、資料治理從哪開始、變更怎麼上線、事故怎麼收：系統上線之後的決定。' },
+  { id: 'agent', title: 'AI 與 Agent 安全', en: 'AI & AGENTS', color: 'teal', blurb: 'Agent 拿什麼身分、經過哪道閘門、工具與憑證怎麼隔離：讓 AI 工具接上內部系統之前的決定。' },
 ]
 
 export const SCENARIOS = Object.entries(mods)

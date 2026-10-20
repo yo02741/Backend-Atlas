@@ -4,6 +4,7 @@ import { findSkill, findDomain } from './content/roadmap.js'
 import { findScenario } from './content/scenarios/index.js'
 import { findExercise } from './content/exercises/index.js'
 import { LAB_META } from './labs/index.js'
+import { findStage } from './content/project/stages.js'
 import Account from './components/Account.jsx'
 import { cloudEnabled } from './cloud/config.js'
 
@@ -20,6 +21,7 @@ const ExercisePage = lazy(() => import('./pages/Exercises.jsx').then((m) => ({ d
 const Curriculum = lazy(() => import('./pages/Curriculum.jsx'))
 const Scenarios = lazy(() => import('./pages/Scenarios.jsx'))
 const ScenarioPage = lazy(() => import('./pages/Scenarios.jsx').then((m) => ({ default: m.ScenarioPage })))
+const Project = lazy(() => import('./pages/Project.jsx'))
 
 /* hash 路由：#/、#/roadmap（?kw=）、#/domain/:id、#/skill/:id、#/labs、#/lab/:Name */
 function useHashRoute() {
@@ -49,6 +51,7 @@ function parseHash(hash) {
   if (seg[0] === 'scenarios') return { view: 'scenarios' }
   if (seg[0] === 'scenario' && seg[1]) return { view: 'scenario', id: seg[1] }
   if (seg[0] === 'exercise' && seg[1]) return { view: 'exercise', id: seg[1] }
+  if (seg[0] === 'project') return { view: 'project', id: seg[1] || '' }
   if (seg[0] === 'playground') return { view: 'playground', lang: params.get('lang') || seg[1] || 'python', code: params.get('code') || '' }
   return { view: 'home' }
 }
@@ -56,7 +59,7 @@ function parseHash(hash) {
 
 /* 每頁的瀏覽器分頁標題：書籤與歷史紀錄才分得出是哪一頁 */
 const SITE = 'Backend Atlas'
-const SECTION_TITLES = { roadmap: '技能盤點', labs: '實驗室', exercises: '練習題', curriculum: '課綱', scenarios: '設計情境', playground: 'Playground' }
+const SECTION_TITLES = { roadmap: '技能盤點', labs: '實驗室', exercises: '練習題', curriculum: '課綱', scenarios: '設計情境', playground: 'Playground', project: '實作路線' }
 function titleFor(route) {
   switch (route.view) {
     case 'skill': return findSkill(route.id)?.title
@@ -64,6 +67,7 @@ function titleFor(route) {
     case 'lab': return LAB_META[route.name]?.title
     case 'scenario': return findScenario(route.id)?.title
     case 'exercise': return findExercise(route.id)?.title
+    case 'project': return route.id ? (findStage(route.id)?.title || '實作路線') : '實作路線'
     default: return SECTION_TITLES[route.view]
   }
 }
@@ -102,6 +106,7 @@ export default function App() {
     case 'labs': page = <Labs />; break
     case 'lab': page = <LabPage name={route.name} />; break
     case 'exercises': page = <Exercises />; break
+    case 'project': page = <Project key={route.id} id={route.id} />; break
     case 'curriculum': page = <Curriculum week={route.week} />; break
     case 'scenarios': page = <Scenarios />; break
     case 'scenario': page = <ScenarioPage id={route.id} />; break
@@ -141,6 +146,7 @@ function Shell({ theme, toggleTheme, view, pending, children }) {
           {link('#/curriculum', '課綱', view === 'curriculum')}
           {link('#/labs', '實驗室', view === 'labs' || view === 'lab')}
           {link('#/scenarios', '設計情境', view === 'scenarios' || view === 'scenario')}
+          {link('#/project', '實作路線', view === 'project')}
           {link('#/exercises', '練習題', view === 'exercises' || view === 'exercise')}
           {link('#/playground', 'Playground', view === 'playground')}
         </div>

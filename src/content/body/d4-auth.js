@@ -88,6 +88,24 @@ export default {
       { label: 'FastAPI：Security', url: 'https://fastapi.tiangolo.com/tutorial/security/' },
     ],
   },
+  'account-lifecycle': {
+    points: [
+      { b: '一次性 token 的標準做法', t: '`secrets.token_urlsafe(32)` 產生、只存 SHA-256 雜湊、記錄用途與 `expires_at`、用過即失效、發新的就作廢舊的。GET 只顯示表單，POST 才兌換（郵件掃描器會先點連結）。' },
+      { b: '不洩漏帳號是否存在', t: '忘記密碼、登入失敗、註冊都回一樣的訊息；寄信丟背景佇列讓回應時間一致。不存在的帳號也要做一次假的雜湊比對。' },
+      { b: '重設密碼後撤銷所有登入', t: '更新密碼雜湊、撤銷全部 session 與 refresh token、寄通知信、請使用者重新登入。重設不能繞過 MFA。' },
+      { b: '鎖定要防被濫用', t: '「錯 5 次鎖帳號」讓任何人都能鎖住別人。以「帳號 + IP」為單位限制、對單一 IP 打很多帳號限流、逐步延遲與 CAPTCHA，計數放共用儲存。' },
+      { b: '敏感操作要重新驗證', t: '改密碼要輸入舊密碼；改 email 要確認新地址並通知舊地址；停用帳號要撤銷 token，換發時檢查狀態；刪除帳號要列出所有資料副本。' },
+    ],
+    checklist: [
+      '能設計重設 token 的資料表，並寫出一句完成「檢查 + 標記已使用」的兌換 SQL',
+      '能列出忘記密碼流程中可能洩漏帳號存在的三個地方',
+      '能說明 session 與 JWT 兩種架構各怎麼做「登出所有裝置」',
+    ],
+    refs: [
+      { label: 'OWASP：Forgot Password Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html' },
+      { label: 'OWASP：Authentication Cheat Sheet', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html' },
+    ],
+  },
   'api-keys-mfa': {
     points: [
       { b: 'API key 當密碼對待', t: '只在建立時顯示一次、資料庫存雜湊、可命名可撤銷、可設 scope 與到期、記錄最後使用時間。' },

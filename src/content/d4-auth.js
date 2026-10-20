@@ -60,6 +60,16 @@ export default {
       lab: null,
     },
     {
+      id: 'account-lifecycle',
+      title: '帳號生命週期：註冊、驗證、重設密碼、鎖定',
+      en: 'Account lifecycle',
+      level: 2,
+      summary: '註冊後的 email 驗證、忘記密碼、登入失敗鎖定、登出所有裝置、改 email、刪除帳號——每一步都有一次性 token 與「不洩漏帳號存在」的細節。',
+      example: { primary: '雜湊儲存的一次性 token + 短效期', alts: ['簽章 token（無狀態）', '交給 IdP（Auth0、Keycloak 等）'] },
+      keywords: ['Token'],
+      lab: null,
+    },
+    {
       id: 'api-keys-mfa',
       title: 'API key、服務間驗證、MFA 與 SSO',
       en: 'Machine auth, MFA, SSO',

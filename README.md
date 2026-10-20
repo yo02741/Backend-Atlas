@@ -15,6 +15,59 @@
 | 設計情境 | 18（API 設計 8、資料與身分 4、高流量 6）：情境與限制、模擬器、做法優缺點、取捨表、換條件的決策題、落地程式碼 |
 | 課綱 | `docs/CURRICULUM.md`：獨立盤點的技能樹、差距分析、16 週課綱、驗收設計 |
 
+## 內容總覽
+
+以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照。
+
+### 技能課程（8 領域、63 課）
+
+每課有摘要、範例技術、重點、自我檢核清單、官方文件連結。★ 表示附互動實驗室。
+
+| 領域 | 課程 |
+|---|---|
+| 1. 語言與工程實踐 | Python 後端心智模型、uv 與專案管理★、同步／多執行緒與 async★、Web 框架與請求生命週期、測試金字塔與 pytest、型別檢查／lint／格式化、日誌／錯誤處理與設定 |
+| 2. 網路、HTTP 與 API 設計 | 一個 HTTP 請求的一生★、REST API 設計★、分頁／篩選／版本與冪等鍵、外部呼叫韌性（timeout、重試、斷路器）、OpenAPI 與 API 契約、CORS／Cookie 與同源、HTTP 快取與條件請求、DNS／TLS 與憑證、GraphQL／gRPC／WebSocket／Webhook |
+| 3. 資料儲存 | SQL 基礎、JOIN 七兄弟★、資料建模與正規化、索引與查詢計畫★、交易／ACID 與隔離等級、子查詢／CTE／視窗函數、ORM 與 migration、資料庫維運、MongoDB 文件模型★、MongoDB 查詢／聚合／索引、Redis 與快取策略★、關聯式 vs 非關聯式怎麼選 |
+| 4. 驗證與授權 | Session vs Token、JWT 解剖★、OAuth 2.0 與 OIDC★、RBAC 與 ABAC★、驗證授權落地（middleware、dependency）、API key／服務間驗證／MFA／SSO |
+| 5. 資安 | OWASP Top 10、SQL 注入與相關攻擊★、密碼儲存（編碼、雜湊、加密）★、密碼學工具箱、XSS／CSRF 與安全標頭、輸入驗證與檔案上傳、秘密管理、依賴與供應鏈安全 |
+| 6. 容器與部署 | Linux 與 shell、Docker image／container／layer★、Python 專案的 Dockerfile、docker-compose 開發環境★、nginx 反向代理★、12-factor、應用伺服器與程序管理、雲端與主機基礎 |
+| 7. CI/CD 與交付 | Git 工作流、CI 管線（lint、test、build）★、環境／secrets／artifact、部署策略與資料庫遷移、可觀測性（log、metrics、trace）、健康檢查、備份與事故處理 |
+| 8. 演算法與系統設計 | Big-O★、後端常用資料結構、限流演算法★、LRU 與快取淘汰、訊息佇列與背景工作、擴展（無狀態、負載平衡、讀寫分離）、系統設計思考框架 |
+
+### 互動實驗室（19 個）
+
+可以拖、切、點的小教具：JOIN 用文氏圖呈現、索引實際走一遍 B-tree、JWT 真的計算簽章、OAuth 流程逐步播放、Docker 映像的層一層層疊上去、token bucket 限流即時跑。另有 HTTP、REST、async、uv、密碼雜湊、SQL 注入、RBAC/ABAC、Redis 快取、MongoDB vs 關聯式、compose、nginx、CI 管線、Big-O。
+
+### 設計情境（18 個）
+
+每個情境有背景與限制、可操作的模擬器、幾種做法的優缺點、取捨表、換條件後重新選做法的決策題、落地程式碼。
+
+- **API 設計（8）**：列表分頁、API 快取、付款的冪等與重試、限流放哪與用什麼當 key、三分鐘長任務匯出、使用者上傳檔案、商品搜尋與篩選、API 改版不弄壞客戶端
+- **資料與身分（4）**：多租戶資料隔離、刪除使用者要留下什麼（軟刪除與稽核）、讀寫分離後「剛存的怎麼不見了」、SPA 加手機 App 的登入方案
+- **高流量（6）**：從 100 到 10 萬 QPS、秒殺 1,000 人搶 100 件、削峰與背壓、資料庫撐不住（連線池、讀寫分離、分片）、快取雪崩與擊穿、一則貼文通知 10 萬個追蹤者
+
+### 練習題
+
+- **程式題 42 道**（SQL 17、Python 18、JavaScript 7）：在瀏覽器裡真的執行並跑測試——SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker。13 個設計情境各有一道對應的題（cache-aside、冪等鍵、滑動視窗限流、秒殺扣庫存、ETag/304…）。
+- **選擇題 189 道**：每課 3 題，含程式碼判讀與情境題。
+
+### 課綱（16 週、3 個里程碑）
+
+| 週 | 主題 |
+|---|---|
+| 1–4 | Python 工程底盤、HTTP/REST 與 OpenAPI、SQL 與資料建模、ORM 與 migration → 里程碑 M1 |
+| 5–7 | 驗證、密碼儲存、JWT、RBAC/ABAC、OAuth/OIDC、XSS/CSRF、秘密與供應鏈 |
+| 8–10 | 索引與查詢計畫、交易與鎖、並發、快取、限流、佇列、冪等、分頁、Webhook → 里程碑 M2 |
+| 11–13 | Docker、Compose、nginx、CI/CD、部署策略、Linux 維運、TLS/DNS、雲端 |
+| 14–16 | 可觀測性、資料庫維運與備份、演算法補強、擴展與壓測、系統設計 → 里程碑 M3 |
+
+每週標題下列出該週對應的設計情境；情境頁的「第 N 週」可直接跳回課綱。全文在 `docs/CURRICULUM.md`。
+
+### 其他
+
+- **Playground**：Python、PostgreSQL、JavaScript 在瀏覽器裡自由寫、直接跑，附電商範例資料庫。
+- **進度與登入**：完成的課、檢核清單、題目與決策題的狀態預設存在瀏覽器；用 Google 登入後同步到其他裝置（見「登入與同步」）。
+
 ## 執行環境（全部在瀏覽器）
 
 | 語言 | 引擎 | 大小 |

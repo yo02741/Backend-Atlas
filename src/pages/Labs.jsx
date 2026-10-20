@@ -19,7 +19,7 @@ export default function Labs() {
         return (
           <section key={d.id} className="domain-block" style={{ '--tint': color }}>
             <div className="domain-block-head">
-              <span className="kicker tinted">0{d.no}</span>
+              <span className="kicker tinted">{String(d.no).padStart(2, "0")}</span>
               <h2>{d.title}</h2>
               <span className="count">{names.length} 個</span>
             </div>

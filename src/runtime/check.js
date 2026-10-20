@@ -81,10 +81,23 @@ export async function gradeJs(ex, code) {
   return { pass, message: pass ? '全部測試通過。' : '有測試沒通過。', output: res.output, results: res.results }
 }
 
+/* 設定檔題：使用者的檔案內容變成 source / lines 兩個常數，測試碼（JS）用 assert 檢查。
+   lines 已去掉行尾空白與 # 註解，方便用 regex 比對指令。 */
+export function configPrelude(text) {
+  return `const source = ${JSON.stringify(text)};\nconst lines = source.split('\\n').map((l) => l.replace(/\\s+#.*$|^\\s*#.*$/, '').trimEnd()).filter((l) => l.trim());\n`
+}
+export async function gradeConfig(ex, text) {
+  const res = await runJs(configPrelude(text), ex.tests)
+  if (!res.ok) return { pass: false, message: '檢查器執行錯誤。', error: res.error }
+  const pass = res.results?.length ? res.results.every((r) => r.pass) : false
+  return { pass, message: pass ? '全部檢查通過。' : '有檢查沒通過。', results: res.results }
+}
+
 export function grade(ex, code) {
   if (ex.kind === 'sql') return gradeSql(ex, code)
   if (ex.kind === 'python') return gradePython(ex, code)
   if (ex.kind === 'js') return gradeJs(ex, code)
+  if (ex.kind === 'config') return gradeConfig(ex, code)
   return Promise.resolve({ pass: false, message: `未知題型 ${ex.kind}` })
 }
 
@@ -98,5 +111,6 @@ export async function runOnly(ex, code) {
   }
   if (ex.kind === 'python') return runPython(code)
   if (ex.kind === 'js') return runJs(code)
+  if (ex.kind === 'config') return gradeConfig(ex, code).then((g) => ({ ok: true, output: g.pass ? '全部檢查通過，可以交卷。' : `還有 ${g.results.filter((r) => !r.pass).length} 項檢查沒通過：\n` + g.results.filter((r) => !r.pass).map((r) => `· ${r.name}`).join('\n') }))
   return { ok: false, error: '未知題型' }
 }

@@ -73,7 +73,7 @@ export default function Home() {
             return (
               <a key={d.id} href={`#/domain/${d.id}`} className="dcard" style={{ '--tint': `var(--c-${d.color})` }}>
                 <div className="dcard-head">
-                  <span className="dcard-no">0{d.no}</span>
+                  <span className="dcard-no">{String(d.no).padStart(2, "0")}</span>
                   <ProgressRing value={doneN} total={d.skills.length} color={`var(--c-${d.color})`} />
                 </div>
                 <h3>{d.title}</h3>

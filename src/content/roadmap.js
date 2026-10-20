@@ -1,4 +1,4 @@
-// Backend Atlas 內容索引：8 個領域、各領域的技能（skill）、學習路線與工作關鍵字對照
+// Backend Atlas 內容索引：各領域、各領域的技能（skill）、學習路線與工作關鍵字對照
 // 這裡只有列表與卡片需要的索引欄位（id / title / en / level / summary / example / keywords / lab），
 // 技能內文（points / checklist / refs）在 ./body/，由 skillBody.js 於技能頁懶載入。此檔要能被 Node 直接 import（校驗腳本用），不要放 import.meta.glob。
 import language from './d1-language.js'
@@ -9,8 +9,13 @@ import security from './d5-security.js'
 import deploy from './d6-deploy.js'
 import cicd from './d7-cicd.js'
 import algo from './d8-algo.js'
+import devops from './d9-devops.js'
+import ai from './d10-ai.js'
+import knowledge from './d11-knowledge.js'
 
-export const DOMAINS = [language, web, data, auth, security, deploy, cicd, algo]
+// ALL_DOMAINS 含還沒有任何技能的領域（撰寫中）；站上只列出已有技能的領域
+export const ALL_DOMAINS = [language, web, data, auth, security, deploy, cicd, algo, devops, ai, knowledge]
+export const DOMAINS = ALL_DOMAINS.filter((d) => d.skills.length > 0)
 
 export const LEVELS = { 1: '入門', 2: '進階', 3: '深入' }
 

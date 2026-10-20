@@ -25,6 +25,9 @@
   --c-green: #008300;
   --c-violet: #4a3aa7;
   --c-red: #e34948;
+  --c-slate: #56677f;
+  --c-teal: #0b8a8f;
+  --c-brown: #9b6b3c;
   /* sequential blue（幅度用） */
   --seq-100: #cde2fb; --seq-250: #86b6ef; --seq-400: #3987e5; --seq-550: #1c5cab; --seq-700: #0d366b;
   --serif: Georgia, "Times New Roman", "Noto Serif TC", "Songti TC", "PMingLiU", serif;
@@ -47,6 +50,7 @@
     --accent: #3987e5;
     --c-blue: #3987e5; --c-orange: #d95926; --c-aqua: #199e70; --c-yellow: #c98500;
     --c-magenta: #d55181; --c-green: #008300; --c-violet: #9085e9; --c-red: #e66767;
+    --c-slate: #93a4bd; --c-teal: #2bb0b5; --c-brown: #c99560;
     --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.35);
     --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
   }
@@ -63,6 +67,7 @@
   --accent: #3987e5;
   --c-blue: #3987e5; --c-orange: #d95926; --c-aqua: #199e70; --c-yellow: #c98500;
   --c-magenta: #d55181; --c-green: #008300; --c-violet: #9085e9; --c-red: #e66767;
+    --c-slate: #93a4bd; --c-teal: #2bb0b5; --c-brown: #c99560;
   --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.35);
   --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
@@ -624,3 +629,15 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .dec-rationale textarea:focus { border-color: var(--accent); outline: none; }
 .scen-impl { display: grid; gap: 14px; }
 .scen-exercise { margin-top: 14px; }
+
+/* ============ 技能頁：深入內容 ============ */
+.deep { margin-top: 8px; }
+.deep-body { font-size: 0.97rem; }
+.deep-body h3 { font-size: 1.25rem; margin-top: 34px; scroll-margin-top: 80px; }
+.deep-body h4 { font-size: 1.02rem; color: var(--ink-1); margin: 22px 0 6px; scroll-margin-top: 80px; }
+.deep-body blockquote { border-left: 3px solid var(--tint, var(--accent)); background: var(--surface-2); padding: 10px 14px; margin: 14px 0; border-radius: var(--radius); }
+.deep-body blockquote p { margin: 4px 0; }
+.md-code { margin: 14px 0; }
+.md-code > * { margin-bottom: 0; }
+.md-code-actions { display: flex; justify-content: flex-end; margin-top: 6px; }
+.ex-file { font-size: 0.78rem; color: var(--ink-3); margin: 4px 0 -4px; }

@@ -49,7 +49,7 @@ function parseHash(hash) {
   if (seg[0] === 'scenarios') return { view: 'scenarios' }
   if (seg[0] === 'scenario' && seg[1]) return { view: 'scenario', id: seg[1] }
   if (seg[0] === 'exercise' && seg[1]) return { view: 'exercise', id: seg[1] }
-  if (seg[0] === 'playground') return { view: 'playground', lang: params.get('lang') || seg[1] || 'python' }
+  if (seg[0] === 'playground') return { view: 'playground', lang: params.get('lang') || seg[1] || 'python', code: params.get('code') || '' }
   return { view: 'home' }
 }
 
@@ -106,7 +106,7 @@ export default function App() {
     case 'scenarios': page = <Scenarios />; break
     case 'scenario': page = <ScenarioPage id={route.id} />; break
     case 'exercise': page = <ExercisePage id={route.id} />; break
-    case 'playground': page = <Playground key={route.lang} initialLang={route.lang} />; break
+    case 'playground': page = <Playground key={route.lang + route.code} initialLang={route.lang} initialCode={route.code} />; break
     default: page = <Home />
   }
 

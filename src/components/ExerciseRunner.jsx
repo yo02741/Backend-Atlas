@@ -25,7 +25,7 @@ export default function ExerciseRunner({ exercise: ex, compact = false, showStat
   const [hints, setHints] = useState(0)
   const [showSolution, setShowSolution] = useState(false)
   const [plan, setPlan] = useState(null)
-  const lang = ex.kind === 'js' ? 'js' : ex.kind
+  const lang = ex.kind === 'js' ? 'js' : ex.kind === 'config' ? 'text' : ex.kind
 
   useEffect(() => { saveDraft(ex.id, code) }, [ex.id, code])
   // 編輯器一出現就預載執行環境
@@ -76,9 +76,10 @@ export default function ExerciseRunner({ exercise: ex, compact = false, showStat
         </div>
       </header>
       <Md text={ex.prompt} className="ex-prompt" />
+      {ex.file && <p className="ex-file mono">{ex.file}</p>}
 
       <div className="ex-toolbar">
-        <button className="btn small" onClick={run} disabled={busy}>{busy ? '執行中…' : '▶ 執行'}</button>
+        <button className="btn small" onClick={run} disabled={busy}>{busy ? '執行中…' : ex.kind === 'config' ? '▶ 檢查' : '▶ 執行'}</button>
         <button className="btn small submit" onClick={submit} disabled={busy}>交卷</button>
         {ex.kind === 'sql' && <button className="btn ghost small" onClick={doExplain} disabled={busy}>查詢計畫</button>}
         <button className="btn ghost small" onClick={reset} disabled={busy}>重設</button>

@@ -6,6 +6,8 @@ import { Code } from '../labs/ui.jsx'
 
 const LANG_MAP = { dockerfile: 'bash', toml: 'yaml', shell: 'bash', sh: 'bash', text: '', txt: '', javascript: 'js', typescript: 'js', ts: 'js' }
 
+const LANG_LABEL = { python: 'Python', sql: 'SQL', js: 'JavaScript', javascript: 'JavaScript', bash: 'Shell', sh: 'Shell', shell: 'Shell', dockerfile: 'Dockerfile', yaml: 'YAML', yml: 'YAML', nginx: 'nginx', http: 'HTTP', json: 'JSON', toml: 'TOML', text: '', txt: '', '': '' }
+
 function slug(text) {
   return text.toLowerCase().replace(/[`*_]/g, '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')
 }
@@ -30,14 +32,15 @@ export function parse(md) {
     const line = lines[i]
     if (!line.trim()) { i++; continue }
     // fenced code
-    const fence = /^```\s*(\S*)/.exec(line)
+    const fence = /^```\s*(\S*)\s*(.*)$/.exec(line)
     if (fence) {
       const lang = fence[1].toLowerCase()
+      const flags = fence[2].trim().split(/\s+/).filter(Boolean)   // 例如 ```python run：可在 Playground 執行
       const buf = []
       i++
       while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++])
       i++
-      push({ type: 'code', lang: LANG_MAP[lang] ?? lang, text: buf.join('\n') })
+      push({ type: 'code', lang: LANG_MAP[lang] ?? lang, rawLang: lang, flags, text: buf.join('\n') })
       continue
     }
     const h = /^(#{1,6})\s+(.*)$/.exec(line)
@@ -104,22 +107,29 @@ function List({ items }) {
   )
 }
 
-/* idFor(block, defaultId)：自訂標題的 id；after(block)：在某個區塊後面插入額外內容（例如課綱每週標題下掛本站的情境連結） */
-export default function Markdown({ text, className = '', idFor, after }) {
+/* idFor(block, defaultId)：自訂標題的 id；after(block)：在某個區塊後面插入額外內容（例如課綱每週標題下掛本站的情境連結）
+   headingOffset：標題降級（技能頁的深入內容放在 h2「深入」底下，md 裡的 ## 要變成 h3）
+   codeAction(block)：程式碼區塊下方的動作（例如「在 Playground 開啟」） */
+export default function Markdown({ text, className = '', idFor, after, headingOffset = 0, codeAction }) {
   const blocks = React.useMemo(() => parse(text), [text])
   return (
     <div className={`mdoc ${className}`}>
       {blocks.map((b, i) => {
         switch (b.type) {
           case 'h': {
-            const Tag = `h${Math.min(6, b.level)}`
+            const Tag = `h${Math.min(6, b.level + headingOffset)}`
             const id = idFor ? idFor(b, slug(b.text)) : slug(b.text)
             const extra = after ? after(b) : null
             return <React.Fragment key={i}><Tag id={id}>{inline(b.text)}</Tag>{extra}</React.Fragment>
           }
           case 'hr': return <hr key={i} />
           case 'quote': return <blockquote key={i}>{b.lines.map((l, j) => <p key={j}>{inline(l)}</p>)}</blockquote>
-          case 'code': return <Code key={i} lang={b.lang || 'text'} title="">{b.text}</Code>
+          case 'code': {
+            const action = codeAction ? codeAction(b) : null
+            const label = LANG_LABEL[b.rawLang] ?? b.rawLang
+            const code = <Code key={i} lang={b.lang || 'text'} title={b.flags?.includes('run') ? `${label} · 可在 Playground 執行` : label}>{b.text}</Code>
+            return action ? <div key={i} className="md-code">{code}<div className="md-code-actions">{action}</div></div> : code
+          }
           case 'table': return (
             <div key={i} className="dtable-wrap">
               <table className="md-table">

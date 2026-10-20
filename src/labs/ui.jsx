@@ -250,7 +250,7 @@ export function Code({ lang = 'sql', title, children, highlight = [], dim = fals
   return (
     <div className="code">
       {(title || lang) && (
-        <div className="code-head"><span>{title || lang}</span><span>{lang}</span></div>
+        <div className="code-head"><span>{title || lang}</span><span>{title && title.toLowerCase() !== String(lang).toLowerCase() ? lang : ''}</span></div>
       )}
       <pre>
         {lines.map((line, i) => {

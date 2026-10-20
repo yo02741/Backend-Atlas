@@ -19,7 +19,7 @@ export default function Domain({ id }) {
     <div className="fade-swap" style={{ '--tint': color }}>
       <header className="masthead">
         <p className="crumbs"><a href="#/">首頁</a> / <a href="#/roadmap">技能盤點</a> / {d.title}</p>
-        <p className="kicker tinted">0{d.no} · {d.en}</p>
+        <p className="kicker tinted">{String(d.no).padStart(2, "0")} · {d.en}</p>
         <h1 className="display" style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           {d.title}
           <ProgressRing value={doneN} total={d.skills.length} color={color} />

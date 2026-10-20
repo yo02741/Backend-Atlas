@@ -10,7 +10,8 @@ const page = await browser.newPage({ viewport: { width: 1200, height: 900 } })
 const errs = []
 page.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message))
 page.on('console', (m) => { if (m.type() === 'error') errs.push('CONSOLE ' + m.text().slice(0, 200)) })
-await page.goto(base + '?verify=1', { waitUntil: 'networkidle' })
+// ONLY=題目或技能 id（逗號分隔）只驗這幾題
+await page.goto(base + '?verify=1' + (process.env.ONLY ? '&only=' + process.env.ONLY : ''), { waitUntil: 'networkidle' })
 await page.waitForFunction(() => window.__verify?.done, null, { timeout: 900000 })
 const r = await page.evaluate(() => window.__verify.results)
 let bad = 0

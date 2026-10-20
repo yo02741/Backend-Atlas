@@ -64,7 +64,7 @@ export function DomainBlock({ domain: d, skills, isDone, kw, showDesc = true, pr
   return (
     <section className="domain-block" style={{ '--tint': `var(--c-${d.color})` }}>
       <div className="domain-block-head">
-        <span className="kicker tinted">0{d.no}</span>
+        <span className="kicker tinted">{String(d.no).padStart(2, "0")}</span>
         <h2><a href={`#/domain/${d.id}`} style={{ textDecoration: 'none' }}>{d.title}</a></h2>
         <span className="en">{d.en}</span>
         <span className="count">{doneN} / {d.skills.length} 完成</span>

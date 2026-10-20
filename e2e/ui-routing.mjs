@@ -22,12 +22,12 @@ const homeChunks = [...loaded]
 t('home does not load CodeMirror chunk', !homeChunks.some((n) => /^CodeEditor-/.test(n)), homeChunks.join(','))
 t('home does not load Curriculum chunk', !homeChunks.some((n) => /^Curriculum-/.test(n)))
 t('home does not load page chunks', !homeChunks.some((n) => /^(Skill|Exercises|Scenarios|Playground|Roadmap)-/.test(n)))
-t('home does not load skill body chunks', !homeChunks.some((n) => /^d\d-[a-z]+-/.test(n)))
+t('home does not load skill body chunks', !homeChunks.some((n) => /^d\d+-[a-z]+-/.test(n)))
 t('home does not load the Firebase SDK (only after 登入 or a restored session)', !homeChunks.some((n) => /^firebase-/.test(n)))
 t('home title', await page.title() === 'Backend Atlas · 後端學習地圖', await page.title())
 
 // 技能頁：只載自己領域的內文 chunk；同領域換課不再下載；換領域才多載一個
-const bodyChunks = () => [...loaded].filter((n) => /^d\d-[a-z]+-/.test(n))
+const bodyChunks = () => [...loaded].filter((n) => /^d\d+-[a-z]+-/.test(n))
 await page.goto(base + '#/skill/sql-joins', { waitUntil: 'networkidle' })
 await page.waitForSelector('.points li')
 t('skill page renders body (points)', (await page.$$('.points li')).length >= 2)

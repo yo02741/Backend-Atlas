@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react'
 import { findSkill, neighbors } from '../content/roadmap.js'
 import { readSkillBody } from '../content/skillBody.js'
+import { readSkillDeep, preloadSkillDeep, hasDeep } from '../content/skillDeep.js'
+import Markdown from '../components/Markdown.jsx'
+import { playgroundHref, PLAYGROUND_LANGS } from '../playgroundLink.js'
 import { useProgress } from '../progress.js'
 import { Level, DomainPill, LabEmbed, labTitle } from '../components/bits.jsx'
 import { Callout } from '../labs/ui.jsx'
@@ -17,6 +20,7 @@ export default function Skill({ id }) {
   if (!s) return <p className="status-msg">找不到這一課：{id}</p>
 
   const d = s.domain
+  if (hasDeep(s.id)) preloadSkillDeep(s.id)   // 跟內文一起開始下載，不用等內文到了才發出請求
   const body = readSkillBody(d, s.id)   // 內文另外一個 chunk：沒到就 suspend（換頁時舊頁面留著）
   const color = `var(--c-${d.color})`
   const done = isDone(s.id)
@@ -33,7 +37,7 @@ export default function Skill({ id }) {
           <a href="#/">首頁</a> / <a href="#/roadmap">技能盤點</a> / <a href={`#/domain/${d.id}`}>{d.title}</a>
         </p>
         <header className="lesson-head">
-          <p className="kicker tinted">0{d.no} · {d.en}</p>
+          <p className="kicker tinted">{String(d.no).padStart(2, "0")} · {d.en}</p>
           <h1>{s.title}</h1>
           <p className="en">{s.en}</p>
           <div className="lesson-meta">
@@ -56,6 +60,7 @@ export default function Skill({ id }) {
         <nav className="course-toc" aria-label="本課章節">
           {s.lab && <a href="#lab" className="lab-link">▶ 實驗室</a>}
           <a href="#points">重點（{body.points.length}）</a>
+          {hasDeep(s.id) && <a href="#deep">深入</a>}
           {assess.total > 0 && <a href="#assess">驗收（{assess.passed}/{assess.total}）</a>}
           <a href="#check">自我檢核（{checkedN}/{body.checklist.length}）</a>
           {body.refs.length > 0 && <a href="#refs">延伸閱讀</a>}
@@ -78,6 +83,12 @@ export default function Skill({ id }) {
           <ul className="points">
             {body.points.map((p, i) => <li key={i}><span><b>{p.b}</b>　<Inline text={p.t} /></span></li>)}
           </ul>
+
+          {hasDeep(s.id) && (
+            <React.Suspense fallback={<p className="muted">載入深入內容…</p>}>
+              <Deep id={s.id} />
+            </React.Suspense>
+          )}
 
           <h2 id="assess">驗收 <span className="muted" style={{ fontSize: '0.85rem', fontFamily: 'var(--sans)', fontWeight: 500 }}>{assess.total > 0 ? `${assess.passed} / ${assess.total}` : ''}</span></h2>
           {assess.total === 0 && <p className="muted">這一課的驗收題目撰寫中。</p>}
@@ -124,6 +135,21 @@ export default function Skill({ id }) {
         </nav>
       </div>
     </article>
+  )
+}
+
+/* 深入內容：md 的 ## 變成 h3（放在 h2「深入」底下）；標記 run 的 python / sql / js 範例可以在 Playground 開 */
+function Deep({ id }) {
+  const text = readSkillDeep(id)
+  if (!text) return null
+  const action = (b) => (b.flags.includes('run') && PLAYGROUND_LANGS[b.rawLang]
+    ? <a className="btn ghost small" href={playgroundHref(b.rawLang, b.text)}>在 Playground 開啟 ↗</a>
+    : null)
+  return (
+    <section className="deep">
+      <h2 id="deep">深入</h2>
+      <Markdown text={text} className="deep-body" headingOffset={1} idFor={(_, slug) => `deep-${slug}`} codeAction={action} />
+    </section>
   )
 }
 

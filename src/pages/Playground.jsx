@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { decodePlaygroundCode } from '../playgroundLink.js'
 import CodeEditor from '../components/CodeEditor.jsx'
 import { ConsoleOut, ResultTable, PlanTree, RuntimeStatus } from '../components/Output.jsx'
 import { runPython, ensurePython } from '../runtime/py.js'
@@ -132,15 +133,22 @@ const LANGS = [
 function loadDraft(lang) { try { return localStorage.getItem(`atlas-playground-${lang}`) } catch { return null } }
 function saveDraft(lang, code) { try { localStorage.setItem(`atlas-playground-${lang}`, code) } catch { /* ignore */ } }
 
-export default function Playground({ initialLang = 'python' }) {
+export default function Playground({ initialLang = 'python', initialCode = '' }) {
   const [lang, setLang] = useState(LANGS.some((l) => l.id === initialLang) ? initialLang : 'python')
-  const [code, setCode] = useState(() => loadDraft(lang) ?? SAMPLES[lang][0].code)
+  // 從課程的「在 Playground 開啟」進來：載入那段程式碼；使用者改過之前不覆蓋原本的草稿
+  const linked = React.useRef(decodePlaygroundCode(initialCode))
+  const [code, setCode] = useState(() => linked.current ?? loadDraft(lang) ?? SAMPLES[lang][0].code)
   const [out, setOut] = useState(null)
   const [busy, setBusy] = useState(false)
   const [plan, setPlan] = useState(null)
 
-  useEffect(() => { setCode(loadDraft(lang) ?? SAMPLES[lang][0].code); setOut(null); setPlan(null) }, [lang])
-  useEffect(() => { saveDraft(lang, code) }, [lang, code])
+  const firstLang = React.useRef(true)
+  useEffect(() => {
+    if (firstLang.current) { firstLang.current = false; return }
+    linked.current = null
+    setCode(loadDraft(lang) ?? SAMPLES[lang][0].code); setOut(null); setPlan(null)
+  }, [lang])
+  useEffect(() => { if (linked.current === null || code !== linked.current) { linked.current = null; saveDraft(lang, code) } }, [lang, code])
   // 進頁就預載執行環境，按下執行時已經好了
   useEffect(() => { if (lang === 'python') ensurePython(); if (lang === 'sql') ensureSql().catch(() => {}) }, [lang])
 

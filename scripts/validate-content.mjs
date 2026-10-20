@@ -1,16 +1,16 @@
 // 技能內容結構校驗：索引（src/content/dN-*.js）與內文（src/content/body/dN-*.js）技能 id 一一對應、
 // 必填欄位齊全、id 全站唯一、lab 檔存在、refs 是 https 連結、PATH / KEYWORDS 對得到技能。
-import { readdirSync, existsSync } from 'node:fs'
+import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const content = resolve(here, '../src/content')
-const { DOMAINS, PATH, KEYWORDS } = await import(pathToFileURL(resolve(content, 'roadmap.js')).href)
+const { ALL_DOMAINS: DOMAINS, PATH, KEYWORDS } = await import(pathToFileURL(resolve(content, 'roadmap.js')).href)
 
 const errors = []
 const seen = new Set()
 let skills = 0
-const files = readdirSync(content).filter((f) => /^d\d-.*\.js$/.test(f))
+const files = readdirSync(content).filter((f) => /^d\d+-.*\.js$/.test(f))
 if (files.length !== DOMAINS.length) errors.push(`dN-*.js 有 ${files.length} 個，roadmap.js 的 DOMAINS 有 ${DOMAINS.length} 個`)
 
 for (const d of DOMAINS) {
@@ -49,6 +49,32 @@ for (const p of PATH) if (!seen.has(p.skill)) errors.push(`PATH: 技能 "${p.ski
 const allKw = new Set(DOMAINS.flatMap((d) => d.skills.flatMap((s) => (s.keywords || []).map((k) => k.toLowerCase()))))
 for (const k of KEYWORDS) if (!allKw.has(k.toLowerCase())) errors.push(`KEYWORDS: "${k}" 沒有任何技能對應`)
 
-console.log(`領域 ${DOMAINS.length} 個，技能 ${skills} 個`)
+// 深入內容（src/content/deep/<skill-id>.md）：檔名對得到技能、至少三個 ## 段落、篇幅足夠、
+// 不用禁用措辭、連結是 https、程式碼區塊有收尾、標 run 的區塊只能是 python / sql / js
+const BANNED = ['為什麼要學', '給前端工程師', '你工作上', '你已經會', '身為前端']
+const deepDir = resolve(content, 'deep')
+const deepFiles = existsSync(deepDir) ? readdirSync(deepDir).filter((f) => f.endsWith('.md')) : []
+for (const f of deepFiles) {
+  const id = f.replace(/\.md$/, '')
+  const tag = `deep/${f}`
+  if (!seen.has(id)) errors.push(`${tag}: 沒有 id 為 "${id}" 的技能`)
+  const md = readFileSync(resolve(deepDir, f), 'utf8')
+  const fences = md.match(/^```.*$/gm) || []
+  if (fences.length % 2) errors.push(`${tag}: 程式碼區塊沒有收尾（\`\`\` 數量是奇數）`)
+  for (let i = 0; i < fences.length; i += 2) {
+    const [, lang, rest] = /^```\s*(\S*)\s*(.*)$/.exec(fences[i])
+    if (/\brun\b/.test(rest) && !['python', 'sql', 'js', 'javascript'].includes(lang)) errors.push(`${tag}: 標 run 的程式碼區塊只能是 python / sql / js（這裡是 "${lang}"）`)
+  }
+  const prose = md.replace(/^```[\s\S]*?^```/gm, '')
+  if (/^# /m.test(prose)) errors.push(`${tag}: 不要用 # 一級標題（技能頁已有標題），段落用 ##`)
+  const h2 = (prose.match(/^## /gm) || []).length
+  if (h2 < 3) errors.push(`${tag}: 至少要有三個 ## 段落（目前 ${h2} 個）`)
+  const chars = prose.replace(/\s+/g, '').length
+  if (chars < 1500) errors.push(`${tag}: 正文太短（${chars} 字，至少 1500）`)
+  for (const w of BANNED) if (md.includes(w)) errors.push(`${tag}: 不用「${w}」這類措辭（見 CLAUDE.md 語氣規則）`)
+  for (const m of prose.matchAll(/\]\(([^)]+)\)/g)) if (!/^https:\/\//.test(m[1]) && !/^#\//.test(m[1])) errors.push(`${tag}: 連結要是 https:// 或站內 #/ 路由（${m[1]}）`)
+}
+
+console.log(`領域 ${DOMAINS.length} 個，技能 ${skills} 個，深入內容 ${deepFiles.length} / ${skills} 課`)
 if (errors.length) { console.log('錯誤：\n' + errors.join('\n')); process.exit(1) }
 console.log('OK')

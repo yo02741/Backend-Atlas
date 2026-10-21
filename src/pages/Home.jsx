@@ -53,7 +53,7 @@ export default function Home() {
         </div>
         <MetroMap stations={stations} isDone={isDone} />
         <div className="metro-legend">
-          {DOMAINS.map((d) => (
+          {DOMAINS.filter((d) => stations.some((s) => s.domain.id === d.id)).map((d) => (
             <span key={d.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <i style={{ width: 8, height: 8, borderRadius: '50%', background: `var(--c-${d.color})`, display: 'inline-block' }} />{d.title}
             </span>

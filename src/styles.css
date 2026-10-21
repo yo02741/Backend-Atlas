@@ -244,7 +244,9 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .hero-copy h1 { margin-bottom: 18px; }
 .hero-copy .lede { margin-bottom: 26px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.hero-stats { display: flex; gap: 28px; margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--hairline); }
+.hero-stats { display: flex; flex-wrap: wrap; gap: 14px 28px; margin-top: 30px; padding-top: 18px; border-top: 1px solid var(--hairline); }
+/* 窄手機：六個數字排成兩列三欄，不擠出畫面 */
+@media (max-width: 420px) { .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 12px; } }
 .stat b { display: block; font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
 .stat span { font-size: 0.78rem; color: var(--ink-3); letter-spacing: 0.06em; }
 .hero-art { position: relative; }
@@ -261,6 +263,8 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .metro-station circle.core { transition: r 0.2s ease; }
 .metro-station text { font-family: var(--sans); fill: var(--ink-1); font-size: 13px; font-weight: 600; }
 .metro-station .sub { fill: var(--ink-3); font-size: 11px; font-weight: 500; }
+/* 站名與領域名加一圈底色描邊：轉彎的連線從字後面經過，不會穿過文字 */
+.metro-station text:not([font-size]) { paint-order: stroke; stroke: var(--page); stroke-width: 4px; stroke-linejoin: round; }
 .metro-station .prog { stroke-width: 4; fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
 .metro-legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 0.78rem; color: var(--ink-3); justify-content: center; margin-top: 10px; }
 

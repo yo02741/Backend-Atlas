@@ -49,7 +49,7 @@ export default function Home() {
       <section className="home-section">
         <div className="section-head">
           <h2 className="section-title">建議學習路線</h2>
-          <p>12 站、每站約一週。先看得見的、再打地基、最後上線。點站名進入該課。想要完整的 16 週計畫與里程碑專案，看 <a href="#/curriculum">課綱</a>。</p>
+          <p>12 站、每站約一週。先看得見的、再打地基、最後上線。點站名進入該課。完整的 16 週主線、6 週延伸與里程碑專案在 <a href="#/curriculum">課綱</a>；想把學過的課組成一個系統，走 <a href="#/project">實作路線</a>。</p>
         </div>
         <MetroMap stations={stations} isDone={isDone} />
         <div className="metro-legend">
@@ -63,8 +63,8 @@ export default function Home() {
 
       <section className="home-section">
         <div className="section-head">
-          <h2 className="section-title">八大領域</h2>
-          <p>後端工程師的技能樹，每個領域以一項技術當範例；概念換到別的技術也通。</p>
+          <h2 className="section-title">{DOMAINS.length} 個領域</h2>
+          <p>後端工程師的技能樹，每個領域以一項技術當範例；概念換到別的技術也通。9 之後是延伸：基礎建設、AI 時代的開發與知識系統。</p>
         </div>
         <div className="domain-grid">
           {DOMAINS.map((d) => {

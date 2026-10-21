@@ -28,7 +28,7 @@ export default function Roadmap({ initialKw = '' }) {
         <p className="kicker">SKILL INVENTORY · 後端工程師技能盤點</p>
         <h1 className="display">後端技能盤點</h1>
         <p className="lede">
-          依 roadmap.sh 的 Backend Developer 路線整理。每個技能標示一項範例技術與常見替代品、難度、相關關鍵字；有實驗室的可以直接動手。
+          領域 1–8 依 roadmap.sh 的 Backend Developer 路線整理，9–11 是延伸：DevOps 與基礎建設、AI 時代的開發與 Agent 安全、知識系統。每個技能標示一項範例技術與常見替代品、難度、相關關鍵字；有實驗室的可以直接動手。
         </p>
       </header>
 

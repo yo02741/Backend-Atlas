@@ -70,6 +70,7 @@ export default function CodeEditor({ value, onChange, lang = 'python', onRun, re
         langComp.current.of(langExt(lang)),
         roComp.current.of(EditorState.readOnly.of(readOnly)),
         theme, syntaxHighlighting(highlight),
+        EditorView.lineWrapping, // 長行換行，手機上不用左右滑
         placeholder ? cmPlaceholder(placeholder) : [],
         EditorView.updateListener.of((u) => { if (u.docChanged) onChangeRef.current?.(u.state.doc.toString()) }),
       ],

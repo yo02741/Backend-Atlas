@@ -373,7 +373,7 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 /* ============ 技能頁（課程） ============ */
 /* 單欄閱讀（.reading 限 760px），實驗室 .lab-full 破欄到整個版心寬 */
 .lesson { padding-top: 30px; }
-.lesson .reading { max-width: 760px; }
+.lesson .reading { max-width: 760px; min-width: 0; }
 .course-bar {
   position: sticky; top: 61px; z-index: 20;
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
@@ -413,7 +413,7 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .lesson-body ul, .lesson-body ol { padding-left: 1.3em; margin-bottom: 12px; color: var(--ink-2); max-width: 72ch; }
 .lesson-body li { margin-bottom: 4px; }
 .lesson-body li::marker { color: var(--ink-3); }
-.lesson-body code { font-size: 0.86em; background: var(--surface-2); padding: 1px 6px; border-radius: 3px; color: var(--ink-1); }
+.lesson-body code { font-size: 0.86em; background: var(--surface-2); padding: 1px 6px; border-radius: 3px; color: var(--ink-1); overflow-wrap: anywhere; }
 .lesson-body .lab { margin: 26px 0; }
 .points { list-style: none; padding: 0; display: grid; gap: 10px; margin: 8px 0 0; }
 .points li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
@@ -518,7 +518,7 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .md p { margin-bottom: 8px; }
 .md p:last-child { margin-bottom: 0; }
 .md ul { padding-left: 1.2em; margin-bottom: 8px; }
-.md code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 1px 6px; border-radius: 3px; color: var(--ink-1); }
+.md code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 1px 6px; border-radius: 3px; color: var(--ink-1); overflow-wrap: anywhere; }
 .md strong { color: var(--ink-1); }
 .ex-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0 10px; }
 .ex-toolbar .spacer { flex: 1; }
@@ -535,13 +535,15 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .ex-solution .kicker { margin-bottom: 8px; }
 .assess-ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 50%, transparent); }
 .quiz-list { list-style: none; display: grid; gap: 18px; margin: 6px 0 4px; }
-.quiz-q { padding: 12px 14px; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--page); }
+/* grid 子項預設 min-width: auto，長的程式碼片段會把題目撐出外框（外框 overflow: hidden 會把選項裁掉、點不到） */
+.quiz-list > li, .ex > * { min-width: 0; }
+.quiz-q { overflow-wrap: anywhere; padding: 12px 14px; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--page); }
 .quiz-q.right { border-color: color-mix(in srgb, var(--good) 45%, var(--hairline)); }
 .quiz-q.wrong { border-color: color-mix(in srgb, var(--critical) 45%, var(--hairline)); }
 .quiz-stem { font-size: 0.95rem; color: var(--ink-1); font-weight: 600; margin-bottom: 8px; }
 .quiz-q .code { margin: 6px 0 10px; }
 .quiz-opts { display: grid; gap: 6px; }
-.quiz-opt { display: grid; grid-template-columns: 18px 24px 1fr; gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--hairline); border-radius: var(--radius); cursor: pointer; font-size: 0.9rem; color: var(--ink-2); background: var(--surface-1); transition: border-color 0.12s ease, background 0.12s ease; }
+.quiz-opt { display: grid; grid-template-columns: 18px 24px minmax(0, 1fr); gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--hairline); border-radius: var(--radius); cursor: pointer; font-size: 0.9rem; color: var(--ink-2); background: var(--surface-1); transition: border-color 0.12s ease, background 0.12s ease; }
 .quiz-opt:hover { border-color: var(--ink-3); }
 .quiz-opt input { margin-top: 4px; accent-color: var(--tint, var(--accent)); }
 .quiz-opt.picked { border-color: var(--tint, var(--accent)); color: var(--ink-1); }
@@ -594,7 +596,10 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .mdoc hr { border: none; border-top: 3px double var(--hairline); margin: 28px 0; }
 .mdoc .code { margin: 8px 0 14px; }
 .md-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; margin: 8px 0 16px; }
-.md-table th { text-align: left; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); padding: 8px 10px; border-bottom: 2px solid var(--ink-1); white-space: nowrap; }
+/* 儲存格內容（含行內碼）一律可換行：表格不撐寬版面，手機上不用左右滑 */
+.md-table th, .md-table td { overflow-wrap: anywhere; }
+.md-table code { white-space: normal; overflow-wrap: anywhere; }
+.md-table th { text-align: left; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); padding: 8px 10px; border-bottom: 2px solid var(--ink-1); }
 .md-table td { padding: 8px 10px; border-bottom: 1px solid var(--hairline); vertical-align: top; color: var(--ink-2); }
 .md-table td:first-child { color: var(--ink-1); font-weight: 600; }
 
@@ -623,6 +628,15 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .scen-opt ul.cons li::before { content: '✕'; color: var(--critical); font-weight: 700; }
 .scen-opt .md p { margin: 0; display: inline; }
 .tradeoffs td:first-child { white-space: nowrap; }
+/* 手機寬度：取捨表改成一個做法一張卡，欄名放在每格上方，不用左右滑 */
+@media (max-width: 640px) {
+  .tradeoffs thead { display: none; }
+  .tradeoffs, .tradeoffs tbody, .tradeoffs tr, .tradeoffs td { display: block; width: 100%; }
+  .tradeoffs tr { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 10px 12px; margin-bottom: 10px; }
+  .tradeoffs td { border: none; padding: 4px 0; }
+  .tradeoffs td:first-child { white-space: normal; font-size: 0.95rem; padding-bottom: 6px; border-bottom: 1px solid var(--hairline); margin-bottom: 4px; }
+  .tradeoffs td[data-label]::before { content: attr(data-label); display: block; font-size: 0.7rem; letter-spacing: 0.06em; color: var(--ink-3); }
+}
 .tradeoffs .md p { margin: 0; }
 .decisions .dec-no { font-size: 0.7rem; letter-spacing: 0.14em; color: var(--tint, var(--accent)); font-weight: 700; margin-bottom: 4px; }
 .dec-rationale { display: grid; gap: 4px; margin-top: 10px; }

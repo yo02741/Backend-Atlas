@@ -100,6 +100,11 @@
 .code pre { margin: 0; padding: 10px 0; overflow-x: auto; font-family: var(--mono); color: var(--ink-1); }
 .code .ln { display: block; padding: 0 14px 0 0; white-space: pre; position: relative; transition: background 0.2s ease; }
 .code .ln::before { content: attr(data-n); display: inline-block; width: 2.4em; margin-right: 12px; text-align: right; color: var(--ink-3); opacity: 0.6; user-select: none; font-size: 0.9em; }
+/* 手機寬度：程式碼長行換行（懸掛縮排讓續行對齊程式碼、不壓到行號），不用左右滑 */
+@media (max-width: 640px) {
+  .code .ln { white-space: pre-wrap; overflow-wrap: anywhere; padding-left: calc(2.4em + 12px); text-indent: calc(-2.4em - 12px); }
+  .code .ln::before { text-indent: 0; }
+}
 .code .ln.hl { background: color-mix(in srgb, var(--lab-accent) 14%, transparent); box-shadow: inset 3px 0 0 var(--lab-accent); }
 .code .ln.dim { opacity: 0.45; }
 .code .tk-kw { color: var(--c-violet); font-weight: 600; }
@@ -124,6 +129,11 @@
 .dtable th { text-align: left; font-weight: 600; color: var(--ink-3); font-size: 0.7rem; letter-spacing: 0.06em; padding: 6px 10px; border-bottom: 1px solid var(--hairline); background: var(--surface-2); white-space: nowrap; }
 .dtable td { padding: 5px 10px; border-bottom: 1px solid var(--hairline); color: var(--ink-1); white-space: nowrap; transition: background 0.2s ease, opacity 0.2s ease; }
 .dtable tr:last-child td { border-bottom: none; }
+/* 手機寬度：儲存格可換行，表格縮進畫面裡，不用左右滑 */
+@media (max-width: 640px) {
+  .dtable th, .dtable td { white-space: normal !important; overflow-wrap: anywhere; min-width: 0 !important; padding-left: 7px; padding-right: 7px; }
+  .dtable { min-width: 0 !important; }
+}
 .dtable tr.row-in td { animation: row-in 0.35s ease-out both; }
 .dtable td.null { color: var(--ink-3); font-style: italic; background: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--ink-3) 10%, transparent) 4px 5px); }
 .dtable tr.off td { opacity: 0.35; text-decoration: line-through; }

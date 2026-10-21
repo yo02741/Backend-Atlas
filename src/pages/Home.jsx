@@ -14,7 +14,7 @@ export default function Home() {
   const { done, isDone } = useProgress()
   const skills = allSkills()
   const labCount = skills.filter((s) => s.lab).length
-  const stations = PATH.map((p) => findSkill(p.skill)).filter(Boolean)
+  const stations = PATH.map((p) => { const s = findSkill(p.skill); return s && { ...s, label: p.label || s.title } }).filter(Boolean)
   const nextStation = stations.find((s) => !isDone(s.id)) || stations[0]
 
   return (
@@ -49,7 +49,7 @@ export default function Home() {
       <section className="home-section">
         <div className="section-head">
           <h2 className="section-title">建議學習路線</h2>
-          <p>12 站、每站約一週。先看得見的、再打地基、最後上線。點站名進入該課。完整的 16 週主線、6 週延伸與里程碑專案在 <a href="#/curriculum">課綱</a>；想把學過的課組成一個系統，走 <a href="#/project">實作路線</a>。</p>
+          <p>{stations.length} 站、每站約一週。先看得見的、再打地基、接著上線，最後是基礎建設、Agent 安全與知識系統。點站名進入該課。完整的 16 週主線、6 週延伸與里程碑專案在 <a href="#/curriculum">課綱</a>；想把學過的課組成一個系統，走 <a href="#/project">實作路線</a>。</p>
         </div>
         <MetroMap stations={stations} isDone={isDone} />
         <div className="metro-legend">

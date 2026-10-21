@@ -55,10 +55,10 @@ export default function MetroMap({ stations, isDone }) {
               {done
                 ? <path d={`M${p.x - 5},${p.y} l3.5,3.5 l7,-7`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 : <text x={p.x} y={p.y + 4} textAnchor="middle" fontSize="11" fontWeight="700" fill={color}>{i + 1}</text>}
-              {wrap(st.title, cellW * (W / 100)).map((line, li) => (
+              {wrap(st.label || st.title, cellW * (W / 100)).map((line, li) => (
                 <text key={li} x={p.x} y={p.y + 32 + li * 16} textAnchor="middle">{line}</text>
               ))}
-              <text x={p.x} y={p.y + 32 + wrap(st.title, cellW * (W / 100)).length * 16} textAnchor="middle" className="sub">{st.domain.title}</text>
+              <text x={p.x} y={p.y + 32 + wrap(st.label || st.title, cellW * (W / 100)).length * 16} textAnchor="middle" className="sub">{st.domain.title}</text>
             </a>
           )
         })}
@@ -67,11 +67,22 @@ export default function MetroMap({ stations, isDone }) {
   )
 }
 
-/* 站名依格寬折成最多兩行（CJK 約 13px 一字），超過就截斷 */
+/* 站名依格寬折成最多兩行：CJK 約 13.5px 一字、英數約一半寬；優先在空白或標點斷行，不把英文字切開；超過兩行截斷 */
 function wrap(t, cellPx) {
-  const per = Math.max(6, Math.floor((cellPx - 12) / 13.5))
-  if (t.length <= per) return [t]
-  const a = t.slice(0, per)
-  const rest = t.slice(per)
-  return [a, rest.length > per ? rest.slice(0, per - 1) + '…' : rest]
+  const max = Math.max(6, (cellPx - 12) / 13.5)
+  const w = (ch) => (/[\x00-\x7f]/.test(ch) ? 0.55 : 1)
+  const width = (str) => [...str].reduce((n, ch) => n + w(ch), 0)
+  if (width(t) <= max) return [t]
+  let cut = 0, acc = 0, lastBreak = -1
+  for (const [i, ch] of [...t].entries()) {
+    acc += w(ch)
+    if (acc > max) break
+    cut = i + 1
+    if (/[\s、：，／]/.test(ch)) lastBreak = i + 1
+  }
+  if (lastBreak > 0 && /[\x00-\x7f]/.test(t[cut] || '') && /[\x00-\x7f]/.test(t[cut - 1] || '')) cut = lastBreak
+  const a = t.slice(0, cut).trim()
+  let rest = t.slice(cut).trim()
+  if (width(rest) > max) { let n = 0, k = 0; for (const ch of rest) { if (n + w(ch) > max - 1) break; n += w(ch); k++ } rest = rest.slice(0, k) + '…' }
+  return [a, rest]
 }

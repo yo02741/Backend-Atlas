@@ -25,20 +25,26 @@ export const KEYWORDS = [
   'GitLab CI', 'GitHub Actions', 'Token', 'JWT', 'RBAC', 'ABAC', 'OAuth', 'OWASP',
 ]
 
-/* 建議學習路線：先「看得見」的、再打地基、最後上線相關。共 12 站，每站 1 週左右。 */
+/* 建議學習路線（label 是地圖上的短站名）：先「看得見」的、再打地基、上線相關，最後是基礎建設、Agent 安全與知識系統。每站 1 週左右。 */
 export const PATH = [
-  { skill: 'http-basics', note: '看清一個請求從瀏覽器到伺服器的每一步。' },
-  { skill: 'rest-design', note: '資源、方法、狀態碼：把 API 寫對。' },
-  { skill: 'sql-basics', note: 'SQL 是後端最保值的技能。' },
-  { skill: 'sql-joins', note: '用文氏圖與結果表把 JOIN 一次搞懂。' },
-  { skill: 'indexes', note: '慢查詢的第一個答案。' },
-  { skill: 'transactions', note: '扣庫存、下訂單不能沒有它。' },
-  { skill: 'authn-basics', note: 'Token、JWT、OAuth 的地基。' },
-  { skill: 'jwt', note: '把 token 拆開，看三段各是什麼。' },
-  { skill: 'rbac-abac', note: '誰能做什麼，做成模型。' },
-  { skill: 'injection', note: '最老也最常見的漏洞，親手擋一次。' },
-  { skill: 'docker-basics', note: '搞懂層，build 就不再慢。' },
-  { skill: 'ci-pipeline', note: 'GitHub Actions 與 GitLab CI 對照著學。' },
+  { skill: 'http-basics', label: 'HTTP 請求的一生', note: '看清一個請求從瀏覽器到伺服器的每一步。' },
+  { skill: 'rest-design', label: 'REST API 設計', note: '資源、方法、狀態碼：把 API 寫對。' },
+  { skill: 'sql-basics', label: 'SQL 基礎', note: 'SQL 是後端最保值的技能。' },
+  { skill: 'sql-joins', label: 'JOIN 七兄弟', note: '用文氏圖與結果表把 JOIN 一次搞懂。' },
+  { skill: 'indexes', label: '索引與查詢計畫', note: '慢查詢的第一個答案。' },
+  { skill: 'transactions', label: '交易與隔離等級', note: '扣庫存、下訂單不能沒有它。' },
+  { skill: 'authn-basics', label: 'Session vs Token', note: 'Token、JWT、OAuth 的地基。' },
+  { skill: 'jwt', label: 'JWT 解剖', note: '把 token 拆開，看三段各是什麼。' },
+  { skill: 'rbac-abac', label: 'RBAC 與 ABAC', note: '誰能做什麼，做成模型。' },
+  { skill: 'injection', label: 'SQL 注入', note: '最老也最常見的漏洞，親手擋一次。' },
+  { skill: 'docker-basics', label: 'Docker 的層', note: '搞懂層，build 就不再慢。' },
+  { skill: 'ci-pipeline', label: 'CI 管線', note: 'GitHub Actions 與 GitLab CI 對照著學。' },
+  { skill: 'network-troubleshooting', label: '網路通不通', note: '連不上時，從 DNS 一層一層往下查。' },
+  { skill: 'https-certificates', label: 'HTTPS 憑證', note: '憑證鏈、要買哪種、怎麼續約不過期。' },
+  { skill: 'k8s-readiness', label: '導入 K8s 之前', note: '導入 Kubernetes 之前要先備齊的東西。' },
+  { skill: 'oauth-device-pkce', label: 'Device Code 與 PKCE', note: 'CLI 與 agent 沒有瀏覽器時怎麼授權。' },
+  { skill: 'tool-poisoning', label: 'Tool Poisoning', note: '工具描述也是攻擊面：模型讀到的比畫面上多。' },
+  { skill: 'rag-basics', label: 'RAG 與它的限制', note: 'RAG 怎麼運作，限制在哪裡。' },
 ]
 
 export function allSkills() {

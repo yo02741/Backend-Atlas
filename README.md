@@ -153,6 +153,7 @@ npm run e2e:deep                 # 深入內容的每個 run 區塊都能執行�
 npm run e2e:ui                   # 練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停
 npm run e2e:labs                 # 54 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
+npm run e2e:mobile               # 390px 逐頁（每一課、情境、實驗室、題目、實作路線）：頁面不能橫向捲動、內容不能被裁切、不留需要左右滑的區塊
 npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Emulator 與 preview；需要 Java 11+）
 ```
 

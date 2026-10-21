@@ -138,7 +138,7 @@ export function ScenarioPage({ id }) {
             <thead><tr><th>做法</th>{s.tradeoffs.axes.map((a) => <th key={a}>{a}</th>)}</tr></thead>
             <tbody>
               {s.tradeoffs.rows.map((r) => (
-                <tr key={r.option}><td>{optName(r.option)}</td>{r.cells.map((c, j) => <td key={j}><Md text={c} /></td>)}</tr>
+                <tr key={r.option}><td>{optName(r.option)}</td>{r.cells.map((c, j) => <td key={j} data-label={s.tradeoffs.axes[j]}><Md text={c} /></td>)}</tr>
               ))}
             </tbody>
           </table>

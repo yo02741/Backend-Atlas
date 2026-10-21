@@ -20,6 +20,33 @@
 
 以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照。
 
+### 建議學習路線（18 站）
+
+首頁的路線圖：先「看得見」的（HTTP、SQL），再打地基（索引、交易、驗證授權、資安），接著上線（Docker、CI），最後是基礎建設、Agent 安全與知識系統。每站約一週，★ 表示附互動實驗室。完整的週次安排見課綱。
+
+| 站 | 課 | 領域 | 這一站要搞懂的事 |
+|---|---|---|---|
+| 1 | 一個 HTTP 請求的一生★ | 網路、HTTP 與 API 設計 | 看清一個請求從瀏覽器到伺服器的每一步。 |
+| 2 | REST API 設計★ | 網路、HTTP 與 API 設計 | 資源、方法、狀態碼：把 API 寫對。 |
+| 3 | SQL 基礎：SELECT 到 GROUP BY | 資料儲存 | SQL 是後端最保值的技能。 |
+| 4 | JOIN 七兄弟★ | 資料儲存 | 用文氏圖與結果表把 JOIN 一次搞懂。 |
+| 5 | 索引與查詢計畫★ | 資料儲存 | 慢查詢的第一個答案。 |
+| 6 | 交易、ACID 與隔離等級★ | 資料儲存 | 扣庫存、下訂單不能沒有它。 |
+| 7 | 驗證基礎：Session vs Token | 驗證與授權 | Token、JWT、OAuth 的地基。 |
+| 8 | JWT 解剖★ | 驗證與授權 | 把 token 拆開，看三段各是什麼。 |
+| 9 | RBAC 與 ABAC 授權模型★ | 驗證與授權 | 誰能做什麼，做成模型。 |
+| 10 | 注入攻擊：SQL 與它的親戚★ | 資安 | 最老也最常見的漏洞，親手擋一次。 |
+| 11 | Docker：image、container、layer★ | 容器與部署 | 搞懂層，build 就不再慢。 |
+| 12 | CI 管線：lint、test、build★ | CI/CD 與交付 | GitHub Actions 與 GitLab CI 對照著學。 |
+| 13 | 網路通不通：從 DNS 到防火牆★ | DevOps 與基礎建設 | 連不上時，從 DNS 一層一層往下查。 |
+| 14 | HTTPS 憑證：要買哪種、怎麼續★ | DevOps 與基礎建設 | 憑證鏈、要買哪種、怎麼續約不過期。 |
+| 15 | 導入 Kubernetes 前要準備什麼★ | DevOps 與基礎建設 | 導入 Kubernetes 之前要先備齊的東西。 |
+| 16 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
+| 17 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述也是攻擊面：模型讀到的比畫面上多。 |
+| 18 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
+
+站點定義在 `src/content/roadmap.js` 的 `PATH`（`label` 是地圖上的短站名）。
+
 ### 技能課程（11 領域、112 課）
 
 每課有重點卡（摘要、範例技術、重點、自我檢核清單、官方文件連結）與深入內容。★ 表示附互動實驗室。
@@ -98,7 +125,7 @@
 ```
 src/
   content/         內容（純資料，改這裡不用碰元件）
-    roadmap.js       領域索引、學習路線 PATH、工作關鍵字 WORK_KEYWORDS、查詢 helper
+    roadmap.js       領域索引、學習路線 PATH（18 站）、工作關鍵字 WORK_KEYWORDS、查詢 helper
     d1-language.js … d11-knowledge.js   每個領域一檔的「索引」：skills[] 各有 id / title / en / level / summary / example / keywords / lab（跟著主 chunk）
     body/d1-language.js … d11-knowledge.js   每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs（技能頁才懶載入，每領域一個 chunk）
     deep/<skill-id>.md   每課的深入內容（markdown，技能頁逐課懶載入；格式見 docs/CONTRIBUTING-lessons.md）

@@ -86,4 +86,7 @@ jobs:
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: backend-atlas
+          # 15.35.0 起部署前會查 Service Usage API，現在的服務帳戶沒有這個權限（403）。
+          # 先固定在可用的版本；服務帳戶加上「服務使用情形檢視者」角色後即可拿掉這行。
+          firebaseToolsVersion: 15.34.0
           channelId: live

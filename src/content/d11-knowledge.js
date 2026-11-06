@@ -50,6 +50,16 @@ export default {
       lab: null,
     },
     {
+      id: 'semantic-layer',
+      title: 'Semantic Layer：讓 agent 查資料不用猜欄位',
+      en: 'Semantic layer',
+      level: 2,
+      summary: '把「營收」「掛號數」這類指標和維度定義成一層（名稱、公式、來源表、允許的篩選），agent 用定義好的指標查，不是看欄位名猜 SQL；定義由資料擁有者維護，查詢可追溯。',
+      example: { primary: '指標定義（YAML / SQL view）', alts: ['dbt metrics', 'Cube', '資料庫 view'] },
+      keywords: ['SQL', 'PostgreSQL'],
+      lab: null,
+    },
+    {
       id: 'knowledge-poisoning',
       title: '原始資料下毒與間接提示注入',
       en: 'Knowledge poisoning',

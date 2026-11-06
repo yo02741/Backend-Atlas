@@ -1,5 +1,6 @@
 // 領域 7：CI/CD 與交付（GitHub Actions、GitLab CI） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d7-cicd.js
-export default {
+import l2 from './parts/d7-cicd-l2.js'
+const base = {
   'git-workflow': {
     points: [
       { b: '分支活不過幾天', t: '功能拆小、常合回 main；長分支 = 大衝突 + 難 review。未完成的功能用 feature flag 藏起來。' },
@@ -98,3 +99,6 @@ export default {
     ],
   },
 }
+
+// P9 新課的內文放在 parts/ 底下，這裡合併
+export default { ...base, ...l2 }

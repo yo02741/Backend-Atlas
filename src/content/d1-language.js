@@ -100,6 +100,16 @@ export default {
       lab: null,
     },
     {
+      id: 'test-quality',
+      title: '測試品質：綠燈越多，品質為什麼沒變好',
+      en: 'Test quality',
+      level: 2,
+      summary: '覆蓋率只說「跑過」，不說「驗過」。AI 寫的測試常見三種假綠燈：斷言太弱、測實作不測行為、把現況當規範；用突變測試檢查測試到底抓不抓得到錯。',
+      example: { primary: 'pytest + mutmut', alts: ['hypothesis（性質測試）', 'Stryker（JS）'] },
+      keywords: ['Python'],
+      lab: null,
+    },
+    {
       id: 'code-quality',
       title: '型別檢查、lint 與格式化',
       en: 'Code quality tooling',

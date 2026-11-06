@@ -50,6 +50,16 @@ export default {
       lab: 'CapacityLab',
     },
     {
+      id: 'finops',
+      title: 'FinOps：雲端與 AI 工具的計費結構',
+      en: 'FinOps',
+      level: 1,
+      summary: '雲端按用量計費的項目（運算、儲存、流量、請求數），AI 工具按 token、context、快取與座位計費；先看得見（tag、報表、預算告警）、再分攤、再優化。',
+      example: { primary: '雲端帳單 + 標籤 + 預算告警', alts: ['AI 工具的用量儀表板', 'AI Gateway 的用量統計'] },
+      keywords: [],
+      lab: null,
+    },
+    {
       id: 'gitlab-cicd',
       title: 'GitLab CI/CD 實戰',
       en: 'GitLab CI/CD',
@@ -107,6 +117,16 @@ export default {
       summary: '分級、事故指揮官、溝通頻道、先止血再找原因；on-call 要有 runbook 與合理輪班；postmortem 不咎責、產出有負責人的改善項目。',
       example: { primary: '事故分級 + 事故指揮官 + 不咎責檢討', alts: ['ITIL 事件管理 / 問題管理'] },
       keywords: [],
+      lab: null,
+    },
+    {
+      id: 'aiops',
+      title: 'AIOps：讓 agent 調查告警但不亂動',
+      en: 'AIOps',
+      level: 2,
+      summary: '告警太多就沒人看；讓 agent 先做唯讀調查（查指標、日誌、最近的變更）並寫摘要，變更類動作要人核准；每一步有紀錄、可以隨時接手。',
+      example: { primary: '告警 → agent 唯讀調查 → 人決定', alts: ['runbook 自動化', 'Kubernetes 告警分級'] },
+      keywords: ['Docker'],
       lab: null,
     },
     {

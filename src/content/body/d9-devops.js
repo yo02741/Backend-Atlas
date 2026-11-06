@@ -1,5 +1,6 @@
 // 領域 9：DevOps 與基礎建設 的技能內文（以技能 id 為 key）
-export default {
+import l4 from './parts/d9-devops-l4.js'
+const base = {
   'devops-glossary': {
     points: [
       { b: '交付線上的詞', t: 'pipeline 是一串自動化 job；artifact 是 job 產出、往後傳的檔案或 image；環境晉升是同一個 artifact 依序部署到 dev → staging → prod，不重新 build。' },
@@ -198,3 +199,6 @@ export default {
     ],
   },
 }
+
+// P9 新課的內文放在 parts/ 底下，這裡合併
+export default { ...base, ...l4 }

@@ -1,5 +1,6 @@
 // 領域 1：語言與工程實踐（以 Python 為範例） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d1-language.js
-export default {
+import l1 from './parts/d1-language-l1.js'
+const base = {
   'python-backend': {
     points: [
       { b: '型別提示是文件也是防線', t: '`def get_user(user_id: int) -> User | None` 一眼看出輸入輸出；搭配 pyright / mypy 在存檔時就抓到錯，和 TypeScript 的型別直覺一致。' },
@@ -202,3 +203,6 @@ export default {
     ],
   },
 }
+
+// P9 新課的內文放在 parts/ 底下，這裡合併
+export default { ...base, ...l1 }

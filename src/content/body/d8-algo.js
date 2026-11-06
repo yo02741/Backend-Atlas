@@ -1,5 +1,6 @@
 // 領域 8：演算法與系統設計 — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d8-algo.js
-export default {
+import l4 from './parts/d8-algo-l4.js'
+const base = {
   'big-o': {
     points: [
       { b: 'Big-O 是成長率', t: '不是秒數。它回答「資料變十倍時，時間變幾倍」：O(n) 十倍、O(n²) 百倍、O(log n) 幾乎不變。' },
@@ -164,3 +165,6 @@ export default {
     ],
   },
 }
+
+// P9 新課的內文放在 parts/ 底下，這裡合併
+export default { ...base, ...l4 }

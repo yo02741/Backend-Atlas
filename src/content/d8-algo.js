@@ -70,6 +70,16 @@ export default {
       lab: null,
     },
     {
+      id: 'event-driven',
+      title: '事件驅動系統的一致性',
+      en: 'Event-driven consistency',
+      level: 3,
+      summary: '事件和資料庫寫入不在同一個交易裡就會丟事件或重複送；outbox 把事件先寫進同一個交易，消費端用冪等鍵去重，重放靠事件有序與版本號。',
+      example: { primary: 'PostgreSQL outbox + 佇列', alts: ['Kafka', 'Debezium（CDC）'] },
+      keywords: ['PostgreSQL', 'SQL'],
+      lab: null,
+    },
+    {
       id: 'job-scheduling',
       title: '排程工作：cron、重複執行與遺漏',
       en: 'Scheduled jobs',

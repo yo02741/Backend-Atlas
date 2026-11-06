@@ -1,5 +1,6 @@
 // 領域 11：知識系統：從 RAG 到 LLM Wiki 的技能內文（以技能 id 為 key）
-export default {
+import l4 from './parts/d11-knowledge-l4.js'
+const base = {
   'rag-basics': {
     points: [
       { b: '兩個階段', t: '離線：切段 → embedding → 寫入向量索引；線上：問題 embedding → 相似度 top-k → 重新排序 → 放進 prompt 生成。查詢與文件要用同一個 embedding 模型。' },
@@ -91,3 +92,6 @@ export default {
     ],
   },
 }
+
+// P9 新課的內文放在 parts/ 底下，這裡合併
+export default { ...base, ...l4 }

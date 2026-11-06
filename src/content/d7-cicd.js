@@ -60,6 +60,16 @@ export default {
       lab: null,
     },
     {
+      id: 'llm-observability',
+      title: 'LLM 應用的可觀測性',
+      en: 'LLM observability',
+      level: 2,
+      summary: '每次呼叫記 prompt 版本、模型、token、延遲、成本與 trace id；品質靠抽樣評分與使用者回饋，不是只看錯誤率。OpenTelemetry 的 GenAI 語意慣例讓這些欄位有統一名字。',
+      example: { primary: 'OpenTelemetry GenAI semantic conventions', alts: ['Langfuse', '自建：log + metrics'] },
+      keywords: [],
+      lab: null,
+    },
+    {
       id: 'reliability',
       title: '健康檢查、備份與事故處理',
       en: 'Reliability basics',

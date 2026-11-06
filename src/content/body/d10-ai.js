@@ -1,5 +1,8 @@
 // 領域 10：AI 時代的開發與 Agent 安全 的技能內文（以技能 id 為 key）
-export default {
+import l1 from './parts/d10-ai-l1.js'
+import l2 from './parts/d10-ai-l2.js'
+import l3 from './parts/d10-ai-l3.js'
+const base = {
   // ── 團隊工作流 ──
   'ai-adr': {
     points: [
@@ -295,3 +298,6 @@ export default {
     ],
   },
 }
+
+// P9 新課的內文放在 parts/ 底下，這裡合併
+export default { ...base, ...l1, ...l2, ...l3 }

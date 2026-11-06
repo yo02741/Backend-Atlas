@@ -13,8 +13,12 @@ import devopsConfig from './devops-config.js'
 import ai from './ai.js'
 import knowledge from './knowledge.js'
 import project from './project.js'
+import p9l1 from './p9-l1.js'
+import p9l2 from './p9-l2.js'
+import p9l3 from './p9-l3.js'
+import p9l4 from './p9-l4.js'
 
-export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...scenarios, ...project]
+export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...p9l1, ...p9l2, ...p9l3, ...p9l4, ...scenarios, ...project]
 
 export const KINDS = {
   sql: { label: 'SQL', runtime: 'sql' },

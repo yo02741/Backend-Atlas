@@ -42,9 +42,15 @@ export const PATH = [
   { skill: 'network-troubleshooting', label: '網路通不通', note: '連不上時，從 DNS 一層一層往下查。' },
   { skill: 'https-certificates', label: 'HTTPS 憑證', note: '憑證鏈、要買哪種、怎麼續約不過期。' },
   { skill: 'k8s-readiness', label: '導入 K8s 之前', note: '導入 Kubernetes 之前要先備齊的東西。' },
+  { skill: 'finops', label: 'FinOps 計費結構', note: '雲端與 AI 工具怎麼計費，錢花在哪裡先看得見。' },
+  { skill: 'test-quality', label: '測試品質', note: '覆蓋率是跑過，不是驗過：用突變測試檢查測試。' },
+  { skill: 'harness-engineering', label: 'Harness Engineering', note: '同一個 prompt 跑 N 次：評測集、重試與檢查器。' },
+  { skill: 'agent-loop', label: 'Agent 的執行迴圈', note: '工具呼叫、狀態機、步數與 token 預算。' },
   { skill: 'oauth-device-pkce', label: 'Device Code 與 PKCE', note: 'CLI 與 agent 沒有瀏覽器時怎麼授權。' },
+  { skill: 'ai-gateway', label: 'AI Gateway', note: '模型路由、金鑰集中、配額與用量都在一個入口。' },
   { skill: 'tool-poisoning', label: 'Tool Poisoning', note: '工具描述也是攻擊面：模型讀到的比畫面上多。' },
   { skill: 'rag-basics', label: 'RAG 與它的限制', note: 'RAG 怎麼運作，限制在哪裡。' },
+  { skill: 'semantic-layer', label: 'Semantic Layer', note: '讓 agent 用定義好的指標查資料，不猜欄位。' },
 ]
 
 export function allSkills() {

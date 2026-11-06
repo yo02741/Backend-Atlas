@@ -20,9 +20,9 @@
 
 以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照。
 
-### 建議學習路線（18 站）
+### 建議學習路線（24 站）
 
-首頁的路線圖：先「看得見」的（HTTP、SQL），再打地基（索引、交易、驗證授權、資安），接著上線（Docker、CI），最後是基礎建設、Agent 安全與知識系統。每站約一週，★ 表示附互動實驗室。完整的週次安排見課綱。
+首頁的路線圖：先「看得見」的（HTTP、SQL），再打地基（索引、交易、驗證授權、資安），接著上線（Docker、CI），然後是基礎建設與成本、AI 協作的測試與評測、Agent 的迴圈、授權與資安，最後是知識系統。每站約一週，★ 表示附互動實驗室。完整的週次安排見課綱。
 
 | 站 | 課 | 領域 | 這一站要搞懂的事 |
 |---|---|---|---|
@@ -41,9 +41,15 @@
 | 13 | 網路通不通：從 DNS 到防火牆★ | DevOps 與基礎建設 | 連不上時，從 DNS 一層一層往下查。 |
 | 14 | HTTPS 憑證：要買哪種、怎麼續★ | DevOps 與基礎建設 | 憑證鏈、要買哪種、怎麼續約不過期。 |
 | 15 | 導入 Kubernetes 前要準備什麼★ | DevOps 與基礎建設 | 導入 Kubernetes 之前要先備齊的東西。 |
-| 16 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
-| 17 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述也是攻擊面：模型讀到的比畫面上多。 |
-| 18 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
+| 16 | FinOps：雲端與 AI 工具的計費結構★ | DevOps 與基礎建設 | 雲端與 AI 工具怎麼計費，錢花在哪裡先看得見。 |
+| 17 | 測試品質：綠燈越多，品質為什麼沒變好★ | 語言與工程實踐 | 覆蓋率是跑過，不是驗過：用突變測試檢查測試。 |
+| 18 | Harness Engineering：同一個 Prompt 為什麼差這麼多★ | AI 時代的開發與 Agent 安全 | 同一個 prompt 跑 N 次：評測集、重試與檢查器。 |
+| 19 | Agent 的執行迴圈：工具呼叫、狀態機、預算與中斷★ | AI 時代的開發與 Agent 安全 | 工具呼叫、狀態機、步數與 token 預算。 |
+| 20 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
+| 21 | AI Gateway：模型路由、金鑰集中、用量與成本 | AI 時代的開發與 Agent 安全 | 模型路由、金鑰集中、配額與用量都在一個入口。 |
+| 22 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述也是攻擊面：模型讀到的比畫面上多。 |
+| 23 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
+| 24 | Semantic Layer：讓 agent 查資料不用猜欄位★ | 知識系統：從 RAG 到 LLM Wiki | 讓 agent 用定義好的指標查資料，不猜欄位。 |
 
 站點定義在 `src/content/roadmap.js` 的 `PATH`（`label` 是地圖上的短站名）。
 
@@ -125,7 +131,7 @@
 ```
 src/
   content/         內容（純資料，改這裡不用碰元件）
-    roadmap.js       領域索引、學習路線 PATH（18 站）、工作關鍵字 WORK_KEYWORDS、查詢 helper
+    roadmap.js       領域索引、學習路線 PATH（24 站）、工作關鍵字 WORK_KEYWORDS、查詢 helper
     d1-language.js … d11-knowledge.js   每個領域一檔的「索引」：skills[] 各有 id / title / en / level / summary / example / keywords / lab（跟著主 chunk）
     body/d1-language.js … d11-knowledge.js   每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs（技能頁才懶載入，每領域一個 chunk）
     deep/<skill-id>.md   每課的深入內容（markdown，技能頁逐課懶載入；格式見 docs/CONTRIBUTING-lessons.md）

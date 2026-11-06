@@ -49,7 +49,7 @@ export default function Home() {
       <section className="home-section">
         <div className="section-head">
           <h2 className="section-title">建議學習路線</h2>
-          <p>{stations.length} 站、每站約一週。先看得見的、再打地基、接著上線，最後是基礎建設、Agent 安全與知識系統。點站名進入該課。完整的 16 週主線、6 週延伸與里程碑專案在 <a href="#/curriculum">課綱</a>；想把學過的課組成一個系統，走 <a href="#/project">實作路線</a>。</p>
+          <p>{stations.length} 站、每站約一週。先看得見的、再打地基、接著上線，然後是基礎建設與成本、AI 協作的測試與評測、Agent 的迴圈與資安，最後是知識系統。點站名進入該課。完整的 16 週主線、6 週延伸與里程碑專案在 <a href="#/curriculum">課綱</a>；想把學過的課組成一個系統，走 <a href="#/project">實作路線</a>。</p>
         </div>
         <MetroMap stations={stations} isDone={isDone} />
         <div className="metro-legend">

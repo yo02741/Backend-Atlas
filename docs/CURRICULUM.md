@@ -391,7 +391,7 @@
 
 ### 第 10 週｜佇列與背景工作、冪等鍵、分頁、Webhook、機器身分 → 里程碑 M2
 
-- **對應技能**：B5、B6、B8、D7、D8、H5、H6。現有：`queues-workers`、`api-patterns`、`beyond-rest`（Webhook）、`api-keys-mfa`（API key）；新增：`job-scheduling`、`realtime-choice`
+- **對應技能**：B5、B6、B8、D7、D8、H5、H6。現有：`queues-workers`、`api-patterns`、`beyond-rest`（Webhook）、`api-keys-mfa`（API key）；新增：`job-scheduling`、`realtime-choice`、`event-driven`
 - **學習目標**
   1. 能把「註冊後寄歡迎信」改成佇列 + worker，重複投遞不會寄兩封（消費者冪等）
   2. 能實作 `Idempotency-Key`，同 key 重送回同結果且不重複建單
@@ -440,7 +440,7 @@
 
 ### 第 14 週｜可觀測性、可靠性、資料庫維運與備份演練
 
-- **對應技能**：C11、G5、G6。現有：`observability`、`reliability`
+- **對應技能**：C11、G5、G6。現有：`observability`、`reliability`；新增：`llm-observability`
 - **學習目標**
   1. 能讓服務輸出 Prometheus metrics 並在 Grafana 畫四個黃金訊號；能用 OpenTelemetry trace 找出一個慢請求的瓶頸 span
   2. 能設一條「5xx 比率 > 1% 持續 5 分鐘」的可行動告警並寫下收到後做什麼
@@ -486,7 +486,7 @@
 
 ### 實作路線與週次對照
 
-本站的[實作路線](#/project)把前 16 週的課組成一個門診掛號後端，八個階段各有在瀏覽器裡跑的驗收題，可以和課綱並行：
+本站的[實作路線](#/project)把課組成一個門診掛號後端，九個階段各有在瀏覽器裡跑的驗收題，可以和課綱並行（第 9 階段用到延伸課綱第 21 週的課）：
 
 | 階段 | 建議週次 | 對應課 |
 |---|---|---|
@@ -498,6 +498,7 @@
 | 6 快取與限流 | 第 9 週 | `redis-cache`、`rate-limiting` |
 | 7 打包與持續整合 | 第 11–12 週 | `dockerfile-python`、`ci-pipeline` |
 | 8 日誌、指標與追蹤 | 第 14 週 | `logging-config`、`observability` |
+| 9 給 agent 一個唯讀查詢的 MCP server | 第 21 週 | `mcp-authorization`、`key-scope-lifetime`、`logs-pii`、`identity-gateway` |
 
 ---
 
@@ -507,7 +508,7 @@
 
 ### 第 17 週｜基礎建設：網路排查、HTTPS 憑證、容量規劃
 
-- **對應技能**：`devops-glossary`、`network-troubleshooting`、`https-certificates`、`capacity-planning`
+- **對應技能**：`devops-glossary`、`network-troubleshooting`、`https-certificates`、`capacity-planning`、`finops`
 - **學習目標**
   1. 能依 DNS → TCP → TLS → HTTP 的順序排查「連不上」，並從錯誤訊息判斷是哪一層
   2. 能說明憑證鏈、DV / OV / EV、萬用字元憑證、院內 CA 與公開 CA 的差別，並規劃自動續約
@@ -530,7 +531,7 @@
 
 ### 第 19 週｜資料治理、SLO 與事故處理
 
-- **對應技能**：`data-governance`、`slo-error-budget`、`incident-response`
+- **對應技能**：`data-governance`、`slo-error-budget`、`incident-response`、`aiops`
 - **學習目標**
   1. 能說明做數據中台之前要先完成的治理工作：盤點、資料目錄、負責人、品質規則、主資料、血緣、權限與去識別化
   2. 能為一個服務定義 SLI 與 SLO，並用錯誤預算決定何時暫停上線
@@ -541,7 +542,7 @@
 
 ### 第 20 週｜AI 時代的團隊開發：ADR、垂直切片、規範變測試、品質閘門
 
-- **對應技能**：`ai-adr`、`ai-vertical-slices`、`ai-spec-to-tests`、`ai-quality-gates`、`ai-skills-mcp`、`ai-multi-agent`
+- **對應技能**：`ai-adr`、`ai-vertical-slices`、`ai-spec-to-tests`、`acceptance-design`、`ai-quality-gates`、`architecture-tests`、`test-quality`、`harness-engineering`、`agent-delivery`、`ai-skills-mcp`、`skill-registry`、`ai-multi-agent`
 - **學習目標**
   1. 能寫 ADR 記錄設計決策，並讓 AI 協作時引用它
   2. 能把一個需求拆成垂直切片的票，標出阻擋關係
@@ -553,7 +554,7 @@
 
 ### 第 21 週｜Agent 的身分、授權與資安
 
-- **對應技能**：`oauth-device-pkce`、`mcp-authorization`、`mcp-gateway`、`identity-gateway`、`cli-token-storage`、`key-scope-lifetime`、`owasp-mcp-top10`、`tool-poisoning`、`agent-credential-isolation`、`agent-supply-chain`
+- **對應技能**：`oauth-device-pkce`、`mcp-authorization`、`mcp-gateway`、`identity-gateway`、`cli-token-storage`、`key-scope-lifetime`、`owasp-mcp-top10`、`tool-poisoning`、`agent-credential-isolation`、`agent-supply-chain`、`ai-gateway`、`agent-loop`、`agent-memory`、`agent-protocols`、`ai-threat-modeling`
 - **學習目標**
   1. 能依客戶端型態選 Device Code、Authorization Code + PKCE 或 Client Credentials
   2. 能說明 MCP Authorization 的流程，以及 gateway 與集中式身分閘道各解決什麼問題
@@ -565,7 +566,7 @@
 
 ### 第 22 週｜知識系統：從 RAG 到 LLM Wiki
 
-- **對應技能**：`rag-basics`、`llm-wiki`、`knowledge-graph`、`knowledge-choice`、`knowledge-poisoning`
+- **對應技能**：`rag-basics`、`llm-wiki`、`knowledge-graph`、`knowledge-choice`、`semantic-layer`、`knowledge-poisoning`
 - **學習目標**
   1. 能說明 RAG 的切段、嵌入、檢索流程與限制
   2. 能說明 LLM Wiki 的三層（原始資料、LLM 維護的 wiki、規範文件）與知識圖譜的用途

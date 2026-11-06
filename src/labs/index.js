@@ -33,6 +33,11 @@ export const LAB_META = {
   DeviceCodeLab:     { title: '三種授權流程', blurb: 'Device Code、授權碼 + PKCE、Client Credentials 的時序圖與 HTTP 原文，PKCE 真的算 SHA-256。', skill: 'oauth-device-pkce' },
   ToolPoisoningLab:  { title: 'Tool Poisoning', blurb: '使用者看到的工具摘要 vs 模型讀到的完整描述；一道道打開防禦，看在哪一層擋下。', skill: 'tool-poisoning' },
   ChunkingLab:       { title: 'RAG 的切段與檢索', blurb: '調段落大小與重疊，看一條跨兩句的答案怎麼被切開、檢索取回了什麼。', skill: 'rag-basics' },
+  HarnessLab:        { title: '同一個 Prompt 跑 N 次', blurb: '調溫度與取樣次數、換 harness 策略（多數決、重試、檢查器），看通過率、不穩定的題目與呼叫成本怎麼變。', skill: 'harness-engineering' },
+  TokenCostLab:      { title: 'Agent 工作流一個月花多少', blurb: '自己填單價，調請求量與 context 長度，比較全部重送、prompt 快取、限制長度三種做法的月成本。', skill: 'finops' },
+  AgentLoopLab:      { title: 'Agent 的執行迴圈', blurb: '逐步看狀態機怎麼走、context 怎麼累積；製造工具逾時與格式錯誤，看步數與 token 預算在哪裡攔下。', skill: 'agent-loop' },
+  SemanticLayerLab:  { title: '猜欄位 vs 用定義好的指標', blurb: '同一個問題，憑欄位名猜出三種 SQL、三個數字；用 Semantic Layer 只對到一個定義、一個答案。', skill: 'semantic-layer' },
+  TestQualityLab:    { title: '覆蓋率 100% 的測試抓不抓得到錯', blurb: '對兩組測試跑突變測試，看哪些假綠燈讓突變體存活、補強後殺死率怎麼變。', skill: 'test-quality' },
   WikiGraphLab:      { title: 'wikilink 長成知識圖譜', blurb: '編輯幾頁 markdown，即時畫出連結圖、反向連結、孤兒頁與斷鏈，找兩頁之間的路徑。', skill: 'knowledge-graph' },
 }
 

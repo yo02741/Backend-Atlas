@@ -15,6 +15,7 @@ export const STAGES = [
   { id: 'cache-ratelimit', no: 6, title: '快取與限流', summary: '診次清單用 cache-aside 加 TTL、掛號後失效；每位使用者一個 token bucket，超量回 429。', lessons: ['redis-cache', 'rate-limiting'], exercises: ['project-cache-1', 'project-cache-2'] },
   { id: 'ship', no: 7, title: '打包與持續整合', summary: '多階段、非 root、不含祕密的 Dockerfile，加上 lint → test（帶 PostgreSQL）→ build → 只在 main 部署的 GitLab CI。', lessons: ['dockerfile-python', 'ci-pipeline'], exercises: ['project-ship-1', 'project-ship-2'] },
   { id: 'observe', no: 8, title: '日誌、指標與追蹤', summary: '一行一筆的 JSON 日誌帶 request_id 並遮罩身分證字號，掛號結果做成 Prometheus 計數器，跨服務用 traceparent 串起來。', lessons: ['logging-config', 'observability'], exercises: ['project-observe-1', 'project-observe-2'] },
+  { id: 'mcp', no: 9, title: '給 agent 一個唯讀查詢的 MCP server', summary: '401 帶路標讓 client 找到 GitLab 登入，server 驗 aud、exp、scope，依使用者限定可查的表、用唯讀帳號查，輸出前遮罩身分證字號、電話、姓名，每次查詢寫一筆不含內容的稽核。', lessons: ['mcp-authorization', 'key-scope-lifetime', 'logs-pii', 'identity-gateway'], exercises: ['project-mcp-1', 'project-mcp-2', 'project-mcp-3'] },
 ]
 
 export function findStage(id) { return STAGES.find((s) => s.id === id) || null }

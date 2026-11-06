@@ -57,7 +57,7 @@ export default {
       summary: '雲端按用量計費的項目（運算、儲存、流量、請求數），AI 工具按 token、context、快取與座位計費；先看得見（tag、報表、預算告警）、再分攤、再優化。',
       example: { primary: '雲端帳單 + 標籤 + 預算告警', alts: ['AI 工具的用量儀表板', 'AI Gateway 的用量統計'] },
       keywords: [],
-      lab: null,
+      lab: 'TokenCostLab',
     },
     {
       id: 'gitlab-cicd',

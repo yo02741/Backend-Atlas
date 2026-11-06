@@ -39,7 +39,10 @@ async function worker() {
       for (const el of document.querySelectorAll('main *, .page *, #root *')) {
         const b = el.getBoundingClientRect()
         if (b.width === 0 || b.height === 0 || el.closest('.bg-aurora')) continue // 背景光暈本來就超出畫面
-        if (b.right > W + 1 && !inScroller(el) && getComputedStyle(el).position !== 'fixed') clipped.push(label(el))
+        // SVG 會裁掉自己範圍外的內容（動畫中的圖形滑出邊界不會被看到），只要 SVG 本身在畫面內就不算
+        const svg = el instanceof SVGElement && !(el instanceof SVGSVGElement) ? el.ownerSVGElement : null
+        const inVisibleSvg = svg && svg.getBoundingClientRect().right <= W + 1
+        if (b.right > W + 1 && !inScroller(el) && !inVisibleSvg && getComputedStyle(el).position !== 'fixed') clipped.push(label(el))
         if (scrollable(el) && el.scrollWidth > el.clientWidth + 2 && !el.closest('.cm-editor')) inner.push(`${label(el)} 多 ${el.scrollWidth - el.clientWidth}px`)
       }
       return { pageOverflow: document.documentElement.scrollWidth - W, clipped: [...new Set(clipped)].slice(0, 3), inner: [...new Set(inner)].slice(0, 3) }

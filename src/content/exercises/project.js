@@ -1615,4 +1615,382 @@ assert _line == 'e_total{path="a\\"b\\\\c\\nd"} 1', _line` },
       '跳脫要先處理反斜線，再處理雙引號與換行，不然會重複跳脫。',
     ],
   },
+  // ───────────── 9. mcp ─────────────
+  {
+    id: 'project-mcp-1', project: 'mcp', skill: 'mcp-authorization', kind: 'python', level: 2,
+    title: '沒帶 token 給路標，帶了 token 驗 aud、exp、scope',
+    prompt: `實作 \`handle_request(headers, now) -> (status, body)\`。\`verify_signature(token)\` 已經寫好：簽章正確回 claims（dict），否則回 \`None\`。正式環境這一步是用 GitLab 的 JWKS 驗 RS256，這裡用 HMAC 代替。
+
+- 沒有 \`Authorization\`，或不是 \`Bearer \` 開頭 → \`(401, {"WWW-Authenticate": 'Bearer resource_metadata="https://clinic.example/.well-known/oauth-protected-resource"'})\`，body 只有這一個鍵
+- \`verify_signature\` 回 \`None\` → 401，\`error_description="bad signature"\`
+- \`aud\`（字串或 list）不含 \`RESOURCE\` → 401，\`error_description="audience mismatch"\`
+- \`exp\` 缺少或 \`now >= exp\` → 401，\`error_description="expired"\`
+- \`scope\`（空白分隔）沒有 \`clinic:read\` → 403
+
+401 的 \`WWW-Authenticate\` 是 \`Bearer error="invalid_token", error_description="…", resource_metadata="…"\`；403 的是 \`Bearer error="insufficient_scope", scope="clinic:read", resource_metadata="…"\`。全部通過回 \`(200, claims)\`。檢查順序照上面。`,
+    starter: String.raw`import base64
+import hashlib
+import hmac
+import json
+
+SECRET = b"demo-secret"
+RESOURCE = "https://clinic.example/mcp"
+METADATA = "https://clinic.example/.well-known/oauth-protected-resource"
+REQUIRED_SCOPE = "clinic:read"
+
+
+def _b64u(raw):
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+
+
+def make_token(claims):
+    """測試用：簽一個 HS256 token。"""
+    head = _b64u(json.dumps({"alg": "HS256"}).encode())
+    body = _b64u(json.dumps(claims).encode())
+    sig = hmac.new(SECRET, f"{head}.{body}".encode(), hashlib.sha256).digest()
+    return f"{head}.{body}.{_b64u(sig)}"
+
+
+def verify_signature(token):
+    """已寫好，不用改：簽章正確回 claims（dict）；格式錯或簽章不符回 None。"""
+    try:
+        head, body, sig = token.split(".")
+        want = hmac.new(SECRET, f"{head}.{body}".encode(), hashlib.sha256).digest()
+        got = base64.urlsafe_b64decode(sig + "=" * (-len(sig) % 4))
+        if not hmac.compare_digest(want, got):
+            return None
+        return json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
+    except (ValueError, UnicodeDecodeError):
+        return None
+
+
+def handle_request(headers, now):
+    # TODO：沒帶 token 的 401 要附路標；有 token 要依序檢查簽章、aud、exp、scope
+    token = headers.get("Authorization", "").replace("Bearer ", "")
+    claims = verify_signature(token)
+    if claims is None:
+        return 401, {}
+    return 200, claims
+`,
+    solution: String.raw`import base64
+import hashlib
+import hmac
+import json
+
+SECRET = b"demo-secret"
+RESOURCE = "https://clinic.example/mcp"
+METADATA = "https://clinic.example/.well-known/oauth-protected-resource"
+REQUIRED_SCOPE = "clinic:read"
+
+
+def _b64u(raw):
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+
+
+def make_token(claims):
+    """測試用：簽一個 HS256 token。"""
+    head = _b64u(json.dumps({"alg": "HS256"}).encode())
+    body = _b64u(json.dumps(claims).encode())
+    sig = hmac.new(SECRET, f"{head}.{body}".encode(), hashlib.sha256).digest()
+    return f"{head}.{body}.{_b64u(sig)}"
+
+
+def verify_signature(token):
+    """已寫好，不用改：簽章正確回 claims（dict）；格式錯或簽章不符回 None。"""
+    try:
+        head, body, sig = token.split(".")
+        want = hmac.new(SECRET, f"{head}.{body}".encode(), hashlib.sha256).digest()
+        got = base64.urlsafe_b64decode(sig + "=" * (-len(sig) % 4))
+        if not hmac.compare_digest(want, got):
+            return None
+        return json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
+    except (ValueError, UnicodeDecodeError):
+        return None
+
+
+def _invalid(reason):
+    return 401, {"WWW-Authenticate": f'Bearer error="invalid_token", error_description="{reason}", resource_metadata="{METADATA}"'}
+
+
+def handle_request(headers, now):
+    auth = headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return 401, {"WWW-Authenticate": f'Bearer resource_metadata="{METADATA}"'}
+    claims = verify_signature(auth[len("Bearer "):])
+    if claims is None:
+        return _invalid("bad signature")
+    aud = claims.get("aud")
+    if RESOURCE not in (aud if isinstance(aud, list) else [aud]):
+        return _invalid("audience mismatch")
+    if not isinstance(claims.get("exp"), (int, float)) or now >= claims["exp"]:
+        return _invalid("expired")
+    if REQUIRED_SCOPE not in str(claims.get("scope", "")).split():
+        return 403, {"WWW-Authenticate": f'Bearer error="insufficient_scope", scope="{REQUIRED_SCOPE}", resource_metadata="{METADATA}"'}
+    return 200, claims
+`,
+    tests: [
+      { name: '沒帶 token 或不是 Bearer：401 與 resource_metadata', code: String.raw`for _h in ({}, {"Authorization": "Basic dXNlcjpwdw=="}, {"X-Token": "abc"}):
+    _st, _out = handle_request(_h, 1_800_000_000)
+    assert _st == 401, (_h, _st)
+    assert _out == {"WWW-Authenticate": 'Bearer resource_metadata="https://clinic.example/.well-known/oauth-protected-resource"'}, _out` },
+      { name: '正常的 token 放行（aud 可以是 list）', code: String.raw`_now = 1_800_000_000
+_claims = {"iss": "https://gitlab.example", "aud": "https://clinic.example/mcp", "sub": "u_lin", "scope": "openid clinic:read", "exp": _now + 900}
+_st, _out = handle_request({"Authorization": "Bearer " + make_token(_claims)}, _now)
+assert _st == 200 and _out["sub"] == "u_lin", (_st, _out)
+_st, _out = handle_request({"Authorization": "Bearer " + make_token({**_claims, "aud": ["https://other.example", "https://clinic.example/mcp"]})}, _now)
+assert _st == 200, (_st, _out)` },
+      { name: 'aud 不對：401 audience mismatch', code: String.raw`_now = 1_800_000_000
+_claims = {"aud": "https://hr.example/mcp", "sub": "u_lin", "scope": "clinic:read", "exp": _now + 900}
+_st, _out = handle_request({"Authorization": "Bearer " + make_token(_claims)}, _now)
+assert _st == 401, _st
+_w = _out.get("WWW-Authenticate", "")
+assert _w.startswith("Bearer ") and 'error="invalid_token"' in _w and 'error_description="audience mismatch"' in _w and 'resource_metadata="https://clinic.example/.well-known/oauth-protected-resource"' in _w, _w
+_st, _out = handle_request({"Authorization": "Bearer " + make_token({**_claims, "aud": None})}, _now)
+assert _st == 401 and 'error_description="audience mismatch"' in _out["WWW-Authenticate"], _out` },
+      { name: '過期或缺 exp：401 expired', code: String.raw`_now = 1_800_000_000
+_claims = {"aud": "https://clinic.example/mcp", "sub": "u_lin", "scope": "clinic:read", "exp": _now - 1}
+_st, _out = handle_request({"Authorization": "Bearer " + make_token(_claims)}, _now)
+assert _st == 401 and 'error="invalid_token"' in _out["WWW-Authenticate"] and 'error_description="expired"' in _out["WWW-Authenticate"], (_st, _out)
+_st, _out = handle_request({"Authorization": "Bearer " + make_token({**_claims, "exp": _now})}, _now)
+assert _st == 401 and 'error_description="expired"' in _out["WWW-Authenticate"], (_st, _out)
+_st, _out = handle_request({"Authorization": "Bearer " + make_token({"aud": "https://clinic.example/mcp", "sub": "u_lin", "scope": "clinic:read"})}, _now)
+assert _st == 401 and 'error_description="expired"' in _out["WWW-Authenticate"], (_st, _out)` },
+      { name: 'scope 不足：403 insufficient_scope', code: String.raw`_now = 1_800_000_000
+_claims = {"aud": "https://clinic.example/mcp", "sub": "u_lin", "scope": "openid clinic:write", "exp": _now + 900}
+_st, _out = handle_request({"Authorization": "Bearer " + make_token(_claims)}, _now)
+assert _st == 403, (_st, _out)
+_w = _out["WWW-Authenticate"]
+assert 'error="insufficient_scope"' in _w and 'scope="clinic:read"' in _w, _w
+_st, _out = handle_request({"Authorization": "Bearer " + make_token({**_claims, "scope": "clinic:readonly"})}, _now)
+assert _st == 403, (_st, _out)` },
+      { name: '簽章不符或格式錯：401 invalid_token', code: String.raw`_now = 1_800_000_000
+_good = make_token({"aud": "https://clinic.example/mcp", "sub": "u_lin", "scope": "clinic:read", "exp": _now + 900})
+_h, _b, _s = _good.split(".")
+import base64 as _b64, json as _json
+_fake = _b64.urlsafe_b64encode(_json.dumps({"aud": "https://clinic.example/mcp", "sub": "u_admin", "scope": "clinic:read", "exp": _now + 900}).encode()).rstrip(b"=").decode()
+for _t in (f"{_h}.{_fake}.{_s}", "not-a-token", ""):
+    _st, _out = handle_request({"Authorization": "Bearer " + _t}, _now)
+    assert _st == 401 and 'error="invalid_token"' in _out.get("WWW-Authenticate", ""), (_t, _st, _out)` },
+    ],
+    hints: [
+      '先處理沒帶 token：`headers.get("Authorization", "")` 不是 `"Bearer "` 開頭就直接回 401。',
+      '`aud` 可能是字串也可能是 list：`aud if isinstance(aud, list) else [aud]`。',
+      'scope 要切開比對：`"clinic:readonly"` 不等於 `"clinic:read"`，不能用 `in` 比字串。',
+    ],
+  },
+  {
+    id: 'project-mcp-2', project: 'mcp', skill: 'logs-pii', kind: 'python', level: 2,
+    title: '輸出前遮罩身分證字號、電話、姓名',
+    prompt: `實作 \`mask_row(row, policy) -> dict\`。\`policy\` 是 \`{欄位名稱: 遮罩方式}\`：
+
+- \`"id"\`：身分證字號只留前 1 碼與後 2 碼，\`A123456789\` → \`A*******89\`
+- \`"phone"\`：只留後 3 碼，其他每個字元換成 \`*\`，\`0912345678\` → \`*******678\`
+- \`"name"\`：只留第一個字，\`王小明\` → \`王**\`
+- \`"text"\`：自由文字，把裡面的身分證字號（一個大寫英文字母加 9 位數字）與手機（\`09\` 開頭共 10 位）各照上面的規則遮罩；前後緊鄰中文也要抓到，但不能遮到更長的英數字串或市話
+- 其他遮罩方式 → \`ValueError\`
+
+值是 \`None\` 時原樣；不是字串的值先轉成字串。不在 policy 的欄位原樣輸出；policy 有但 row 沒有的欄位不要新增。回傳新的 dict，不要改到傳進來的 row。`,
+    starter: String.raw`import re
+
+ID_IN_TEXT = re.compile(r"\b[A-Z]\d{9}\b")      # TODO：中文緊鄰時 \b 抓不到
+
+
+def mask_value(value, kind):
+    s = str(value)
+    if kind == "id":
+        return s[:3] + "*" * (len(s) - 3)        # TODO：規格是留前 1 碼與後 2 碼
+    if kind == "phone":
+        return "*" * (len(s) - 3) + s[-3:]
+    if kind == "name":
+        return s[:1] + "*" * (len(s) - 1)
+    if kind == "text":
+        return ID_IN_TEXT.sub("[ID]", s)
+    return s
+
+
+def mask_row(row, policy):
+    for k, kind in policy.items():
+        row[k] = mask_value(row[k], kind)        # TODO：不要改到原本的 row；沒有這個欄位時？
+    return row
+`,
+    solution: String.raw`import re
+
+# 自由文字裡的身分證字號與手機號碼：前後不是英數字就算一個（中文緊鄰時 \b 抓不到）
+ID_IN_TEXT = re.compile(r"(?<![A-Za-z0-9])[A-Z]\d{9}(?![0-9])")
+MOBILE_IN_TEXT = re.compile(r"(?<![0-9])09\d{8}(?![0-9])")
+
+
+def mask_value(value, kind):
+    if value is None:
+        return None
+    s = str(value)
+    if kind == "id":
+        return s if len(s) < 4 else s[0] + "*" * (len(s) - 3) + s[-2:]
+    if kind == "phone":
+        return "*" * max(len(s) - 3, 0) + s[-3:]
+    if kind == "name":
+        return s[:1] + "*" * (len(s) - 1)
+    if kind == "text":
+        s = ID_IN_TEXT.sub(lambda m: mask_value(m.group(), "id"), s)
+        return MOBILE_IN_TEXT.sub(lambda m: mask_value(m.group(), "phone"), s)
+    raise ValueError(f"不認得的遮罩方式 {kind!r}")
+
+
+def mask_row(row, policy):
+    return {k: (mask_value(v, policy[k]) if k in policy else v) for k, v in row.items()}
+`,
+    tests: [
+      { name: '身分證字號、電話、姓名', code: String.raw`_p = {"national_id": "id", "phone": "phone", "name": "name"}
+_r = mask_row({"id": 41, "name": "王小明", "national_id": "A123456789", "phone": "0912345678", "status": "booked"}, _p)
+assert _r == {"id": 41, "name": "王**", "national_id": "A*******89", "phone": "*******678", "status": "booked"}, _r
+_r = mask_row({"name": "歐陽小花", "phone": "02-2345-6789"}, _p)
+assert _r == {"name": "歐***", "phone": "*********789"}, _r` },
+      { name: '未列在 policy 的欄位原樣、不改原 row', code: String.raw`_row = {"id": 7, "name": "陳小華", "national_id": "B234567890", "memo": "A123456789"}
+_r = mask_row(_row, {"name": "name", "phone": "phone"})
+assert _r == {"id": 7, "name": "陳**", "national_id": "B234567890", "memo": "A123456789"}, _r
+assert "phone" not in _r, _r
+assert _row["name"] == "陳小華", _row
+assert mask_row({"a": 1}, {}) == {"a": 1}` },
+      { name: 'None 與非字串', code: String.raw`_p = {"national_id": "id", "phone": "phone", "name": "name", "note": "text"}
+_r = mask_row({"name": None, "national_id": None, "phone": None, "note": None}, _p)
+assert _r == {"name": None, "national_id": None, "phone": None, "note": None}, _r
+_r = mask_row({"phone": 912345678}, _p)
+assert _r["phone"] == "******678", _r` },
+      { name: '自由文字：中文緊鄰也要遮', code: String.raw`_p = {"note": "text"}
+_r = mask_row({"note": "病患A123456789來電0912345678改期，備用電話0987654321"}, _p)
+assert _r["note"] == "病患A*******89來電*******678改期，備用電話*******321", _r
+_r = mask_row({"note": "家屬 B234567890 代掛"}, _p)
+assert _r["note"] == "家屬 B*******90 代掛", _r` },
+      { name: '不誤遮更長的編號與市話', code: String.raw`_p = {"note": "text"}
+for _s in ("病歷號 X1234567890123", "單號 AB123456789", "住家電話 0223456789", "院內分機 0912"):
+    assert mask_row({"note": _s}, _p)["note"] == _s, mask_row({"note": _s}, _p)` },
+      { name: '不認得的遮罩方式要 ValueError', code: String.raw`try:
+    mask_row({"x": "a"}, {"x": "rot13"})
+    raise AssertionError("沒有 raise")
+except ValueError:
+    pass` },
+    ],
+    hints: [
+      '不要用 `\\b`：Python 把中文當成字元，「病患A123456789來電」中間沒有字界。用 `(?<![A-Za-z0-9])[A-Z]\\d{9}(?![0-9])`。',
+      '`re.sub` 可以接函式：`PATTERN.sub(lambda m: mask_value(m.group(), "id"), s)`。',
+      '`{k: (mask_value(v, policy[k]) if k in policy else v) for k, v in row.items()}` 同時處理「不在 policy」與「不改原 row」。',
+    ],
+  },
+  {
+    id: 'project-mcp-3', project: 'mcp', skill: 'key-scope-lifetime', kind: 'python', level: 2,
+    title: '依使用者限定可查的表，每次查詢寫稽核',
+    prompt: `實作三個函式：
+
+- \`authorize_query(user, table, allowlist) -> bool\`：\`allowlist\` 是 \`{sub: 可查的表（set 或 list）}\`。\`user\` 是驗過的 token claims，用 \`user["sub"]\` 查；表名完全比對（大小寫、schema 前綴都不放寬）；沒有 \`sub\`、使用者不在清單、表不在清單 → \`False\`
+- \`audit(user, table, rows, allowed=True) -> dict\`：回傳 \`{"user", "table", "allowed", "row_count", "ts"}\`，\`user\` 是 sub 字串，\`ts\` 是 UTC 的 ISO 8601 字串（帶時區）。**不能帶查詢結果的任何內容**
+- \`run_query(user, table, allowlist, fetch, log)\`：沒通過授權 → 在 \`log\` 加一筆 \`allowed=False\`、\`row_count=0\` 的稽核，丟 \`PermissionError\`，而且不能呼叫 \`fetch\`；通過 → \`rows = fetch(table)\`，加一筆稽核，回傳 rows
+
+每次呼叫 \`run_query\` 剛好一筆稽核。`,
+    starter: String.raw`from datetime import datetime, timezone
+
+TABLES = {"sessions", "appointments", "patients"}
+
+
+def authorize_query(user, table, allowlist):
+    # TODO：要看這位使用者的 allowlist，不是看表存不存在
+    return table in TABLES
+
+
+def audit(user, table, rows, allowed=True):
+    # TODO：稽核紀錄不能帶查詢結果的內容
+    return {"user": user, "table": table, "rows": rows, "ts": datetime.now(timezone.utc)}
+
+
+def run_query(user, table, allowlist, fetch, log):
+    rows = fetch(table)
+    if authorize_query(user, table, allowlist):
+        log.append(audit(user, table, rows))
+    return rows
+`,
+    solution: String.raw`from datetime import datetime, timezone
+
+
+def authorize_query(user, table, allowlist):
+    sub = (user or {}).get("sub")
+    if sub is None:
+        return False
+    return table in allowlist.get(sub, ())
+
+
+def audit(user, table, rows, allowed=True):
+    # 只記誰、何時、哪張表、幾列、有沒有放行。結果內容與查詢條件的值都不進稽核
+    return {
+        "user": user["sub"],
+        "table": table,
+        "allowed": allowed,
+        "row_count": len(rows),
+        "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+
+
+def run_query(user, table, allowlist, fetch, log):
+    if not authorize_query(user, table, allowlist):
+        log.append(audit(user, table, [], allowed=False))
+        raise PermissionError(f"{user.get('sub')} 不能查 {table}")
+    rows = fetch(table)
+    log.append(audit(user, table, rows))
+    return rows
+`,
+    tests: [
+      { name: 'allowlist：依使用者、完全比對', code: String.raw`_al = {"u_lin": {"sessions", "appointments"}, "u_chen": ["sessions"]}
+assert authorize_query({"sub": "u_lin"}, "appointments", _al)
+assert authorize_query({"sub": "u_chen"}, "sessions", _al)
+assert not authorize_query({"sub": "u_chen"}, "appointments", _al)
+assert not authorize_query({"sub": "u_lin"}, "patients", _al)
+assert not authorize_query({"sub": "u_wang"}, "sessions", _al)
+assert not authorize_query({}, "sessions", _al) and not authorize_query(None, "sessions", _al)
+assert not authorize_query({"sub": "u_lin"}, "Appointments", _al) and not authorize_query({"sub": "u_lin"}, "public.appointments", _al)` },
+      { name: '稽核紀錄的欄位，且不含結果內容', code: String.raw`import json as _json
+from datetime import datetime as _dt, timezone as _tz
+_rows = [{"id": 41, "name": "王小明", "national_id": "A123456789"}, {"id": 42, "name": "陳小華", "national_id": "B234567890"}]
+_e = audit({"sub": "u_lin", "scope": "clinic:read"}, "appointments", _rows)
+assert _e["user"] == "u_lin" and _e["table"] == "appointments" and _e["row_count"] == 2 and _e["allowed"] is True, _e
+_s = _json.dumps(_e, ensure_ascii=False, default=str)
+for _leak in ("王小明", "A123456789", "B234567890", "41"):
+    assert _leak not in _s, (_leak, _s)
+_t = _dt.fromisoformat(_e["ts"])
+assert _t.tzinfo is not None and _t.utcoffset().total_seconds() == 0 and abs((_dt.now(_tz.utc) - _t).total_seconds()) < 60, _e["ts"]
+assert audit({"sub": "u_lin"}, "sessions", [])["row_count"] == 0` },
+      { name: 'run_query 放行時寫一筆稽核', code: String.raw`_log = []
+_calls = []
+def _fetch(t):
+    _calls.append(t)
+    return [{"id": 1, "name": "王小明"}, {"id": 2, "name": "陳小華"}, {"id": 3, "name": "林小芳"}]
+_out = run_query({"sub": "u_lin"}, "appointments", {"u_lin": {"appointments"}}, _fetch, _log)
+assert len(_out) == 3 and _calls == ["appointments"]
+assert len(_log) == 1 and _log[0]["row_count"] == 3 and _log[0]["allowed"] is True and _log[0]["user"] == "u_lin", _log
+assert "王小明" not in _json.dumps(_log, ensure_ascii=False, default=str)` },
+      { name: 'run_query 拒絕時不碰資料庫、也要寫稽核', code: String.raw`_log = []
+_calls = []
+def _fetch(t):
+    _calls.append(t)
+    return [{"id": 1}]
+try:
+    run_query({"sub": "u_chen"}, "patients", {"u_chen": {"sessions"}}, _fetch, _log)
+    raise AssertionError("沒有 raise")
+except PermissionError:
+    pass
+assert _calls == [], "被拒絕的查詢不該碰資料庫"
+assert len(_log) == 1 and _log[0]["allowed"] is False and _log[0]["row_count"] == 0 and _log[0]["table"] == "patients", _log` },
+      { name: '每次查詢各一筆', code: String.raw`_log = []
+_al = {"u_lin": {"sessions", "appointments"}}
+run_query({"sub": "u_lin"}, "sessions", _al, lambda t: [{"id": 1}], _log)
+run_query({"sub": "u_lin"}, "appointments", _al, lambda t: [], _log)
+try:
+    run_query({"sub": "u_lin"}, "patients", _al, lambda t: [{"id": 1}], _log)
+except PermissionError:
+    pass
+assert [(e["table"], e["allowed"], e["row_count"]) for e in _log] == [("sessions", True, 1), ("appointments", True, 0), ("patients", False, 0)], _log` },
+    ],
+    hints: [
+      '`table in allowlist.get(sub, ())` 同時處理使用者不在清單的情況。',
+      '先授權再 `fetch`：被拒絕的查詢連資料庫都不該碰。',
+      '稽核只記 `len(rows)`；把整個 rows 放進去，稽核系統就變成第二份病患資料。',
+    ],
+  },
 ]

@@ -107,7 +107,7 @@ export default {
       summary: '覆蓋率只說「跑過」，不說「驗過」。AI 寫的測試常見三種假綠燈：斷言太弱、測實作不測行為、把現況當規範；用突變測試檢查測試到底抓不抓得到錯。',
       example: { primary: 'pytest + mutmut', alts: ['hypothesis（性質測試）', 'Stryker（JS）'] },
       keywords: ['Python'],
-      lab: null,
+      lab: 'TestQualityLab',
     },
     {
       id: 'code-quality',

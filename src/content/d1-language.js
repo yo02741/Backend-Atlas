@@ -48,6 +48,7 @@ export default {
       example: { primary: 'uv', alts: ['pip + venv', 'Poetry', 'PDM'] },
       keywords: ['Python', 'uv'],
       lab: 'UvLab',
+      reviewed: '2026-10',
     },
     {
       id: 'python-async',

@@ -68,6 +68,7 @@ export default {
       example: { primary: 'OpenTelemetry GenAI semantic conventions', alts: ['Langfuse', '自建：log + metrics'] },
       keywords: [],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'reliability',

@@ -38,6 +38,7 @@ export default {
       example: { primary: "Let's Encrypt（ACME）自動續約", alts: ['付費 OV 憑證', '內部 CA（內網系統）', 'cert-manager（Kubernetes）'] },
       keywords: ['nginx'],
       lab: 'CertChainLab',
+      reviewed: '2026-10',
     },
     {
       id: 'capacity-planning',
@@ -58,6 +59,7 @@ export default {
       example: { primary: '雲端帳單 + 標籤 + 預算告警', alts: ['AI 工具的用量儀表板', 'AI Gateway 的用量統計'] },
       keywords: [],
       lab: 'TokenCostLab',
+      reviewed: '2026-11',
     },
     {
       id: 'gitlab-cicd',
@@ -78,6 +80,7 @@ export default {
       example: { primary: '雲端代管（EKS / GKE / AKS）', alts: ['地端自建（kubeadm、RKE2 等）', '先用 docker-compose，暫不導入'] },
       keywords: ['Docker', 'nginx', 'PostgreSQL'],
       lab: 'K8sLab',
+      reviewed: '2026-10',
     },
     {
       id: 'k8s-manifests',

@@ -46,6 +46,7 @@ export default function Skill({ id }) {
             {s.lab && <a href="#lab" className="pill tint" style={{ '--tint': color }}>互動實驗室</a>}
             {assess.total > 0 && <a href="#assess" className={`pill${assess.complete ? ' assess-ok' : ''}`}>{assess.complete ? '✓ 驗收通過' : `驗收 ${assess.passed}/${assess.total}`}</a>}
             {s.keywords.map((k) => <a key={k} href={`#/roadmap?kw=${encodeURIComponent(k)}`} className="pill mono">{k}</a>)}
+            {s.reviewed && <span className="pill" title="這一課提到的版本、規格或事件會隨時間變動，這是最後一次核對內容的時間">內容核對：{s.reviewed.replace('-', ' 年 ').replace(/^(\d+ 年 )0?(\d+)$/, '$1$2 月')}</span>}
           </div>
           <p className="lede">{s.summary}</p>
         </header>

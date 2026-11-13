@@ -62,7 +62,7 @@ print(Decimal('0.1') + Decimal('0.2'))
 
 新增一課時要一次備齊：
 
-1. 索引：`dN-*.js` 加一筆（id 全站唯一、小寫英數與連字號）
+1. 索引：`dN-*.js` 加一筆（id 全站唯一、小寫英數與連字號）。內容會隨時間變動的課（規格還在改、提到版本或效期、引用事件）加 `reviewed: 'YYYY-MM'`，技能頁會顯示「內容核對：YYYY 年 M 月」；之後每次核對內容就更新這個欄位
 2. 重點卡：`body/dN-*.js` 加同 id 的 points（5 條，每條 `{ b, t }`）、checklist（3 條）、refs（只放確定存在的官方 https 連結，不確定就留空陣列）
 3. 深入：`deep/<id>.md`
 4. 選擇題：`quizzes/<domain>.js` 3 題
@@ -75,4 +75,5 @@ npm run validate          # 索引、內文、深入內容、題庫、情境
 npm run build && npm run preview   # 另一個終端
 npm run e2e:deep          # 深入內容的 run 區塊都能執行
 npm run e2e:verify        # 有加程式題時：解答通過、起始碼不通過
+npm run check:links       # 外部連結（需要能連外網；CI 的 Links workflow 每月跑一次，也可以手動觸發）
 ```

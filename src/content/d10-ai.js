@@ -99,6 +99,7 @@ export default {
       example: { primary: 'SKILL.md（說明書）+ MCP server（工具）', alts: ['專案規範檔（CLAUDE.md / AGENTS.md）', '直接呼叫 API 的自寫腳本'] },
       keywords: [],
       lab: null,
+      reviewed: '2026-10',
     },
     {
       id: 'skill-registry',
@@ -149,6 +150,7 @@ export default {
       example: { primary: 'MCP', alts: ['A2A', 'ACP', 'WebMCP', 'x402 / AP2'] },
       keywords: [],
       lab: null,
+      reviewed: '2026-11',
     },
     // ── 身分與授權 ──
     {
@@ -160,6 +162,7 @@ export default {
       example: { primary: 'CLI：Device Code；本機 App：Authorization Code + PKCE', alts: ['服務帳號：Client Credentials', 'Personal Access Token（不建議長期使用）'] },
       keywords: ['OAuth', 'Token'],
       lab: 'DeviceCodeLab',
+      reviewed: '2026-10',
     },
     {
       id: 'mcp-authorization',
@@ -170,6 +173,7 @@ export default {
       example: { primary: 'OAuth + RFC 9728 + RFC 8707 + JWKS 驗章', alts: ['stdio 本機 server 從環境取得憑證', 'Gateway 代為驗證'] },
       keywords: ['OAuth', 'JWT', 'Token'],
       lab: null,
+      reviewed: '2026-10',
     },
     {
       id: 'mcp-gateway',
@@ -190,6 +194,7 @@ export default {
       example: { primary: 'LiteLLM / 自建 proxy', alts: ['Kong AI Gateway', '雲端供應商的 AI gateway'] },
       keywords: ['Token'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'identity-gateway',
@@ -220,6 +225,7 @@ export default {
       example: { primary: '有範圍與到期日的 Access Token + 稽核紀錄', alts: ['短效 token + refresh', '工作負載身分（不發長效金鑰）'] },
       keywords: ['Token', 'RBAC'],
       lab: null,
+      reviewed: '2026-10',
     },
     // ── Agent 資安 ──
     {
@@ -231,6 +237,7 @@ export default {
       example: { primary: '用 MCP01–MCP10 逐項檢視 MCP 部署', alts: ['OWASP Top 10（Web）', 'OWASP API Security Top 10'] },
       keywords: ['OWASP'],
       lab: null,
+      reviewed: '2026-10',
     },
     {
       id: 'ai-threat-modeling',
@@ -241,6 +248,7 @@ export default {
       example: { primary: 'OWASP Top 10 for LLM Applications', alts: ['MITRE ATLAS', 'STRIDE'] },
       keywords: ['OWASP'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'tool-poisoning',
@@ -261,6 +269,7 @@ export default {
       example: { primary: '隔離容器 + 短效範圍 token + 出站限制', alts: ['共享叢集 + 環境變數放金鑰（反例）'] },
       keywords: ['Token', 'Docker', 'OWASP'],
       lab: null,
+      reviewed: '2026-10',
     },
     {
       id: 'agent-supply-chain',

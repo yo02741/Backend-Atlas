@@ -31,6 +31,8 @@ for (const d of DOMAINS) {
     if (![1, 2, 3].includes(s.level)) errors.push(`${st}: level 要是 1 / 2 / 3`)
     if (!s.example?.primary) errors.push(`${st}: example.primary 必填`)
     if (!Array.isArray(s.keywords)) errors.push(`${st}: keywords 要是陣列`)
+    // reviewed（選填）：內容會隨時間變動的課，標最後一次核對的年月
+    if (s.reviewed != null && !/^20\d\d-(0[1-9]|1[0-2])$/.test(s.reviewed)) errors.push(`${st}: reviewed 要是 YYYY-MM`)
     if (s.lab && !existsSync(resolve(here, '../src/labs', `${s.lab}.jsx`))) errors.push(`${st}: lab "${s.lab}" 在 src/labs/ 找不到`)
     for (const k of ['points', 'checklist', 'refs']) if (k in s) errors.push(`${st}: ${k} 要放在 body/${tag}.js，不放索引`)
     const b = body[s.id]

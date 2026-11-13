@@ -18,6 +18,7 @@ export default {
       example: { primary: 'OWASP Top 10 (2021)', alts: ['OWASP API Security Top 10', 'CWE Top 25'] },
       keywords: ['OWASP'],
       lab: null,
+      reviewed: '2026-10',
     },
     {
       id: 'injection',
@@ -98,6 +99,7 @@ export default {
       example: { primary: 'uv.lock + pip-audit + image 掃描', alts: ['Dependabot / Renovate', 'Trivy'] },
       keywords: ['uv', 'Docker', 'GitHub Actions', 'OWASP'],
       lab: null,
+      reviewed: '2026-10',
     },
   ],
 }

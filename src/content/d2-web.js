@@ -78,6 +78,7 @@ export default {
       example: { primary: 'FastAPI CORSMiddleware', alts: ['nginx add_header', 'API gateway'] },
       keywords: ['nginx'],
       lab: null,
+      reviewed: '2026-10',
     },
     {
       id: 'http-caching',
@@ -108,6 +109,7 @@ export default {
       example: { primary: 'nginx 對外 HTTP/2、對後端 HTTP/1.1', alts: ['HTTP/3（QUIC）', 'gRPC over HTTP/2'] },
       keywords: ['nginx'],
       lab: null,
+      reviewed: '2026-10',
     },
     {
       id: 'realtime-choice',

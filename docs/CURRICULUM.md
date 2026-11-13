@@ -379,7 +379,7 @@
 
 ### 第 9 週｜並發模型、量測、快取、限流、外部呼叫韌性
 
-- **對應技能**：A9、A10、C14、H1–H4。現有：`python-async`、`redis-cache`、`rate-limiting`、`lru-cache`；新增：`concurrency-bugs`
+- **對應技能**：A9、A10、C14、H1–H4。現有：`python-async`、`redis-cache`、`rate-limiting`、`lru-cache`；新增：`concurrency-bugs`、`debugging`、`load-testing`
 - **學習目標**
   1. 能用數字示範「在 async handler 裡呼叫同步 sleep」如何卡死所有請求，並用 `to_thread` 或 async driver 修好
   2. 能用 k6 量出 p95，並在加快取前後給出對照數字
@@ -464,7 +464,7 @@
 
 ### 第 16 週｜系統設計、設計文件、選型 → 里程碑 M3
 
-- **對應技能**：C15、I5–I7、E9（走一遍）。現有：`system-design`、`db-choice`；新增：`distributed-basics`
+- **對應技能**：C15、I5–I7、E9（走一遍）。現有：`system-design`、`db-choice`；新增：`distributed-basics`、`legacy-migration`、`legacy-data-sync`
 - **學習目標**
   1. 能用六步驟（需求 → 估算 → API → 資料 → 架構 → 瓶頸 → 取捨）在 45 分鐘內設計「通知系統」並講給同事聽
   2. 能寫一頁設計文件與 3 份 ADR，說明本專案每個元件為何在那裡
@@ -486,7 +486,7 @@
 
 ### 實作路線與週次對照
 
-本站的[實作路線](#/project)把課組成一個門診掛號後端，九個階段各有在瀏覽器裡跑的驗收題，可以和課綱並行（第 9 階段用到延伸課綱第 21 週的課）：
+本站的[實作路線](#/project)把課組成一個門診掛號後端，十個階段各有在瀏覽器裡跑的驗收題，可以和課綱並行（第 9、10 階段用到延伸課綱第 21、18 週的課）：
 
 | 階段 | 建議週次 | 對應課 |
 |---|---|---|
@@ -499,6 +499,7 @@
 | 7 打包與持續整合 | 第 11–12 週 | `dockerfile-python`、`ci-pipeline` |
 | 8 日誌、指標與追蹤 | 第 14 週 | `logging-config`、`observability` |
 | 9 給 agent 一個唯讀查詢的 MCP server | 第 21 週 | `mcp-authorization`、`key-scope-lifetime`、`logs-pii`、`identity-gateway` |
+| 10 部署到 Kubernetes | 第 18 週 | `k8s-manifests`、`k8s-config-probes`、`k8s-troubleshooting`、`cd-strategies` |
 
 ---
 
@@ -519,7 +520,7 @@
 
 ### 第 18 週｜GitLab CI/CD、導入 K8s、主機放哪裡、變更管理
 
-- **對應技能**：`gitlab-cicd`、`k8s-readiness`、`hosting-models`、`change-management`
+- **對應技能**：`gitlab-cicd`、`k8s-readiness`、`k8s-manifests`、`k8s-config-probes`、`k8s-troubleshooting`、`k8s-helm-gitops`、`hosting-models`、`change-management`
 - **學習目標**
   1. 能寫出含 stages、受保護變數、environments、MR pipeline 的 `.gitlab-ci.yml`
   2. 能列出導入 K8s 前要準備的元件（Ingress、儲存、映像倉庫、監控、秘密管理），並指出地端要自己補哪些

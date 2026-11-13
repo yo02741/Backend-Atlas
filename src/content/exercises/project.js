@@ -76,6 +76,167 @@ const fromIdx = ins.map((l, i) => (/^FROM\s/i.test(l) ? i : -1)).filter((i) => i
 const lastStage = fromIdx.length ? ins.slice(fromIdx[fromIdx.length - 1]) : []
 `
 
+// Kubernetes manifest 檢查用：把 YAML（常用的子集）解析成物件再檢查，欄位順序、縮排寬度、block 或 flow 寫法都不影響結果。
+// 支援：多份文件（---）、巢狀的 mapping 與清單（清單可以和 key 同一層縮排）、{ } 與 [ ] 的 flow 寫法、引號、| 與 > 區塊。不支援 anchor／alias。
+const K8S_PARSE = String.raw`
+const __scalar = (raw) => {
+  const s = raw.trim()
+  if (s === '' || s === '~' || s === 'null') return null
+  if (s.length >= 2 && (s[0] === '"' || s[0] === "'") && s[s.length - 1] === s[0]) return s.slice(1, -1)
+  if (s === 'true' || s === 'True') return true
+  if (s === 'false' || s === 'False') return false
+  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s)
+  return s
+}
+const __depth = (t) => {
+  let d = 0, q = null
+  for (const ch of t) {
+    if (q) { if (ch === q) q = null } else if (ch === '"' || ch === "'") q = ch
+    else if (ch === '{' || ch === '[') d++
+    else if (ch === '}' || ch === ']') d--
+  }
+  return d
+}
+const __flow = (s) => {
+  let i = 0
+  const ws = () => { while (i < s.length && /\s/.test(s[i])) i++ }
+  const token = (isKey) => {
+    ws()
+    const st = i
+    if (s[i] === '"' || s[i] === "'") {
+      const j = s.indexOf(s[i], i + 1)
+      if (j < 0) throw new Error('引號沒有收尾：' + s)
+      i = j + 1
+      return s.slice(st, i)
+    }
+    while (i < s.length && !',}]'.includes(s[i]) && !(isKey && s[i] === ':')) i++
+    return s.slice(st, i)
+  }
+  const value = () => {
+    ws()
+    if (s[i] === '{') {
+      i++
+      const o = {}
+      ws()
+      if (s[i] === '}') { i++; return o }
+      for (;;) {
+        const k = __scalar(token(true))
+        ws()
+        if (s[i] !== ':') throw new Error('看不懂這段寫法：' + s)
+        i++
+        o[String(k)] = value()
+        ws()
+        if (s[i] === ',') { i++; continue }
+        if (s[i] === '}') { i++; return o }
+        throw new Error('{ } 沒有收尾：' + s)
+      }
+    }
+    if (s[i] === '[') {
+      i++
+      const a = []
+      ws()
+      if (s[i] === ']') { i++; return a }
+      for (;;) {
+        a.push(value())
+        ws()
+        if (s[i] === ',') { i++; continue }
+        if (s[i] === ']') { i++; return a }
+        throw new Error('[ ] 沒有收尾：' + s)
+      }
+    }
+    return __scalar(token(false))
+  }
+  const v = value()
+  ws()
+  if (i < s.length) throw new Error('看不懂這段寫法：' + s)
+  return v
+}
+const __KEY = /^("[^"]*"|'[^']*'|[A-Za-z0-9_.\/$][^:]*?)\s*:(?:\s+(.*))?$/
+const __isItem = (t) => t === '-' || t.startsWith('- ')
+const __parseDoc = (ls) => {
+  let p = 0
+  const value = (t, ind) => {
+    if (t[0] === '{' || t[0] === '[') {
+      let s = t
+      while (__depth(s) > 0 && p < ls.length) { s += ' ' + ls[p].text; p++ }
+      return __flow(s)
+    }
+    if (/^[|>][+-]?$/.test(t)) {
+      const parts = []
+      while (p < ls.length && ls[p].indent > ind) { parts.push(ls[p].text); p++ }
+      return parts.join('\n')
+    }
+    return __scalar(t)
+  }
+  const block = (ind) => {
+    if (__isItem(ls[p].text)) {
+      const arr = []
+      while (p < ls.length && ls[p].indent === ind && __isItem(ls[p].text)) {
+        const rest = ls[p].text.slice(1)
+        const t = rest.trim()
+        if (t === '') {
+          p++
+          arr.push(p < ls.length && ls[p].indent > ind ? block(ls[p].indent) : null)
+        } else if (__KEY.test(t) || __isItem(t)) {
+          const inner = ind + 1 + (rest.length - rest.trimStart().length)
+          ls[p] = { indent: inner, text: t }
+          arr.push(block(inner))
+        } else { p++; arr.push(value(t, ind)) }
+      }
+      return arr
+    }
+    const obj = {}
+    while (p < ls.length && ls[p].indent === ind && !__isItem(ls[p].text)) {
+      const m = __KEY.exec(ls[p].text)
+      if (!m) throw new Error('看不懂這一行：' + ls[p].text)
+      const key = String(__scalar(m[1]))
+      const rest = (m[2] || '').trim()
+      p++
+      if (rest !== '') obj[key] = value(rest, ind)
+      else if (p < ls.length && (ls[p].indent > ind || (ls[p].indent === ind && __isItem(ls[p].text)))) obj[key] = block(ls[p].indent)
+      else obj[key] = null
+    }
+    return obj
+  }
+  const out = block(ls[0].indent)
+  if (p < ls.length) throw new Error('縮排對不起來，看不懂這一行：' + ls[p].text)
+  return out
+}
+const docs = (() => {
+  const groups = [[]]
+  for (const l of lines) {
+    if (/^---(\s|$)/.test(l)) { groups.push([]); continue }
+    if (/^\t/.test(l) || /^ *\t/.test(l)) throw new Error('YAML 的縮排不能用 tab')
+    groups[groups.length - 1].push({ indent: l.length - l.trimStart().length, text: l.trim() })
+  }
+  return groups.filter((g) => g.length).map(__parseDoc).filter((d) => d && typeof d === 'object' && !Array.isArray(d))
+})()
+const kind = (k) => docs.filter((d) => d.kind === k)
+const dig = (o, path) => path.split('.').reduce((a, k) => (a === null || a === undefined ? undefined : a[k]), o)
+const list = (v) => (Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : [])
+`
+
+// deployment.yaml 檢查用：找出 Deployment、Pod spec 與 API 容器（名稱是 api 的容器，沒有就取第一個）
+const K8S_DEPLOY = K8S_PARSE + String.raw`
+const dep = kind('Deployment')[0]
+assert(dep, '找不到 kind: Deployment 的文件')
+const podSpec = dig(dep, 'spec.template.spec') || {}
+const containers = list(podSpec.containers)
+assert(containers.length, 'spec.template.spec.containers 是空的')
+const api = containers.find((c) => c.name === 'api') || containers[0]
+const portOk = (p) => p === 8000 || (typeof p === 'string' && list(api.ports).some((x) => x.name === p && x.containerPort === 8000))
+`
+
+// service-ingress.yaml 檢查用
+const K8S_SVC_ING = K8S_PARSE + String.raw`
+assert(kind('Service').length === 1, '檔案裡要剛好有一份 kind: Service（找到 ' + kind('Service').length + ' 份）')
+assert(kind('Ingress').length === 1, '檔案裡要剛好有一份 kind: Ingress（找到 ' + kind('Ingress').length + ' 份；兩份文件用 --- 分隔）')
+const svc = kind('Service')[0]
+const ing = kind('Ingress')[0]
+const svcPorts = list(dig(svc, 'spec.ports'))
+const rule = list(dig(ing, 'spec.rules')).find((r) => r.host === 'clinic.example')
+`
+
 export default [
   // ───────────── 1. schema ─────────────
   {
@@ -1991,6 +2152,411 @@ assert [(e["table"], e["allowed"], e["row_count"]) for e in _log] == [("sessions
       '`table in allowlist.get(sub, ())` 同時處理使用者不在清單的情況。',
       '先授權再 `fetch`：被拒絕的查詢連資料庫都不該碰。',
       '稽核只記 `len(rows)`；把整個 rows 放進去，稽核系統就變成第二份病患資料。',
+    ],
+  },
+
+  // ───────────── 10. k8s ─────────────
+  {
+    id: 'project-k8s-1', project: 'k8s', skill: 'k8s-config-probes', kind: 'config', level: 2, file: 'deployment.yaml',
+    title: '掛號 API 的 Deployment',
+    prompt: `已知條件：映像是 \`registry.gitlab.example/clinic/api\`，CI 推的 tag 是 commit SHA（例如 \`3f9c2a1b\`）；容器聽 8000；\`GET /healthz\` 只回報行程存活、不碰資料庫，\`GET /ready\` 會查資料庫；程式從環境變數 \`DATABASE_URL\` 讀連線字串（含密碼），它存在 Secret \`clinic-api-secret\` 的 \`DATABASE_URL\` 這個 key；映像的 \`USER\` 是名稱 \`app\`（UID 10001）。
+
+改寫起始的 Deployment（API 容器的名稱維持 \`api\`），讓它通過以下檢查：
+
+- **副本**：\`replicas\` 至少 2；\`selector.matchLabels\` 對得到 Pod template 的 label
+- **固定映像版本**：tag 要含數字（版本號或 commit SHA）或用 digest，不能省略、不能是 \`latest\`
+- **readinessProbe**：\`httpGet\` 打 \`/ready\`、port 8000（寫數字，或寫指到 8000 的具名 port）
+- **livenessProbe**：不能打 \`/ready\`。接受 \`httpGet\` 打 \`/healthz\`，也接受 \`tcpSocket\`
+- **資源**：\`requests\` 要有 \`cpu\` 與 \`memory\`，\`limits\` 至少要有 \`memory\` 而且不小於 requests（CPU limit 設不設都接受）
+- **連線字串來自 Secret**：\`env\` 用 \`valueFrom.secretKeyRef\`，或用 \`envFrom\` 的 \`secretRef\` 整包讀，兩種都接受；\`DATABASE_URL\` 與名稱含 PASSWORD 的變數不能用 \`value\` 寫死，檔案裡也不能出現 \`://帳號:密碼@\`
+- **非 root**：\`runAsNonRoot: true\`，並指定不是 0 的 \`runAsUser\`（映像的 USER 是名稱，kubelet 無法從名稱確認它不是 root）；寫在 Pod 或容器的 \`securityContext\` 都接受
+- **滾動更新**：\`strategy.rollingUpdate.maxUnavailable\` 是 \`0\`（或 \`0%\`），\`maxSurge\` 不能也是 0
+
+檢查器會把 YAML 解析成物件，欄位順序、縮排寬度、\`{ }\` 的單行寫法都不影響結果。`,
+    starter: String.raw`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinic-api
+  namespace: clinic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clinic-api
+  template:
+    metadata:
+      labels:
+        app: clinic-api
+    spec:
+      containers:
+        - name: api
+          image: registry.gitlab.example/clinic/api:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: LOG_LEVEL
+              value: INFO
+            - name: DATABASE_URL
+              value: postgresql://clinic:clinic-pass@db.clinic.example:5432/clinic
+          livenessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+`,
+    solution: String.raw`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinic-api
+  namespace: clinic
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: clinic-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1            # 先多開一個新的
+      maxUnavailable: 0      # 可用的 Pod 數不低於 replicas
+  template:
+    metadata:
+      labels:
+        app: clinic-api
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001     # 映像的 USER 是名稱 app，這裡寫數字 UID
+      containers:
+        - name: api
+          image: registry.gitlab.example/clinic/api:3f9c2a1b
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: LOG_LEVEL
+              value: INFO
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: clinic-api-secret
+                  key: DATABASE_URL
+          readinessProbe:      # 會查資料庫：不通過就不收流量
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 5
+          livenessProbe:       # 只看行程是否存活：不通過就重啟
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+`,
+    tests: [
+      { name: 'apps/v1 的 Deployment，selector 對得到 Pod template 的 label', code: K8S_DEPLOY + String.raw`
+assertEqual(dep.apiVersion, 'apps/v1', 'apiVersion')
+const sel = dig(dep, 'spec.selector.matchLabels')
+const labels = dig(dep, 'spec.template.metadata.labels') || {}
+assert(sel && typeof sel === 'object' && Object.keys(sel).length, '沒有 spec.selector.matchLabels')
+for (const [k, v] of Object.entries(sel)) assert(String(labels[k]) === String(v), 'selector 的 ' + k + '=' + v + ' 在 Pod template 的 labels 裡找不到')` },
+      { name: 'replicas 至少 2', code: K8S_DEPLOY + String.raw`
+const n = dig(dep, 'spec.replicas')
+assert(typeof n === 'number' && n >= 2, 'replicas 是 ' + (n === undefined ? '沒寫（預設 1）' : n))` },
+      { name: '映像固定版本，不用 latest', code: K8S_DEPLOY + String.raw`
+for (const c of containers.concat(list(podSpec.initContainers))) {
+  const image = String(c.image || '')
+  assert(image, '容器 ' + c.name + ' 沒有 image')
+  const tag = image.includes('@sha256:') ? 'digest' : (image.split('/').pop().split(':')[1] || '')
+  assert(tag && tag !== 'latest' && (tag === 'digest' || /\d/.test(tag)), image + ' 沒有固定版本')
+}` },
+      { name: 'readinessProbe 打 /ready', code: K8S_DEPLOY + String.raw`
+const r = api.readinessProbe
+assert(r && r.httpGet, 'api 容器沒有 httpGet 的 readinessProbe')
+assertEqual(r.httpGet.path, '/ready', 'readinessProbe 的 path')
+assert(portOk(r.httpGet.port), 'readinessProbe 的 port 要是 8000（或指到 8000 的具名 port）')` },
+      { name: 'livenessProbe 只看行程是否存活，不打 /ready', code: K8S_DEPLOY + String.raw`
+const l = api.livenessProbe
+assert(l, 'api 容器沒有 livenessProbe')
+assert(l.httpGet || l.tcpSocket, 'livenessProbe 要用 httpGet 或 tcpSocket')
+if (l.httpGet) {
+  assert(l.httpGet.path !== '/ready', 'livenessProbe 打 /ready：資料庫不穩時所有 Pod 會一起重啟')
+  assertEqual(l.httpGet.path, '/healthz', 'livenessProbe 的 path')
+}
+assert(portOk((l.httpGet || l.tcpSocket).port), 'livenessProbe 的 port 要是 8000（或指到 8000 的具名 port）')` },
+      { name: 'requests 有 cpu 與 memory，limits 有 memory 且不小於 requests', code: K8S_DEPLOY + String.raw`
+const has = (v) => v !== undefined && v !== null && v !== ''
+const req = dig(api, 'resources.requests') || {}
+const lim = dig(api, 'resources.limits') || {}
+assert(has(req.cpu), '沒有 resources.requests.cpu')
+assert(has(req.memory), '沒有 resources.requests.memory')
+assert(has(lim.memory), '沒有 resources.limits.memory')
+const UNIT = { Ki: 1024, Mi: 1024 ** 2, Gi: 1024 ** 3, Ti: 1024 ** 4, k: 1e3, M: 1e6, G: 1e9, T: 1e12 }
+const bytes = (v) => { const m = /^(\d+(?:\.\d+)?)(Ki|Mi|Gi|Ti|k|M|G|T)?$/.exec(String(v)); return m ? Number(m[1]) * (m[2] ? UNIT[m[2]] : 1) : NaN }
+for (const v of [req.memory, lim.memory]) assert(!Number.isNaN(bytes(v)), '記憶體 ' + v + ' 的寫法看不懂；單位用 Mi、Gi（小寫 m 是千分之一 byte）')
+assert(bytes(lim.memory) >= bytes(req.memory), 'limits.memory 比 requests.memory 小')` },
+      { name: 'DATABASE_URL 來自 Secret，檔案裡沒有明文', code: K8S_DEPLOY + String.raw`
+const fromKeyRef = list(api.env).some((e) => e.name === 'DATABASE_URL' && dig(e, 'valueFrom.secretKeyRef.name') && dig(e, 'valueFrom.secretKeyRef.key'))
+const fromEnvFrom = list(api.envFrom).some((e) => dig(e, 'secretRef.name'))
+assert(fromKeyRef || fromEnvFrom, 'DATABASE_URL 要用 valueFrom.secretKeyRef，或用 envFrom 的 secretRef 整包讀 Secret')
+const URL_WITH_PASSWORD = /:\/\/[^\s:\/@]+:[^\s@\/]+@/
+for (const c of containers.concat(list(podSpec.initContainers))) {
+  for (const e of list(c.env)) {
+    const literal = e.value !== undefined && e.value !== null
+    assert(!(literal && (e.name === 'DATABASE_URL' || /PASSWORD/i.test(String(e.name)))), e.name + ' 的值直接寫在 manifest 裡')
+    assert(!(literal && URL_WITH_PASSWORD.test(String(e.value))), e.name + ' 是帶密碼的連線字串')
+  }
+}
+assert(!URL_WITH_PASSWORD.test(lines.join('\n')), '檔案裡出現帶密碼的連線字串')` },
+      { name: '以非 root 執行：runAsNonRoot: true 加上非 0 的 runAsUser', code: K8S_DEPLOY + String.raw`
+const podSc = podSpec.securityContext || {}
+const pick = (a, b) => (a !== undefined && a !== null ? a : b)
+for (const c of containers) {
+  const sc = c.securityContext || {}
+  assert(pick(sc.runAsNonRoot, podSc.runAsNonRoot) === true, '容器 ' + c.name + ' 沒有 runAsNonRoot: true（寫在 Pod 或容器的 securityContext 都可以）')
+  const uid = pick(sc.runAsUser, podSc.runAsUser)
+  assert(typeof uid === 'number' && uid > 0, '容器 ' + c.name + ' 要有不是 0 的 runAsUser（映像的 USER 是名稱，kubelet 無法確認它不是 root）')
+}` },
+      { name: 'rollingUpdate：maxUnavailable 是 0，maxSurge 大於 0', code: K8S_DEPLOY + String.raw`
+const st = dig(dep, 'spec.strategy') || {}
+assert(st.type === undefined || st.type === null || st.type === 'RollingUpdate', 'strategy.type 要是 RollingUpdate（現在是 ' + st.type + '）')
+const ru = st.rollingUpdate || {}
+assert(ru.maxUnavailable === 0 || ru.maxUnavailable === '0%', 'strategy.rollingUpdate.maxUnavailable 要是 0（現在是 ' + (ru.maxUnavailable === undefined ? '沒寫，預設 25%' : ru.maxUnavailable) + '）')
+const surge = ru.maxSurge
+assert(surge === undefined || surge === null || (typeof surge === 'number' ? surge >= 1 : /^[1-9]\d*%$/.test(String(surge))), 'maxSurge 不能也是 0')` },
+    ],
+    hints: [
+      '`strategy` 和 `replicas`、`selector` 同一層（`spec` 底下），不是在 `template` 裡。',
+      'Pod 層的 `securityContext` 寫在 `spec.template.spec` 底下，會套用到每個容器；容器層的同名設定會蓋過它。',
+      '`valueFrom.secretKeyRef` 要有 `name`（哪個 Secret）與 `key`（Secret 裡的哪一個 key）；同一個變數不能同時有 `value` 與 `valueFrom`。',
+    ],
+  },
+  {
+    id: 'project-k8s-2', project: 'k8s', skill: 'k8s-manifests', kind: 'config', level: 2, file: 'service-ingress.yaml',
+    title: 'Service 與 Ingress：把 clinic.example 接到 Pod',
+    prompt: `已知條件：掛號 API 的 Pod 帶兩個 label：\`app: clinic-api\`、\`tier: backend\`；容器聽 8000，這個 port 的名稱是 \`http\`；TLS 憑證已經放在 Secret \`clinic-tls\`。
+
+改寫起始的檔案（兩份 manifest 放在同一個檔案，用 \`---\` 分隔），讓它通過以下檢查：
+
+- **Service 的 selector**：每一組 key／value 都要是 Pod 身上有的（只寫 \`app: clinic-api\` 或兩個都寫都接受）；Service 的 selector 直接寫 label，沒有 \`matchLabels\`
+- **Service 的 port**：\`port: 80\`，\`targetPort\` 是 \`8000\`（或 port 的名稱 \`http\`）
+- **Ingress 的 host**：\`apiVersion\` 是 \`networking.k8s.io/v1\`，\`rules\` 裡有 host \`clinic.example\`
+- **TLS**：\`spec.tls\` 有一項的 \`hosts\` 包含 \`clinic.example\`，並有 \`secretName\`
+- **backend**：\`clinic.example\` 底下 \`path: /\`、\`pathType: Prefix\`，\`backend.service.name\` 是這個 Service 的名稱，\`port\` 指到 Service 的 port 80（\`number: 80\`，或 Service 有幫 port 取名時用 \`name\`）
+- 兩份都寫了 \`namespace\` 時要相同
+
+\`ingressClassName\` 依叢集而定，這題不檢查。`,
+    starter: String.raw`apiVersion: v1
+kind: Service
+metadata:
+  name: clinic-api
+spec:
+  selector:
+    app: clinic
+  ports:
+    - port: 8000
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: clinic-api
+spec:
+  rules:
+    - host: clinic.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: clinic
+                port:
+                  number: 8000
+`,
+    solution: String.raw`apiVersion: v1
+kind: Service
+metadata:
+  name: clinic-api
+  namespace: clinic
+spec:
+  selector:
+    app: clinic-api          # 要和 Pod 的 label 完全一樣
+  ports:
+    - name: http
+      port: 80               # Service 對外的 port
+      targetPort: 8000       # 容器在聽的 port
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: clinic-api
+  namespace: clinic          # Ingress 只能指到同一個 namespace 的 Service
+spec:
+  tls:
+    - hosts:
+        - clinic.example
+      secretName: clinic-tls
+  rules:
+    - host: clinic.example
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: clinic-api     # Service 的名稱
+                port:
+                  number: 80         # Service 的 port，不是容器的 8000
+`,
+    tests: [
+      { name: '一份 v1 的 Service 與一份 networking.k8s.io/v1 的 Ingress，namespace 一致', code: K8S_SVC_ING + String.raw`
+assertEqual(svc.apiVersion, 'v1', 'Service 的 apiVersion')
+assertEqual(ing.apiVersion, 'networking.k8s.io/v1', 'Ingress 的 apiVersion')
+const a = dig(svc, 'metadata.namespace'), b = dig(ing, 'metadata.namespace')
+assert(!a || !b || a === b, 'Service 在 ' + a + '、Ingress 在 ' + b + '：Ingress 只能指到同一個 namespace 的 Service')` },
+      { name: 'Service 的 selector 對得到 Pod 的 label', code: K8S_SVC_ING + String.raw`
+const POD = { app: 'clinic-api', tier: 'backend' }
+const sel = dig(svc, 'spec.selector')
+assert(sel && typeof sel === 'object' && !Array.isArray(sel) && Object.keys(sel).length, 'Service 沒有 selector')
+assert(!('matchLabels' in sel), 'Service 的 selector 直接寫 label，不用 matchLabels')
+for (const [k, v] of Object.entries(sel)) assert(POD[k] === String(v), 'Pod 沒有 ' + k + '=' + v + ' 這個 label，Service 後面不會有任何 Pod')` },
+      { name: 'Service 的 port 80 轉到容器的 8000', code: K8S_SVC_ING + String.raw`
+const p = svcPorts.find((x) => x.port === 80)
+assert(p, 'Service 沒有 port: 80')
+assert(p.targetPort === 8000 || p.targetPort === 'http', 'targetPort 要是 8000（或容器 port 的名稱 http），現在是 ' + (p.targetPort === undefined ? '沒寫（預設和 port 相同）' : p.targetPort))` },
+      { name: 'Ingress 的 host 是 clinic.example', code: K8S_SVC_ING + String.raw`
+assert(rule, 'spec.rules 裡沒有 host: clinic.example')` },
+      { name: 'Ingress 有 TLS：hosts 含 clinic.example，並指定 secretName', code: K8S_SVC_ING + String.raw`
+const tls = list(dig(ing, 'spec.tls'))
+assert(tls.length, 'Ingress 沒有 spec.tls')
+const t = tls.find((x) => Array.isArray(x.hosts) && x.hosts.includes('clinic.example'))
+assert(t, 'spec.tls 沒有 hosts 包含 clinic.example 的項目')
+assert(typeof t.secretName === 'string' && t.secretName, 'tls 沒有 secretName')` },
+      { name: 'Ingress 把 / 導到這個 Service 的 port 80', code: K8S_SVC_ING + String.raw`
+assert(rule, 'spec.rules 裡沒有 host: clinic.example')
+const root = list(dig(rule, 'http.paths')).find((x) => x.path === '/')
+assert(root, 'clinic.example 底下沒有 path: /')
+assertEqual(root.pathType, 'Prefix', 'pathType')
+const b = dig(root, 'backend.service')
+assert(b && typeof b === 'object', 'backend 要寫成 backend.service.name 與 backend.service.port')
+assertEqual(b.name, dig(svc, 'metadata.name'), 'backend 的 Service 名稱')
+const sp = svcPorts.find((x) => x.port === 80)
+assert(sp, 'Service 沒有 port: 80，backend 沒有可以指的 port')
+const port = b.port || {}
+assert(port.number === 80 || (sp.name && port.name === sp.name), 'backend 的 port 要指到 Service 的 port 80（number: 80，或 Service port 的名稱）')` },
+    ],
+    hints: [
+      '流量的路徑是 Ingress → Service 的 `port` → 容器的 `targetPort`。Ingress 的 backend 寫的是 Service 的 port（80），不是容器的 8000。',
+      '`tls` 和 `rules` 同一層，都在 Ingress 的 `spec` 底下；`tls` 的 `hosts` 是清單。',
+      'Service 的 selector 少一個字（`clinic` 與 `clinic-api`）不會有任何錯誤訊息，只是後面沒有 Pod。',
+    ],
+  },
+  {
+    id: 'project-k8s-3', project: 'k8s', skill: 'cd-strategies', kind: 'python', level: 2,
+    title: '滾動更新的每一步還有幾個副本能服務',
+    prompt: `實作兩個函式，用簡化的模型算出滾動更新每一步的副本數。這題只處理整數，不處理百分比。
+
+\`rollout_plan(replicas, max_surge, max_unavailable)\` 回傳一個 list，每一項是 \`(舊 Pod 數, 新 Pod 數, 可服務數)\`。第一項是更新前的狀態 \`(replicas, 0, replicas)\`，之後每一輪依序做三件事，做完記一項：
+
+- 上一輪開的新 Pod 在這一輪變成 ready
+- 關舊的：在「可服務數 ≥ replicas − max_unavailable」的前提下，盡量多關舊 Pod
+- 開新的：在「舊 + 新 ≤ replicas + max_surge」而且「新 ≤ replicas」的前提下，盡量多開新 Pod（這一輪開的還沒 ready）
+
+可服務數 = 舊 Pod 數 + 已經 ready 的新 Pod 數；新 Pod 數包含還沒 ready 的。舊 Pod 歸零、新 Pod 全部 ready 就結束，所以最後一項是 \`(0, replicas, replicas)\`。
+
+\`max_surge\` 與 \`max_unavailable\` 同時是 0、任一個是負數，或 \`replicas\` 小於 1，丟 \`ValueError\`。
+
+\`is_zero_downtime(plan, min_available)\`：計畫裡**每一步**的可服務數都不低於 \`min_available\` 才回傳 \`True\`。`,
+    starter: String.raw`def rollout_plan(replicas, max_surge, max_unavailable):
+    # TODO：這個版本先關掉全部舊的再開新的，沒有用到 max_surge 與 max_unavailable
+    return [(replicas, 0, replicas), (0, replicas, 0), (0, replicas, replicas)]
+
+
+def is_zero_downtime(plan, min_available):
+    # TODO：要看每一步，不是只看最後一步
+    return plan[-1][2] >= min_available
+`,
+    solution: String.raw`def rollout_plan(replicas, max_surge, max_unavailable):
+    if replicas < 1 or max_surge < 0 or max_unavailable < 0:
+        raise ValueError("replicas 至少 1，max_surge 與 max_unavailable 不能是負數")
+    if max_surge == 0 and max_unavailable == 0:
+        raise ValueError("max_surge 與 max_unavailable 不能同時為 0")
+    old, new, ready = replicas, 0, 0
+    plan = [(old, new, old + ready)]
+    while old > 0 or ready < replicas:
+        ready = new                                     # 上一輪開的新 Pod，這一輪 ready
+        floor = replicas - max_unavailable              # 可服務數的下限
+        old -= max(0, min(old, old + ready - floor))    # 在下限之上，盡量多關舊的
+        ceiling = replicas + max_surge                  # Pod 總數的上限
+        new += max(0, min(ceiling - old - new, replicas - new))   # 在上限之內，盡量多開新的
+        plan.append((old, new, old + ready))
+    return plan
+
+
+def is_zero_downtime(plan, min_available):
+    # 每一步都要看：中間任何一步低於門檻，就有請求沒有人接
+    return all(available >= min_available for _old, _new, available in plan)
+`,
+    tests: [
+      { name: 'max_surge 1、max_unavailable 0：先開新的再關舊的', code: String.raw`_p = [tuple(s) for s in rollout_plan(3, 1, 0)]
+assert _p == [(3, 0, 3), (3, 1, 3), (2, 2, 3), (1, 3, 3), (0, 3, 3)], _p
+assert is_zero_downtime(_p, 3) is True` },
+      { name: 'max_surge 0、max_unavailable 1：先關舊的，可服務數少 1', code: String.raw`_p = [tuple(s) for s in rollout_plan(3, 0, 1)]
+assert _p == [(3, 0, 3), (2, 1, 2), (1, 2, 2), (0, 3, 2), (0, 3, 3)], _p
+assert is_zero_downtime(_p, 3) is False and is_zero_downtime(_p, 2) is True` },
+      { name: '兩個都是 1：一輪換兩個', code: String.raw`_p = [tuple(s) for s in rollout_plan(3, 1, 1)]
+assert _p == [(3, 0, 3), (2, 2, 2), (0, 3, 2), (0, 3, 3)], _p` },
+      { name: '只有一個副本：max_surge 0 會掉到 0，max_surge 1 不會', code: String.raw`_p = [tuple(s) for s in rollout_plan(1, 0, 1)]
+assert _p == [(1, 0, 1), (0, 1, 0), (0, 1, 1)], _p
+assert is_zero_downtime(_p, 1) is False
+_q = [tuple(s) for s in rollout_plan(1, 1, 0)]
+assert _q == [(1, 0, 1), (1, 1, 1), (0, 1, 1)], _q
+assert is_zero_downtime(_q, 1) is True` },
+      { name: '較大的例子', code: String.raw`_p = [tuple(s) for s in rollout_plan(10, 3, 2)]
+assert _p == [(10, 0, 10), (8, 5, 8), (3, 10, 8), (0, 10, 10)], _p
+_q = [tuple(s) for s in rollout_plan(4, 1, 0)]
+assert _q == [(4, 0, 4), (4, 1, 4), (3, 2, 4), (2, 3, 4), (1, 4, 4), (0, 4, 4)], _q` },
+      { name: '各種組合都守住上限與下限', code: String.raw`for _r in range(1, 8):
+    for _s in range(0, 4):
+        for _u in range(0, 4):
+            if _s == 0 and _u == 0:
+                continue
+            _p = [tuple(x) for x in rollout_plan(_r, _s, _u)]
+            assert _p[0] == (_r, 0, _r) and _p[-1] == (0, _r, _r), (_r, _s, _u, _p)
+            assert len(_p) <= 2 * _r + 3, (_r, _s, _u, len(_p))
+            for _old, _new, _avail in _p:
+                assert _old + _new <= _r + _s, ("超過 replicas + max_surge", _r, _s, _u, _p)
+                assert _avail >= max(0, _r - _u), ("低於 replicas - max_unavailable", _r, _s, _u, _p)
+                assert _new <= _r and _avail <= _old + _new, (_r, _s, _u, _p)
+            assert is_zero_downtime(_p, _r) is (_u == 0), (_r, _s, _u, _p)` },
+      { name: '無法進行或不合理的參數要 ValueError', code: String.raw`for _args in [(3, 0, 0), (0, 1, 0), (3, -1, 1), (3, 1, -1)]:
+    try:
+        rollout_plan(*_args)
+        raise AssertionError(f"{_args} 沒有 raise")
+    except ValueError:
+        pass` },
+      { name: 'is_zero_downtime 看每一步', code: String.raw`assert is_zero_downtime([(2, 0, 2), (2, 1, 2), (1, 2, 2), (0, 2, 2)], 2) is True
+assert is_zero_downtime([(2, 0, 2), (1, 1, 1), (0, 2, 2)], 2) is False
+assert is_zero_downtime([(2, 0, 2), (1, 1, 1), (0, 2, 2)], 1) is True
+assert is_zero_downtime([[2, 0, 2], [0, 2, 0], [0, 2, 2]], 1) is False` },
+    ],
+    hints: [
+      '用三個變數：`old`、`new`（包含還沒 ready 的）、`ready`。每一輪開頭 `ready = new`。',
+      '能關幾個舊的：`min(old, old + ready - (replicas - max_unavailable))`，小於 0 就當 0。',
+      '能開幾個新的：`min(replicas + max_surge - old - new, replicas - new)`。先關再開，順序反了結果會不同。',
     ],
   },
 ]

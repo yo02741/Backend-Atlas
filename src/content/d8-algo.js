@@ -95,9 +95,9 @@ export default {
       en: 'Load testing',
       level: 2,
       summary: '看 p95 / p99 不看平均；壓測逐步加併發，找出吞吐不再上升、延遲開始飆的飽和點；先量再改，一次只改一件事，瓶頸通常在資料庫、連線池或外部呼叫。',
-      example: { primary: 'k6', alts: ['Locust', 'wrk / hey', 'py-spy'] },
+      example: { primary: 'k6', alts: ['Locust', 'wrk / hey', 'pg_stat_statements'] },
       keywords: ['Python', 'PostgreSQL'],
-      lab: null,
+      lab: 'LoadTestLab',
     },
     {
       id: 'scaling',

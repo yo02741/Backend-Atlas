@@ -2,7 +2,7 @@
 // 此檔要能被 Node 直接 import（校驗腳本用）。
 export const PROJECT = {
   title: '從零做完一個門診掛號後端',
-  summary: '一個階段接一個階段，把前面學過的課組成一個完整的系統：資料表、領域邏輯、API、權限、並行搶號、快取與限流、容器與 CI、可觀測性。每階段都有在瀏覽器裡跑的驗收測試。',
+  summary: '一個階段接一個階段，把前面學過的課組成一個完整的系統：資料表、領域邏輯、API、權限、並行搶號、快取與限流、容器與 CI、可觀測性、給 agent 的唯讀查詢介面、部署到 Kubernetes。每階段都有在瀏覽器裡跑的驗收測試。',
 }
 
 // { id, no, title, summary, lessons: [技能 id], exercises: [程式題 id] }
@@ -16,6 +16,7 @@ export const STAGES = [
   { id: 'ship', no: 7, title: '打包與持續整合', summary: '多階段、非 root、不含祕密的 Dockerfile，加上 lint → test（帶 PostgreSQL）→ build → 只在 main 部署的 GitLab CI。', lessons: ['dockerfile-python', 'ci-pipeline'], exercises: ['project-ship-1', 'project-ship-2'] },
   { id: 'observe', no: 8, title: '日誌、指標與追蹤', summary: '一行一筆的 JSON 日誌帶 request_id 並遮罩身分證字號，掛號結果做成 Prometheus 計數器，跨服務用 traceparent 串起來。', lessons: ['logging-config', 'observability'], exercises: ['project-observe-1', 'project-observe-2'] },
   { id: 'mcp', no: 9, title: '給 agent 一個唯讀查詢的 MCP server', summary: '401 帶路標讓 client 找到 GitLab 登入，server 驗 aud、exp、scope，依使用者限定可查的表、用唯讀帳號查，輸出前遮罩身分證字號、電話、姓名，每次查詢寫一筆不含內容的稽核。', lessons: ['mcp-authorization', 'key-scope-lifetime', 'logs-pii', 'identity-gateway'], exercises: ['project-mcp-1', 'project-mcp-2', 'project-mcp-3'] },
+  { id: 'k8s', no: 10, title: '部署到 Kubernetes', summary: '兩個以上的副本、設定與密碼不進映像：Deployment 接上 readiness 與 liveness 探針、requests 與 limits、非 root，Service 與 Ingress 把 clinic.example 導進來；migration 用 Job 先跑，再以 maxUnavailable 0 滾動更新，GitLab CI 手動核准後部署。', lessons: ['k8s-manifests', 'k8s-config-probes', 'k8s-troubleshooting', 'cd-strategies'], exercises: ['project-k8s-1', 'project-k8s-2', 'project-k8s-3'] },
 ]
 
 export function findStage(id) { return STAGES.find((s) => s.id === id) || null }

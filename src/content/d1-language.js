@@ -136,7 +136,7 @@ export default {
       en: 'Debugging',
       level: 1,
       summary: '先把問題縮成最小重現，再讀 traceback 找第一個屬於自己的 frame；猜不到就用二分法（git bisect、註解一半）。pdb 看現場，profiler 看時間花在哪。',
-      example: { primary: 'traceback + pdb + git bisect', alts: ['cProfile / py-spy', 'logging', 'IDE debugger'] },
+      example: { primary: 'traceback + pdb + git bisect', alts: ['cProfile / py-spy', 'logging', 'pytest --pdb'] },
       keywords: ['Python'],
       lab: null,
     },

@@ -209,4 +209,4 @@ TypeError: Object of type datetime is not JSON serializable
 
 **計數器**：累加與查詢；負數與標籤不符時 `ValueError`；`render()` 的 HELP、TYPE、標籤順序、排序、整數格式、結尾換行；沒有標籤的寫法；標籤值的跳脫。
 
-追蹤需要 OpenTelemetry SDK 與收集端，不在瀏覽器驗收範圍內。到這裡，系統從資料表、規則、介面、權限、並行、快取限流、打包部署，到上線後看得見自己的狀態，八個階段都接起來了。
+追蹤需要 OpenTelemetry SDK 與收集端，不在瀏覽器驗收範圍內。到這裡，系統從資料表、規則、介面、權限、並行、快取限流、打包部署，到上線後看得見自己的狀態，都接起來了。後面兩個階段再往外接：給 agent 的唯讀查詢介面，以及部署到 Kubernetes。

@@ -91,6 +91,7 @@ export default {
       example: { primary: 'Deployment + Service + Ingress', alts: ['Gateway API', 'StatefulSet', 'Job / CronJob'] },
       keywords: ['Docker'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'k8s-config-probes',
@@ -110,7 +111,7 @@ export default {
       summary: '從 Pod 狀態往下查：Pending 看排程與資源、ImagePullBackOff 看映像與憑證、CrashLoopBackOff 看前一次的日誌、OOMKilled 看 limits；Service 連不到就查 selector、endpoints 與探針。',
       example: { primary: 'kubectl get / describe / logs / events', alts: ['kubectl debug', 'k9s', 'Lens'] },
       keywords: ['Docker'],
-      lab: null,
+      lab: 'K8sDebugLab',
     },
     {
       id: 'k8s-helm-gitops',
@@ -121,6 +122,7 @@ export default {
       example: { primary: 'Kustomize overlays', alts: ['Helm chart', 'Argo CD', 'Flux', 'Terraform'] },
       keywords: ['GitLab CI'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'hosting-models',

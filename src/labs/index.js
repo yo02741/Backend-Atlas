@@ -38,6 +38,8 @@ export const LAB_META = {
   AgentLoopLab:      { title: 'Agent 的執行迴圈', blurb: '逐步看狀態機怎麼走、context 怎麼累積；製造工具逾時與格式錯誤，看步數與 token 預算在哪裡攔下。', skill: 'agent-loop' },
   SemanticLayerLab:  { title: '猜欄位 vs 用定義好的指標', blurb: '同一個問題，憑欄位名猜出三種 SQL、三個數字；用 Semantic Layer 只對到一個定義、一個答案。', skill: 'semantic-layer' },
   TestQualityLab:    { title: '覆蓋率 100% 的測試抓不抓得到錯', blurb: '對兩組測試跑突變測試，看哪些假綠燈讓突變體存活、補強後殺死率怎麼變。', skill: 'test-quality' },
+  LoadTestLab:       { title: '逐步加壓，找飽和點', blurb: '調 worker 數與連線池，逐級加併發，看吞吐在哪裡變平、p95 在哪裡先超標、瓶頸是 CPU 還是連線池。', skill: 'load-testing' },
+  K8sDebugLab:       { title: 'Kubernetes 排錯', blurb: '六種故障情境：按 kubectl 指令收集線索，判斷原因，看要改 manifest 的哪一行。', skill: 'k8s-troubleshooting' },
   WikiGraphLab:      { title: 'wikilink 長成知識圖譜', blurb: '編輯幾頁 markdown，即時畫出連結圖、反向連結、孤兒頁與斷鏈，找兩頁之間的路徑。', skill: 'knowledge-graph' },
 }
 

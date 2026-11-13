@@ -1,5 +1,6 @@
 // 領域 3：資料儲存（關聯式：PostgreSQL；文件式：MongoDB；快取：Redis） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d3-data.js
-export default {
+import m3 from './parts/d3-data-m3.js'
+const base = {
   'sql-basics': {
     points: [
       { b: '邏輯執行順序不是書寫順序', t: 'FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT。所以 WHERE 裡不能用 SELECT 的別名，HAVING 才能用聚合。（PostgreSQL 的擴充：ORDER BY 與 GROUP BY 可以用輸出欄位的別名，別的資料庫不一定。）' },
@@ -265,3 +266,6 @@ export default {
     ],
   },
 }
+
+// 後續新增的課，內文放在 parts/ 底下，這裡合併
+export default { ...base, ...m3 }

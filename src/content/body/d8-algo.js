@@ -1,5 +1,7 @@
 // 領域 8：演算法與系統設計 — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d8-algo.js
 import l4 from './parts/d8-algo-l4.js'
+import m1 from './parts/d8-algo-m1.js'
+import m3 from './parts/d8-algo-m3.js'
 const base = {
   'big-o': {
     points: [
@@ -167,4 +169,4 @@ const base = {
 }
 
 // P9 新課的內文放在 parts/ 底下，這裡合併
-export default { ...base, ...l4 }
+export default { ...base, ...l4, ...m1, ...m3 }

@@ -1,5 +1,6 @@
 // 領域 1：語言與工程實踐（以 Python 為範例） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d1-language.js
 import l1 from './parts/d1-language-l1.js'
+import m1 from './parts/d1-language-m1.js'
 const base = {
   'python-backend': {
     points: [
@@ -205,4 +206,4 @@ const base = {
 }
 
 // P9 新課的內文放在 parts/ 底下，這裡合併
-export default { ...base, ...l1 }
+export default { ...base, ...l1, ...m1 }

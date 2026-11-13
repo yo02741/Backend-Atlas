@@ -1,5 +1,6 @@
 // 領域 9：DevOps 與基礎建設 的技能內文（以技能 id 為 key）
 import l4 from './parts/d9-devops-l4.js'
+import m2 from './parts/d9-devops-m2.js'
 const base = {
   'devops-glossary': {
     points: [
@@ -201,4 +202,4 @@ const base = {
 }
 
 // P9 新課的內文放在 parts/ 底下，這裡合併
-export default { ...base, ...l4 }
+export default { ...base, ...l4, ...m2 }

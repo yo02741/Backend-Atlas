@@ -120,6 +120,16 @@ export default {
       lab: null,
     },
     {
+      id: 'legacy-data-sync',
+      title: '從舊資料庫同步資料：批次、CDC、雙寫與對帳',
+      en: 'Legacy data sync',
+      level: 3,
+      summary: '新舊系統並存時資料要一致：批次同步簡單但有延遲、CDC 讀變更日誌接近即時、雙寫容易不一致。不管哪一種都要有對帳（筆數、雜湊、抽樣比對）與可重跑的回補。',
+      example: { primary: '增量批次 + 對帳', alts: ['CDC（Debezium）', '雙寫', '唯讀副本 + view'] },
+      keywords: ['SQL', 'PostgreSQL'],
+      lab: null,
+    },
+    {
       id: 'mongodb',
       title: 'MongoDB 文件模型',
       en: 'Document model',

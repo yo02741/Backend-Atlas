@@ -1,5 +1,6 @@
 // 領域 4：驗證與授權（AuthN & AuthZ） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d4-auth.js
-export default {
+import m6 from './parts/d4-auth-m6.js'
+const base = {
   'authn-basics': {
     points: [
       { b: 'Session：伺服器記、客戶端拿號碼牌', t: '登入後伺服器在 Redis / DB 存一筆 session，把 session id 種進 HttpOnly cookie。每次請求靠 id 查回使用者。可即時撤銷，但要有共用儲存。' },
@@ -122,3 +123,6 @@ export default {
     refs: [],
   },
 }
+
+// 後續新增的課，內文放在 parts/ 底下，這裡合併
+export default { ...base, ...m6 }

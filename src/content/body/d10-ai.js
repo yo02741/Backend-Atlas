@@ -2,6 +2,7 @@
 import l1 from './parts/d10-ai-l1.js'
 import l2 from './parts/d10-ai-l2.js'
 import l3 from './parts/d10-ai-l3.js'
+import m5 from './parts/d10-ai-m5.js'
 const base = {
   // ── 團隊工作流 ──
   'ai-adr': {
@@ -300,4 +301,4 @@ const base = {
 }
 
 // P9 新課的內文放在 parts/ 底下，這裡合併
-export default { ...base, ...l1, ...l2, ...l3 }
+export default { ...base, ...l1, ...l2, ...l3, ...m5 }

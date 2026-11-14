@@ -1,5 +1,6 @@
 // 領域 5：資安（以 OWASP Top 10 為地圖） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d5-security.js
-export default {
+import m6 from './parts/d5-security-m6.js'
+const base = {
   'owasp-top10': {
     points: [
       { b: 'A01 存取控制失效', t: '第一名。改網址的 id 就看到別人的訂單（IDOR）、一般使用者打 admin API。解法：每個資源操作都驗擁有權與角色。' },
@@ -156,3 +157,6 @@ export default {
     refs: [],
   },
 }
+
+// 後續新增的課，內文放在 parts/ 底下，這裡合併
+export default { ...base, ...m6 }

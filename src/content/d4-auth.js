@@ -79,5 +79,16 @@ export default {
       keywords: ['OAuth', 'Token'],
       lab: null,
     },
+    {
+      id: 'enterprise-identity',
+      title: '企業身分：LDAP、AD、SAML 與 SCIM',
+      en: 'Enterprise identity',
+      level: 3,
+      reviewed: '2026-11',
+      summary: '組織裡的帳號放在目錄服務（LDAP、Active Directory），應用程式不自己存密碼：用 SAML 或 OIDC 把登入交給身分提供者，用群組對應角色，用 SCIM 或同步讓離職停用自動生效。',
+      example: { primary: 'OIDC 接組織的 IdP', alts: ['SAML 2.0', 'LDAP bind', 'Kerberos', 'SCIM'] },
+      keywords: ['OAuth'],
+      lab: null,
+    },
   ],
 }

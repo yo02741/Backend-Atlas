@@ -101,5 +101,16 @@ export default {
       lab: 'SupplyChainLab',
       reviewed: '2026-10',
     },
+    {
+      id: 'security-operations',
+      title: '資安維運：弱點管理、修補與邊界防護',
+      en: 'Security operations',
+      level: 2,
+      reviewed: '2026-11',
+      summary: '上線之後的資安是持續的工作：資產清冊知道有什麼、弱點掃描知道哪裡有洞、依嚴重度與可被利用的程度排修補順序；WAF 與網路分段是補償控制，不能取代修補。',
+      example: { primary: '弱點掃描 + 修補流程', alts: ['WAF', '網路分段', '滲透測試', 'SIEM'] },
+      keywords: ['OWASP'],
+      lab: null,
+    },
   ],
 }

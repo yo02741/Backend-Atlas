@@ -521,7 +521,13 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .ex-prompt { font-size: 0.92rem; color: var(--ink-2); line-height: 1.7; margin-bottom: 12px; max-width: 76ch; }
 .md p { margin-bottom: 8px; }
 .md p:last-child { margin-bottom: 0; }
-.md ul { padding-left: 1.2em; margin-bottom: 8px; }
+.md ul, .md ol { padding-left: 1.2em; margin-bottom: 8px; }
+.md ol { padding-left: 1.6em; }
+.md li { margin-bottom: 2px; }
+.md-pre { font-family: var(--mono); font-size: 0.8rem; line-height: 1.55; background: var(--surface-2); border: 1px solid var(--hairline); border-radius: var(--radius); padding: 10px 12px; margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-1); }
+.md-pre code { background: none; padding: 0; font-size: inherit; }
+/* 題目說明裡的表格：第一欄多半是識別字，留夠寬度才不會被切成好幾行 */
+.md .md-table th:first-child, .md .md-table td:first-child { min-width: 8.5em; }
 .md code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 1px 6px; border-radius: 3px; color: var(--ink-1); overflow-wrap: anywhere; }
 .md strong { color: var(--ink-1); }
 .ex-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0 10px; }

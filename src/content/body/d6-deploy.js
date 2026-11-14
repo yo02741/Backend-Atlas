@@ -137,7 +137,7 @@ export default {
       '能說明 graceful shutdown 的步驟',
     ],
     refs: [
-      { label: 'Uvicorn：Deployment', url: 'https://www.uvicorn.org/deployment/' },
+      { label: 'Uvicorn：Deployment', url: 'https://uvicorn.dev/deployment/' },
     ],
   },
   'object-storage': {

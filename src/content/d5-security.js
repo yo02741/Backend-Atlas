@@ -48,7 +48,7 @@ export default {
       summary: '雜湊驗完整性、HMAC 驗來源、對稱加密藏內容、非對稱簽章與交換金鑰、CSPRNG 產 token——五種工具各解一種問題。',
       example: { primary: 'Python 標準庫 hashlib / hmac / secrets + cryptography 套件', alts: ['Node crypto', 'libsodium'] },
       keywords: ['JWT', 'OAuth', 'OWASP'],
-      lab: null,
+      lab: 'CryptoLab',
     },
     {
       id: 'xss-csrf',
@@ -58,7 +58,7 @@ export default {
       summary: '從後端角度：輸出編碼與 CSP 防 XSS、SameSite 與 CSRF token 防 CSRF、一組安全標頭當基本盤。',
       example: { primary: 'SameSite cookie + CSP + 安全標頭', alts: ['CSRF token（表單）'] },
       keywords: ['OWASP', 'nginx'],
-      lab: null,
+      lab: 'XssCsrfLab',
     },
     {
       id: 'input-validation',
@@ -98,7 +98,7 @@ export default {
       summary: '你的程式碼只佔專案的一小部分，其餘是別人的套件與 image——它們也會有漏洞。',
       example: { primary: 'uv.lock + pip-audit + image 掃描', alts: ['Dependabot / Renovate', 'Trivy'] },
       keywords: ['uv', 'Docker', 'GitHub Actions', 'OWASP'],
-      lab: null,
+      lab: 'SupplyChainLab',
       reviewed: '2026-10',
     },
   ],

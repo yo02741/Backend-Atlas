@@ -47,7 +47,7 @@ export default {
       summary: 'rolling / blue-green / canary 各怎麼換版、怎麼回滾；migration 要跟程式碼相容才能零停機。',
       example: { primary: 'Rolling + 可回滾的 migration', alts: ['Blue-green', 'Canary + feature flag'] },
       keywords: ['Docker', 'PostgreSQL', 'GitHub Actions'],
-      lab: null,
+      lab: 'DeployStrategyLab',
     },
     {
       id: 'observability',
@@ -57,7 +57,7 @@ export default {
       summary: 'log 記發生了什麼、metrics 記數量與趨勢、trace 記一個請求跨服務的路徑；三者用 request id / trace id 串起來。',
       example: { primary: 'JSON log + Prometheus metrics + OpenTelemetry trace', alts: ['雲端內建（Cloud Logging / CloudWatch）', 'Sentry（錯誤追蹤）'] },
       keywords: ['Python', 'nginx', 'Docker'],
-      lab: null,
+      lab: 'TraceLab',
     },
     {
       id: 'llm-observability',

@@ -96,6 +96,22 @@ for (const e of projectExercises) {
   if (e.skill && !seen.has(e.skill)) errors.push(`exercises/project.js ${e.id}: skill "${e.skill}" 不存在`)
 }
 
-console.log(`領域 ${DOMAINS.length} 個，技能 ${skills} 個，深入內容 ${deepFiles.length} / ${skills} 課，實作路線 ${STAGES.length} 個階段`)
+// 程式題：欄位齊全（技能頁與題目頁直接讀這些欄位，缺了會壞頁）、id 唯一、對得到技能
+const { EXERCISES, KINDS } = await import(pathToFileURL(resolve(content, 'exercises/index.js')).href)
+const exSeen = new Set()
+for (const e of EXERCISES) {
+  const tag = `exercises ${e.id}`
+  if (!e.id || exSeen.has(e.id)) errors.push(`${tag}: id 缺少或重複`)
+  exSeen.add(e.id)
+  if (!seen.has(e.skill)) errors.push(`${tag}: skill "${e.skill}" 不存在`)
+  if (!KINDS[e.kind]) errors.push(`${tag}: kind "${e.kind}" 不是 ${Object.keys(KINDS).join(' / ')}`)
+  for (const k of ['title', 'prompt', 'solution']) if (typeof e[k] !== 'string' || !e[k].trim()) errors.push(`${tag}: 缺 ${k}`)
+  if (typeof e.starter !== 'string') errors.push(`${tag}: starter 要是字串（可以是空字串）`)
+  if (!Array.isArray(e.hints)) errors.push(`${tag}: hints 要是陣列（可以是空陣列）`)
+  if (![1, 2, 3].includes(e.level)) errors.push(`${tag}: level 要是 1 / 2 / 3`)
+  if (e.kind === 'sql' ? !e.expect : !(Array.isArray(e.tests) && e.tests.length)) errors.push(`${tag}: ${e.kind === 'sql' ? '缺 expect' : 'tests 至少一個'}`)
+}
+
+console.log(`領域 ${DOMAINS.length} 個，技能 ${skills} 個，深入內容 ${deepFiles.length} / ${skills} 課，實作路線 ${STAGES.length} 個階段，程式題 ${EXERCISES.length} 道`)
 if (errors.length) { console.log('錯誤：\n' + errors.join('\n')); process.exit(1) }
 console.log('OK')

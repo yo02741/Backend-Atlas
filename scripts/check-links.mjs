@@ -23,6 +23,12 @@ for (const f of files) {
 
 const UA = 'Mozilla/5.0 (compatible; backend-atlas-link-check)'
 async function check(url) {
+  let r = await once(url)
+  // 網路層的暫時性錯誤（DNS 逾時、連線被重設）再試一次，避免單次抖動被當成失效
+  if (r.kind !== 'ok' && !/^\d+$/.test(r.note)) { await new Promise((ok) => setTimeout(ok, 3000)); r = await once(url) }
+  return r
+}
+async function once(url) {
   for (const method of ['HEAD', 'GET']) {
     try {
       const res = await fetch(url, { method, redirect: 'follow', headers: { 'user-agent': UA, accept: 'text/html,*/*' }, signal: AbortSignal.timeout(20000) })
@@ -33,7 +39,7 @@ async function check(url) {
     } catch (e) {
       if (method === 'HEAD') continue
       const code = e.cause?.code || e.name
-      return { kind: ['ENOTFOUND', 'EAI_AGAIN'].includes(code) ? 'broken' : 'manual', note: code }
+      return { kind: code === 'ENOTFOUND' ? 'broken' : 'manual', note: code }   // 網域不存在才算失效；其他網路錯誤列為需人工確認
     }
   }
 }

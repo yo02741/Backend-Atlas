@@ -40,6 +40,11 @@ export const LAB_META = {
   TestQualityLab:    { title: '覆蓋率 100% 的測試抓不抓得到錯', blurb: '對兩組測試跑突變測試，看哪些假綠燈讓突變體存活、補強後殺死率怎麼變。', skill: 'test-quality' },
   LoadTestLab:       { title: '逐步加壓，找飽和點', blurb: '調 worker 數與連線池，逐級加併發，看吞吐在哪裡變平、p95 在哪裡先超標、瓶頸是 CPU 還是連線池。', skill: 'load-testing' },
   K8sDebugLab:       { title: 'Kubernetes 排錯', blurb: '六種故障情境：按 kubectl 指令收集線索，判斷原因，看要改 manifest 的哪一行。', skill: 'k8s-troubleshooting' },
+  XssCsrfLab:        { title: 'XSS 與 CSRF 各擋在哪一層', blurb: '一道道打開防線：輸出跳脫、CSP、HttpOnly、SameSite、CSRF token，看每種攻擊在哪裡被擋下、哪些防線對它沒有作用。', skill: 'xss-csrf' },
+  CryptoLab:         { title: '雜湊、HMAC、加密、簽章', blurb: '瀏覽器真的算給你看：竄改訊息、換金鑰、重複使用 nonce，看驗證結果怎麼變。', skill: 'crypto-toolbox' },
+  SupplyChainLab:    { title: '一個相依套件出問題時', blurb: '漏洞、套件被接管、名稱相近的假套件：打開 lockfile、掃描、延遲更新等防線，看在哪裡攔下。', skill: 'supply-chain' },
+  DeployStrategyLab: { title: '三種部署策略與 migration', blurb: 'rolling、blue-green、canary 逐步換版；新版有 bug 或含 schema 變更時，各自影響多少請求、回滾多快。', skill: 'cd-strategies' },
+  TraceLab:          { title: '用 trace id 串起 log、metrics、trace', blurb: '從指標的尖峰找到慢的 trace，看是哪個 span 慢，再用 trace id 找到那一段的日誌。', skill: 'observability' },
   WikiGraphLab:      { title: 'wikilink 長成知識圖譜', blurb: '編輯幾頁 markdown，即時畫出連結圖、反向連結、孤兒頁與斷鏈，找兩頁之間的路徑。', skill: 'knowledge-graph' },
 }
 

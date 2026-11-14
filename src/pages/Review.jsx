@@ -68,9 +68,9 @@ export default function Review({ seed = '' }) {
     const take = Math.min(count, avail)
     const doneSkills = new Set(pools.done.map((it) => it.skill)).size
     const desc = {
-      done: usable.done ? `${doneSkills} 課，共 ${pools.done.length} 題` : '還沒有標為完成的課。在課程頁按「標記完成」後就能選。',
-      domains: '挑一個或多個領域，當成領域總驗收。',
-      wrong: usable.wrong ? `${pools.wrong.length} 題，答對就從清單移除` : '目前沒有答錯紀錄。',
+      done: usable.done ? `${doneSkills} 課，共 ${pools.done.length} 題` : '還沒有完成的課',
+      domains: '',
+      wrong: usable.wrong ? `${pools.wrong.length} 題，答對就從清單移除` : '沒有答錯紀錄',
       all: `${POOL.length} 題，${POOL_DOMAINS.length} 個領域`,
     }
     const allPicked = domainIds.length === POOL_DOMAINS.length
@@ -79,7 +79,6 @@ export default function Review({ seed = '' }) {
         <header className="masthead">
           <p className="kicker">REVIEW · 複習</p>
           <h1 className="display">混合複習</h1>
-          <p className="lede">從各課的選擇題跨課抽題，一次作答，交卷後看解析與各領域的答對率。</p>
         </header>
 
         <section className="rv-setup">
@@ -89,7 +88,7 @@ export default function Review({ seed = '' }) {
               {SCOPES.map((s) => (
                 <label key={s} className={`rv-scope${active === s ? ' on' : ''}${usable[s] ? '' : ' off'}`}>
                   <input type="radio" name="rv-scope" value={s} checked={active === s} disabled={!usable[s]} onChange={() => setScope(s)} />
-                  <span className="rv-scope-body"><b>{SCOPE_LABEL[s]}</b><span>{desc[s]}</span></span>
+                  <span className="rv-scope-body"><b>{SCOPE_LABEL[s]}</b>{desc[s] && <span>{desc[s]}</span>}</span>
                 </label>
               ))}
             </div>

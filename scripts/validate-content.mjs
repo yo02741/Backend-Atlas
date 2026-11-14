@@ -15,7 +15,7 @@ if (files.length !== DOMAINS.length) errors.push(`dN-*.js 有 ${files.length} �
 
 for (const d of DOMAINS) {
   const tag = `d${d.no}-${d.id}`
-  for (const k of ['id', 'no', 'title', 'en', 'color', 'tagline', 'desc']) if (d[k] === undefined || d[k] === '') errors.push(`${tag}: 領域缺 ${k}`)
+  for (const k of ['id', 'no', 'title', 'en', 'color', 'tagline']) if (d[k] === undefined || d[k] === '') errors.push(`${tag}: 領域缺 ${k}`)
   if (!existsSync(resolve(content, `${tag}.js`))) errors.push(`${tag}: 索引檔名要是 ${tag}.js（d<no>-<id>.js）`)
   const bodyPath = resolve(content, 'body', `${tag}.js`)
   if (!existsSync(bodyPath)) { errors.push(`${tag}: 缺內文檔 body/${tag}.js`); continue }

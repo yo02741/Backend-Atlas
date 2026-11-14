@@ -6,8 +6,7 @@ export default {
   title: '演算法與系統設計',
   en: 'ALGORITHMS & SYSTEM DESIGN',
   color: 'magenta',
-  tagline: '後端的演算法不是刷題：是 Big-O 直覺、幾個真的會用到的結構與演算法，以及把它們組成系統的思考框架。',
-  desc: '你不需要背紅黑樹，但要知道為什麼索引是 log n、迴圈裡打 query 是 n²、限流用 token bucket、快取用 LRU。這一區挑後端真的會遇到的部分，最後給一個系統設計的思考順序。',
+  tagline: 'Big-O、後端常用的資料結構、限流與快取演算法、系統設計。',
   skills: [
     {
       id: 'big-o',

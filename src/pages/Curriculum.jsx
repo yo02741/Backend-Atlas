@@ -41,7 +41,6 @@ export default function Curriculum({ week = '' }) {
       <header className="masthead">
         <p className="kicker">CURRICULUM · 技能樹、16 週主線與 6 週延伸</p>
         <h1 className="display">課綱</h1>
-        <p className="lede">完整的技能樹、16 週主線課綱（每週有可驗證的目標、動手作業與驗收標準，三個里程碑專案）與實作路線的週次對照、第 17–22 週的延伸課綱（DevOps 與基礎建設、AI 時代的開發與 Agent 安全、知識系統），以及驗收方式設計。以已有程式開發經驗、想系統地補後端基礎的工程師為對象。每週標題下列出本站對應那一週的設計情境。</p>
       </header>
       <div className="curri">
         <aside className="curri-toc">

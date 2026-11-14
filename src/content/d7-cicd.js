@@ -6,8 +6,7 @@ export default {
   title: 'CI/CD 與交付',
   en: 'CI/CD & DELIVERY',
   color: 'green',
-  tagline: '每次 push 自動 lint、測試、build image、部署——GitHub Actions 與 GitLab CI 概念一樣、寫法對照。',
-  desc: '交付是把「寫好的程式碼」變成「跑在正式環境的服務」的機械化流程。這一區對照 GitHub Actions 與 GitLab CI，再談部署策略、環境與 secrets、可觀測性與事故處理。',
+  tagline: 'GitHub Actions 與 GitLab CI 對照、部署策略、可觀測性與事故處理。',
   skills: [
     {
       id: 'git-workflow',

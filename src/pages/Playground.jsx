@@ -175,7 +175,7 @@ export default function Playground({ initialLang = 'python', initialCode = '' })
       <header className="masthead" style={{ paddingBottom: 18 }}>
         <p className="kicker">PLAYGROUND · 自由練習</p>
         <h1 className="display">Playground</h1>
-        <p className="lede">真的 Python、真的 PostgreSQL、真的 JavaScript，全部在你的瀏覽器裡跑，不會送到任何伺服器。SQL 有一套電商範例資料可以隨便玩，改壞了按「重設資料庫」就好。</p>
+        <p className="lede">程式碼在瀏覽器裡執行，不會送到伺服器。</p>
       </header>
 
       <div className="tabs" role="tablist" aria-label="語言">

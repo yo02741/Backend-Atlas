@@ -24,7 +24,7 @@ export default function Domain({ id }) {
           {d.title}
           <ProgressRing value={doneN} total={d.skills.length} color={color} />
         </h1>
-        <p className="lede">{d.desc}</p>
+        <p className="lede">{d.tagline}</p>
         <p className="muted" style={{ marginTop: 10, fontSize: '0.85rem' }}>
           {d.skills.length} 個技能 · {d.skills.filter((s) => s.lab).length} 個實驗室 · 已完成 {doneN}
         </p>

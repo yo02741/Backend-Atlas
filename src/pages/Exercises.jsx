@@ -23,7 +23,7 @@ export default function Exercises() {
       <header className="masthead">
         <p className="kicker">EXERCISES · 練習題</p>
         <h1 className="display">動手驗收</h1>
-        <p className="lede">程式題在瀏覽器裡真的執行、真的跑測試：SQL 對 PostgreSQL、Python 跑 Pyodide、JavaScript 跑 Worker；設定檔題（Dockerfile、compose、nginx、CI 設定）由檢查器逐條驗證。每一題都對應一課；選擇題在各課頁面裡。</p>
+        <p className="lede">程式碼在瀏覽器裡執行，不會送到伺服器。選擇題在各課頁面。</p>
         <div className="hero-stats" style={{ marginTop: 18 }}>
           <div className="stat"><b>{passed}<span className="muted" style={{ fontSize: '1rem', fontWeight: 500 }}> / {EXERCISES.length}</span></b><span>程式題通過</span></div>
           <div className="stat"><b>{quizPassed}<span className="muted" style={{ fontSize: '1rem', fontWeight: 500 }}> / {quizSkills}</span></b><span>選擇題組通過</span></div>
@@ -34,10 +34,9 @@ export default function Exercises() {
       <a href="#/review" className="rv-entry">
         <span className="rv-entry-text">
           <span className="kicker">REVIEW · 複習</span>
-          <b>混合複習：跨課抽 10 或 20 題選擇題</b>
-          <span className="rv-entry-desc">範圍可選已完成的課、指定領域、上次答錯的題或全部；交卷後看解析與各領域的答對率。</span>
+          <b>跨課混合複習</b>
         </span>
-        <span className="btn small">開始複習 →</span>
+        <span className="btn small">開始 →</span>
       </a>
 
       <div className="toolbar">

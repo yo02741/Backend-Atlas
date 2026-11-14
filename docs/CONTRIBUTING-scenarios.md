@@ -64,6 +64,8 @@ export default {
 
 ## 語氣
 
+寫作規則見 `.claude/skills/atlas-writing/SKILL.md`（介面文字與中文 AI 腔的改法），搭配 `.claude/skills/stop-slop/`。
+
 直接、精簡、講事實。**不寫**「為什麼要學」「為什麼重要」「你工作上」「給前端工程師」這類段落或措辭。取捨用「好 / 差 / 中」加一句原因，不用形容詞堆疊。
 
 ## 驗證（必做）

@@ -17,7 +17,6 @@ export default function Scenarios() {
       <header className="masthead">
         <p className="kicker">SCENARIOS · 設計情境</p>
         <h1 className="display">在限制下做選擇</h1>
-        <p className="lede">一個情境、幾條限制、兩到四種做法。先在模擬器裡看每種做法的後果，再對照取捨，最後在換了條件的變體裡做決定。</p>
         <p className="muted" style={{ marginTop: 10, fontSize: '0.85rem' }}>{SCENARIOS.length} 個情境 · 已通過 {passed}</p>
       </header>
       {SCENARIO_GROUPS.map((g) => {

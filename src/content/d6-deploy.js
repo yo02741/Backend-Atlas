@@ -6,8 +6,7 @@ export default {
   title: '容器與部署',
   en: 'CONTAINERS & DEPLOYMENT',
   color: 'yellow',
-  tagline: 'Docker 把「在我電腦可以跑」變成可攜的 image；compose 起整套；nginx 站在最前面。',
-  desc: '部署是後端與「機器」交手的地方。這一區把 image 的層、compose 的網路、nginx 的分派畫成看得見的圖，再談環境設定、應用伺服器與雲端基礎。',
+  tagline: 'Linux、Docker、compose、nginx、應用伺服器與雲端基礎。',
   skills: [
     {
       id: 'linux-basics',

@@ -21,18 +21,15 @@ export default function Home() {
     <div className="fade-swap">
       <section className="hero">
         <div className="hero-copy">
-          <p className="kicker">BACKEND ATLAS · 看得見的後端基礎</p>
+          <p className="kicker">BACKEND ATLAS</p>
           <h1 className="display">看得見的<br />後端基礎</h1>
-          <p className="lede">
-            JOIN 用文氏圖動、索引用 B-tree 走、JWT 真的算簽章、Docker 的層一層層疊起來。
-            {DOMAINS.length} 個領域、{skills.length} 個技能、{labCount} 個互動實驗室，練習題在瀏覽器裡真的執行。
-          </p>
+          <p className="lede">用可以操作的圖學後端：JOIN、索引、交易、JWT、Docker 的層。程式題在瀏覽器裡執行。</p>
           <div className="hero-actions">
             <a className="btn" href={`#/skill/${nextStation.id}`}>
               {done.length ? '繼續路線' : '從第一站開始'} →
             </a>
-            <a className="btn ghost" href="#/roadmap">看完整技能盤點</a>
-            <a className="btn ghost" href="#/playground">打開 Playground</a>
+            <a className="btn ghost" href="#/roadmap">技能盤點</a>
+            <a className="btn ghost" href="#/playground">Playground</a>
           </div>
           <div className="hero-stats">
             <div className="stat"><b>{DOMAINS.length}</b><span>領域</span></div>
@@ -49,7 +46,7 @@ export default function Home() {
       <section className="home-section">
         <div className="section-head">
           <h2 className="section-title">建議學習路線</h2>
-          <p>{stations.length} 站、每站約一週。先看得見的、再打地基、接著上線，然後是基礎建設與成本、AI 協作的測試與評測、Agent 的迴圈與資安，最後是知識系統。點站名進入該課。完整的 16 週主線、6 週延伸與里程碑專案在 <a href="#/curriculum">課綱</a>；想把學過的課組成一個系統，走 <a href="#/project">實作路線</a>。</p>
+          <p>每站約一週。<a href="#/curriculum">完整課綱 →</a>　<a href="#/project">實作路線 →</a></p>
         </div>
         <MetroMap stations={stations} isDone={isDone} />
         <div className="metro-legend">
@@ -64,7 +61,7 @@ export default function Home() {
       <section className="home-section">
         <div className="section-head">
           <h2 className="section-title">{DOMAINS.length} 個領域</h2>
-          <p>後端工程師的技能樹，每個領域以一項技術當範例；概念換到別的技術也通。9 之後是延伸：基礎建設、AI 時代的開發與知識系統。</p>
+          <p>1–8 是主線，9–11 是延伸。範例以 Python 與 PostgreSQL 為主。</p>
         </div>
         <div className="domain-grid">
           {DOMAINS.map((d) => {
@@ -91,7 +88,6 @@ export default function Home() {
       <section className="home-section">
         <div className="section-head">
           <h2 className="section-title">從技術名詞找課</h2>
-          <p>每個名詞對應到會用到它的課。學過的課可以到 <a href="#/review">複習頁</a> 跨課抽題驗收。</p>
         </div>
         <div className="kw-cloud">
           {KEYWORDS.map((k) => (
@@ -105,7 +101,6 @@ export default function Home() {
           <h2 className="section-title">設計情境</h2>
           <a href="#/scenarios" className="muted" style={{ fontSize: '0.88rem' }}>全部 {SCENARIOS.length} 個 →</a>
         </div>
-        <p className="muted" style={{ fontSize: '0.88rem', marginTop: -8, marginBottom: 14 }}>一段限制、幾種做法、一個能親手玩後果的模擬器，最後在換了條件的變體裡做決定。</p>
         <div className="scen-grid">
           {SCENARIOS.slice(0, 6).map((sc) => {
             const g = groupOf(sc)

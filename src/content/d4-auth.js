@@ -6,8 +6,7 @@ export default {
   title: '驗證與授權',
   en: 'AUTHENTICATION & AUTHORIZATION',
   color: 'orange',
-  tagline: '你是誰（驗證）與你能做什麼（授權）是兩件事：Session、Token、JWT、OAuth、RBAC、ABAC 各管一段。',
-  desc: 'Token、JWT、OAuth、RBAC、ABAC 這些詞常一起出現，其實分屬不同層：怎麼證明身分、怎麼把身分帶在請求裡、怎麼委託第三方登入、怎麼決定權限。這一區用實驗室把每一段畫出來。',
+  tagline: '驗證確認你是誰，授權決定你能做什麼：Session、Token、JWT、OAuth、RBAC、ABAC。',
   skills: [
     {
       id: 'authn-basics',

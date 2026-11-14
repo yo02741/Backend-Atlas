@@ -109,7 +109,7 @@ export default function Skill({ id }) {
             ))}
           </ul>
           {checkedN === body.checklist.length && !done && (
-            <Callout tone="good" title="全部打勾了">可以按上方的「標記完成」把這一站點亮。</Callout>
+            <Callout tone="good" title="全部打勾了" />
           )}
 
           {related.length > 0 && (

@@ -10,7 +10,6 @@ export default function Labs() {
       <header className="masthead">
         <p className="kicker">LABS · 互動實驗室</p>
         <h1 className="display">動手玩的後端</h1>
-        <p className="lede">每個實驗室都是一個可以切、拉、點的小教具。文氏圖跟著 JOIN 變、B-tree 跟著查詢走、簽章真的算給你看。全部在瀏覽器裡跑，不需要後端。</p>
       </header>
       {DOMAINS.map((d) => {
         const names = LAB_NAMES.filter((n) => findSkill(LAB_META[n].skill)?.domain.id === d.id)

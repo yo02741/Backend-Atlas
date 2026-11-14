@@ -6,8 +6,7 @@ export default {
   title: '資料儲存',
   en: 'DATABASES & STORAGE',
   color: 'violet',
-  tagline: 'SQL 看得見：JOIN、索引、交易用畫面理解，再學文件資料庫與快取怎麼補位。',
-  desc: '後端最難補的基礎是資料庫，因為它的行為藏在引擎裡看不到。這一區把 JOIN、索引、交易畫出來，用 PostgreSQL 當關聯式範例、MongoDB 當文件式範例、Redis 當快取範例，最後談怎麼選。',
+  tagline: 'SQL、JOIN、索引、交易，加上 MongoDB 與 Redis。範例用 PostgreSQL。',
   skills: [
     {
       id: 'sql-basics',

@@ -6,8 +6,7 @@ export default {
   title: '資安',
   en: 'SECURITY',
   color: 'red',
-  tagline: 'OWASP Top 10 是地圖；注入、密碼儲存、XSS/CSRF、秘密管理是你每週都會碰到的四件事。',
-  desc: '後端資安不是額外功能，是每個 endpoint 的預設姿勢。這一區從 OWASP Top 10 出發，把最常見的幾類攻擊做成可以「親手打一次、再親手擋住」的實驗室。',
+  tagline: 'OWASP Top 10、注入、密碼儲存、XSS 與 CSRF、秘密管理、供應鏈、資安維運。',
   skills: [
     {
       id: 'owasp-top10',

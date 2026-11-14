@@ -6,8 +6,7 @@ export default {
   title: '語言與工程實踐',
   en: 'LANGUAGE & ENGINEERING',
   color: 'blue',
-  tagline: '把 Python 當「後端語言」重新學一次：型別、套件、非同步、測試。',
-  desc: '後端語言的工程習慣：型別當文件、依賴可重現、I/O 不阻塞、測試能跑在 CI。以 Python + uv + FastAPI 為範例，概念在 Node、Go、Java 通用。',
+  tagline: 'Python 當後端語言：型別、套件管理、非同步、測試。概念適用其他語言。',
   skills: [
     {
       id: 'python-backend',

@@ -72,3 +72,7 @@ E2E_BASE=http://localhost:<PORT>/ LAB=<Name>Lab node e2e/labs-smoke.mjs
 - 每個 lab 一行：做了什麼互動、教了什麼
 - 已驗證：亮/暗/手機截圖無錯、無 console error
 - 任何不確定或簡化之處
+
+## 文字
+
+寫作規則見 `.claude/skills/atlas-writing/SKILL.md`（介面文字與中文 AI 腔的改法），搭配 `.claude/skills/stop-slop/`。實驗室裡的標題、按鈕、說明直接說它做什麼，不加教學說明段落。

@@ -1,6 +1,6 @@
-# Backend Atlas — 看得見的後端基礎
+# Backend Atlas
 
-看得見的後端基礎學習地圖。JOIN 用文氏圖動、索引用 B-tree 走、JWT 真的算簽章、Docker 的層一層層疊起來；練習題在瀏覽器裡真的執行（PostgreSQL、Python、JavaScript），不需要任何後端。
+後端學習網站。JOIN、索引、交易、JWT、Docker 的層都做成可以操作的圖；練習題在瀏覽器裡執行（PostgreSQL、Python、JavaScript），不需要後端伺服器。
 
 - **線上**：[backend-atlas.web.app](https://backend-atlas.web.app/)（Firebase Hosting）、[yo02741.github.io/Backend-Atlas](https://yo02741.github.io/Backend-Atlas/)（GitHub Pages），每次 push 到 `main` 兩邊同時更新
 - **本機**：`npm install && npm run dev`（第一次會把 Pyodide 複製到 `public/pyodide/`）
@@ -22,40 +22,40 @@
 
 ### 建議學習路線（30 站）
 
-首頁的路線圖：先「看得見」的（HTTP、SQL），再打地基（索引、交易、驗證授權、資安），接著上線（Docker、CI），然後是基礎建設與成本、AI 協作的測試與評測、Agent 的迴圈、授權與資安，最後是知識系統。每站約一週，★ 表示附互動實驗室。完整的週次安排見課綱。
+首頁路線圖的站點，每站約一週。★ 表示附互動實驗室。
 
-| 站 | 課 | 領域 | 這一站要搞懂的事 |
+| 站 | 課 | 領域 | 內容 |
 |---|---|---|---|
 | 1 | 一個 HTTP 請求的一生★ | 網路、HTTP 與 API 設計 | 看清一個請求從瀏覽器到伺服器的每一步。 |
-| 2 | REST API 設計★ | 網路、HTTP 與 API 設計 | 資源、方法、狀態碼：把 API 寫對。 |
-| 3 | SQL 基礎：SELECT 到 GROUP BY | 資料儲存 | SQL 是後端最保值的技能。 |
-| 4 | JOIN 七兄弟★ | 資料儲存 | 用文氏圖與結果表把 JOIN 一次搞懂。 |
-| 5 | 索引與查詢計畫★ | 資料儲存 | 慢查詢的第一個答案。 |
-| 6 | 交易、ACID 與隔離等級★ | 資料儲存 | 扣庫存、下訂單不能沒有它。 |
-| 7 | 驗證基礎：Session vs Token | 驗證與授權 | Token、JWT、OAuth 的地基。 |
-| 8 | JWT 解剖★ | 驗證與授權 | 把 token 拆開，看三段各是什麼。 |
-| 9 | RBAC 與 ABAC 授權模型★ | 驗證與授權 | 誰能做什麼，做成模型。 |
-| 10 | 注入攻擊：SQL 與它的親戚★ | 資安 | 最老也最常見的漏洞，親手擋一次。 |
-| 11 | Docker：image、container、layer★ | 容器與部署 | 搞懂層，build 就不再慢。 |
+| 2 | REST API 設計★ | 網路、HTTP 與 API 設計 | 資源、方法、狀態碼的設計。 |
+| 3 | SQL 基礎：SELECT 到 GROUP BY | 資料儲存 | SELECT、WHERE、GROUP BY 與聚合函式。 |
+| 4 | JOIN 七兄弟★ | 資料儲存 | 各種 JOIN 用文氏圖與結果表對照。 |
+| 5 | 索引與查詢計畫★ | 資料儲存 | 用 B-tree 索引與 EXPLAIN 找出慢查詢的原因。 |
+| 6 | 交易、ACID 與隔離等級★ | 資料儲存 | ACID、隔離等級，以及兩個交易交錯時各讀到什麼。 |
+| 7 | 驗證基礎：Session vs Token | 驗證與授權 | Session 與 Token 兩種帶身分的方式。 |
+| 8 | JWT 解剖★ | 驗證與授權 | 把 token 拆成三段，看簽章怎麼算。 |
+| 9 | RBAC 與 ABAC 授權模型★ | 驗證與授權 | 用角色與屬性決定誰能做什麼。 |
+| 10 | 注入攻擊：SQL 與它的親戚★ | 資安 | SQL 注入的原理與參數化查詢。 |
+| 11 | Docker：image、container、layer★ | 容器與部署 | image、container、layer 與 build 快取。 |
 | 12 | CI 管線：lint、test、build★ | CI/CD 與交付 | GitHub Actions 與 GitLab CI 對照著學。 |
-| 13 | 效能量測與壓測：p95、飽和點、找瓶頸★ | 演算法與系統設計 | 先量再改：看 p95、找飽和點、定位瓶頸。 |
+| 13 | 效能量測與壓測：p95、飽和點、找瓶頸★ | 演算法與系統設計 | 量 p95、找飽和點、定位瓶頸。 |
 | 14 | 網路通不通：從 DNS 到防火牆★ | DevOps 與基礎建設 | 連不上時，從 DNS 一層一層往下查。 |
-| 15 | HTTPS 憑證：要買哪種、怎麼續★ | DevOps 與基礎建設 | 憑證鏈、要買哪種、怎麼續約不過期。 |
+| 15 | HTTPS 憑證：要買哪種、怎麼續★ | DevOps 與基礎建設 | 憑證鏈、憑證種類與自動續約。 |
 | 16 | 導入 Kubernetes 前要準備什麼★ | DevOps 與基礎建設 | 導入 Kubernetes 之前要先備齊的東西。 |
 | 17 | Kubernetes 實作：把服務寫成 manifest | DevOps 與基礎建設 | 把服務寫成 manifest：Deployment、Service、Ingress。 |
-| 18 | FinOps：雲端與 AI 工具的計費結構★ | DevOps 與基礎建設 | 雲端與 AI 工具怎麼計費，錢花在哪裡先看得見。 |
-| 19 | 舊系統整合與逐步替換 | 演算法與系統設計 | 一塊一塊換掉舊系統，不是一次重寫。 |
-| 20 | 可重跑的批次管線：增量、冪等、回補 | DevOps 與基礎建設 | 批次重跑不會變兩倍：增量、冪等、回補。 |
-| 21 | 測試品質：綠燈越多，品質為什麼沒變好★ | 語言與工程實踐 | 覆蓋率是跑過，不是驗過：用突變測試檢查測試。 |
+| 18 | FinOps：雲端與 AI 工具的計費結構★ | DevOps 與基礎建設 | 雲端與 AI 工具的計費結構。 |
+| 19 | 舊系統整合與逐步替換 | 演算法與系統設計 | 逐步替換舊系統，每一步都能回退。 |
+| 20 | 可重跑的批次管線：增量、冪等、回補 | DevOps 與基礎建設 | 增量、冪等、回補：重跑不會重複寫入。 |
+| 21 | 測試品質：綠燈越多，品質為什麼沒變好★ | 語言與工程實踐 | 用突變測試檢查測試有沒有驗到東西。 |
 | 22 | Harness Engineering：同一個 Prompt 為什麼差這麼多★ | AI 時代的開發與 Agent 安全 | 同一個 prompt 跑 N 次：評測集、重試與檢查器。 |
 | 23 | 後端怎麼呼叫模型：串流、結構化輸出、重試與成本 | AI 時代的開發與 Agent 安全 | 逾時、重試、串流與結構化輸出的驗證。 |
 | 24 | Agent 的執行迴圈：工具呼叫、狀態機、預算與中斷★ | AI 時代的開發與 Agent 安全 | 工具呼叫、狀態機、步數與 token 預算。 |
 | 25 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
-| 26 | AI Gateway：模型路由、金鑰集中、用量與成本 | AI 時代的開發與 Agent 安全 | 模型路由、金鑰集中、配額與用量都在一個入口。 |
-| 27 | 地端模型：資料不能出去時怎麼辦 | AI 時代的開發與 Agent 安全 | 資料不能出去時，自架模型要自己負責什麼。 |
-| 28 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述也是攻擊面：模型讀到的比畫面上多。 |
+| 26 | AI Gateway：模型路由、金鑰集中、用量與成本 | AI 時代的開發與 Agent 安全 | 模型路由、金鑰集中、配額與用量。 |
+| 27 | 地端模型：資料不能出去時怎麼辦 | AI 時代的開發與 Agent 安全 | 資料不能送出去時，自架模型要自己負責的事。 |
+| 28 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述被下毒與 rug pull 的防法。 |
 | 29 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
-| 30 | Semantic Layer：讓 agent 查資料不用猜欄位★ | 知識系統：從 RAG 到 LLM Wiki | 讓 agent 用定義好的指標查資料，不猜欄位。 |
+| 30 | Semantic Layer：讓 agent 查資料不用猜欄位★ | 知識系統：從 RAG 到 LLM Wiki | agent 用定義好的指標查資料，不猜欄位。 |
 
 站點定義在 `src/content/roadmap.js` 的 `PATH`（`label` 是地圖上的短站名）。
 

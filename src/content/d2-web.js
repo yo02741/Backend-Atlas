@@ -6,8 +6,7 @@ export default {
   title: '網路、HTTP 與 API 設計',
   en: 'HTTP & API DESIGN',
   color: 'aqua',
-  tagline: 'HTTP 的另一端：由你決定狀態碼、標頭與資源長什麼樣。',
-  desc: 'API 是後端對外的合約。這一區把 HTTP 從「fetch 就好」拆成看得見的步驟，再學怎麼設計別人用起來不會罵的 REST API：資源、方法、狀態碼、分頁、錯誤格式、版本。',
+  tagline: 'HTTP 與 API 設計：狀態碼、標頭、REST、分頁、錯誤格式、版本。',
   skills: [
     {
       id: 'http-basics',

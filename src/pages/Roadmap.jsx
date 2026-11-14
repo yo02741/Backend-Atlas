@@ -54,7 +54,7 @@ export default function Roadmap({ initialKw = '' }) {
         if (!list.length) return null
         return <DomainBlock key={d.id} domain={d} skills={list} isDone={isDone} kw={kw} progress={progress} />
       })}
-      {shown === 0 && <p className="status-msg">沒有符合的技能。換個關鍵字試試。</p>}
+      {shown === 0 && <p className="status-msg">沒有符合的技能</p>}
     </div>
   )
 }

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinic-api
+  namespace: clinic
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: clinic-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # 先多開一個新的
+      maxUnavailable: 0    # 可用的 Pod 數不低於 replicas；要搭配如實回報的 readiness 探針
+  template:
+    metadata:
+      labels:
+        app: clinic-api
+    spec:
+      terminationGracePeriodSeconds: 30   # 要大於 preStop 的等待 + 最長的請求
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001                  # Dockerfile 建的 UID
+      containers:
+        - name: api
+          image: registry.gitlab.example/clinic/api:3f9c2a1b   # commit SHA，由 CI 換成該次的版本
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: clinic-api-config
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: clinic-api-secret
+                  key: DATABASE_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: clinic-api-secret
+                  key: JWT_SECRET
+          readinessProbe:               # 失敗：從 Service 移出，恢復後加回
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:                # 失敗：重啟容器。不能打會查資料庫的 /ready
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:                    # 示意值：依實際的指標在尖峰時的用量調整
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          lifecycle:
+            preStop:                    # 從 Service 後端移除要幾秒才生效：這段時間照常服務，之後才收到 SIGTERM
+              exec:
+                command: ["sleep", "5"]

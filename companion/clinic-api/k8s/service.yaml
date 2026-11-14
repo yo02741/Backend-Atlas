@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clinic-api
+  namespace: clinic
+spec:
+  selector:
+    app: clinic-api        # 要對得到 Pod 的 label；對不到不會報錯，只是後面沒有位址
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000

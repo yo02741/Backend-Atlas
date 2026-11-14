@@ -3,6 +3,11 @@
 export const PROJECT = {
   title: '從零做完一個門診掛號後端',
   summary: '一個階段接一個階段，把前面學過的課組成一個完整的系統：資料表、領域邏輯、API、權限、並行搶號、快取與限流、容器與 CI、可觀測性、給 agent 的唯讀查詢介面、部署到 Kubernetes。每階段都有在瀏覽器裡跑的驗收測試。',
+  // 參考實作：同一個題目做成可以在本機跑起來的專案（repo 的 companion/clinic-api/）
+  companion: {
+    url: 'https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api',
+    note: '階段 1–8 與第 10 階段做成一個可以 clone 下來跑的專案：FastAPI、PostgreSQL、Redis，附測試、Dockerfile、compose 與 Kubernetes manifest。',
+  },
 }
 
 // { id, no, title, summary, lessons: [技能 id], exercises: [程式題 id] }

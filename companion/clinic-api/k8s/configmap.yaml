@@ -1,0 +1,13 @@
+# 非機密設定。環境變數只在容器啟動時讀一次：改了之後要 kubectl rollout restart deployment/clinic-api
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clinic-api-config
+  namespace: clinic
+data:
+  LOG_LEVEL: INFO
+  REDIS_URL: redis://redis.clinic.svc.cluster.local:6379/0   # 換成實際的 Redis 位址
+  SESSION_CACHE_TTL: "30"
+  RATE_LIMIT_CAPACITY: "5"
+  RATE_LIMIT_REFILL_SECONDS: "6"
+  DB_POOL_SIZE: "5"          # 連線數 ≈ (pool + overflow 5) ×（replicas + maxSurge），不能超過資料庫的 max_connections

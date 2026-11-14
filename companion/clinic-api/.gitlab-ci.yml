@@ -1,0 +1,66 @@
+# 把這個目錄當成一個獨立的 GitLab 專案時，這個檔案放在專案根目錄。
+# push ──► lint ──► test（+ postgres、redis service）──► build（推 $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA）──► deploy（只有 main，手動核准）
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+default:
+  image: python:3.12-slim
+
+.python:
+  before_script:
+    - pip install --no-cache-dir uv==0.11.32
+    - uv sync --locked            # lock 和 pyproject 不一致就直接失敗
+
+lint:
+  stage: lint
+  extends: .python
+  script:
+    - uv run ruff check .
+
+test:
+  stage: test
+  extends: .python
+  services:
+    - postgres:16
+    - redis:7
+  variables:
+    POSTGRES_DB: clinic_test
+    POSTGRES_USER: clinic
+    POSTGRES_PASSWORD: ci-only-password       # CI 內的拋棄式測試資料庫，job 結束就消失
+    DATABASE_URL: postgresql://clinic:ci-only-password@postgres:5432/clinic_test   # 主機是 service 名稱，不是 localhost
+    REDIS_URL: redis://redis:6379/15
+  script:
+    - uv run alembic upgrade head
+    - uv run pytest -q                        # 含並發測試：需要真的 PostgreSQL
+
+build:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind                          # 需要 runner 允許 privileged
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+deploy_production:
+  stage: deploy
+  image: registry.gitlab.example/tools/kubectl:1.31   # 示意：換成內部維護、裝有 kubectl 的映像
+  environment:
+    name: production
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual                            # 有人按下才部署
+  script:
+    - kubectl apply -n clinic -f k8s/configmap.yaml -f k8s/service.yaml -f k8s/ingress.yaml -f k8s/pdb.yaml
+    # 1. migration：每一版一個 Job，完成才往下走
+    - sed "s/__SHA__/$CI_COMMIT_SHA/g" k8s/migrate-job.yaml | kubectl apply -n clinic -f -
+    - kubectl wait -n clinic --for=condition=complete --timeout=300s "job/clinic-migrate-$CI_COMMIT_SHA"
+    # 2. 換映像，等滾動更新完成；逾時這個 job 就失敗
+    - kubectl set image -n clinic deployment/clinic-api "api=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - kubectl rollout status -n clinic deployment/clinic-api --timeout=300s

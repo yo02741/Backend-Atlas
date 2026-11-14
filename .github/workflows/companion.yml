@@ -1,0 +1,88 @@
+# 參考專案 companion/clinic-api（實作路線的可執行版本）的測試。
+# 只在 companion/ 或這個檔案變動時跑，不影響網站的部署。
+name: Companion（clinic-api）
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'companion/**'
+      - '.github/workflows/companion.yml'
+  pull_request:
+    paths:
+      - 'companion/**'
+      - '.github/workflows/companion.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: companion/clinic-api
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: clinic
+          POSTGRES_PASSWORD: ci-only-password   # 這個 job 專用的拋棄式資料庫
+          POSTGRES_DB: clinic_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U clinic -d clinic_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://clinic:ci-only-password@localhost:5432/clinic_test
+      REDIS_URL: redis://localhost:6379/15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.11.32"
+      - run: uv sync --locked
+      - run: uv run alembic upgrade head
+      - run: uv run ruff check .
+      - run: uv run pytest          # 含並發測試：多個執行緒、各自的連線搶同一個診次
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SEED_PASSWORD: ci-only-password           # 只存在於這個 job 的測試帳號密碼
+    steps:
+      - uses: actions/checkout@v4
+      - name: 建置映像並啟動 api + postgres + redis（等 healthcheck 通過）
+        run: docker compose up -d --build --wait
+      - name: Migration
+        run: docker compose exec -T api alembic upgrade head
+      - name: Seed
+        run: docker compose exec -T -e SEED_PASSWORD api python -m clinic.seed
+      - name: 健康檢查
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:8000/healthz
+          curl --fail --silent --show-error http://127.0.0.1:8000/ready
+      - name: 掛號流程（登入 → 查診次 → 掛號 → 重複掛號 409 → 取消 → /metrics）
+        run: bash scripts/smoke.sh
+      - name: 失敗時印出日誌
+        if: failure()
+        run: docker compose logs
+      - name: 清除
+        if: always()
+        run: docker compose down -v

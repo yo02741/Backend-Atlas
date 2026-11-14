@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: clinic-api
+  namespace: clinic
+spec:
+  ingressClassName: nginx          # 換成叢集實際的 IngressClass（kubectl get ingressclass）
+  tls:
+    - hosts:
+        - clinic.example
+      secretName: clinic-tls       # 型別 kubernetes.io/tls，放憑證與私鑰；不在這個目錄裡
+  rules:
+    - host: clinic.example
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: clinic-api
+                port:
+                  number: 80

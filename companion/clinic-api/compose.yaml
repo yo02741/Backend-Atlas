@@ -1,0 +1,55 @@
+# 本機開發用：api + PostgreSQL 16 + Redis 7。
+# 這裡的密碼與 JWT_SECRET 是寫在檔案裡的開發用假值，僅供本機；正式環境的值由平台注入，不進版控。
+name: clinic
+
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DATABASE_URL: postgresql://clinic:local-dev-only@postgres:5432/clinic   # 主機名稱就是服務名稱
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: local-dev-only-jwt-secret-not-for-production                # 僅供本機
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy    # 等資料庫真的能接受連線，不只是容器啟動
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: clinic
+      POSTGRES_PASSWORD: local-dev-only    # 僅供本機
+      POSTGRES_DB: clinic
+    ports:
+      - "127.0.0.1:5432:5432"              # 只綁本機：給 psql 與在主機上跑的測試用
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinic -d clinic"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

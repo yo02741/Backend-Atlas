@@ -1,0 +1,31 @@
+# 用同一個映像跑一次 migration。Job 的 Pod template 建立後不能改，所以名稱帶 commit SHA；
+# __SHA__ 由 CI 代換（見 .gitlab-ci.yml 的 deploy_production）。
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: clinic-migrate-__SHA__
+  namespace: clinic
+spec:
+  backoffLimit: 0                  # 失敗不自動重試，交給人看
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 86400   # 結束一天後自動清掉
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: migrate
+          image: registry.gitlab.example/clinic/api:__SHA__
+          command: ["alembic", "upgrade", "head"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: clinic-api-secret
+                  key: DATABASE_URL
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

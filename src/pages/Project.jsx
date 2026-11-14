@@ -27,6 +27,12 @@ function Overview() {
         <h1 className="display">{PROJECT.title}</h1>
         <p className="lede">{PROJECT.summary}</p>
       </header>
+      {PROJECT.companion && (
+        <p className="proj-companion">
+          <strong>參考實作</strong>　{PROJECT.companion.note}
+          　<a href={PROJECT.companion.url} target="_blank" rel="noreferrer"><code>companion/clinic-api</code> ↗</a>
+        </p>
+      )}
       {STAGES.length === 0 && <p className="muted">實作路線撰寫中。</p>}
       <ol className="proj-stages">
         {STAGES.map((s) => {

@@ -1,0 +1,11 @@
+# 節點維護時一次最多驅逐到剩 1 個；minAvailable 不能設成和 replicas 一樣，否則 drain 永遠卡住
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: clinic-api
+  namespace: clinic
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: clinic-api

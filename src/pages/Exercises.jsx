@@ -31,6 +31,15 @@ export default function Exercises() {
         </div>
       </header>
 
+      <a href="#/review" className="rv-entry">
+        <span className="rv-entry-text">
+          <span className="kicker">REVIEW · 複習</span>
+          <b>混合複習：跨課抽 10 或 20 題選擇題</b>
+          <span className="rv-entry-desc">範圍可選已完成的課、指定領域、上次答錯的題或全部；交卷後看解析與各領域的答對率。</span>
+        </span>
+        <span className="btn small">開始複習 →</span>
+      </a>
+
       <div className="toolbar">
         <button className={`chip${!kind ? ' on' : ''}`} onClick={() => setKind('')}>全部類型</button>
         {Object.entries(KINDS).map(([k, v]) => <button key={k} className={`chip${kind === k ? ' on' : ''}`} onClick={() => setKind(kind === k ? '' : k)}>{v.label}</button>)}

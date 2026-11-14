@@ -91,7 +91,7 @@ export default function Home() {
       <section className="home-section">
         <div className="section-head">
           <h2 className="section-title">從技術名詞找課</h2>
-          <p>每個名詞對應到會用到它的課。</p>
+          <p>每個名詞對應到會用到它的課。學過的課可以到 <a href="#/review">複習頁</a> 跨課抽題驗收。</p>
         </div>
         <div className="kw-cloud">
           {KEYWORDS.map((k) => (

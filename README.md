@@ -93,6 +93,7 @@
 
 - **程式題 181 道**（Python 115、SQL 34、config 20、JavaScript 12）：在瀏覽器裡真的執行並跑測試——SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證。
 - **選擇題 408 道**：每課 3 題，含程式碼判讀與情境題。
+- **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。
 
 ### 課綱（16 週主線 + 6 週延伸）
 
@@ -144,10 +145,11 @@ src/
   labs/            互動實驗室：ui.jsx（共用元件）、lab.css、index.js（登錄表）、*Lab.jsx
     scenarios/       情境模擬器 *ScenarioLab.jsx（index.js 懶載入）
   runtime/         py.js + py.worker.js（Pyodide）、sql.js（PGlite）、js.js + js.worker.js、check.js（評分）
-  pages/           Home / Roadmap / Domain / Skill / Labs / Exercises / Playground / Curriculum / Scenarios / Project
+  pages/           Home / Roadmap / Domain / Skill / Labs / Exercises / Review / Playground / Curriculum / Scenarios / Project
   App.jsx          hash 路由與外殼；首頁以外的頁面 React.lazy 懶載入（CodeMirror、題庫、課綱各自成 chunk），換頁走 startTransition
   components/      MetroMap、HeroArt、bits、CodeEditor、ExerciseRunner、Quiz、Decisions、Output、Markdown、Account（登入按鈕與帳號選單）
   assess.js        一個技能的驗收狀態（程式題 + 選擇題）
+  review.js        複習頁的抽題與錯題紀錄（純函式，Node 可測；localStorage `atlas-review-v1`）
   progress.js      localStorage 進度（useProgress），並提供同步層用的 getProgress / replaceProgress / onLocalChange
   progressData.js  進度的資料形狀、正規化、三方合併（純函式，Node 可測）
   cloud/           選配的登入同步：config.js（讀 VITE_FIREBASE_*）、sync.js（同步狀態機，主 chunk）、firebase.js（SDK，懶載入）
@@ -155,7 +157,7 @@ src/
   harness.jsx      開發用：?lab=JwtLab 只渲染該實驗室
   verify.jsx       開發用：?verify=1 把每題解答與起始碼丟進真實執行環境評分；?verify=deep 執行深入內容的每個 run 區塊
 docs/              CURRICULUM.md、PLAN-2026Q4.md、AUDIT.md、CONTRIBUTING-lessons.md、CONTRIBUTING-labs.md、CONTRIBUTING-quizzes.md、CONTRIBUTING-scenarios.md
-scripts/           copy-pyodide.mjs、validate-content.mjs、validate-quizzes.mjs、validate-scenarios.mjs、test-progress.mjs
+scripts/           copy-pyodide.mjs、validate-content.mjs、validate-quizzes.mjs、validate-scenarios.mjs、test-progress.mjs、test-review.mjs、check-links.mjs
 firestore.rules    雲端進度的存取規則（本人才能讀寫、文件形狀固定）；firebase.json 是 emulator 設定
 .env.e2e           e2e 用的 Firebase 設定（指向 emulator 的 demo 專案）
 e2e/               Playwright 腳本（見下）
@@ -163,7 +165,7 @@ e2e/               Playwright 腳本（見下）
 
 ## 路由
 
-hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/skill/sql-joins`、`#/labs`、`#/lab/SqlJoinLab`、`#/scenarios`、`#/scenario/pagination`、`#/exercises`、`#/exercise/sql-joins-1`、`#/project`、`#/project/concurrency`、`#/playground?lang=sql`（課程的「在 Playground 開啟」會帶 `&code=`）。
+hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/skill/sql-joins`、`#/labs`、`#/lab/SqlJoinLab`、`#/scenarios`、`#/scenario/pagination`、`#/exercises`、`#/review`（`?seed=42` 固定抽題）、`#/exercise/sql-joins-1`、`#/project`、`#/project/concurrency`、`#/playground?lang=sql`（課程的「在 Playground 開啟」會帶 `&code=`）。
 
 ## 新增內容
 
@@ -178,7 +180,7 @@ hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/
 
 ```bash
 npm run validate                 # 技能索引與內文對應、深入內容、實作路線、題庫、情境結構
-npm run test:unit                # 進度合併規則（兩台裝置、離線、取消完成）
+npm run test:unit                # 進度合併規則（兩台裝置、離線、取消完成）、複習頁的抽題與錯題紀錄
 npm run check:links              # 延伸閱讀與深入內容裡的外部連結（需要連外網；Actions 的 Links workflow 每月跑一次）
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
 npm run e2e:runtime              # Playground 的 Python / SQL / JS 真的能跑

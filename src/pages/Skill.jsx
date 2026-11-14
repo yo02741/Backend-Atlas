@@ -95,6 +95,7 @@ export default function Skill({ id }) {
           {assess.total === 0 && <p className="muted">這一課的驗收題目撰寫中。</p>}
           {assess.exercises.map((ex) => <ExerciseRunner key={ex.id} exercise={ex} compact />)}
           {assess.quiz && <Quiz key={s.id} skillId={s.id} questions={assess.quiz} />}
+          {assess.quiz && <p className="rv-after">做完了？<a href="#/review">到複習頁混合練習 →</a></p>}
 
           <h2 id="check">自我檢核 <span className="muted" style={{ fontSize: '0.85rem', fontFamily: 'var(--sans)', fontWeight: 500 }}>{checkedN} / {body.checklist.length}</span></h2>
           <ul className="checklist">

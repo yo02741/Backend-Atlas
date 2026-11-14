@@ -22,8 +22,9 @@ const Curriculum = lazy(() => import('./pages/Curriculum.jsx'))
 const Scenarios = lazy(() => import('./pages/Scenarios.jsx'))
 const ScenarioPage = lazy(() => import('./pages/Scenarios.jsx').then((m) => ({ default: m.ScenarioPage })))
 const Project = lazy(() => import('./pages/Project.jsx'))
+const Review = lazy(() => import('./pages/Review.jsx'))
 
-/* hash 路由：#/、#/roadmap（?kw=）、#/domain/:id、#/skill/:id、#/labs、#/lab/:Name */
+/* hash 路由：#/、#/roadmap（?kw=）、#/domain/:id、#/skill/:id、#/labs、#/lab/:Name、#/review（?seed=） */
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash)
   const [pending, startTransition] = useTransition()
@@ -52,6 +53,7 @@ function parseHash(hash) {
   if (seg[0] === 'scenario' && seg[1]) return { view: 'scenario', id: seg[1] }
   if (seg[0] === 'exercise' && seg[1]) return { view: 'exercise', id: seg[1] }
   if (seg[0] === 'project') return { view: 'project', id: seg[1] || '' }
+  if (seg[0] === 'review') return { view: 'review', seed: params.get('seed') || '' }
   if (seg[0] === 'playground') return { view: 'playground', lang: params.get('lang') || seg[1] || 'python', code: params.get('code') || '' }
   return { view: 'home' }
 }
@@ -59,7 +61,7 @@ function parseHash(hash) {
 
 /* 每頁的瀏覽器分頁標題：書籤與歷史紀錄才分得出是哪一頁 */
 const SITE = 'Backend Atlas'
-const SECTION_TITLES = { roadmap: '技能盤點', labs: '實驗室', exercises: '練習題', curriculum: '課綱', scenarios: '設計情境', playground: 'Playground', project: '實作路線' }
+const SECTION_TITLES = { roadmap: '技能盤點', labs: '實驗室', exercises: '練習題', curriculum: '課綱', scenarios: '設計情境', playground: 'Playground', project: '實作路線', review: '複習' }
 function titleFor(route) {
   switch (route.view) {
     case 'skill': return findSkill(route.id)?.title
@@ -107,6 +109,7 @@ export default function App() {
     case 'lab': page = <LabPage name={route.name} />; break
     case 'exercises': page = <Exercises />; break
     case 'project': page = <Project key={route.id} id={route.id} />; break
+    case 'review': page = <Review key={route.seed} seed={route.seed} />; break
     case 'curriculum': page = <Curriculum week={route.week} />; break
     case 'scenarios': page = <Scenarios />; break
     case 'scenario': page = <ScenarioPage id={route.id} />; break

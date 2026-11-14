@@ -13,7 +13,7 @@ const { ALL_DOMAINS } = await import(src('content/roadmap.js'))
 const { STAGES } = await import(src('content/project/stages.js'))
 const domains = ALL_DOMAINS.filter((d) => d.skills.length).map((d) => d.id)
 const routes = [
-  '#/', '#/roadmap', '#/roadmap?kw=JWT', '#/labs', '#/curriculum', '#/curriculum?week=21', '#/exercises',
+  '#/', '#/roadmap', '#/roadmap?kw=JWT', '#/labs', '#/curriculum', '#/curriculum?week=21', '#/exercises', '#/review',
   '#/exercise/sql-joins-1', '#/exercise/jwt-1', '#/exercise/http-basics-1', '#/exercise/gitlab-cicd-1', '#/exercise/project-schema-1',
   '#/playground', '#/playground?lang=sql', '#/playground?lang=js',
   '#/scenarios', ...scenarios.map((id) => `#/scenario/${id}`),

@@ -48,18 +48,18 @@ const EXPLAIN = [
   { title: '現況：連線先炸，CPU 也快滿', body: ['8 台 API × 每台 20 條 = 160 條連線去搶 max_connections 100，尖峰時拿不到連線的請求直接失敗。CPU 80% 一部分是上百個 backend 程序的切換與閒置成本，但主要還是查詢本身。', '拉「API 台數」看：再加 API 只會讓連線更滿，DB 一點都沒變快。先解連線，因為它最便宜也最急。'] },
   { title: 'pgbouncer：160 條客戶端連線，DB 端只開 20 條', body: [
     'transaction pooling：API 端還是 160 條客戶端連線，但只有「交易進行中」才占用一條真正的伺服器連線，所以 DB 端 20 條就夠。連線數的紅字消失，CPU 少一點。',
-    '查詢的成本一點都沒少，能撐的 QPS 幾乎不變——連線池解的是連線，不是算力。',
+    '查詢的成本一點都沒少，能撐的 QPS 幾乎不變：連線池解的是連線，不是算力。',
     'transaction 模式下不能用 session 層的功能（SET、advisory lock、LISTEN、舊版 prepared statement）；程式碼靠這些的話先改掉，不然只能用 session 模式，那就省不到多少。',
   ] },
-  { title: '讀寫分離：85% 的讀分到兩台副本', body: ['主庫只剩寫入與複製，讀由兩台副本平分；三台的 CPU 都遠低於原本那一台，能撐的 QPS 變成兩倍多。拉「讀比例」看：讀越多，副本的好處越大；寫越多，主庫還是那一台在扛。', '代價是複製延遲：剛寫完就讀副本可能讀到舊的。要做 read-your-writes——寫後幾秒內讀主庫，或帶 LSN 等副本追上。'] },
+  { title: '讀寫分離：85% 的讀分到兩台副本', body: ['主庫只剩寫入與複製，讀由兩台副本平分；三台的 CPU 都遠低於原本那一台，能撐的 QPS 變成兩倍多。讀比例越高，副本的好處越大；寫越多，主庫還是那一台在扛。', '代價是複製延遲：剛寫完就讀副本可能讀到舊的。要做 read-your-writes：寫後幾秒內讀主庫，或帶 LSN 等副本追上。'] },
   { title: '表分割：5 億列切成 32 個分區，還在同一台', body: [
     '帶 user_id 的查詢只掃 1 個分區：索引變小、VACUUM 一次做一個分區、砍舊資料變成 DROP PARTITION。但 CPU 和寫入還是同一台在扛，所以這一步是「整理」不是「擴展」。',
-    '切到「跨全表統計」看：32 個分區全掃，比沒分割還多一點開銷。分區鍵要跟查詢條件一致，選錯就是每個查詢都變 32 倍。',
+    '「跨全表統計」要掃全部 32 個分區，比沒分割還多一點開銷。分區鍵要跟查詢條件一致，選錯就是每個查詢都變 32 倍。',
     '分區鍵怎麼選：查詢都帶 user_id 就 HASH (user_id)；要定期砍舊資料就 RANGE (created_at)。兩種需求都有時，以更常跑的那種查詢為準，另一種用索引撐。',
   ] },
   { title: '分片：依 user_id 切到 4 台，每台各自一整套', body: [
     '每個分片都是「主 + 讀副本 + pgbouncer」；帶 user_id 的查詢只打 1 台，讀、寫、儲存容量都 ×4，是唯一能突破單機寫入上限的做法。',
-    '切到「跨全表統計」：每個查詢要打 4 台再合併，容量回到原點；跨分片 JOIN 與交易更是做不到。備份、migration、重新分片全部 ×4——這是最後手段。',
+    '「跨全表統計」的每個查詢要打 4 台再合併，容量回到原點；跨分片 JOIN 與交易更是做不到。備份、migration、重新分片全部 ×4，這是最後手段。',
     '動手前的前提：前三步都做了、機器也升到頂；主鍵改用全域唯一的 ID（UUIDv7 或 snowflake），跨片交易改成 saga 或設計成不需要。',
   ] },
 ]
@@ -80,7 +80,7 @@ export default function DbScalingScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="同一台快撐不住的 PostgreSQL，四步疊上去看每一步解了什麼"
-         blurb="按「下一步」逐階段加上連線池、讀副本、分區、分片；拉 API 台數、每台連線、讀比例，切查詢型態，看連線數、CPU、能撐的 QPS 與複雜度怎麼變。">
+         blurb="逐階段加上連線池、讀副本、分區、分片，連線數、CPU、能撐的 QPS 與複雜度怎麼變。">
       <LabControls>
         <Stepper step={step} total={STAGES.length} onStep={setStep} playing={playing} onPlay={toggle} labels={STAGES} />
       </LabControls>
@@ -130,7 +130,7 @@ export default function DbScalingScenarioLab() {
             <p>一台扛全部時 CPU ≈ 72% + 每條連線 0.05%；讀寫分離後主庫只算寫入加 5% 複製開銷，副本平分讀；能撐的 QPS 依最忙的那個節點換算（現況 80% 對應 4,000 QPS）。</p>
             <p>絕對值都是示意。要看的是：哪一步讓紅字消失、哪一步讓 QPS 跳、哪一步只是把痛換個地方。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">順序幾乎總是：慢查詢與索引 → 連線池 → 讀寫分離 → 分割 → 垂直升級 → 分片。看到「連線滿了」先問 CPU 幾 %：CPU 低就是連線池；CPU 高才是算力問題。跳過前面直接分片的團隊，通常是被跨分片查詢和 migration ×4 拖垮的。</Callout>
+          <Callout title="什麼時候會踩到">順序幾乎總是：慢查詢與索引 → 連線池 → 讀寫分離 → 分割 → 垂直升級 → 分片。看到「連線滿了」先問 CPU 幾 %：CPU 低就是連線池；CPU 高才是算力問題。跳過前面直接分片的團隊，通常是被跨分片查詢和 migration ×4 拖垮的。</Callout>
         </div>
       </LabGrid>
       <style>{`

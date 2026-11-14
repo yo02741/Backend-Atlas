@@ -29,15 +29,15 @@ const EVENTS = {
   takeover: { label: '套件被接管、發布惡意新版', pkg: 'fastlib', bad: '惡意版本被裝進來', ok: '惡意版本沒有裝進來', chip: '已安裝（惡意版本）',
     short: '被接管',
     blurb: 'fastlib 維護者的帳號被接管，昨天發布了 2.1.5，安裝腳本會讀取環境變數並送到外部伺服器。專案的依賴宣告寫的是範圍 `^2.1.0`。',
-    works: '攔得住的是 **lock 檔＋CI 鎖定安裝**（不重新解析，就不會選到新版）與**延遲採用**（新版本先等幾天）。漏洞掃描通常來不及，剛發布的惡意版本還沒有紀錄；限制來源也沒用，名稱與來源都是對的。' },
+    works: '攔得住的是 **lock 檔＋CI 鎖定安裝**（不重新解析，就不會選到新版）與延遲採用（新版本先等幾天）。漏洞掃描通常來不及，剛發布的惡意版本還沒有紀錄；限制來源也沒用，名稱與來源都是對的。' },
   typo: { label: '名稱相近的假套件', pkg: 'fast1ib', bad: '假套件被裝進來', ok: '假套件沒有裝進來', chip: '已安裝（假套件）',
     short: '假套件',
-    blurb: '有人新增依賴時把 `fastlib` 打成 `fast1ib`（第五個字元是數字 1），這就是 typosquatting。公開套件庫上真的有這個名稱，是兩天前才發布的假套件。',
+    blurb: '有人新增依賴時把 `fastlib` 打成 `fast1ib`（第五個字元是數字 1），這叫 typosquatting。公開套件庫上確實有這個名稱，是兩天前才發布的假套件。',
     works: '攔得住的是**限制套件來源**（允許清單裡沒有這個名稱）；延遲採用只在假套件還很新時有效。lock 檔與鎖定安裝攔不住：lock 檔防的是「之後裝到不一樣的東西」，不防第一次就鎖進惡意版本。新增依賴的那一刻才是審查點。' },
   nolock: { label: 'lock 檔沒進版控', pkg: 'poolman', bad: '每次裝到不同版本', ok: '每次裝到相同版本', chip: '已安裝（和上週五不同）',
     short: '沒 lock 檔',
     blurb: 'poolman 的宣告是範圍 `^0.8.0`，解析結果沒有被記錄下來。上週五裝到 0.8.2；週末發布了 0.8.3（不是惡意版本），今天同一個 commit 裝到的就不一樣了。',
-    works: '解法是把 **lock 檔提交進版控**，而且 **CI 用鎖定安裝**，兩個都要。只有 lock 檔、CI 卻重新解析，裝到的仍然不是 lock 檔的版本。延遲採用只是把變動延後幾天。' },
+    works: '解法是 **lock 檔提交進版控，而且 CI 用鎖定安裝**，兩個都要。只有 lock 檔、CI 卻重新解析，裝到的仍然不是 lock 檔的版本。延遲採用只是把變動延後幾天。' },
 }
 const ORDER = ['vuln', 'takeover', 'typo', 'nolock']
 const STAGES = ['解析版本', '來源與雜湊', '漏洞掃描', '安裝']
@@ -96,7 +96,7 @@ function simulate(ev, d) {
       return { outcome: 'blocked', by: '限制套件來源', ver: null, st: [s1, ['block', 'fast1ib 不在允許清單內，指定的來源沒有這個名稱 → 下載被拒，安裝失敗。'], SKIP, SKIP] }
     }
     return { outcome: 'bad', by: null, ver: '0.0.3', st: [s1,
-      ['', `公開套件庫上真的有 fast1ib 這個名稱，下載成功。${locked ? 'SHA-256 與 lock 檔相符——lock 檔忠實地鎖住了假套件。' : ''}`],
+      ['', `公開套件庫上確實有 fast1ib 這個名稱，下載成功。${locked ? 'SHA-256 與 lock 檔相符：lock 檔忠實地鎖住了假套件。' : ''}`],
       !d.scan ? NO_SCAN : ['', '漏洞資料庫比對的是已知漏洞；fast1ib 還沒被回報，掃描通過。'],
       ['bad', 'fast1ib 0.0.3 裝進來，和其他依賴一樣，在程式的權限下執行。'],
     ] }
@@ -140,7 +140,7 @@ export default function SupplyChainLab() {
 
   return (
     <Lab className="sc" accent="red" kicker="SECURITY LAB" title="供應鏈：一個依賴出問題時，哪一道防線攔得住"
-         blurb="自己寫的程式碼只佔最終執行內容的一小部分，其餘來自依賴，而且都在同樣的權限下執行。選一種事件、打開幾道防線，按「安裝依賴」看 CI 這次裝進了什麼、在哪一步被攔下。">
+         blurb="自己寫的程式碼只佔最終執行內容的一小部分，其餘來自依賴，而且都在同樣的權限下執行。各種事件下 CI 裝進了什麼、在哪一道防線被攔下。">
       <LabControls>
         <Seg label="事件" tinted value={ev} onChange={(v) => { setEv(v); setStep(0) }} options={ORDER.map((k) => ({ value: k, label: EVENTS[k].label }))} />
         <Toggle label="lock 檔進版控（版本＋雜湊）" checked={d.lock} onChange={on('lock')} />
@@ -190,7 +190,7 @@ export default function SupplyChainLab() {
           </LabStage>
 
           <Stats min={150} className="sc-stats">
-            <Stat label="這次安裝的結果" value={result[0]} tone={result[1]} note={done ? '' : '按「安裝依賴」看每一步'} />
+            <Stat label="這次安裝的結果" value={result[0]} tone={result[1]} note={done ? '' : '尚未安裝'} />
             <Stat label="被攔下的位置" value={res.by || '沒有攔下'} tone={res.by ? '' : 'bad'} note={res.by && blockAt >= 0 ? `在「${STAGES[blockAt]}」這一步` : ''} />
             <Stat label="受影響的服務數" value={`${affected} / ${ALL.length}`} tone={affected ? (res.by || res.outcome === 'later' ? 'warn' : 'bad') : 'ok'}
                   note={ev === 'vuln' ? (res.by ? '已上線的要升級後重新部署' : '沒有人知道') : affected ? '假設每個服務的防線都相同' : `沒有服務裝到${ev === 'nolock' ? '不同的版本' : '它'}`} />
@@ -220,7 +220,7 @@ export default function SupplyChainLab() {
             </table>
           </div>
           <p className="sc-foot">△：延遲採用只在假套件還很新時有效；對沒有 lock 檔的版本變動只是延後。沒有哪一道防線涵蓋全部四種事件。</p>
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             依賴宣告寫的是範圍、lock 檔沒提交，CI 每次重新解析；CI 有 lock 檔，Dockerfile 裡卻用沒鎖定的指令安裝；工具產生的 lock 檔 diff 很長，在 PR 裡被略過；新增依賴時從搜尋結果複製名稱，沒有核對拼寫與來源；漏洞掃描每次都有幾十項、沒有分級，大家開始忽略。
           </Callout>
           <Callout tone="good" title="CI 的嚴格模式長這樣">

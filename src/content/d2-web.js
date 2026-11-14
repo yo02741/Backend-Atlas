@@ -33,7 +33,7 @@ export default {
       title: 'REST API 設計',
       en: 'REST design',
       level: 1,
-      summary: '資源是名詞、方法是動詞、狀態碼是結果——把這三件事對齊，API 就好用。',
+      summary: '資源用名詞命名、操作用 HTTP 方法表達、結果用狀態碼回報。',
       example: { primary: 'REST over JSON', alts: ['GraphQL', 'gRPC'] },
       keywords: [],
       lab: 'RestLab',

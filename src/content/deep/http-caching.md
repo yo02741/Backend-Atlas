@@ -7,7 +7,7 @@
 1. `index.html` 的回應帶著 `Cache-Control: max-age=86400`，瀏覽器在一天內直接用存著的舊 `index.html`，而舊的 `index.html` 引用的是舊的 `app.js`。
 2. 另一個 API `GET /me/orders` 回應帶了 `Cache-Control: public, max-age=60`，CDN 把 A 使用者的訂單列表存起來，60 秒內回給了其他使用者。
 
-第一個問題讓修正遲遲送不到使用者手上，第二個問題是資料外洩。兩個都只是一個標頭的值寫錯。HTTP 快取的規則決定**誰可以存回應、存多久、過期後怎麼確認是否還能用**，寫對了能省下大部分流量，寫錯了就是上面這兩種事故。
+第一個問題讓修正遲遲送不到使用者手上，第二個問題是資料外洩。兩個都只是一個標頭的值寫錯。HTTP 快取的規則決定誰可以存回應、存多久、過期後怎麼確認是否還能用，寫對了能省下大部分流量，寫錯了會出上面這兩種事故。
 
 ## 運作原理：快取在哪裡
 
@@ -105,7 +105,7 @@ ETag: "p1-v42"
 
 兩者都有時，`If-None-Match` 優先，`If-Modified-Since` 會被忽略。
 
-ETag 有強弱之分：`"p1-v42"` 是強 ETag（位元組完全相同），`W/"p1-v42"` 是弱 ETag（語意相同即可，例如壓縮方式不同）。`If-None-Match` 用**弱比較**（忽略 `W/`），`If-Match` 用**強比較**（弱 ETag 永遠不相符）。
+ETag 有強弱之分：`"p1-v42"` 是強 ETag（位元組完全相同），`W/"p1-v42"` 是弱 ETag（語意相同即可，例如壓縮方式不同）。`If-None-Match` 用弱比較（忽略 `W/`），`If-Match` 用強比較（弱 ETag 永遠不相符）。
 
 ETag 怎麼產生：
 
@@ -144,7 +144,7 @@ CDN 對 `Vary` 的支援程度不一，有些只支援特定幾個標頭，或�
 | 個人化 API（我的訂單） | `Cache-Control: private, no-cache` 加 ETag | 不能進共用快取；瀏覽器可以存但每次確認 |
 | 敏感資料（付款資訊、一次性 token） | `Cache-Control: no-store` | 不留在任何地方 |
 
-開頭的第一個事故，就是把 `index.html` 當成了第一列。部署工具（Vite、webpack 等）產出的資產檔名本來就帶雜湊，只要入口檔不要長快取，新版就能立刻生效。
+開頭的第一個事故，是把 `index.html` 當成了第一列。部署工具（Vite、webpack 等）產出的資產檔名本來就帶雜湊，只要入口檔不要長快取，新版就能立刻生效。
 
 部分 CDN 支援 `CDN-Cache-Control`（RFC 9213），讓 CDN 和瀏覽器的設定可以完全分開；各家 CDN 也有自己的設定方式。快取到期瞬間大量請求打回原站（雪崩、擊穿）的處理，見 [快取到期的瞬間](#/scenario/edge-cache)；API 層要用 HTTP 快取還是 Redis，見 [API 快取](#/scenario/cache)。
 

@@ -132,13 +132,13 @@ print("沒有 patient_id 的病患：", cancel_handler({"role": "patient"}, 41))
 
 **`None == None`。** 使用者物件少了 `patient_id`（例如櫃台帳號誤設成 patient 角色），掛號資料的 `patient_id` 也是 `None` 時，比對結果是 `True`。比對前先確認使用者這邊的值存在。
 
-**相信 body 裡的身分。** 病患掛號時採用 body 的 `patient_id`、取消時採用 body 的 `role`——身分只能來自驗證過的憑證。
+**相信 body 裡的身分。** 病患掛號時採用 body 的 `patient_id`、取消時採用 body 的 `role`。身分只能來自驗證過的憑證。
 
 **先分頁、再過濾。** 列表頁的筆數忽多忽少，甚至整頁空白。過濾條件要在 SQL 的 `WHERE` 裡。
 
 **把使用者的值拼進 SQL。** `f"WHERE patient_id = {user['patient_id']}"` 在 `patient_id` 來自 token 時看似安全，但只要有一條路徑讓使用者影響這個值，就是 SQL injection。條件片段可以拼，值一律走參數。
 
-**錯誤的狀態碼洩漏存在與否。** 對病患回 403 等於確認了資源存在；要不要洩漏，是一個要在設計時決定的事，而不是哪個 handler 寫了什麼就是什麼。
+**錯誤的狀態碼洩漏存在與否。** 對病患回 403 等於確認了資源存在；要不要洩漏要在設計時統一決定，不能每個 handler 各寫各的。
 
 ## 驗收題在測什麼
 

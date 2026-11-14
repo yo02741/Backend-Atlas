@@ -150,7 +150,7 @@
 ### 領域 E：應用資安
 
 - **E1 OWASP Top 10 與 API Security Top 10** — 必學 · 第 5 週
-  - Web Top 10：2021 版類別，以及 2025 版的變動（供應鏈失效、例外狀況處理不當新入榜；SSRF 併入存取控制）——版本要標清楚
+  - Web Top 10：2021 版類別，以及 2025 版的變動（供應鏈失效、例外狀況處理不當新入榜；SSRF 併入存取控制）；版本要標清楚
   - API Top 10（2023）：BOLA、Broken Authentication、BOPLA、資源耗盡、BFLA、敏感商業流程、SSRF、設定錯誤、資產盤點、不安全消費第三方 API
   - 用清單對自己負責的 API 走一遍並列出風險
 - **E2 注入** — 必學 · 第 5 週
@@ -300,10 +300,10 @@
 - **K1 ADR：把架構決策寫下來** — 入門 · 第 20 週 · `ai-adr`
 - **K2 把需求拆成垂直切片** — 進階 · 第 20 週 · `ai-vertical-slices`
 - **K3 規範要變成測試：AI 協作下的 TDD** — 進階 · 第 20 週 · `ai-spec-to-tests`
-- **K4 驗收設計：產出的人不能驗證自己** — 進階 · 第 20 週 · `acceptance-design`
+- **K4 驗收設計：驗收條件與獨立驗收** — 進階 · 第 20 週 · `acceptance-design`
 - **K5 AI 改程式的品質閘門** — 進階 · 第 20 週 · `ai-quality-gates`
-- **K6 架構測試：光靠 Prompt 守不住架構** — 進階 · 第 20 週 · `architecture-tests`
-- **K7 Harness Engineering：同一個 Prompt 為什麼差這麼多** — 進階 · 第 20 週 · `harness-engineering`
+- **K6 架構測試：用測試守住分層與相依** — 進階 · 第 20 週 · `architecture-tests`
+- **K7 Harness Engineering：評測集、重試與多數決** — 進階 · 第 20 週 · `harness-engineering`
 - **K8 把 agent 當軟體交付：版本、評測與跨模型 CI/CD** — 進階 · 第 20 週 · `agent-delivery`
 - **K9 Skill 與 MCP 是什麼** — 入門 · 第 20 週 · `ai-skills-mcp`
 - **K10 專案規範檔與 context：模型看得到什麼** — 進階 · 第 20 週 · `context-engineering`
@@ -317,14 +317,14 @@
 - **K18 MCP 的授權：OAuth、受保護資源與 JWKS** — 深入 · 第 21 週 · `mcp-authorization`
 - **K19 MCP Gateway：集中管理憑證與上架** — 深入 · 第 21 週 · `mcp-gateway`
 - **K20 AI Gateway：模型路由、金鑰集中、用量與成本** — 進階 · 第 21 週 · `ai-gateway`
-- **K21 地端模型：資料不能出去時怎麼辦** — 深入 · 第 21 週 · `self-hosted-models`
-- **K22 集中式身分閘道：不要每個工具各做登入** — 進階 · 第 21 週 · `identity-gateway`
+- **K21 地端模型：自架推論與依敏感度分流** — 深入 · 第 21 週 · `self-hosted-models`
+- **K22 集中式身分閘道：多個工具共用一套登入** — 進階 · 第 21 週 · `identity-gateway`
 - **K23 CLI 與 Agent 的 token 存哪裡** — 進階 · 第 21 週 · `cli-token-storage`
 - **K24 金鑰的範圍與壽命** — 進階 · 第 21 週 · `key-scope-lifetime`
 - **K25 OWASP MCP Top 10** — 進階 · 第 21 週 · `owasp-mcp-top10`
 - **K26 AI 應用的威脅建模：OWASP LLM Top 10 與 MITRE ATLAS** — 深入 · 第 21 週 · `ai-threat-modeling`
 - **K27 Tool Poisoning 與 rug pull** — 深入 · 第 21 週 · `tool-poisoning`
-- **K28 模型擋不住工具層的洞：credential 隔離與執行邊界** — 深入 · 第 21 週 · `agent-credential-isolation`
+- **K28 Credential 隔離與執行邊界** — 深入 · 第 21 週 · `agent-credential-isolation`
 - **K29 行為層的供應鏈管理** — 深入 · 第 21 週 · `agent-supply-chain`
 
 ### 領域 L：知識系統：從 RAG 到 LLM Wiki
@@ -701,7 +701,7 @@ print(add(3, []))
 
 - **答案**：`[1]`、`[1, 2]`、`[3]`。預設值在函式定義時只建立一次，前兩次呼叫共用同一個 list；第三次傳入新 list。
 - **評分重點**：三行輸出全對（6 分）；說出「預設值在 def 時求值一次」（3 分）；給出修法 `bucket=None` 再在函式內建 list（1 分）。
-- **常見錯答**：`[1]`、`[2]`、`[3]`——以為每次呼叫重新建立預設值。
+- **常見錯答**：`[1]`、`[2]`、`[3]`，以為每次呼叫重新建立預設值。
 
 #### Q2｜A · 預測輸出 · 難度 2 · 5 分鐘
 
@@ -722,7 +722,7 @@ asyncio.run(main())
 
 - **答案**：`[1, 2, 3] 3`。`time.sleep` 是同步阻塞呼叫，event loop 在它期間無法切換，三個協程只能依序各睡 1 秒。改成 `await asyncio.sleep(1)` 會變 `1`；若必須呼叫同步阻塞函式，用 `await asyncio.to_thread(time.sleep, 1)`。
 - **評分重點**：秒數 3（4 分）；解釋阻塞 loop（3 分）；兩種修法（3 分）。
-- **常見錯答**：答 1 秒——把 `gather` 當成自動平行。
+- **常見錯答**：答 1 秒，把 `gather` 當成自動平行。
 
 #### Q3｜C · SQL 程式題 · 難度 2 · 10 分鐘
 
@@ -769,7 +769,7 @@ SELECT id FROM orders WHERE status IS DISTINCT FROM 'paid';
 
 - **答案**：第一句 `5, 4, 2`（`COUNT(status)` 不算 NULL；DISTINCT 也不算 NULL）。第二句只回 `3`（NULL <> 'paid' 結果是 NULL，被 WHERE 當假）。第三句回 `3, 5`。
 - **評分重點**：三個 COUNT（3 分）；第二句只有一列並解釋三值邏輯（4 分）；第三句兩列（3 分）。
-- **常見錯答**：第二句答 `3, 5`——把 NULL 當「不等於 paid」。
+- **常見錯答**：第二句答 `3, 5`，把 NULL 當「不等於 paid」。
 
 #### Q5｜D · 選擇題 · 難度 2 · 3 分鐘
 
@@ -787,7 +787,7 @@ D. 將 token 加進 Redis 黑名單
 
 情境：同事在 code review 問你兩個問題，請講給他聽。(1) 使用者 A 呼叫 `DELETE /orders/42`，42 屬於使用者 B，為什麼你回 404 而不是 403？(2) 我們的 Web 用 cookie session、行動 App 用 Bearer JWT，這兩種各要防什麼攻擊？為什麼？
 
-- **答案要點**：(1) 403 會洩漏「42 存在」，攻擊者可以枚舉 id；對「不是你的資源」一律回 404，行為與「不存在」一致。若是同一使用者但角色不夠（例如 customer 呼叫 admin 端點）才回 403——那是端點層級、不洩漏資源存在性。(2) cookie 會被瀏覽器自動帶上，所以要防 CSRF（`SameSite=Lax`、狀態改變只用 POST、必要時 CSRF token）；Bearer 存在 JS 可讀處、不會自動帶，所以免疫 CSRF 但要防 XSS 偷 token（存記憶體、短效、refresh 放 HttpOnly cookie）。
+- **答案要點**：(1) 403 會洩漏「42 存在」，攻擊者可以枚舉 id；對「不是你的資源」一律回 404，行為與「不存在」一致。若是同一使用者但角色不夠（例如 customer 呼叫 admin 端點）才回 403：那是端點層級、不洩漏資源存在性。(2) cookie 會被瀏覽器自動帶上，所以要防 CSRF（`SameSite=Lax`、狀態改變只用 POST、必要時 CSRF token）；Bearer 存在 JS 可讀處、不會自動帶，所以免疫 CSRF 但要防 XSS 偷 token（存記憶體、短效、refresh 放 HttpOnly cookie）。
 - **評分重點**：404 的洩漏理由（3 分）；能區分資源層 404 與端點層 403（2 分）；cookie → CSRF、Bearer → XSS 對應正確（3 分）；各給一個具體防法（2 分）。
 - **常見錯答**：「404 只是習慣」；把 CSRF 與 XSS 說反。
 
@@ -898,7 +898,7 @@ jobs:
 
 - **參考答案 (b)**：job 直接跑在 VM runner 上（不是 `container:` 內），service 容器對 job 而言是 `localhost:<對應 port>`；service 名稱 `db` 只有在 job 本身也跑在容器裡（同一個 Docker 網路）時才解析得到。改成 `localhost:5432`，或把 job 放進 `container:`。
 - **評分重點**：service 有 health option（2 分）；`--locked` 而非 `--frozen`（1 分）；quality 步驟齊全且順序 fail fast（2 分）；`permissions` 最小化與 Action 釘 SHA（1 分）；(b) 說出 VM runner vs container job 的 hostname 差別（4 分）。
-- **常見錯答**：(b) 以為是 health check 沒等到——若是那樣錯誤訊息通常是 timeout 不是 refused，且 hostname 就已解析失敗。
+- **常見錯答**：(b) 以為是 health check 沒等到。若是那樣，錯誤訊息通常是 timeout 不是 refused，且 hostname 就已解析失敗。
 
 #### Q10｜H + I · Python 程式題 · 難度 2 · 15 分鐘
 

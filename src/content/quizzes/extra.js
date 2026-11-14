@@ -63,7 +63,7 @@ export default [
         q: '下面哪一種請求**不應該**自動重試？',
         options: ['`GET /orders/42` 回 503', '`PUT /orders/42` 逾時', '`POST /orders`（沒有 Idempotency-Key）連線中斷', '`DELETE /orders/42` 回 502'],
         answer: 2,
-        explain: 'GET / PUT / DELETE 是冪等的，重送結果一樣，遇到 5xx 或逾時可以退避重試。沒有冪等鍵的 POST 重送可能建立第二筆訂單——連線中斷時你根本不知道第一次有沒有成功。要重試 POST 必須先有 Idempotency-Key。另外 4xx 通常不值得重試，再打也是一樣的錯。',
+        explain: 'GET / PUT / DELETE 是冪等的，重送結果一樣，遇到 5xx 或逾時可以退避重試。沒有冪等鍵的 POST 重送可能建立第二筆訂單，連線中斷時你根本不知道第一次有沒有成功。要重試 POST 必須先有 Idempotency-Key。另外 4xx 通常不值得重試，再打也是一樣的錯。',
       },
       {
         q: '重試時為什麼要在退避時間上加隨機抖動（jitter）？',
@@ -80,7 +80,7 @@ export default [
         q: '團隊說「我們每天都有自動備份」。哪一個問題最能檢驗這句話有沒有意義？',
         options: ['上一次成功從備份還原回來是什麼時候、花了多久？', '備份檔多大？', '備份用的是 pg_dump 還是快照？', '備份存在哪個雲端？'],
         answer: 0,
-        explain: '沒還原過的備份不算備份：檔案可能損壞、格式不對版本、還原步驟沒人會、或還原要 8 小時而業務只能容忍 1 小時。定期演練還原並記錄 RTO，才知道備份真的能救你。其他問題都重要，但都不能證明備份「有用」。',
+        explain: '沒還原過的備份不算備份：檔案可能損壞、格式不對版本、還原步驟沒人會、或還原要 8 小時而業務只能容忍 1 小時。定期演練還原並記錄 RTO，才知道備份能不能用。其他問題都重要，但都不能證明備份「有用」。',
       },
       {
         q: 'API 有 4 個 uvicorn worker，每個 worker 的 SQLAlchemy 連線池 pool_size=20、max_overflow=10；PostgreSQL 的 max_connections=100。流量一高就出現 too many connections。為什麼？',

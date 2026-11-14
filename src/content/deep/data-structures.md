@@ -16,7 +16,7 @@ def tick(now):
 
 這段程式真正需要的操作只有兩個：「最早到期的是哪一筆」和「把它拿出來」。list 對這兩件事都是 O(n)。**heap**（堆）可以讓「看最早的」變 O(1)、「拿出來」變 O(log n)。改用 `heapq` 後，每秒的工作量只和「這一秒到期的筆數」有關，和總共有幾筆幾乎無關。
 
-選資料結構的方法就是這樣：**先列出程式要做哪些操作、各做多少次，再挑讓最頻繁的操作最便宜的結構。**
+選資料結構的方法：先列出程式要做哪些操作、各做多少次，再挑讓最頻繁的操作最便宜的**結構**。
 
 ## 先列操作，再挑結構
 
@@ -155,7 +155,7 @@ for prio, task in [(5, "send_email"), (1, "charge_card"), (5, "resize_image")]:
 print("取出順序：", [heapq.heappop(jobs)[2]["task"] for _ in range(3)])
 ```
 
-「步數」是示意的計數（list 算每筆看一次，heap 算每次 pop 走的層數），重點是倍數：這次執行 list 寫法約 20 萬步、heap 寫法約 3 千步。把提醒數量改成 20 萬筆再跑，list 那邊跟著變十倍，heap 那邊幾乎不變，因為它只和「到期的筆數 × log n」有關。
+「步數」是示意的計數（list 算每筆看一次，heap 算每次 pop 走的層數），要看的是倍數：這次執行 list 寫法約 20 萬步、heap 寫法約 3 千步。把提醒數量改成 20 萬筆再跑，list 那邊跟著變十倍，heap 那邊幾乎不變，因為它只和「到期的筆數 × log n」有關。
 
 ### hash map、deque 與圖
 
@@ -273,6 +273,6 @@ SELECT role, depth, is_cycle, path FROM walk ORDER BY depth, role;
 
 1. 在 Playground 跑 heap 那段，把 `range(20_000)` 改成 `range(200_000)`，看 list 與 heap 的步數各變幾倍。
 2. 在 hash map 那段，把 `deps` 改成你熟悉的建置流程，看 `get_ready()` 分出的批次是否符合預期；故意加一條循環依賴看錯誤訊息。
-3. 在 `WITH RECURSIVE` 那段把 `CYCLE` 子句拿掉，並在遞迴部分加上 `WHERE w.depth < 6`（一定要加，否則有循環時查詢會一直遞迴下去），看同一個循環被重複走了幾圈。這就是 `CYCLE` 子句要防的事。
+3. 在 `WITH RECURSIVE` 那段把 `CYCLE` 子句拿掉，並在遞迴部分加上 `WHERE w.depth < 6`（一定要加，否則有循環時查詢會一直遞迴下去），看同一個循環被重複走了幾圈，`CYCLE` 子句要防的就是這件事。
 4. 程式題：[用 heapq 取前 k 大](#/exercise/data-structures-1)。
 5. 開 [索引為什麼快](#/lab/IndexLab) 實驗室，對照循序掃描與 B-tree 走訪的比較次數。

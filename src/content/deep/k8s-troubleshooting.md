@@ -30,7 +30,7 @@ export-api-84f9d6c5b7-m4n1z       1/1     Running            0             1h
 | 3 | `kubectl logs <pod> -n <ns>`（必要時加 `--previous`） | 程式自己說了什麼？ |
 | 4 | `kubectl get events -n <ns> --sort-by=.lastTimestamp` | 這個 namespace 最近還發生了什麼？（Pod 已經不在時也查得到） |
 
-分工很清楚：**Events 是 Kubernetes 的視角**（排程、拉映像、探針、重啟），**logs 是應用程式的視角**（stdout 與 stderr）。容器根本沒啟動過（Pending、ImagePullBackOff）時不會有 log，只能看 Events；程式啟動後自己掛掉時，Events 只會說「它結束了」，原因在 log 裡。
+Events 是 Kubernetes 的視角（排程、拉映像、探針、重啟），logs 是應用程式的視角（stdout 與 stderr）。容器根本沒啟動過（Pending、ImagePullBackOff）時不會有 log，只能看 Events；程式啟動後自己掛掉時，Events 只會說「它結束了」，原因在 log 裡。
 
 三個欄位要一起看：
 
@@ -236,7 +236,7 @@ print(f"    原因：{cause}")
 print(f"    下一步：{action}")
 ```
 
-兩個地方值得注意。`notify-api` 現在是 `Running`、`READY 1/1`，只看 STATUS 會以為沒事；判斷的順序把「上一次的結束原因」放在最前面，就是為了不漏掉這種情況。`export-api` 的 Pod 診斷結果是「正常」——問題不在 Pod，而在 Service 的 selector，所以 Pod 這一層查不出東西時，要往 Service 那一層查。
+輸出裡有兩點要看。`notify-api` 現在是 `Running`、`READY 1/1`，只看 STATUS 會以為沒事；判斷的順序把「上一次的結束原因」放在最前面，就是為了不漏掉這種情況。`export-api` 的 Pod 診斷結果是「正常」，問題出在 Service 的 selector，所以 Pod 這一層查不出東西時，要往 Service 那一層查。
 
 ## 進到容器裡查：exec、port-forward、debug
 
@@ -281,7 +281,7 @@ kubectl port-forward pod/export-api-84f9d6c5b7-m4n1z 8080:8000 -n booking
 | `error: deployment "booking-api" exceeded its progress deadline` | 滾動更新太久沒有進展 | 找出新的 ReplicaSet 的 Pod，照本課的順序查 |
 | `Error from server (Forbidden): pods "…" is forbidden: User "…" cannot get resource "pods/log"` | 帳號的 RBAC 權限不足 | 不是 Pod 的問題；找叢集管理者確認權限 |
 | `port-forward` 通，經過 Service 不通 | 問題在 Service 這一層 | selector、`targetPort`、readiness、NetworkPolicy |
-| 刪掉 Pod 之後好了一陣子又壞 | 重建只是把狀態歸零（例如記憶體洩漏重新累積） | 回頭查 `RESTARTS` 與 `Last State`，找出真正的原因 |
+| 刪掉 Pod 之後好了一陣子又壞 | 重建只是把狀態歸零（例如記憶體洩漏重新累積） | 回頭查 `RESTARTS` 與 `Last State`，找出根本原因 |
 
 事故當下的分工與紀錄方式，見 [事故處理、on-call 與 postmortem](#/skill/incident-response)。
 

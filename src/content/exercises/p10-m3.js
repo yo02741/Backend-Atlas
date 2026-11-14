@@ -1,4 +1,4 @@
-// 程式題：P10 新課（m3 批）——legacy-migration、legacy-data-sync
+// 程式題：P10 新課（m3 批）：legacy-migration、legacy-data-sync
 // SQL 題的資料表都由 setup 建立（虛構的排班與預約資料，沒有真實個資）
 
 // 舊排班表 → 新排班表；sync_state 記錄水位

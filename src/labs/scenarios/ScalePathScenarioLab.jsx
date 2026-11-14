@@ -12,11 +12,11 @@ const COST = { inst: 80, instBig: 300, lb: 20, redis: 50, pgb: 10, primary: 200,
 
 const PLAN = [
   { label: '起點', cfg: { vertical: false, instances: 1, hit: 0, pgb: false, replicas: 0, queue: false },
-    title: '起點：一台 4 vCPU 跑單 worker', text: '所有請求都經過同一個 Python 程序，示意容量 800 QPS。100 QPS 時一切正常，但流量再長十倍就是 API 先爆——DB 這時還很閒。' },
+    title: '起點：一台 4 vCPU 跑單 worker', text: '所有請求都經過同一個 Python 程序，示意容量 800 QPS。100 QPS 時一切正常，但流量再長十倍就是 API 先爆，DB 這時還很閒。' },
   { label: '① 升級機器', cfg: { vertical: true, instances: 1, hit: 0, pgb: false, replicas: 0, queue: false },
     title: '① 升級機器：零程式改動', text: '換 16 vCPU、uvicorn 開多個 worker，單機容量到 2,400 QPS。夠不夠？拉 QPS 到 3,000 看：API 又爆了，而且沒有更大的機器可以換。這一步便宜、快、但有天花板。' },
   { label: '② 水平擴展', cfg: { vertical: true, instances: 4, hit: 0, pgb: false, replicas: 0, queue: false },
-    title: '② 無狀態 + 4 實例 + LB', text: 'session 搬 Redis、檔案搬物件儲存後，API 可以無限加台。4 台是 9,600 QPS——但第一個爆的變成 PostgreSQL 讀：90% 的讀全部打到單一主庫，3,333 QPS 就到頂。加 API 實例對這個瓶頸毫無幫助。' },
+    title: '② 無狀態 + 4 實例 + LB', text: 'session 搬 Redis、檔案搬物件儲存後，API 可以無限加台。4 台是 9,600 QPS，但第一個爆的變成 PostgreSQL 讀：90% 的讀全部打到單一主庫，3,333 QPS 就到頂。加 API 實例對這個瓶頸毫無幫助。' },
   { label: '③ 快取', cfg: { vertical: true, instances: 4, hit: 90, pgb: false, replicas: 0, queue: false },
     title: '③ 快取命中 90%：DB 讀砍九成', text: '商品頁與列表走 cache-aside，90% 的讀完全不碰 DB。DB 讀容量從 3,333 QPS 變成 33,333 QPS，瓶頸回到 API（9,600）。快取是讀多寫少系統最便宜的一步，代價是失效邏輯。' },
   { label: '④ 加到 16 台', cfg: { vertical: true, instances: 16, hit: 90, pgb: false, replicas: 0, queue: false },
@@ -26,7 +26,7 @@ const PLAN = [
   { label: '⑥ 讀寫分離', cfg: { vertical: true, instances: 16, hit: 90, pgb: true, replicas: 2, queue: false },
     title: '⑥ 兩台副本：讀容量 ×3', text: 'DB 讀容量 9,000 QPS，換算成總流量 10 萬。但下一個爆的是寫：10% 的寫在 1.5 萬 QPS 時就是 1,500 筆 commit / 秒，單主庫的 fsync 到頂。副本對寫入完全沒有幫助，還帶來寫後讀的一致性問題。' },
   { label: '⑦ 佇列 + 42 台', cfg: { vertical: true, instances: 42, hit: 90, pgb: true, replicas: 2, queue: true },
-    title: '⑦ 佇列削峰寫入 + 補足 API', text: '下單先進佇列回 202，worker 批次 INSERT，一次 commit 幾百筆，寫容量示意 12,000 QPS。API 再補到 42 台，整條路撐到約 10 萬 QPS。順序是：先擋讀（快取）、再擴 API、最後才動 DB——每一步只解當下第一個爆的元件。' },
+    title: '⑦ 佇列削峰寫入 + 補足 API', text: '下單先進佇列回 202，worker 批次 INSERT，一次 commit 幾百筆，寫容量示意 12,000 QPS。API 再補到 42 台，整條路撐到約 10 萬 QPS。順序是：先擋讀（快取）、再擴 API、最後才動 DB；每一步只解當下第一個爆的元件。' },
 ]
 
 const ASSUMPTIONS = [
@@ -100,7 +100,7 @@ export default function ScalePathScenarioLab() {
 
   return (
     <Lab accent="red" kicker="SCENARIO LAB" title="容量模擬器：流量再長，第一個爆的是誰"
-         blurb="拉 QPS，看六個元件誰先到頂；用 Stepper 逐步套用建議順序，每一步看撐到多少、花多少。所有容量、延遲、成本都是示意，只為呈現相對關係。">
+         blurb="QPS 上升時六個元件誰先到頂，依建議順序擴充後每一步撐到多少、花多少。所有容量、延遲、成本都是示意，只為呈現相對關係。">
       <LabControls>
         <Slider label="QPS（對數）" min={0} max={100} value={pos} onChange={setPos} format={() => `${fmtN(qps)} QPS`} />
         <Slider label="讀的比例" min={50} max={99} value={readPct} onChange={setReadPct} format={(v) => `讀 ${v}% / 寫 ${100 - v}%`} />
@@ -188,11 +188,11 @@ export default function ScalePathScenarioLab() {
           <LabExplain title={plan.title}>
             <p>{plan.text}</p>
             <p>目前：{fmtN(qps)} QPS、讀 {readPct}%。{statusLine}</p>
-            <p>流量怎麼分：每秒 {fmtN(r.reads)} 讀、{fmtN(r.writes)} 寫。快取擋掉 {fmtN(r.reads - r.toDb)} 讀，真正到 PostgreSQL 的是 {fmtN(r.toDb)} 讀 + {fmtN(r.writes)} 寫{cfg.queue ? '（寫先進佇列，DB 以批次速度消化）' : '（每筆寫一個 commit）'}。</p>
+            <p>流量怎麼分：每秒 {fmtN(r.reads)} 讀、{fmtN(r.writes)} 寫。快取擋掉 {fmtN(r.reads - r.toDb)} 讀，實際到 PostgreSQL 的是 {fmtN(r.toDb)} 讀 + {fmtN(r.writes)} 寫{cfg.queue ? '（寫先進佇列，DB 以批次速度消化）' : '（每筆寫一個 commit）'}。</p>
           </LabExplain>
           <div className="dtable-wrap">
             <table className="dtable sp-path">
-              <caption>建議順序總表（讀 {readPct}% 時，每一步撐到多少、花多少；點一列套用）</caption>
+              <caption>建議順序總表（讀 {readPct}% 時，每一步撐到多少、花多少）</caption>
               <thead><tr><th>步驟</th><th>撐到（示意）</th><th>卡在</th><th>每月（示意）</th></tr></thead>
               <tbody>
                 {path.map((p, i) => (
@@ -224,8 +224,8 @@ export default function ScalePathScenarioLab() {
               <tbody>{ASSUMPTIONS.map(([a, b, c]) => <tr key={a}><td>{a}</td><td>{b}</td><td>{c}</td></tr>)}</tbody>
             </table>
           </div>
-          <Callout title="什麼時候會真的踩到">
-            活動前一週壓測：加了 20 台 API 實例，QPS 沒上去反而全站 500——每台開 10 條連線，DB 的 max_connections 100 第 11 台就滿了。另一種：快取上了、API 加了，尖峰時下單卻大量逾時，因為 10% 的寫全部同步 commit 在同一顆磁碟上。
+          <Callout title="什麼時候會踩到">
+            活動前一週壓測：加了 20 台 API 實例，QPS 沒上去反而全站 500：每台開 10 條連線，DB 的 max_connections 100 第 11 台就滿了。另一種：快取上了、API 加了，尖峰時下單卻大量逾時，因為 10% 的寫全部同步 commit 在同一顆磁碟上。
           </Callout>
         </div>
       </LabGrid>

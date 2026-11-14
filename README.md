@@ -46,13 +46,13 @@
 | 18 | FinOps：雲端與 AI 工具的計費結構★ | DevOps 與基礎建設 | 雲端與 AI 工具的計費結構。 |
 | 19 | 舊系統整合與逐步替換 | 演算法與系統設計 | 逐步替換舊系統，每一步都能回退。 |
 | 20 | 可重跑的批次管線：增量、冪等、回補 | DevOps 與基礎建設 | 增量、冪等、回補：重跑不會重複寫入。 |
-| 21 | 測試品質：綠燈越多，品質為什麼沒變好★ | 語言與工程實踐 | 用突變測試檢查測試有沒有驗到東西。 |
-| 22 | Harness Engineering：同一個 Prompt 為什麼差這麼多★ | AI 時代的開發與 Agent 安全 | 同一個 prompt 跑 N 次：評測集、重試與檢查器。 |
+| 21 | 測試品質：覆蓋率、假綠燈與突變測試★ | 語言與工程實踐 | 用突變測試檢查測試有沒有驗到東西。 |
+| 22 | Harness Engineering：評測集、重試與多數決★ | AI 時代的開發與 Agent 安全 | 同一個 prompt 跑 N 次：評測集、重試與檢查器。 |
 | 23 | 後端怎麼呼叫模型：串流、結構化輸出、重試與成本 | AI 時代的開發與 Agent 安全 | 逾時、重試、串流與結構化輸出的驗證。 |
 | 24 | Agent 的執行迴圈：工具呼叫、狀態機、預算與中斷★ | AI 時代的開發與 Agent 安全 | 工具呼叫、狀態機、步數與 token 預算。 |
 | 25 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
 | 26 | AI Gateway：模型路由、金鑰集中、用量與成本 | AI 時代的開發與 Agent 安全 | 模型路由、金鑰集中、配額與用量。 |
-| 27 | 地端模型：資料不能出去時怎麼辦 | AI 時代的開發與 Agent 安全 | 資料不能送出去時，自架模型要自己負責的事。 |
+| 27 | 地端模型：自架推論與依敏感度分流 | AI 時代的開發與 Agent 安全 | 資料不能送出去時，自架模型要自己負責的事。 |
 | 28 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述被下毒與 rug pull 的防法。 |
 | 29 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
 | 30 | Semantic Layer：讓 agent 查資料不用猜欄位★ | 知識系統：從 RAG 到 LLM Wiki | agent 用定義好的指標查資料，不猜欄位。 |
@@ -79,11 +79,18 @@
 
 ### 互動實驗室（41 個）
 
-可以拖、切、點的小教具：JOIN 用文氏圖呈現、索引實際走一遍 B-tree、兩個交易交錯執行看各隔離等級讀到什麼、JWT 真的計算簽章、OAuth 與 Device Code 流程逐步播放、Docker 映像的層一層層疊上去、token bucket 限流即時跑。DevOps 有網路排查（在任一層製造故障看錯誤長怎樣）、憑證鏈驗證、容量估算、K8s 副本與滾動更新、錯誤預算燃燒；Agent 安全有 Tool Poisoning（介面上看到的描述 vs 模型讀到的描述）；知識系統有 RAG 切段、wiki 連結圖與 Semantic Layer（猜欄位 vs 用定義好的指標）。另有逐步加壓找飽和點、Kubernetes 排錯（按 kubectl 指令收集線索、判斷原因）。資安有 XSS 與 CSRF 各擋在哪一層、瀏覽器真的計算的雜湊／HMAC／加密／簽章、相依套件出問題時的防線；CI/CD 有三種部署策略與 migration 相容性、用 trace id 串起 log、metrics、trace。AI 開發有 harness 評測（同一個 prompt 跑 N 次）、agent 執行迴圈的狀態機、token 成本估算、對兩組測試跑突變測試。
+依領域列出：
+
+- **語言**：uv 從零到能跑、同步／執行緒／async 對照
+- **資料與 API**：JOIN 文氏圖、B-tree 索引、交易交錯與隔離等級、表格與文件模型、cache-aside、HTTP 請求、REST、token bucket 限流、Big-O
+- **驗證與資安**：JWT 簽章、OAuth 與 Device Code 流程、RBAC 與 ABAC、SQL 注入、編碼與雜湊、XSS 與 CSRF、雜湊／HMAC／加密／簽章、相依套件的防線
+- **部署與交付**：Docker 的層、compose 拓樸、nginx 分派、CI/CD 管線對照、三種部署策略與 migration 相容性、用 trace id 串起 log 與 metrics
+- **DevOps**：網路排查、憑證鏈、容量估算、K8s 滾動更新與排錯、錯誤預算、逐步加壓找飽和點
+- **AI 與知識系統**：harness 評測、agent 執行迴圈、token 成本、突變測試、Tool Poisoning、RAG 切段、wiki 連結圖、Semantic Layer
 
 ### 設計情境（30 個）
 
-每個情境有背景與限制、可操作的模擬器、幾種做法的優缺點、取捨表、換條件後重新選做法的決策題、落地程式碼。
+每個情境包含背景與限制、模擬器、取捨表、決策題與落地程式碼。
 
 - **API 設計（8）**：列表分頁、API 快取、付款的冪等與重試、限流放哪與用什麼當 key、三分鐘長任務匯出、使用者上傳檔案、商品搜尋與篩選、API 改版不弄壞客戶端
 - **資料與身分（4）**：多租戶資料隔離、刪除使用者要留下什麼（軟刪除與稽核）、讀寫分離後「剛存的怎麼不見了」、SPA 加手機 App 的登入方案
@@ -101,7 +108,7 @@
 
 ### 練習題
 
-- **程式題 190 道**（Python 120、SQL 38、config 20、JavaScript 12）：在瀏覽器裡真的執行並跑測試——SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證。
+- **程式題 190 道**（Python 120、SQL 38、config 20、JavaScript 12）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證。
 - **選擇題 429 道**：每課 3 題，含程式碼判讀與情境題。
 - **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。
 
@@ -182,7 +189,7 @@ hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/
 
 ## 新增內容
 
-- **技能**：分兩處——`content/dN-*.js` 的 `skills` 加索引物件（id 全站唯一），`content/body/dN-*.js` 加同一個 id 的內文（`points` / `checklist` / `refs`）；`refs` 只放確定存在的官方文件。寫完跑 `npm run validate:content`（索引與內文的 id 必須一一對應）。
+- **技能**：分兩處，`content/dN-*.js` 的 `skills` 加索引物件（id 全站唯一），`content/body/dN-*.js` 加同一個 id 的內文（`points` / `checklist` / `refs`）；`refs` 只放確定存在的官方文件。寫完跑 `npm run validate:content`（索引與內文的 id 必須一一對應）。
 - **深入內容**：見 `docs/CONTRIBUTING-lessons.md`（段落結構、語氣、可執行區塊的限制、新課的完整清單）；寫完跑 `npm run validate:content` 與 `npm run e2e:deep`。
 - **實驗室**：見 `docs/CONTRIBUTING-labs.md`（合約、共用元件 API、驗證流程）。
 - **程式題**：在 `content/exercises/<領域>.js` 加一筆：`kind` 為 `sql`（`setup` + `expect: { columns, rows, ordered }`，或 `expect.query` 指定驗證查詢）、`python` / `js`（`tests: [{ name, code }]`，測試碼與使用者程式碼在同一命名空間；JS 內建 `assert` / `assertEqual`）或 `config`（使用者的設定檔成為 `source` / `lines`，交給 JS 測試檢查）。寫完跑 `npm run e2e:verify` 確認解答通過、起始碼不通過。
@@ -196,7 +203,7 @@ npm run validate                 # 技能索引與內文對應、深入內容、
 npm run test:unit                # 進度合併規則（兩台裝置、離線、取消完成）、複習頁的抽題與錯題紀錄
 npm run check:links              # 延伸閱讀與深入內容裡的外部連結（需要連外網；Actions 的 Links workflow 每月跑一次）
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
-npm run e2e:runtime              # Playground 的 Python / SQL / JS 真的能跑
+npm run e2e:runtime              # Playground 的 Python / SQL / JS 能執行
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
 npm run e2e:deep                 # 深入內容的每個 run 區塊都能執行（ONLY=transactions 只驗指定的課）
 npm run e2e:ui                   # 練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停

@@ -136,21 +136,21 @@ const PY_MARKS = [
 
 const EXPLAIN = {
   concat: {
-    legit: ['拼接：正常輸入時完全看不出問題', 'f-string 把 username 和 password 直接塞進 SQL 文字。alice / correct-horse 這種乖乖的輸入會組出合法查詢，功能測試全過——問題只在輸入含有引號時才浮現。', '資料庫收到的只是一串文字，它**無法分辨哪些字元來自程式碼、哪些來自使用者**。這就是漏洞的根源。'],
-    none: ['帳密錯誤，但這不代表安全', '這次只是剛好沒對上。只要拼接還在，換一個含引號的輸入就能改寫查詢結構——試試上面的兩個範例 payload。'],
-    tautology: ['資料變成程式碼：一個引號關掉了字串常值', "輸入的第一個 `'` 提前結束了 password 的字串，接下來的 `OR '1'='1'` 被當成 SQL 條件解析。`'1'='1'` 永遠為真，整個 WHERE 對每一列都成立。", '應用程式通常取第一列當登入者——這裡是 id=1 的 admin。攻擊者不需要知道任何密碼，只需要知道「引號沒被處理」。'],
-    comment: ['-- 把後面的密碼檢查整段註解掉', "`admin'` 關掉字串之後，`--` 是 SQL 的行註解：從這裡到行尾的 `AND password = '...'` 全部被忽略。留下的查詢只剩 `username = 'admin'`，密碼根本沒被比對。", '注意：把 SQL 拆成多行不算防禦——換行位置一變，註解攻擊的效果會變，但引號攻擊照樣有效。'],
+    legit: ['拼接：正常輸入時完全看不出問題', 'f-string 把 username 和 password 直接塞進 SQL 文字。alice / correct-horse 這種乖乖的輸入會組出合法查詢，功能測試全過，問題只在輸入含有引號時才浮現。', '資料庫收到的只是一串文字，它**無法分辨哪些字元來自程式碼、哪些來自使用者**，漏洞就從這裡來。'],
+    none: ['帳密錯誤，但這不代表安全', '這次只是剛好沒對上。只要拼接還在，換一個含引號的輸入就能改寫查詢結構。'],
+    tautology: ['資料變成程式碼：一個引號關掉了字串常值', "輸入的第一個 `'` 提前結束了 password 的字串，接下來的 `OR '1'='1'` 被當成 SQL 條件解析。`'1'='1'` 永遠為真，整個 WHERE 對每一列都成立。", '應用程式通常取第一列當登入者，這裡是 id=1 的 admin。攻擊者不需要知道任何密碼，只需要知道「引號沒被處理」。'],
+    comment: ['-- 把後面的密碼檢查整段註解掉', "`admin'` 關掉字串之後，`--` 是 SQL 的行註解：從這裡到行尾的 `AND password = '...'` 全部被忽略。留下的查詢只剩 `username = 'admin'`，密碼根本沒被比對。", '注意：把 SQL 拆成多行不算防禦：換行位置一變，註解攻擊的效果會變，但引號攻擊照樣有效。'],
     inject: ['輸入的引號改寫了查詢結構', '輸入裡的引號讓後面的文字脫離字串常值、變成 SQL 語法的一部分。這次剛好還能解析、也剛好有匹配的列，但查詢的意義已經不是「比對這組帳密」了。'],
     error: ['查詢壞掉了：資料庫回了語法錯誤', "光是多一個 `'` 就讓查詢壞掉（引號不平衡，或後面的文字被當成欄位名）。這正是攻擊者探測注入點的第一步：在每個輸入欄位丟一個引號，看誰噴 500 或 SQL 錯誤。錯誤訊息若原樣回給使用者，還會順便洩漏資料表結構。"],
   },
   param: {
-    legit: ['參數化：SQL 與資料分開送', 'alice 用正確密碼登入，行為和拼接版一樣——差別只在遇到惡意輸入時。'],
+    legit: ['參數化：SQL 與資料分開送', 'alice 用正確密碼登入，行為和拼接版一樣，差別只在遇到惡意輸入時。'],
     none: ['參數化：SQL 與資料分開送', '沒有任何一列的帳密和輸入完全相同，所以 0 列匹配。'],
     blocked: ['參數化：攻擊 payload 現在只是一個怪字串', '剛才的 payload 被拿去和欄位值**精確比對**：引號、OR、`--` 都只是字串內容，0 列匹配。同一個輸入，只是換了傳遞方式，攻擊就失效。'],
   },
 }
 const PARAM_COMMON = '驅動程式把帶 `%s` 佔位符的 SQL 和值分開送（或在本地安全轉義）。資料庫解析 SQL 結構時參數還不存在，所以無論參數裡有引號、`--` 還是 `OR`，都只能是一個字串常值的內容。注意這裡的 `%s` 不是 Python 的字串格式化，`execute()` 的第二個引數才是值。'
-const EXTRA = '同樣的概念在 NoSQL 也有：MongoDB 若直接把請求 JSON 塞進查詢，`{"password": {"$gt": ""}}` 這種運算子注入會讓條件永遠成立——要對輸入做型別檢查（只接受字串）。另外，讓應用程式連線用的資料庫帳號只有最小權限（不能 DROP、不能讀其他 schema），注入成功時災情才有限。'
+const EXTRA = '同樣的概念在 NoSQL 也有：MongoDB 若直接把請求 JSON 塞進查詢，`{"password": {"$gt": ""}}` 這種運算子注入會讓條件永遠成立，要對輸入做型別檢查（只接受字串）。另外，讓應用程式連線用的資料庫帳號只有最小權限（不能 DROP、不能讀其他 schema），注入成功時災情才有限。'
 
 export default function SqlInjectionLab() {
   const [mode, setMode] = useState('concat')
@@ -180,7 +180,7 @@ export default function SqlInjectionLab() {
 
   return (
     <Lab className="sqli" accent="red" kicker="SECURITY LAB" title="SQL Injection：字串拼接 vs 參數化"
-         blurb="輸入帳密（或按範例 payload），看真正送到資料庫的 SQL 長什麼樣、哪些列會被匹配。切換模式比較：同一個輸入，拼接會讓「資料」變成「程式碼」，參數化則永遠把它當字串。">
+         blurb="實際送到資料庫的 SQL 與被匹配的列。同一個輸入，拼接會讓「資料」變成「程式碼」，參數化永遠把它當字串。">
       <LabControls>
         <Seg label="模式" tinted value={mode} onChange={setMode}
              options={[{ value: 'concat', label: '字串拼接（f-string）' }, { value: 'param', label: '參數化查詢' }]} />
@@ -202,7 +202,7 @@ export default function SqlInjectionLab() {
           {mode === 'concat' ? (
             <>
               <div className="code sqli-sql">
-                <div className="code-head"><span>真正送到資料庫的 SQL（拼接後）</span><span>sql</span></div>
+                <div className="code-head"><span>送到資料庫的 SQL（拼接後）</span><span>sql</span></div>
                 <pre>{segs.map((sg, i) => <span key={i} className={`sqli-seg-${sg.k}${sg.from ? ' sqli-from' : ''}`}>{sg.s}</span>)}</pre>
               </div>
               <p className="sqli-legend"><span className="sqli-from sqli-seg-input">底線</span> = 來自輸入　<span className="sqli-seg-code">紅底</span> = 逃出字串、變成 SQL 程式碼　<span className="sqli-seg-cm">灰線</span> = 被 -- 註解掉</p>
@@ -239,7 +239,7 @@ export default function SqlInjectionLab() {
             {isBad && <Status>以 {first.username} 身分登入！{result.rows.length > 1 ? `${result.rows.length} 列匹配，取第一列` : '密碼檢查被繞過'}</Status>}
             {(result.kind === 'none' || result.kind === 'blocked') && <Status warn>帳密錯誤（0 列匹配）</Status>}
             {result.kind === 'error' && <Status warn>SQL 語法錯誤：{result.error}</Status>}
-            {result.kind === 'blocked' && <span className="muted">攻擊無效——引號只是字串的一部分</span>}
+            {result.kind === 'blocked' && <span className="muted">攻擊無效：引號只是字串的一部分</span>}
             {result.kind === 'error' && <span className="muted">錯誤訊息若回給使用者，就是攻擊者的探測線索</span>}
           </div>
         </LabStage>
@@ -253,7 +253,7 @@ export default function SqlInjectionLab() {
           </LabExplain>
           <Callout title="工作上什麼時候用">
             <b>永遠參數化</b>：所有 <code>execute()</code> 都用佔位符＋參數，包含 LIKE 與 IN 的值；ORM 的 <code>.where()</code> / <code>.filter()</code> 也是，只有 <code>text()</code> 或 raw SQL 要特別盯。
-            動態的表名、欄位名、ORDER BY 欄位<b>無法參數化</b>——用白名單對照（例如 <code>{'ALLOWED = {"created_at", "name"}'}</code>），對不上就拒絕，不要拼接。
+            動態的表名、欄位名、ORDER BY 欄位<b>無法參數化</b>，要用白名單對照（例如 <code>{'ALLOWED = {"created_at", "name"}'}</code>），對不上就拒絕，不要拼接。
           </Callout>
         </div>
       </LabGrid>

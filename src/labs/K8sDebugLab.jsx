@@ -54,8 +54,8 @@ const SCN = {
       { t: 'Service 的 selector 沒選到 Pod', why: 'selector 只影響流量送不送得到，不會讓 Pod 停在 Pending。' },
     ],
     fix: [' resources:', '   requests:', '-    cpu: "4"', '+    cpu: "500m"', '     memory: "1Gi"'],
-    fixNote: 'requests 依實測用量訂；真的需要 4 核，就要加節點或換大規格。套用後 Deployment 會建立新的 Pod。',
-    why: ['scheduler 只看 requests：節點的「可分配量 − 已被其他 Pod 的 requests 佔走的量」要放得下這個 Pod。這裡要 4 核，三台節點剩下的都不夠，所以一直 Pending。', '節點實際上可能很閒——requests 是預留量，不是用量。'],
+    fixNote: 'requests 依實測用量訂；確實需要 4 核，就要加節點或換大規格。套用後 Deployment 會建立新的 Pod。',
+    why: ['scheduler 只看 requests：節點的「可分配量 − 已被其他 Pod 的 requests 佔走的量」要放得下這個 Pod。這裡要 4 核，三台節點剩下的都不夠，所以一直 Pending。', '節點實際上可能很閒：requests 是預留量，不是用量。'],
   },
   image: {
     label: 'ImagePullBackOff', pod: 'api-5b8c6d7f9-qz4tn', fault: 'pod', faultText: 'image 拉不下來', keys: ['desc', 'ev'], order: ['get', 'desc'],
@@ -78,7 +78,7 @@ const SCN = {
     ],
     fix: [' containers:', '   - name: api', '-    image: reg.local/shop/api:1.43', '+    image: reg.local/shop/api:1.4.3'],
     fixNote: 'tag 交給 CI 用變數帶入，不要手打。套用後新的 Pod 拉得到 image，滾動更新就會繼續。',
-    why: ['manifest 寫的 tag 是 1.43，registry 裡只有 1.4.3。kubelet 拉不到就不會建立容器，Pod 停在 ImagePullBackOff。', '新 Pod 沒有 Ready，Deployment 就不會再關舊 Pod，所以服務沒有中斷——這是滾動更新的保護。'],
+    why: ['manifest 寫的 tag 是 1.43，registry 裡只有 1.4.3。kubelet 拉不到就不會建立容器，Pod 停在 ImagePullBackOff。', '新 Pod 沒有 Ready，Deployment 就不會再關舊 Pod，所以服務沒有中斷，這是滾動更新的保護。'],
   },
   crash: {
     label: 'CrashLoopBackOff', pod: 'api-7f6d8c9b5-tk3wd', fault: 'pod', faultText: '容器一啟動就退出', keys: ['logs', 'prev'], order: ['get', 'logs', 'desc'],
@@ -93,7 +93,7 @@ const SCN = {
     prev: { o: '09:12:41 INFO  starting api 1.4.3\n09:12:41 ERROR config: required environment variable\n               DATABASE_URL is not set\n09:12:41 FATAL exiting with code 1', hl: [1, 2],
       seen: '上一個容器死在同一行：DATABASE_URL is not set。', so: '每次重啟都一樣，不是偶發。容器剛重啟、logs 還是空的時候，要靠 --previous 才看得到上一次的遺言。' },
     ev: { o: events([['4m', 'Normal', 'Started', 'pod/api-7f6d8c9b5-tk3wd', 'Started container api'], ['40s', 'Warning', 'BackOff', 'pod/api-7f6d8c9b5-tk3wd', 'Back-off restarting failed container api']]), hl: [2],
-      seen: '只有 Started 和 BackOff，沒有排程、拉 image、探針的警告。', so: 'events 只說「一直重啟」，不會說程式為什麼退出——那要看 logs。' },
+      seen: '只有 Started 和 BackOff，沒有排程、拉 image、探針的警告。', so: 'events 只說「一直重啟」，不會說程式為什麼退出，那要看 logs。' },
     ep: { o: endpoints(NONE), hl: [1], seen: 'endpoints 是空的。', so: '兩個 Pod 都沒 Ready，Service 沒有後端；是結果不是原因。' },
     opts: [
       { t: '少了必要的環境變數，程式讀設定時就退出', ok: true },
@@ -103,7 +103,7 @@ const SCN = {
     ],
     fix: [' containers:', '   - name: api', '     image: reg.local/shop/api:1.4.3', '+    env:', '+      - name: DATABASE_URL', '+        valueFrom:', '+          secretKeyRef:', '+            name: api-db', '+            key: url'],
     fixNote: '連線字串放 Secret，不直接寫在 manifest。Secret 不存在時 Pod 會停在 CreateContainerConfigError，是另一種狀態。',
-    why: ['CrashLoopBackOff 不是一種錯誤，而是「容器一直結束，kubelet 用越來越長的間隔重啟它」的狀態；真正的原因要從容器最後印出來的 log 找。', '這個版本新增了必要的設定 DATABASE_URL，Deployment 沒有跟著補上，所以每次啟動都在讀設定時退出。'],
+    why: ['CrashLoopBackOff 不是一種錯誤，而是「容器一直結束，kubelet 用越來越長的間隔重啟它」的狀態；原因要從容器最後印出來的 log 找。', '這個版本新增了必要的設定 DATABASE_URL，Deployment 沒有跟著補上，所以每次啟動都在讀設定時退出。'],
   },
   oom: {
     label: 'OOMKilled', pod: 'api-66d5f7c8b9-p4x7n', fault: 'pod', faultText: '超過 memory limits 被殺', keys: ['desc'], order: ['get', 'desc', 'prev'],
@@ -112,7 +112,7 @@ const SCN = {
     get: { o: pods([['api-66d5f7c8b9-p4x7n', '1/1', 'Running', '6 (40s ago)', '38m'], ['api-66d5f7c8b9-w9c2j', '0/1', 'OOMKilled', '5 (9s ago)', '38m']]), hl: [1, 2], clear: ['dep', 'rs'],
       seen: '一個 Running 但 RESTARTS 6，另一個 STATUS 是 OOMKilled。', so: '容器能跑一陣子才掛，不是一啟動就死；排程與 image 可以排除。' },
     desc: { o: `Name:  api-66d5f7c8b9-p4x7n\nContainers:\n  api:\n    State:          Running\n    Last State:     Terminated\n      Reason:       OOMKilled\n      Exit Code:    137\n    Restart Count:  6\n    Limits:\n      memory:  128Mi\n` + devents([['Normal', 'Started', K, 'Started container api'], ['Warning', 'BackOff', K, 'Back-off restarting failed container api']]), hl: [5, 6, 9],
-      seen: 'Last State：OOMKilled、Exit Code 137；Limits 的 memory 是 128Mi。', so: '137 = 128 + 9，被 SIGKILL 殺掉；Reason 寫明 OOMKilled：容器用的記憶體超過自己的 limits。不是節點記憶體不足——那會是 Evicted。' },
+      seen: 'Last State：OOMKilled、Exit Code 137；Limits 的 memory 是 128Mi。', so: '137 = 128 + 9，被 SIGKILL 殺掉；Reason 寫明 OOMKilled：容器用的記憶體超過自己的 limits。不是節點記憶體不足（那會是 Evicted）。' },
     logs: { o: '10:02:11 INFO  starting api 1.4.2\n10:02:12 INFO  listening on :8080\n10:02:15 INFO  GET /orders 200 18ms', hl: [],
       seen: '目前這個容器的 log 一切正常。', so: '剛重啟的容器還沒出事；要看「上一個」容器死前發生什麼，得加 --previous。' },
     prev: { o: '10:01:02 INFO  GET /orders 200 21ms\n10:01:19 INFO  GET /reports/export?range=365d started\n10:01:27 INFO  export: loaded 480000 rows\n# log 到這裡就斷了，沒有任何錯誤訊息', hl: [1, 2],
@@ -137,7 +137,7 @@ const SCN = {
     get: { o: pods([['api-6c9d7b5f4-h7k2c', '1/1', 'Running', '0', '12m'], ['api-6c9d7b5f4-r5n8d', '1/1', 'Running', '0', '12m']]), hl: [1, 2], clear: ['dep', 'rs', 'pod'],
       seen: '兩個 Pod 都是 1/1 Running、RESTARTS 0。', so: 'Pod 本身健康：排程、image、程式啟動、readiness 都過了，問題不在 Pod 內部。' },
     desc: { o: `Name:    api-6c9d7b5f4-h7k2c\nLabels:  app=api-server\n         pod-template-hash=6c9d7b5f4\nStatus:  Running\nIP:      10.244.1.17\nContainers:\n  api:\n    Port:   8080/TCP\n    Ready:  True\n` + devents([['Normal', 'Started', K, 'Started container api']]), hl: [1],
-      seen: 'Ready: True，Events 沒有警告；Pod 的 label 是 app=api-server。', so: 'Pod 沒事。把 label 記下來——Service 是靠 label 找 Pod 的。' },
+      seen: 'Ready: True，Events 沒有警告；Pod 的 label 是 app=api-server。', so: 'Pod 沒事。把 label 記下來：Service 是靠 label 找 Pod 的。' },
     logs: { o: '08:40:02 INFO  starting api 1.4.2\n08:40:03 INFO  listening on :8080', hl: [], seen: '程式正常啟動，之後沒有任何請求的紀錄。', so: '程式沒壞，是請求根本沒送到 Pod；往 Service 那一段查。' },
     prev: { o: noPrev('api-6c9d7b5f4-h7k2c'), hl: [], seen: '沒有上一個容器。', so: '沒重啟過，排除程式當掉。' },
     ev: { o: events([['12m', 'Normal', 'Started', 'pod/api-6c9d7b5f4-h7k2c', 'Started container api'], ['12m', 'Normal', 'Started', 'pod/api-6c9d7b5f4-r5n8d', 'Started container api']]), hl: [],
@@ -150,7 +150,7 @@ const SCN = {
       { t: 'Ingress 的路徑規則寫錯', why: 'Ingress 寫錯不會讓 Service 的 endpoints 變空。Service 找不到 Pod 這件事要先修。' },
     ],
     fix: [' kind: Service', ' metadata:', '   name: api-svc', ' spec:', '   selector:', '-    app: api', '+    app: api-server'],
-    fixNote: '也可以反過來改 Pod template 的 label，重點是兩邊一致。selector 對不上不會有任何錯誤訊息，只能從 endpoints 發現。',
+    fixNote: '也可以反過來改 Pod template 的 label，只要兩邊一致。selector 對不上不會有任何錯誤訊息，只能從 endpoints 發現。',
     why: ['Service 不認 Pod 的名字，只認 label：被 selector 選到、而且 Ready 的 Pod 才會進 endpoints。Pod template 的 label 改成了 app=api-server，Service 還在找 app=api，一個都選不到。', 'Ingress 把請求轉給一個沒有後端的 Service，所以回 503。'],
   },
   ready: {
@@ -158,14 +158,14 @@ const SCN = {
     intro: 'Pod 看起來都在跑，但服務一樣連不到。',
     orderWhy: 'Running 但 0/1 就是 readiness 沒過：describe 的 Events 會寫探針失敗的原因（404、connection refused、timeout 各代表不同問題），再用 logs 從程式那一側確認。',
     get: { o: pods([['api-58c7d9f6b-j6v3s', '0/1', 'Running', '0', '6m'], ['api-58c7d9f6b-n2q8f', '0/1', 'Running', '0', '6m']]), hl: [1, 2], clear: ['dep', 'rs'],
-      seen: 'STATUS 是 Running，但 READY 0/1、RESTARTS 0。', so: '容器活著、沒重啟（排除當掉與 OOM），只是沒被判定為「可以接流量」——這是 readiness 管的事。' },
+      seen: 'STATUS 是 Running，但 READY 0/1、RESTARTS 0。', so: '容器活著、沒重啟（排除當掉與 OOM），只是沒被判定為「可以接流量」，這是 readiness 管的事。' },
     desc: { o: `Name:  api-58c7d9f6b-j6v3s\nContainers:\n  api:\n    State:          Running\n    Ready:          False\n    Restart Count:  0\n    Readiness:      http-get http://:8080/healthz period=5s\n` + devents([['Normal', 'Started', K, 'Started container api'], ['Warning', 'Unhealthy', K, 'Readiness probe failed: HTTP probe'], ['', '', '', 'failed with statuscode: 404']]), hl: [6, 10, 11],
       seen: 'Events：Readiness probe failed … statuscode: 404；探針打的是 :8080/healthz。', so: '404 代表連得到程式、port 也對，只是沒有這個路徑。port 錯會是 connection refused，程式太慢會是 timeout。' },
     logs: { o: '11:20:04 INFO  routes: /orders /reports /ready\n11:20:04 INFO  listening on :8080\n11:20:10 INFO  GET /healthz 404 0ms\n11:20:15 INFO  GET /healthz 404 0ms', hl: [0, 2, 3],
       seen: '程式每 5 秒收到一次 GET /healthz，都回 404；它提供的路徑是 /ready。', so: '從程式這一側證實：探針有打到，只是路徑不對。' },
     prev: { o: noPrev('api-58c7d9f6b-j6v3s'), hl: [], seen: '沒有上一個容器。', so: 'RESTARTS 是 0，沒有當掉過。' },
     ev: { o: events([['6m', 'Normal', 'Started', 'pod/api-58c7d9f6b-j6v3s', 'Started container api'], ['3s', 'Warning', 'Unhealthy', 'pod/api-58c7d9f6b-j6v3s', 'Readiness probe failed: HTTP probe failed with statuscode: 404']]), hl: [2],
-      seen: 'Unhealthy：Readiness probe failed，statuscode 404，3 秒前還在發生。', so: '探針持續失敗，而且失敗的方式是 404——路徑的問題。' },
+      seen: 'Unhealthy：Readiness probe failed，statuscode 404，3 秒前還在發生。', so: '探針持續失敗，而且是 404，代表路徑有問題。' },
     ep: { o: endpoints(NONE), hl: [1], seen: 'endpoints 是空的。', so: '和 selector 對不上的症狀一樣；差別在 get pods 的 READY：這次是 0/1，是 Pod 自己沒就緒。' },
     opts: [
       { t: 'Service 的 selector 對不上', why: 'selector 對不上時 Pod 會是 1/1。這裡 READY 是 0/1，是 Pod 自己沒通過就緒檢查。' },
@@ -202,7 +202,7 @@ export default function K8sDebugLab() {
 
   return (
     <Lab accent="violet" className="kd" kicker="K8S DEBUG LAB" title="從 Pod 狀態查到原因：該下哪個指令、看哪一行"
-         blurb="選一種故障，按指令看它在這個情境下會印出什麼，線索記在右邊的筆記；蒐集夠了就選原因——答對會看到要改 manifest 的哪一行。">
+         blurb="六種故障情境：從 kubectl 指令的輸出蒐集線索、判斷原因，答對後顯示要改 manifest 的哪一行。">
       <LabControls>
         <Seg label="情境" tinted value={key} onChange={choose} options={KEYS.map((k) => ({ value: k, label: SCN[k].label }))} />
         <span className="spacer" />
@@ -246,7 +246,7 @@ export default function K8sDebugLab() {
             <Stat label="作答" value={`${tries} 次`} note={solved ? '已找出原因' : tries ? '還沒答對' : '蒐集線索後再選'} tone={solved ? 'ok' : ''} />
           </Stats>
           <div className="kd-o5"><LabExplain title={solved ? '發生了什麼' : `症狀：${sc.label}`}>
-            {solved ? sc.why.map((t, i) => <p key={i}>{t}</p>) : <><p>{sc.intro}</p><p>先用 get pods 看 STATUS、READY、RESTARTS 三欄，判斷容器是「沒排上節點」「沒啟動」「啟動後又掛」還是「活著但沒接到流量」，再決定下一個指令。每個指令都按按看：沒有輸出、或印出錯誤，本身也是線索。</p></>}
+            {solved ? sc.why.map((t, i) => <p key={i}>{t}</p>) : <><p>{sc.intro}</p><p>先用 get pods 看 STATUS、READY、RESTARTS 三欄，判斷容器是「沒排上節點」「沒啟動」「啟動後又掛」還是「活著但沒接到流量」，再決定下一個指令。沒有輸出、或印出錯誤，本身也是線索。</p></>}
           </LabExplain></div>
         </div>
 

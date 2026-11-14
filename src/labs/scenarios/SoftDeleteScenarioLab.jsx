@@ -28,12 +28,12 @@ const MODES = {
   hard: {
     label: 'hard · DELETE', sql: `DELETE FROM users WHERE id = 1;\n-- orders / comments 的 FK 是 ON DELETE CASCADE`,
     title: 'DELETE 把訂單一起帶走',
-    text: ['外鍵 CASCADE 的意思就是「父列消失，子列跟著消失」。Alice 的兩筆訂單、兩張發票、兩則留言全部不見，財務報表當月少了 NT$ 3,290，稽核找不到 INV-0101。', '改成 SET NULL 訂單會留下來，但 user_id 變 NULL：報表有數字、卻不知道是誰買的，退款也找不到人。個資倒是真的清乾淨了，重新註冊也沒問題。'],
+    text: ['外鍵 CASCADE 的意思是「父列消失，子列跟著消失」。Alice 的兩筆訂單、兩張發票、兩則留言全部不見，財務報表當月少了 NT$ 3,290，稽核找不到 INV-0101。', '改成 SET NULL 訂單會留下來，但 user_id 變 NULL：報表有數字、卻不知道是誰買的，退款也找不到人。個資倒是清乾淨了，重新註冊也沒問題。'],
   },
   soft: {
     label: 'soft · deleted_at', sql: `UPDATE users SET deleted_at = now() WHERE id = 1;\n-- 之後每一條查詢：WHERE deleted_at IS NULL`,
     title: '列還在，一切靠 WHERE 過濾',
-    text: ['三張表一列都沒少，復原就是把 deleted_at 改回 NULL。代價是「每一條查詢都要記得過濾」：開啟「查詢忘了加 WHERE」看列表把 Alice 吐出來。', 'UNIQUE(email) 也會擋住重新註冊，因為那個 email 還躺在表裡；要換成 partial unique index。個資仍在資料庫，30 天後法規要求的清除還沒發生——soft 幾乎一定要配一個排程做第二階段。'],
+    text: ['三張表一列都沒少，復原就是把 deleted_at 改回 NULL。代價是「每一條查詢都要記得過濾」，「查詢忘了加 WHERE」時列表會把 Alice 吐出來。', 'UNIQUE(email) 也會擋住重新註冊，因為那個 email 還躺在表裡；要換成 partial unique index。個資仍在資料庫，30 天後法規要求的清除還沒發生；soft 幾乎一定要配一個排程做第二階段。'],
   },
   anonymize: {
     label: 'anonymize · 覆寫個資', sql: `BEGIN;\nINSERT INTO deletion_audit (user_id, email_hash, at) VALUES (1, 'sha256:3f9a…', now());\nUPDATE users SET name = '已刪除的使用者 #1', email = 'deleted-1@invalid', deleted_at = now() WHERE id = 1;\nCOMMIT;`,
@@ -85,14 +85,14 @@ function simulate(mode, done, forgot, partial) {
     const leak = visible.find((u) => u.deleted_at)
     r.list = leak
       ? (mode === 'anonymize'
-        ? { warn: true, text: `列出 ${visible.length} 人，包含「${leak.name}」——個資沒外洩，但殭屍帳號出現在列表`, rows: visible }
+        ? { warn: true, text: `列出 ${visible.length} 人，包含「${leak.name}」：個資沒外洩，但殭屍帳號出現在列表`, rows: visible }
         : { ok: false, text: `列出 ${visible.length} 人，包含已刪除的 Alice（deleted_at 有值卻被列出來）`, rows: visible })
       : { ok: true, text: `列出 ${visible.length} 人：${visible.map((u) => u.name).join('、')}`, rows: visible }
   }
   if (done.age) {
     r.age = mode === 'hard' ? { ok: true, text: '個資在刪除當下就不存在（備份與日誌另計）' }
       : mode === 'anonymize' ? { ok: true, text: '個資在刪除當下已被覆寫，稽核表只有 hash' }
-      : mode === 'soft' ? { ok: false, text: '第 30 天：users 表裡 Alice 的姓名與 email 原封不動，comments JOIN users 仍顯示 Alice——沒有排程就沒有清除' }
+      : mode === 'soft' ? { ok: false, text: '第 30 天：users 表裡 Alice 的姓名與 email 原封不動，comments JOIN users 仍顯示 Alice。沒有排程就沒有清除' }
       : { ok: false, text: '第 30 天：users_archive 裡 Alice 的個資原封不動，需要排程清 archive' }
   }
   if (done.restore) {
@@ -132,7 +132,7 @@ export default function SoftDeleteScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="刪掉 Alice 之後：三張表、一份財務報表、五個後續動作"
-         blurb="先選做法，按「刪除使用者 Alice」，再依序按後面的動作。切換做法會用同一組動作重算，直接比較後果。所有資料為示意。">
+         blurb="刪除使用者 Alice 之後的一連串動作在各做法下的後果；切換做法會用同一組動作重算。所有資料為示意。">
       <LabControls>
         <Seg tinted value={mode} onChange={setMode} options={Object.entries(MODES).map(([k, v]) => ({ value: k, label: v.label }))} />
       </LabControls>
@@ -249,8 +249,8 @@ export default function SoftDeleteScenarioLab() {
             <Row label="客服復原" res={sim.r.restore} />
           </ul>
           <LabExplain title={m.title}>{m.text.map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
-          <Callout title="什麼時候會真的踩到">
-            上線半年後有人加了一個新的列表 API 忘了過濾 deleted_at；行銷匯出 email 名單把已刪除的使用者寄了一封信；財務對帳發現去年 12 月少了三張發票——這三件事分別對應 soft 忘了 WHERE、soft 沒做第二階段清除、hard 的 CASCADE。
+          <Callout title="什麼時候會踩到">
+            上線半年後有人加了一個新的列表 API 忘了過濾 deleted_at；行銷匯出 email 名單把已刪除的使用者寄了一封信；財務對帳發現去年 12 月少了三張發票。這三件事分別對應 soft 忘了 WHERE、soft 沒做第二階段清除、hard 的 CASCADE。
           </Callout>
         </div>
       </LabGrid>

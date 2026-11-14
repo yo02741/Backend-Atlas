@@ -114,7 +114,7 @@ deploy-prompts:
         explain: 'git repo 提供版本、diff 與審查（MR、CODEOWNERS），清單檔是機器能讀的真相來源，安裝端才有東西可以比對；tag 讓任何版本都取得回來。共用資料夾與聊天室公告沒有審核、無法鎖版本，也查不出誰在用哪一版；等平台上線才開始，等於這段時間完全沒有管理，而平台本身也需要先有清單才有東西可放。',
       },
       {
-        q: '比對程式對 sql-review 回報「已是最新版」，但它其實有問題。問題出在哪？',
+        q: '比對程式對 sql-review 回報「已是最新版」，但它有問題。問題出在哪？',
         code: `def check(manifest, installed):
     for s in installed:
         reg = manifest[s["name"]]

@@ -3,7 +3,7 @@ export default [
   {
     id: 'test-quality-1', skill: 'test-quality', kind: 'python', level: 2,
     title: '修掉假綠燈：讓測試殺得掉四個突變體',
-    prompt: '`shipping_fee(subtotal, member)` 的規格：金額為負要 `raise ValueError`；會員滿 500、非會員滿 1000 免運（回傳 `0`），否則運費 `80`。\n\n底下 `TestShippingFee` 是 AI「補」出來的測試：按「執行」會看到四個測試全綠，但它們對程式一點約束都沒有——每一個都是套套邏輯或斷言太弱。\n\n改寫 `TestShippingFee` 裡的測試（可以改名、增減方法，**不要改 `shipping_fee`**），讓它們：\n\n1. 對正確的實作仍然全部通過\n2. 能殺掉這四個突變體（換成突變體後至少一個測試要失敗）：\n   - `>=` 改成 `>`（門檻邊界）\n   - 門檻永遠是 1000（忽略會員）\n   - 拿掉 `raise ValueError`（負數金額照樣算運費）\n   - `return 80` 改成 `return 60`\n\n每個測試都要寫出**具體的期望值**，不要拿函式自己的輸出當期望值。',
+    prompt: '`shipping_fee(subtotal, member)` 的規格：金額為負要 `raise ValueError`；會員滿 500、非會員滿 1000 免運（回傳 `0`），否則運費 `80`。\n\n底下 `TestShippingFee` 是 AI「補」出來的測試：按「執行」會看到四個測試全綠，但它們對程式一點約束都沒有，每一個都是套套邏輯或斷言太弱。\n\n改寫 `TestShippingFee` 裡的測試（可以改名、增減方法，**不要改 `shipping_fee`**），讓它們：\n\n1. 對正確的實作仍然全部通過\n2. 能殺掉這四個突變體（換成突變體後至少一個測試要失敗）：\n   - `>=` 改成 `>`（門檻邊界）\n   - 門檻永遠是 1000（忽略會員）\n   - 拿掉 `raise ValueError`（負數金額照樣算運費）\n   - `return 80` 改成 `return 60`\n\n每個測試都要寫出**具體的期望值**，不要拿函式自己的輸出當期望值。',
     starter: `import sys
 import unittest
 

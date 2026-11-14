@@ -46,7 +46,7 @@ const STEPS = [
   {
     label: '登入 + 同意', from: 0, to: 2, title: '③ 使用者在授權伺服器上登入並同意',
     text: () => [
-      '帳號密碼、2FA 都發生在授權伺服器的網域，你的 App 從頭到尾看不到密碼——這就是 OAuth 的重點：委託授權，不交出憑證。',
+      '帳號密碼、2FA 都發生在授權伺服器的網域，你的 App 從頭到尾看不到密碼。OAuth 做的是委託授權，不交出憑證。',
       '同意畫面列出 scope 對應的白話描述。使用者按下同意後，授權伺服器產生一個一次性的 code，並記住它對應的 client_id、redirect_uri（和 code_challenge）。',
     ],
     code: () => ({
@@ -58,8 +58,8 @@ const STEPS = [
     label: '/callback?code&state', from: 0, to: 1, title: '④ 導回 redirect_uri，帶著 code 與 state',
     text: () => [
       '授權伺服器 302 到你登記過的 redirect_uri（只能是事先登記的，防止 code 被送去別的網址），瀏覽器再次跟著跳，query 裡有 code 與 state。',
-      'App 第一件事：比對 state 是否等於 session 裡存的。不相等就中止——這防的是 CSRF：攻擊者把「他的」授權結果塞到你的瀏覽器裡，讓你的帳號綁到他的 Google。',
-      'code 本身很短命（通常 10 分鐘內）、只能用一次，而且它還不是 token——瀏覽器攔到也沒直接用處。',
+      'App 第一件事：比對 state 是否等於 session 裡存的。不相等就中止。這一步防的是 CSRF：攻擊者把「他的」授權結果塞到你的瀏覽器裡，讓你的帳號綁到他的 Google。',
+      'code 本身很短命（通常 10 分鐘內）、只能用一次，而且它還不是 token，瀏覽器攔到也沒直接用處。',
     ],
     code: () => ({
       src: `HTTP/1.1 302 Found\nLocation: https://app.example.com/callback\n  ?code=4/0AX4XfWh…\n  &state=k3Qx7f…\n\n→ App 檢查：state === session.state ?\n  不符 → 400，流程中止`,
@@ -70,8 +70,8 @@ const STEPS = [
     label: 'POST /token', from: 1, to: 2, title: '⑤ App 後端用 code 換 token',
     text: (p) => [
       '這一步是 back-channel：App 伺服器直接對授權伺服器發 POST，瀏覽器完全不參與，所以 client_secret（機密型 client 才有）不會經過使用者的裝置。',
-      p ? '同時送上 code_verifier。授權伺服器算 base64url(sha256(verifier)) 和第 ② 步存的 code_challenge 比對——攔到 code 的人沒有 verifier，換不到 token。這就是 PKCE 補上的那一塊。'
-        : '沒有 PKCE 的公開型 client 在這裡什麼都證明不了：code 是誰的、誰都能換。這就是為什麼現在的規範要求 SPA 與手機 App 一律用 PKCE。',
+      p ? '同時送上 code_verifier。授權伺服器算 base64url(sha256(verifier)) 和第 ② 步存的 code_challenge 比對。攔到 code 的人沒有 verifier，換不到 token，這是 PKCE 補上的那一塊。'
+        : '沒有 PKCE 的公開型 client 在這裡什麼都證明不了：code 是誰的、誰都能換。所以現在的規範要求 SPA 與手機 App 一律用 PKCE。',
     ],
     code: (p) => ({
       src: `POST /token HTTP/1.1\nHost: oauth2.googleapis.com\nContent-Type: application/x-www-form-urlencoded\n\ngrant_type=authorization_code\n&code=4/0AX4XfWh…\n&redirect_uri=https://app.example.com/callback\n&client_id=1234.apps.googleusercontent.com\n&client_secret=GOCSPX-…（機密型 client 才加）${p ? `\n&code_verifier=${VERIFIER}` : ''}`,
@@ -92,7 +92,7 @@ const STEPS = [
   {
     label: 'Authorization: Bearer …', from: 1, to: 3, title: '⑦ 帶著 Bearer token 呼叫資源 API',
     text: () => [
-      '把 access_token 放進 Authorization: Bearer 標頭。Bearer 的意思就是「持有者」——誰拿著就當誰，所以 token 要走 HTTPS、不要進 log、不要放 URL。',
+      '把 access_token 放進 Authorization: Bearer 標頭。Bearer 的意思是「持有者」：誰拿著就當誰，所以 token 要走 HTTPS、不要進 log、不要放 URL。',
       '這一步可以是你的後端代打，也可以是前端直接打（若 token 交給了前端）；前者 token 不出伺服器，較安全。',
     ],
     code: () => ({
@@ -104,7 +104,7 @@ const STEPS = [
     label: '200 資料', from: 3, to: 1, title: '⑧ 資源 API 驗 token、回資料',
     text: () => [
       '資源 API 驗證 token：是誰簽的、過期沒、aud 是不是我、scope 夠不夠。JWT 型 token 可以本地驗簽章；不透明 token 則回頭問授權伺服器（introspection）。',
-      '驗過就回資料。整個流程裡，你的 App 只拿到「被授權的那一小塊」——使用者隨時可以在 Google 帳號設定裡撤銷。',
+      '驗過就回資料。整個流程裡，你的 App 只拿到「被授權的那一小塊」，使用者隨時可以在 Google 帳號設定裡撤銷。',
     ],
     code: () => ({
       src: `HTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n  "sub": "110169484474386276334",\n  "email": "alice@example.com",\n  "email_verified": true,\n  "name": "Alice"\n}`,
@@ -124,7 +124,7 @@ export default function OAuthLab() {
 
   return (
     <Lab accent="orange" kicker="AUTH LAB" title="OAuth 2.0 授權碼流程（+PKCE）：8 步看懂"
-         blurb="逐步播放「用 Google 登入」背後的 8 個來回。左邊時序圖亮出目前這一步的箭頭，右邊是該步真正的 HTTP 內容；關掉 PKCE 看少了哪兩樣東西、為什麼公開型 client 少不得。">
+         blurb="「用 Google 登入」背後的 8 個來回與每一步的 HTTP 內容；沒有 PKCE 時少了哪兩樣東西，以及公開型 client 為什麼少不得。">
       <LabControls>
         <div className="oa-ctl"><Stepper step={step} total={STEPS.length} onStep={setStep} playing={playing} onPlay={toggle} /></div>
         <span className="spacer" />
@@ -143,7 +143,7 @@ export default function OAuthLab() {
           <LabExplain title={s.title}>{s.text(pkce).map((t, i) => <p key={i}>{t}</p>)}</LabExplain>
           <Callout title="工作上什麼時候用">
             <b>讓使用者用既有帳號登入</b>（Google / GitHub / 公司 SSO），或<b>代替使用者存取第三方資料</b>（讀他的行事曆、貼文到他的帳號）。
-            自家前後端之間的登入不需要 OAuth——那是一般 session / JWT 的事；OAuth 的價值在「跨組織委託授權，不交出密碼」。
+            自家前後端之間的登入不需要 OAuth，用一般 session / JWT 即可；OAuth 的價值在「跨組織委託授權，不交出密碼」。
           </Callout>
           <Callout tone="good" title="三個常被混在一起的觀念">
             <b>OAuth 是「授權」，OIDC 加上「身分」：</b>OAuth 2.0 只給你 access_token 去叫 API；OpenID Connect 疊在上面，多回一個 id_token（JWT）告訴你使用者是誰。

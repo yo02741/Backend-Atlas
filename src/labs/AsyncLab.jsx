@@ -75,15 +75,15 @@ await asyncio.gather(
 
 const TEXT = {
   sync: {
-    io: ['一次只服務一個請求。每個請求 CPU 其實只忙 20ms，剩下 100ms 程式卡在 `db.query()` 那一行「等回覆」，這段時間 CPU 完全閒著，但下一個請求也進不來。', '6 個請求排成一列：總耗時 6 × 120 = 720ms，CPU 利用率只有 17%。這就是「I/O 密集」的典型浪費：瓶頸不在算力，在等待。'],
-    cpu: ['沒有 I/O、120ms 全部在算。CPU 100% 忙碌，720ms 是「真的需要這麼多 CPU 時間」，不是浪費。', '這種工作（影像處理、報表彙總、加密）要縮短總時間，唯一的辦法是「多顆 CPU 一起算」。'],
+    io: ['一次只服務一個請求。每個請求 CPU 只忙 20ms，剩下 100ms 程式卡在 `db.query()` 那一行「等回覆」，這段時間 CPU 完全閒著，但下一個請求也進不來。', '6 個請求排成一列：總耗時 6 × 120 = 720ms，CPU 利用率只有 17%。這是「I/O 密集」的典型浪費：瓶頸在等待，不在算力。'],
+    cpu: ['沒有 I/O、120ms 全部在算。CPU 100% 忙碌，720ms 全是必要的 CPU 時間，沒有浪費。', '這種工作（影像處理、報表彙總、加密）要縮短總時間，唯一的辦法是「多顆 CPU 一起算」。'],
   },
   threads: {
-    io: ['開 N 個 worker，每個握住一個請求。CPython 的 GIL 讓同一時間只有一個執行緒能跑 Python bytecode，但執行緒進入 socket 等待（DB driver 的 C 層）時會**釋放 GIL**，所以圖上的 I/O 段可以重疊。', 'CPU 段仍然是輪流的——淺灰「等 GIL」就是拿不到鎖的時間。worker 數 = 平行度上限：worker 越多重疊越好，但每個執行緒有自己的 stack（預設 8MB），開到幾百個就不划算。'],
+    io: ['開 N 個 worker，每個握住一個請求。CPython 的 GIL 讓同一時間只有一個執行緒能跑 Python bytecode，但執行緒進入 socket 等待（DB driver 的 C 層）時會**釋放 GIL**，所以圖上的 I/O 段可以重疊。', 'CPU 段仍然是輪流的，淺灰「等 GIL」是拿不到鎖的時間。worker 數 = 平行度上限：worker 越多重疊越好，但每個執行緒有自己的 stack（預設 8MB），開到幾百個就不划算。'],
     cpu: ['4 個 worker 都握住了請求，但沒有任何 I/O 等待可以釋放 GIL：同一時間永遠只有一個執行緒在算，其他人全在「等 GIL」。總時間還是 720ms，一點都沒省。', '真實的 CPython 每 5ms 會強制切換 GIL，所以實際上是交錯執行、總時間一樣（切換還有額外成本）。要真正平行得用 `multiprocessing` / `ProcessPoolExecutor`，每個 process 有自己的 GIL。（Python 3.13 起有實驗性的 free-threaded build 可以關掉 GIL。）'],
   },
   async: {
-    io: ['一個執行緒、一個 event loop。`await db.fetch()` 的意思是「我要等 I/O 了，控制權還給 loop，去跑別人」——所以 6 個請求的 I/O **全部重疊**，CPU 段依序排隊：總耗時 ≈ 120 + 5 × 10 = 170ms。', '並發數不受執行緒數限制，一個 process 撐上千個連線都行。前提是 handler 裡**沒有任何同步阻塞**：在 `async def` 裡呼叫同步的 DB driver（例如 psycopg2、requests），整個 loop 會被凍住，所有請求一起卡——要用 asyncpg / motor / httpx 這類 async driver，或用 `run_in_threadpool` 丟去執行緒池。'],
+    io: ['一個執行緒、一個 event loop。`await db.fetch()` 的意思是「我要等 I/O 了，控制權還給 loop，去跑別人」，所以 6 個請求的 I/O **全部重疊**，CPU 段依序排隊：總耗時 ≈ 120 + 5 × 10 = 170ms。', '並發數不受執行緒數限制，一個 process 撐上千個連線都行。前提是 handler 裡**沒有任何同步阻塞**：在 `async def` 裡呼叫同步的 DB driver（例如 psycopg2、requests），整個 loop 會被凍住，所有請求一起卡。要用 asyncpg / motor / httpx 這類 async driver，或用 `run_in_threadpool` 丟去執行緒池。'],
     cpu: ['沒有 `await` 的地方 event loop 就切不出去：每個 handler 從頭算到尾、一個接一個，和同步完全一樣 720ms。', '而且更糟：運算期間整個 loop 凍住，連 health check 都回不了，其他請求全部 timeout。CPU 密集工作要 `await loop.run_in_executor(process_pool, fn)`，或丟給 worker / queue（Celery、RQ、arq），API 只負責收單與回結果。'],
   },
 }
@@ -127,12 +127,12 @@ export default function AsyncLab() {
   const speedup = SYNC_TOTAL / sim.total
   const util = Math.round((sim.cpuBusy / sim.total) * 100)
   const title = cpuOnly
-    ? { sync: '同步：CPU 真的在忙，沒得省', threads: '多執行緒 + CPU 密集：GIL 讓大家排隊', async: 'async + CPU 密集：沒有 await 就沒有讓出' }[mode]
+    ? { sync: '同步：CPU 一直在忙，沒得省', threads: '多執行緒 + CPU 密集：GIL 讓大家排隊', async: 'async + CPU 密集：沒有 await 就沒有讓出' }[mode]
     : { sync: '同步：等 I/O 的時候 CPU 在發呆', threads: `多執行緒：${workers} 個 worker，I/O 等待可以重疊`, async: 'async：一個執行緒把所有 I/O 等待疊在一起' }[mode]
 
   return (
     <Lab accent="blue" kicker="PYTHON LAB" title="同步、多執行緒、async：I/O 等待時 CPU 在幹嘛"
-         blurb="6 個請求同時進來，每個都要「算一下 → 等資料庫 → 再算一下」。切換三種模式看甘特圖怎麼變、總耗時差多少；再把工作改成純 CPU 運算，看 async 與執行緒為什麼忽然沒用了。">
+         blurb="6 個請求同時進來，每個都要「算一下 → 等資料庫 → 再算一下」：三種模式的甘特圖與總耗時，以及工作換成純 CPU 運算後 async 與執行緒為什麼沒用。">
       <LabControls>
         <Seg label="模式" tinted value={mode} onChange={setMode}
              options={Object.entries(MODES).map(([value, v]) => ({ value, label: v.label }))} />
@@ -161,7 +161,7 @@ export default function AsyncLab() {
             {text.map((t, i) => <p key={i} dangerouslySetInnerHTML={{ __html: md(t) }} />)}
           </LabExplain>
           <Callout title="工作上什麼時候用">
-            後端 API 絕大多數是 I/O 密集（查 DB、打第三方 API、讀快取），所以 async 很有感：FastAPI 的 <code>async def</code> handler 配 async driver。寫 <code>def</code>（同步）handler 也沒關係——FastAPI 會自動把它丟進 threadpool 跑，不會卡住 loop。CPU 密集的工作（轉檔、跑模型、大報表）不要放在 API process 裡，丟給 worker / queue，API 只回「收到了，job id 是…」。
+            後端 API 絕大多數是 I/O 密集（查 DB、打第三方 API、讀快取），所以 async 很有感：FastAPI 的 <code>async def</code> handler 配 async driver。寫 <code>def</code>（同步）handler 也沒關係：FastAPI 會自動把它丟進 threadpool 跑，不會卡住 loop。CPU 密集的工作（轉檔、跑模型、大報表）不要放在 API process 裡，丟給 worker / queue，API 只回「收到了，job id 是…」。
           </Callout>
         </div>
       </LabGrid>

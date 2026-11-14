@@ -68,7 +68,7 @@ const RACE = {
     { a: 'SELECT → 1', b: 'SELECT → 1', stock: 1, text: 'A、B 幾乎同時送出 SELECT stock，兩邊都讀到 1。這一步本身沒有錯，錯的是接下來拿這個舊值做決定。' },
     { a: '1 > 0，可以買', b: '1 > 0，可以買', stock: 1, text: '程式碼裡的 if stock > 0 在兩台 API 上各自成立。沒有任何鎖擋在中間，因為 SELECT 不鎖列。' },
     { a: 'UPDATE → 0', b: '（還在路上）', stock: 0, text: 'A 的 UPDATE stock = stock - 1 先到，庫存 1 → 0，建訂單。' },
-    { a: 'INSERT 訂單', b: 'UPDATE → -1 ✗', stock: -1, bad: true, text: 'B 的 UPDATE 接著到，stock - 1 照做：0 → -1。兩個人都有訂單，庫存卻是負的。這就是超賣，併發越高同時讀到舊值的人越多。' },
+    { a: 'INSERT 訂單', b: 'UPDATE → -1 ✗', stock: -1, bad: true, text: 'B 的 UPDATE 接著到，stock - 1 照做：0 → -1。兩個人都有訂單，庫存卻是負的。這叫超賣，併發越高同時讀到舊值的人越多。' },
   ],
   atomic: [
     { a: 'UPDATE WHERE > 0', b: 'UPDATE WHERE > 0', stock: 1, text: 'A、B 同時送 UPDATE … WHERE id = $1 AND stock > 0。判斷和扣減在同一句裡。' },
@@ -91,8 +91,8 @@ const RACE = {
 }
 
 const EXPLAIN = {
-  naive: { title: '先查再扣：超賣，而且沒有比較快', body: ['每個請求都是「SELECT 看庫存 → 程式判斷 → UPDATE 扣 1」。SELECT 不鎖列，讀到的是已 commit 的值；1,000 個請求在 100 ms 內到齊，而更新在那一列的行鎖上一筆一筆排隊 commit，所以幾乎每個人讀到的庫存都還大於 0，幾乎每個人都「搶到」。', '超賣件數＝「讀到舊值的人數」，跟併發直接相關；而每個搶到的人還是要排那把行鎖，所以尾端一樣慢。把庫存拉大、請求數拉小，超賣會變少但不會歸零——單人測試永遠過，上線第一次秒殺就爆。'] },
-  atomic: { title: '條件 UPDATE：正確，但全部排在同一把鎖後面', body: ['判斷與扣減在同一句 SQL 裡，靠那一列的行鎖排隊，庫存永遠不會變負。沒搶到的人也要等到鎖、重新評估 WHERE 才拿到「0 列」。', '所以尾端的回應時間≈成功數 × 更新成本 + 失敗數 × 重查成本，跟請求數成正比；拉到兩三千個，p95 就超過 1 秒。等鎖的請求又同時佔著連線，堆積超過 max_connections 後其他 API 也會排隊。'] },
+  naive: { title: '先查再扣：超賣，而且沒有比較快', body: ['每個請求都是「SELECT 看庫存 → 程式判斷 → UPDATE 扣 1」。SELECT 不鎖列，讀到的是已 commit 的值；1,000 個請求在 100 ms 內到齊，而更新在那一列的行鎖上一筆一筆排隊 commit，所以幾乎每個人讀到的庫存都還大於 0，幾乎每個人都「搶到」。', '超賣件數＝「讀到舊值的人數」，跟併發直接相關；而每個搶到的人還是要排那把行鎖，所以尾端一樣慢。庫存越大、請求數越少，超賣越少，但不會歸零；單人測試永遠過，上線第一次秒殺就爆。'] },
+  atomic: { title: '條件 UPDATE：正確，但全部排在同一把鎖後面', body: ['判斷與扣減在同一句 SQL 裡，靠那一列的行鎖排隊，庫存永遠不會變負。沒搶到的人也要等到鎖、重新評估 WHERE 才拿到「0 列」。', '所以尾端的回應時間≈成功數 × 更新成本 + 失敗數 × 重查成本，跟請求數成正比；請求數到兩三千個，p95 就超過 1 秒。等鎖的請求又同時佔著連線，堆積超過 max_connections 後其他 API 也會排隊。'] },
   redis: { title: 'Redis 預扣：把「誰搶到」的決定搬到記憶體', body: ['DECR 是原子的，Redis 單執行緒一個一個做，每個約幾十微秒，1,000 個請求幾十毫秒內全部有答案。扣到負數的 900 個請求各補一個 INCR，計數器回到 0。', 'DB 只收到 100 筆訂單，而且是 worker 非同步寫的，開賣瞬間資料庫幾乎沒感覺。代價是兩個儲存體：Redis 說搶到、worker 卻沒建成訂單時，要靠對帳 job 補單或退庫存。'] },
   queue: { title: '排隊：DB 只有一個寫入者，但使用者要等輪詢', body: ['API 只做 enqueue，幾毫秒就回 202；worker 依序處理，庫存見底後剩下的請求可以快速標成失敗。沒有鎖競爭、沒有超賣，尖峰再高 API 都不會被拖垮。', '問題是「知道結果」的時間：要等 worker 排到你、再等下一次輪詢。庫存越多、worker 越慢，1 秒內拿到答案的比例就越低。適合接受排隊體驗的場景，不適合要即時回饋的。'] },
 }
@@ -116,7 +116,7 @@ export default function FlashSaleScenarioLab() {
 
   return (
     <Lab accent="red" kicker="SCENARIO LAB" title="開賣那一秒：同一批請求，四種做法四種結局"
-         blurb="調好請求數與庫存，按「開賣」。切換做法，看超賣件數、鎖等待堆積、回應時間，以及有多少人在 1 秒內知道結果。下方時序圖用兩個請求搶最後一件，逐步走一遍。">
+         blurb="各做法的超賣件數、鎖等待堆積、回應時間，以及有多少人在 1 秒內知道結果。下方時序圖是兩個請求搶最後一件。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         <Slider label="同時請求數" min={200} max={3000} step={100} value={n} onChange={setN} format={(v) => `${v.toLocaleString()} 個`} />
@@ -155,7 +155,7 @@ export default function FlashSaleScenarioLab() {
             <p>單位成本是固定假設（DB 一次更新含 commit 1.2 ms、Redis 一個指令 0.03 ms、worker 一筆 2 ms、輪詢間隔 500 ms），所以絕對值只是示意；要看的是切換做法時哪個數字跳、哪個數字不動。</p>
             <p>「堆積峰值」是同一時刻等在那一列行鎖或等連線的請求數；超過 {POOL} 表示連線池已滿，跟秒殺無關的 API 也會跟著排隊。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">限量搶購、折扣碼名額、抽獎名額、課程或活動報名、演唱會票——凡是「數量有限 + 時間公告在前」的東西。平常低流量看不出問題，先查再扣的程式碼會在第一次真正的開賣時超賣。先用一句條件 UPDATE 保底，流量真的到了再把預扣搬到 Redis。</Callout>
+          <Callout title="什麼時候會踩到">限量搶購、折扣碼名額、抽獎名額、課程或活動報名、演唱會票，凡是「數量有限 + 時間公告在前」的東西。平常低流量看不出問題，先查再扣的程式碼會在第一次正式開賣時超賣。先用一句條件 UPDATE 保底，流量確實到了再把預扣搬到 Redis。</Callout>
         </div>
       </LabGrid>
       <style>{`

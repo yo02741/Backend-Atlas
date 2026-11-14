@@ -9,7 +9,7 @@ export default {
   skills: ['data-modeling', 'db-operations', 'scaling'],
   lab: 'MultiTenantScenarioLab',
   summary: 'B2B SaaS 300 家租戶、大小差 1000 倍；資料要嚴格隔離、又要跨租戶統計、每週還有 schema 變更。同一張表、每租戶一個 schema、還是每租戶一個資料庫？',
-  situation: 'B2B 人資 SaaS，300 家客戶（租戶）：最小的 20 名員工、最大的 2 萬名，資料量差 1000 倍。每家的資料要嚴格隔離——任何一次把 A 公司的資料回給 B 公司都是合約事故。產品團隊每週要看跨租戶的使用統計；工程團隊每週至少一次 schema 變更要套到所有租戶。PostgreSQL 16，兩個人維運。',
+  situation: 'B2B 人資 SaaS，300 家客戶（租戶）：最小的 20 名員工、最大的 2 萬名，資料量差 1000 倍。每家的資料要嚴格隔離：任何一次把 A 公司的資料回給 B 公司都是合約事故。產品團隊每週要看跨租戶的使用統計；工程團隊每週至少一次 schema 變更要套到所有租戶。PostgreSQL 16，兩個人維運。',
   constraints: [
     '一次跨租戶外洩就是合約事故，隔離要靠機制、不靠人記得加 `WHERE`',
     '每週的 schema 變更要在一個維護窗口內套完所有租戶',
@@ -53,7 +53,7 @@ export default {
     { id: 'early', situation: '剛起步 5 家客戶，兩週後要上線；預期一年內長到幾百家。', options: ['shared', 'schema', 'database'], answer: 'shared',
       explain: '5 家的時候三種都做得到，差別在一年後：共用表從 5 家長到 500 家不用改架構，另外兩種到幾百家時 migration 與維運會先撐不住，屆時再搬回共用表是最貴的遷移。現在就把 `tenant_id` 放進每張表的主鍵；RLS 可以晚一點開。' },
     { id: 'mixed', situation: '混合：280 家小客戶，加 5 家要專屬環境的大客戶。程式碼只想維護一套，主體的資料佈局選哪個？', options: ['shared', 'schema', 'database'], answer: 'shared',
-      explain: '主體走共用表（一套程式、一份 migration），5 家專屬客戶用同一套程式碼、同一個帶 `tenant_id` 的 schema，部署到各自的資料庫——差別只在依租戶選連線字串。這樣專屬客戶得到物理隔離，其他 280 家維持一份維運，而不是為 285 家都養三套佈局。' },
+      explain: '主體走共用表（一套程式、一份 migration），5 家專屬客戶用同一套程式碼、同一個帶 `tenant_id` 的 schema，部署到各自的資料庫，差別只在依租戶選連線字串。這樣專屬客戶得到物理隔離，其他 280 家維持一份維運，而不是為 285 家都養三套佈局。' },
   ],
   implementation: [
     { title: 'Row-Level Security：忘了加 WHERE 也只會看不到列（沒設 app.tenant_id 就一列都看不到）', lang: 'sql', code: `ALTER TABLE employees ENABLE ROW LEVEL SECURITY;

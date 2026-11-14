@@ -11,7 +11,7 @@ Pod 沒壞、映像沒錯、程式也在跑。問題出在 Service 的這一行�
 
 Service 靠 label 找 Pod。這個 selector 一個 Pod 也選不到，Service 後面沒有任何位址，Ingress controller 找不到後端就回 503。API server 不會擋這種錯：「一個目前選不到任何 Pod 的 Service」是合法的物件，Pod 可能晚一點才建立。
 
-[導入 Kubernetes 前要準備什麼](#/skill/k8s-readiness) 講過 Pod、Deployment、Service、Ingress 各自的角色，這一課不重複，只講實作：三份 manifest 各自要寫哪些欄位、它們之間靠什麼接起來、套用之後怎麼確認真的接上了。探針、資源與設定注入放在下一課 [Kubernetes 實作：設定、探針與資源](#/skill/k8s-config-probes)。
+[導入 Kubernetes 前要準備什麼](#/skill/k8s-readiness) 講過 Pod、Deployment、Service、Ingress 各自的角色，這一課不重複，只講實作：三份 manifest 各自要寫哪些欄位、它們之間靠什麼接起來、套用之後怎麼確認它們接上了。探針、資源與設定注入放在下一課 [Kubernetes 實作：設定、探針與資源](#/skill/k8s-config-probes)。
 
 ## 三份 manifest 之間的四條接線
 
@@ -43,7 +43,7 @@ Deployment  booking-api
 
 四條裡只有 ④ 會在套用時被擋下來，其他三條都是「套用成功、但不通」。所以套用後不能只看 `created`，要逐條確認，方法在「套用與確認」一節。
 
-label 是貼在物件上的鍵值對，本身沒有意義，由使用的人決定。selector 的比對規則很單純：selector 列出的每一組鍵值，Pod 都要有而且值相同；Pod 身上多出來的 label 不影響。下面這段程式就是這個規則：
+label 是貼在物件上的鍵值對，本身沒有意義，由使用的人決定。selector 的比對規則很單純：selector 列出的每一組鍵值，Pod 都要有而且值相同；Pod 身上多出來的 label 不影響。下面這段程式實作這個規則：
 
 ```python run
 # Service 的 selector 比對 Pod 的 label：selector 的每一組鍵值，Pod 都要有而且值相同

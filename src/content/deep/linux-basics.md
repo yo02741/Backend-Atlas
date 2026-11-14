@@ -42,7 +42,7 @@ $ curl -s localhost:8000/health
 {"status":"ok"}
 ```
 
-這一段用到的東西——systemd、journal、`ss`、`ps`、訊號、行程的擁有者——就是這一課的內容。後面依序講檔案權限、行程與訊號、systemd 與 log、排查指令、環境變數，最後是 SSH 金鑰登入。
+這一段用到的 systemd、journal、`ss`、`ps`、訊號、行程的擁有者，是這一課的內容。後面依序講檔案權限、行程與訊號、systemd 與 log、排查指令、環境變數，最後是 SSH 金鑰登入。
 
 ## 檔案權限：誰可以對這個檔案做什麼
 
@@ -129,7 +129,7 @@ sudo chmod -R g+rX,o-rwx /srv/orders/releases
 sudo install -d -o orders -g orders -m 750 /srv/orders/uploads   # 建目錄並一次設好擁有者與權限
 ```
 
-應用程式被攻破時，攻擊者拿到的就只是 `orders` 這個帳號能碰的東西。容器裡的使用者與掛載目錄的權限問題，本質上也是這裡的 UID 與權限位元，見 [幫 Python 專案寫好 Dockerfile](#/skill/dockerfile-python)。
+應用程式被攻破時，攻擊者拿到的就只是 `orders` 這個帳號能碰的東西。容器裡的使用者與掛載目錄的權限問題，也是這裡的 UID 與權限位元，見 [幫 Python 專案寫好 Dockerfile](#/skill/dockerfile-python)。
 
 ## 行程與訊號
 
@@ -210,7 +210,7 @@ systemctl cat orders-api                # 看 systemd 實際採用的 unit 內�
 sudo systemctl edit orders-api          # 建覆寫檔（drop-in），不直接改套件提供的原檔
 ```
 
-`Restart=on-failure` 加上 `RestartSec` 讓服務當掉後自動回來。但如果短時間內一直失敗，systemd 會停止重試，狀態裡出現 `Start request repeated too quickly.`——這時是程式本身有問題（設定錯、埠被占用），要看 log，不是再按一次 restart。修好後先 `sudo systemctl reset-failed orders-api` 清掉計數。
+`Restart=on-failure` 加上 `RestartSec` 讓服務當掉後自動回來。但如果短時間內一直失敗，systemd 會停止重試，狀態裡出現 `Start request repeated too quickly.`。這時是程式本身有問題（設定錯、埠被占用），要看 log，再按一次 restart 沒有用。修好後先 `sudo systemctl reset-failed orders-api` 清掉計數。
 
 ## log 在哪：journalctl
 
@@ -264,7 +264,7 @@ Mem:           7.7Gi       5.1Gi       312Mi        64Mi       2.6Gi       2.4Gi
 Swap:             0B          0B          0B
 ```
 
-`free` 只剩 312 MiB 不代表快滿了。Linux 會把閒置的記憶體拿去當磁碟快取（`buff/cache`），需要時可以收回來。真正還能用的是 `available` 的 2.4 GiB。
+`free` 只剩 312 MiB 不代表快滿了。Linux 會把閒置的記憶體拿去當磁碟快取（`buff/cache`），需要時可以收回來。還能用的是 `available` 的 2.4 GiB。
 
 磁碟滿了，找是誰：
 
@@ -274,7 +274,7 @@ sudo du -sh /var/log/* | sort -h | tail
 sudo lsof +L1                    # 已經被刪掉、但還被行程開著的檔案：空間要等行程關檔或重啟才會釋放
 ```
 
-最後一個值得記住：刪掉一個正在被寫入的 10 GB log 檔，`df` 的使用率不會下降，因為寫入它的行程還握著那個檔案。正確做法是讓程式重新開檔（logrotate 的 `postrotate`、對 nginx 送 `USR1`），或用 `truncate -s 0` 清空內容而不是刪除。
+最後一點：刪掉一個正在被寫入的 10 GB log 檔，`df` 的使用率不會下降，因為寫入它的行程還握著那個檔案。正確做法是讓程式重新開檔（logrotate 的 `postrotate`、對 nginx 送 `USR1`），或用 `truncate -s 0` 清空內容而不是刪除。
 
 依症狀找指令：
 
@@ -334,7 +334,7 @@ LOG_LEVEL=debug ./run.sh      # 只對這一個指令設定，不影響目前的
 
 - **systemd 不讀 `~/.bashrc`、`~/.profile`**。服務的環境變數只來自 unit 檔的 `Environment=`、`EnvironmentFile=`，`PATH` 也是 systemd 給的預設值。`ExecStart=` 寫完整路徑（`/srv/orders/current/.venv/bin/uvicorn`）最保險。
 - **`sudo` 預設會重設環境**，`PATH` 換成 `secure_path`，你 export 的變數不會帶過去。
-- **cron 的環境非常精簡**，`PATH` 通常只有 `/usr/bin:/bin`。
+- **cron 的環境很精簡**，`PATH` 通常只有 `/usr/bin:/bin`。
 
 要看一個執行中的服務實際拿到什麼環境，讀 `/proc/<pid>/environ`（需要權限）：
 

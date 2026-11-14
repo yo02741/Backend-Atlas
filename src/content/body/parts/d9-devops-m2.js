@@ -3,7 +3,7 @@ export default {
   'k8s-manifests': {
     points: [
       { b: '一個對外的服務要三份 manifest', t: 'Deployment（`apps/v1`）管副本數、Pod 範本與更新方式；Service（`v1`）給一組 Pod 穩定的名稱與 port；Ingress（`networking.k8s.io/v1`）依網域與路徑把外部流量導到 Service。三者要在同一個 namespace。' },
-      { b: '靠 label 與 selector 接線，不是靠檔名', t: '四條接線：Ingress 的 backend 對到 Service 的名稱與 port、Service 的 selector 對到 Pod 的 label、targetPort 對到容器監聽的 port、Deployment 的 selector 對到 template 的 label。只有最後一條寫錯會被 API server 擋下，其他都是套用成功但不通。' },
+      { b: '靠 label 與 selector 接線', t: '四條接線：Ingress 的 backend 對到 Service 的名稱與 port、Service 的 selector 對到 Pod 的 label、targetPort 對到容器監聽的 port、Deployment 的 selector 對到 template 的 label。只有最後一條寫錯會被 API server 擋下，其他都是套用成功但不通。' },
       { b: 'image 用固定 tag', t: '`latest` 換了內容時 manifest 沒有變，`kubectl apply` 不會觸發更新，之後重建的 Pod 才拉到新內容，同一個 Deployment 跑著不同版本，也沒有上一個 tag 可以回退。用 commit SHA 或版本號。' },
       { b: 'maxSurge 與 maxUnavailable 決定滾動更新的節奏', t: '更新期間 Pod 總數不超過 replicas + maxSurge、可用數不低於 replicas − maxUnavailable。`maxSurge: 1`、`maxUnavailable: 0` 不掉容量但需要多餘的節點資源；反過來不需要多餘資源但會短暫少一個副本。' },
       { b: '套用之後要逐條確認', t: '`kubectl apply -f` 回 created 不代表通了。用 `rollout status` 等更新完成、`get endpointslices` 確認 Service 選到了 Pod、`port-forward` 直接測 Service、`describe` 看 Events；出問題用 `rollout undo` 回上一版，再把 Git 裡的 manifest 改回來。' },
@@ -48,7 +48,7 @@ export default {
       { b: 'Pending 與 ImagePullBackOff 看 Events', t: 'Pending：節點放不下 requests、taint 或節點條件不符、PVC 沒綁定，原因寫在 FailedScheduling 的訊息裡。ImagePullBackOff：映像名稱或 tag 不存在、私有倉庫沒有 imagePullSecrets、節點不信任 registry 的憑證。' },
       { b: 'CrashLoopBackOff 看上一次的 log 與結束原因', t: '程式啟動後就結束，kubelet 以加倍的間隔重啟。`logs --previous` 看上一次的輸出；`describe` 的 Last State 分辨是程式錯誤（Exit Code 1）、被 liveness 重啟，還是 OOMKilled（Exit Code 137，log 裡找不到原因）。' },
       { b: 'Running 但連不到：從 Service 往下查', t: 'EndpointSlice 是空的：selector 對不上 label，或 Pod 沒有 ready。有位址但被拒絕：targetPort 寫錯或程式只聽 127.0.0.1。逾時：NetworkPolicy。Ingress 的 404 是規則沒對到、503 是 Service 後面沒有 Pod、502 是連到 Pod 但失敗。' },
-      { b: '刪掉重建不是排錯', t: '範本沒改，重建的 Pod 會停在同樣的狀態，前一次的 log 與事件還會消失。`exec` 進執行中的容器、`port-forward` 跳過 Ingress 直接測、`kubectl debug` 帶工具進沒有 shell 的容器；在容器裡改的東西重建後就不見。' },
+      { b: '刪掉重建修不好問題', t: '範本沒改，重建的 Pod 會停在同樣的狀態，前一次的 log 與事件還會消失。`exec` 進執行中的容器、`port-forward` 跳過 Ingress 直接測、`kubectl debug` 帶工具進沒有 shell 的容器；在容器裡改的東西重建後就不見。' },
     ],
     checklist: [
       '看到 Pending、ImagePullBackOff、CrashLoopBackOff、OOMKilled，能說出各自的下一個指令與要找的線索',

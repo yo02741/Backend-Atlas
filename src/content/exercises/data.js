@@ -84,7 +84,7 @@ FROM users u
 LEFT JOIN orders o ON o.user_id = u.id
 GROUP BY u.id, u.name;`,
     expect: { columns: ['name', 'orders'], rows: [['Alice', '2'], ['Bob', '2'], ['Carol', '1'], ['Dave', '0'], ['Eve', '0']], ordered: false },
-    hints: ['執行一次看看 Dave 的數字——是 1 還是 0？', 'COUNT(欄位) 不會計算 NULL；COUNT(*) 計算所有列。'],
+    hints: ['執行一次看看 Dave 的數字：是 1 還是 0？', 'COUNT(欄位) 不會計算 NULL；COUNT(*) 計算所有列。'],
   },
   {
     id: 'sql-joins-3', skill: 'sql-joins', kind: 'sql', level: 2,
@@ -100,7 +100,7 @@ FROM orders o
 LEFT JOIN users u ON u.id = o.user_id
 WHERE u.id IS NULL;`,
     expect: { columns: ['id'], rows: [['105']], ordered: false },
-    hints: ['以 orders 為主表 LEFT JOIN users，配不到的就是孤兒。', '如果表有正確的外鍵約束，這種資料根本進不來——這正是 FOREIGN KEY 的價值。'],
+    hints: ['以 orders 為主表 LEFT JOIN users，配不到的就是孤兒。', '如果表有正確的外鍵約束，這種資料根本進不來，這是 FOREIGN KEY 的作用。'],
   },
   {
     id: 'sql-joins-4', skill: 'sql-joins', kind: 'sql', level: 2,

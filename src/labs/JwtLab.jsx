@@ -46,7 +46,7 @@ export default function JwtLab() {
 
   useEffect(() => {
     if (!subtleOk) return
-    if (!secret) { setSigs({ sig: '', expected: '', err: 'secret 不可為空——HMAC 需要一把金鑰。' }); return }
+    if (!secret) { setSigs({ sig: '', expected: '', err: 'secret 不可為空：HMAC 需要一把金鑰。' }); return }
     let alive = true
     Promise.all([hmacB64url(secret, `${h64}.${p64}`), hmacB64url(serverSecret, `${h64}.${s64}`)])
       .then(([sig, expected]) => { if (alive) setSigs({ sig, expected, err: '' }) })
@@ -64,7 +64,7 @@ export default function JwtLab() {
 
   return (
     <Lab accent="orange" kicker="AUTH LAB" title="JWT 解剖：三段、簽章、竄改偵測"
-         blurb="這裡的簽章是真的用瀏覽器 WebCrypto 算出來的 HMAC-SHA256。改 payload、換 secret、拉過期時間，看三段 token 與伺服器判定怎麼跟著變。">
+         blurb="簽章由瀏覽器 WebCrypto 計算 HMAC-SHA256；payload、secret 或過期時間改變時，三段 token 與伺服器判定跟著變。">
       <LabControls>
         <label className="jwt-field"><span>sub</span>
           <input value={sub} maxLength={24} style={{ width: 150 }} onChange={(e) => setSub(e.target.value)} spellCheck={false} /></label>
@@ -102,7 +102,7 @@ export default function JwtLab() {
             <section className="jwt-panel h">
               <header>HEADER <span>base64url → JSON</span></header>
               <pre>{JSON.stringify(HEADER, null, 2)}</pre>
-              <p>alg 說「用什麼演算法驗」——但伺服器不能信它，要用自己設定的白名單。</p>
+              <p>alg 說「用什麼演算法驗」，但伺服器不能信它，要用自己設定的白名單。</p>
             </section>
             <section className="jwt-panel p">
               <header>PAYLOAD <span>base64url → JSON（claims）</span></header>
@@ -112,7 +112,7 @@ export default function JwtLab() {
                 {'  "iat": '}<b>{sent.iat}</b>{',  '}<i>{fmtTime(sent.iat)}</i>{'\n'}
                 {'  "exp": '}<b>{sent.exp}</b>{'   '}<i>{fmtTime(sent.exp)}{expired ? '（已過）' : ''}</i>{'\n}'}
               </pre>
-              <p>{changed ? '標記處是被改過的欄位：任何人都改得了這段，只是簽章會對不上。' : '誰拿到 token 都能解出這段——這不是加密，只是編碼。'}</p>
+              <p>{changed ? '標記處是被改過的欄位：任何人都改得了這段，只是簽章會對不上。' : '誰拿到 token 都能解出這段：這是編碼，不是加密。'}</p>
             </section>
             <section className="jwt-panel s">
               <header>SIGNATURE <span>HMAC-SHA256</span></header>
@@ -195,12 +195,12 @@ function explain({ err, changed, tamperNoop, wrongSecret, expired, sigOk }) {
     text: [err, 'HMAC 是「金鑰 + 訊息 → 固定長度摘要」，沒有金鑰就沒有簽章可言。'],
   }
   if (tamperNoop) return {
-    title: '竄改開了，但 role 本來就是 admin——位元組沒變，簽章當然還對',
+    title: '竄改開了，但 role 本來就是 admin：位元組沒變，簽章當然還對',
     text: ['簽章比對的是「位元組是否一模一樣」，不是「有沒有人動過」。改成一樣的值等於沒改，所以伺服器仍判定簽章有效。', '把 role 切回 user 再開竄改，就能看到簽章對不上的樣子。'],
   }
   if (changed && wrongSecret) return {
     title: '既被竄改、secret 又不同：兩個理由都讓簽章無效',
-    text: ['伺服器拿另一把 secret 對「被改過的 header.payload」重算 HMAC，得到的值和 token 第三段完全不同——不管是哪個原因，結果都是拒絕。', '簽章失敗時伺服器通常不會（也不該）告訴 client 是哪個原因，避免給攻擊者線索。'],
+    text: ['伺服器拿另一把 secret 對「被改過的 header.payload」重算 HMAC，得到的值和 token 第三段完全不同。不管是哪個原因，結果都是拒絕。', '簽章失敗時伺服器通常不會（也不該）告訴 client 是哪個原因，避免給攻擊者線索。'],
   }
   if (changed) return {
     title: '竄改被抓到：payload 變了，簽章對不上',
@@ -208,14 +208,14 @@ function explain({ err, changed, tamperNoop, wrongSecret, expired, sigOk }) {
   }
   if (wrongSecret) return {
     title: 'secret 不同，簽章對不上',
-    text: ['同一份 token，伺服器用另一把 secret 重算，得到完全不同的 HMAC。HS256 是對稱簽章：簽的人和驗的人共用同一把 secret。', '這也是跨服務時的痛點——每個服務都要拿到 secret，外洩一處等於人人都能簽發。多服務環境常改用 RS256 / ES256：私鑰簽、公鑰驗，公鑰可以放心公開。'],
+    text: ['同一份 token，伺服器用另一把 secret 重算，得到完全不同的 HMAC。HS256 是對稱簽章：簽的人和驗的人共用同一把 secret。', '這也是跨服務時的痛點：每個服務都要拿到 secret，外洩一處等於人人都能簽發。多服務環境常改用 RS256 / ES256：私鑰簽、公鑰驗，公鑰可以放心公開。'],
   }
   if (expired) return {
     title: '簽章沒問題，但已過期：驗簽和驗 claims 是兩步',
-    text: ['簽章有效只證明內容沒被改。exp 是 payload 裡的一個數字，伺服器要另外拿「現在時間」比對——過期的 token 簽章依然有效。', '所以驗證流程永遠是：先驗簽章（內容可信嗎），再驗 claims（exp、nbf、aud、iss 對不對）。缺任何一步都是漏洞。'],
+    text: ['簽章有效只證明內容沒被改。exp 是 payload 裡的一個數字，伺服器要另外拿「現在時間」比對，過期的 token 簽章依然有效。', '所以驗證流程永遠是：先驗簽章（內容可信嗎），再驗 claims（exp、nbf、aud、iss 對不對）。缺任何一步都是漏洞。'],
   }
   return {
     title: sigOk ? '簽章有效：三段各司其職' : '正在計算簽章…',
-    text: ['第一段 header 說用哪個演算法；第二段 payload 放 claims（sub、role、iat、exp）；第三段是對「前兩段的 base64url 字串」用 secret 算出的 HMAC-SHA256。', '改動前兩段的任何一個字元，第三段就對不上——試試把 sub 改一個字母，看簽章整串換掉。'],
+    text: ['第一段 header 說用哪個演算法；第二段 payload 放 claims（sub、role、iat、exp）；第三段是對「前兩段的 base64url 字串」用 secret 算出的 HMAC-SHA256。', '改動前兩段的任何一個字元，第三段就對不上：sub 改一個字母，簽章就整串換掉。'],
   }
 }

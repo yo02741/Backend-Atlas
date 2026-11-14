@@ -277,13 +277,13 @@ print("全部測試通過")
 
 記憶體版 repository 是 **fake**（有真實行為的簡化實作），不是 mock（預先寫好「被呼叫時回傳什麼」的替身）。fake 讓測試描述的是行為（「用過一次之後剩餘次數少 1」），而不是呼叫細節（「`save` 被呼叫了一次、參數是…」），重構時比較不會整片壞掉。
 
-這不代表資料層不用測：`PostgresCouponRepository` 本身要用真的 PostgreSQL 做整合測試（SQL 寫錯、約束、交易，fake 都測不到），見 [測試金字塔與 pytest](#/skill/testing)。分層之後，這兩種測試各自變得小而清楚。
+這不代表資料層不用測：`PostgresCouponRepository` 本身要用實際的 PostgreSQL 做整合測試（SQL 寫錯、約束、交易，fake 都測不到），見 [測試金字塔與 pytest](#/skill/testing)。分層之後，這兩種測試各自變得小而清楚。
 
 ## 分層的代價與界線
 
 分層不是越多越好：
 
-- **小型 CRUD 不必硬拆**。一個只是「把表單存進資料表」的 endpoint，service 只會是一行轉呼叫。可以先合併，等出現真正的規則再拆；重點是腦中知道界線在哪。
+- **小型 CRUD 不必硬拆**。一個只是「把表單存進資料表」的 endpoint，service 只會是一行轉呼叫。可以先合併，等出現業務規則再拆，但要清楚界線在哪。
 - **不要做萬用的 generic repository**。`Repository[T]` 提供 `get_all` / `filter(**kwargs)` 這類方法，等於把 ORM 的查詢能力原封不動交給 service，界線就沒了。repository 的方法應該以用例命名：`find_active_by_user(user_id)`、`reserve_stock(product_id, qty)`。
 - **不要讓 ORM 物件或 session 穿過邊界**。repository 回傳 ORM 物件後，service 在交易外讀它的關聯欄位會觸發延遲載入，產生難查的錯誤。回傳 dataclass 或明確轉換過的物件比較安全。
 - **介面只在有兩個以上實作時才有價值**。Protocol 的第二個實作通常就是測試用的 fake，這已經足夠理由；但不需要替每個類別都先定義介面。

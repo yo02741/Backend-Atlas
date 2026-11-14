@@ -31,7 +31,7 @@ pyproject.toml ──(uv lock：查套件索引、解出整棵樹)──→ uv.l
                                                        （版本號僅為示意）
 ```
 
-`uv.lock` 是**跨平台**的：它把 macOS、Linux、Windows、不同 Python 版本可能需要的套件都解出來，用環境標記（marker，例如 `python_full_version < '3.13'`）標示適用條件。所以在 macOS 上產生的 lock，Linux 的 CI 與 Docker 也直接能用。這一點和 `pip freeze` 不同：`pip freeze` 列出的是「目前這台機器這個環境裡裝了什麼」，換平台就可能不適用，也會把手動裝進去、其實沒用到的套件一起凍結。
+`uv.lock` 是**跨平台**的：它把 macOS、Linux、Windows、不同 Python 版本可能需要的套件都解出來，用環境標記（marker，例如 `python_full_version < '3.13'`）標示適用條件。所以在 macOS 上產生的 lock，Linux 的 CI 與 Docker 也直接能用。這一點和 `pip freeze` 不同：`pip freeze` 列出的是「目前這台機器這個環境裡裝了什麼」，換平台就可能不適用，也會把手動裝進去、沒用到的套件一起凍結。
 
 ### 虛擬環境是什麼
 

@@ -96,7 +96,7 @@ eyJhbGciOiJub25lIn0.eyJzdWIiOiJ1XzQyIiwicm9sZSI6ImFkbWluIn0.
 
 ### 演算法混淆（RS256 → HS256）
 
-伺服器用 RS256：私鑰簽、公鑰驗，公鑰是公開的。某些函式庫的介面是 `verify(token, key)`，演算法依 header 決定。攻擊者把 header 改成 `HS256`，然後**用伺服器的公鑰當作 HMAC 的 secret** 來簽。伺服器呼叫 `verify(token, public_key)` 時，函式庫看到 HS256，就拿 `public_key` 這串位元組當 HMAC secret 去驗——攻擊者用的正是同一串位元組，驗證通過。
+伺服器用 RS256：私鑰簽、公鑰驗，公鑰是公開的。某些函式庫的介面是 `verify(token, key)`，演算法依 header 決定。攻擊者把 header 改成 `HS256`，然後**用伺服器的公鑰當作 HMAC 的 secret** 來簽。伺服器呼叫 `verify(token, public_key)` 時，函式庫看到 HS256，就拿 `public_key` 這串位元組當 HMAC secret 去驗，而攻擊者簽章用的正是同一串位元組，驗證通過。
 
 防禦和前一個一樣：伺服器決定演算法，而且一把金鑰只對應一種演算法。比較新的函式庫會把金鑰物件與演算法綁在一起（例如 RSA 公鑰物件不能拿去做 HMAC），從介面上排除這種錯誤。整理這類陷阱的文件是 RFC 8725（JWT Best Current Practices）。
 
@@ -126,7 +126,7 @@ eyJhbGciOiJub25lIn0.eyJzdWIiOiJ1XzQyIiwicm9sZSI6ImFkbWluIn0.
 | 使用者層級的「最早有效時間」 | 使用者表存 `tokens_valid_after`；`iat` 早於它就拒絕 | 要查使用者資料（很多系統本來就會查）；一次撤銷該使用者全部 token |
 | 改用 opaque token + introspection | token 只是隨機字串，資源伺服器呼叫授權伺服器的 introspection 端點（RFC 7662）查狀態 | 每次（或每次快取過期）一個網路往返；撤銷即時 |
 
-refresh token rotation 與重放偵測的完整做法見 [身分閘道](#/skill/identity-gateway)。一個判斷原則：如果你的需求是「停用帳號要在一分鐘內生效」，而 access token 效期是一小時，那就必須在驗證時查某個伺服器端狀態——這時要誠實地承認它不是無狀態的，並選上表中的一種。
+refresh token rotation 與重放偵測的完整做法見 [身分閘道](#/skill/identity-gateway)。一個判斷原則：如果你的需求是「停用帳號要在一分鐘內生效」，而 access token 效期是一小時，那就必須在驗證時查某個伺服器端狀態，這時它已經不是無狀態的，要從上表選一種做法。
 
 ## 實際程式：用 WebCrypto 簽 HS256，再驗證
 
@@ -204,7 +204,7 @@ for (const [name, token] of Object.entries(cases)) {
 }
 ```
 
-第一行輸出刻意示範：沒有金鑰也能讀出 payload。五個案例中只有第一個通過。可以把 `ALLOWED_ALGS` 改成從 header 讀（`[header.alg]`）再看 `alg: none` 那一行會發生什麼——這個簡化的實作在 `KEYS` 找得到 kid 之前就會擋下來，但真實世界裡出事的函式庫就是在這一步放行。
+第一行輸出刻意示範：沒有金鑰也能讀出 payload。五個案例中只有第一個通過。可以把 `ALLOWED_ALGS` 改成從 header 讀（`[header.alg]`）再看 `alg: none` 那一行會發生什麼。這個簡化的實作在 `KEYS` 找得到 kid 之前就會擋下來，但真實世界裡出事的函式庫就是在這一步放行。
 
 伺服器端的 Python 通常用 PyJWT（需要安裝套件，不能在瀏覽器裡跑）：
 
@@ -231,7 +231,7 @@ claims = jwt.decode(
 | 例外與訊息 | 原因 | 怎麼處理 |
 |---|---|---|
 | `DecodeError: It is required that you pass in a value for the "algorithms" argument when calling decode().` | 呼叫 `jwt.decode` 時沒指定演算法 | 補上 `algorithms=[...]`，只列自己用的那一種 |
-| `DecodeError: Not enough segments` | 字串裡沒有兩個 `.`：拿到的其實是 opaque token、空字串，或 token 被截斷 | 印出收到的字串長度與前幾個字元（不要印整張 token），確認來源 |
+| `DecodeError: Not enough segments` | 字串裡沒有兩個 `.`：拿到的可能是 opaque token、空字串，或 token 被截斷 | 印出收到的字串長度與前幾個字元（不要印整張 token），確認來源 |
 | `DecodeError: Invalid header string: …` | 第一段解不出 JSON；常見原因是把 `Bearer ` 前綴連同 token 一起傳進 `decode`，前綴被當成第一段的一部分 | 先去掉 `Bearer ` 前綴再解 |
 | `InvalidAlgorithmError: The specified alg value is not allowed` | token header 的 `alg` 不在你的允許清單 | 確認發行端用的演算法；如果是攻擊嘗試，維持拒絕 |
 | `InvalidSignatureError: Signature verification failed` | 金鑰不對、內容被改、或用了錯的 `kid` 對應的金鑰 | 確認環境變數裡的 secret 或公鑰；輪替期間檢查 `kid` 對應 |
@@ -249,7 +249,7 @@ claims = jwt.decode(
 ## 動手
 
 1. 開 [JWT 解剖](#/lab/JwtLab) 實驗室：改 `role`、開「竄改」、開「不同 secret」，觀察哪一段變了、簽章為什麼對不上。
-2. 在上面的 `js run` 範例裡，把 `KEYS` 加一把 `'2026-11': 'next-secret'`，用 `sign(base, '2026-11')` 簽一張，確認兩把都能驗；再把 `'2026-10'` 刪掉，看舊 token 變成「不認得的 kid」。這就是輪替的最後一步。
+2. 在上面的 `js run` 範例裡，把 `KEYS` 加一把 `'2026-11': 'next-secret'`，用 `sign(base, '2026-11')` 簽一張，確認兩把都能驗；再把 `'2026-10'` 刪掉，看舊 token 變成「不認得的 kid」。這是輪替的最後一步。
 3. 把 `verify` 的 `leeway` 改成 `0`，把 `NOW` 改成 `base.exp`，看邊界上的行為；再想想時鐘差 2 分鐘的兩台伺服器會發生什麼。
 4. 拿一個真實的 JWT（例如自己開發環境的 access token），手動把中間那段做 Base64URL 解碼，列出它有哪些聲明、缺了哪些（`aud`？`jti`？）。不要把正式環境的 token 貼到第三方網站。
 5. 接著讀 [OAuth 2.0 與 OIDC](#/skill/oauth-oidc)：ID token 也是 JWT，但驗證規則多了 `nonce` 與 `aud = client_id`。

@@ -73,7 +73,7 @@ HAVING COUNT(*) > 1;`,
   {
     id: 'data-governance-2', skill: 'data-governance', kind: 'sql', level: 1,
     title: '必填欄位缺值（空字串也算）',
-    prompt: '病人的 `name`、`birth_date`、`sex` 都是必填。找出任何一個必填欄位缺值的病人，回 `id` 與 `chart_no`。\n\n注意：來源系統有時把「沒填」存成空字串 `\'\'` 或只有空白，而不是 NULL——這也算缺值。',
+    prompt: '病人的 `name`、`birth_date`、`sex` 都是必填。找出任何一個必填欄位缺值的病人，回 `id` 與 `chart_no`。\n\n注意：來源系統有時把「沒填」存成空字串 `\'\'` 或只有空白，而不是 NULL，這也算缺值。',
     setup: HOSP, setupKey: 'hosp-dq',
     starter: `SELECT id, chart_no
 FROM patients
@@ -102,7 +102,7 @@ WHERE d.code IS NULL
   AND r.dept_code IS NOT NULL
 GROUP BY r.dept_code;`,
     expect: { columns: ['dept_code', 'n'], rows: [['CARD', '1'], ['im', '2']], ordered: false },
-    hints: ['LEFT JOIN departments d ON d.code = r.dept_code，對不到的列 d.code 會是 NULL。', 'dept_code 本身是 NULL 時也對不到，會被當成一組 NULL 列出來——用 r.dept_code IS NOT NULL 排除。'],
+    hints: ['LEFT JOIN departments d ON d.code = r.dept_code，對不到的列 d.code 會是 NULL。', 'dept_code 本身是 NULL 時也對不到，會被當成一組 NULL 列出來，用 r.dept_code IS NOT NULL 排除。'],
   },
   {
     id: 'data-governance-4', skill: 'data-governance', kind: 'sql', level: 2,

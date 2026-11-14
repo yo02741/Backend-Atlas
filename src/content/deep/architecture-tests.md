@@ -8,7 +8,7 @@
 
 三個月後要把 service 拿去給批次任務用，發現它 import 了 FastAPI；想單獨測 repository，發現它會繞回來呼叫 service，形成循環依賴。
 
-規範檔對 agent 是**輸入**，不是**約束**：它讀到了、大多數時候會照做，但沒有任何機制保證每一次都照做，而且違反時沒有任何東西會變紅。這一課把架構規則從文字變成測試：違反就紅燈、合不進去。
+規範檔對 agent 是輸入，不是**約束**：它讀到了、大多數時候會照做，但沒有任何機制保證每一次都照做，而且違反時沒有任何東西會變紅。這一課把架構規則從文字變成測試：違反就紅燈、合不進去。
 
 ## 運作原理：import 就是依賴圖
 
@@ -30,7 +30,7 @@ app.handlers.orders ──▶ app.services.orders ──▶ app.repositories.ord
 
 檢查這些規則**不需要執行程式**：用標準函式庫的 `ast` 解析原始碼，找出 `Import` 與 `ImportFrom` 節點即可。這也代表檢查很快，可以放在 pre-commit 與每一次 CI。
 
-用 `ast` 而不是用 regex 掃 `import` 字串的理由：多行的 `from x import (a, b)`、寫在函式裡的 import、字串或註解裡出現的 `import` 字樣，`ast` 都能正確處理。它抓不到的是動態載入（`importlib.import_module(name)`、`__import__`）——這類寫法本身就值得另外用 lint 禁止。
+用 `ast` 而不是用 regex 掃 `import` 字串的理由：多行的 `from x import (a, b)`、寫在函式裡的 import、字串或註解裡出現的 `import` 字樣，`ast` 都能正確處理。它抓不到的是動態載入（`importlib.import_module(name)`、`__import__`），這類寫法可以另外用 lint 禁止。
 
 ## 實際程式：用 ast 檢查分層
 
@@ -105,7 +105,7 @@ print(f"{len(violations)} violation(s)")
 print("architecture test:", "FAILED" if violations else "passed")
 ```
 
-幾個值得注意的地方：
+幾個細節：
 
 - `layer_of` 用「等於前綴」或「以前綴加 `.` 開頭」判斷，少了 `.` 會把 `app.servicesx` 誤判成 `app.services`。
 - 標準函式庫與第三方套件不屬於任何層（`layer_of` 回傳 `None`），只受禁用規則限制。
@@ -165,14 +165,14 @@ uv run lint-imports        # 有 contract 被違反就以非零結束碼結束�
 | 架構測試 / import-linter | CI 紅燈，不能合併 | 能機械判定的依賴方向、禁用套件、模組獨立 |
 | code review | 看 reviewer 有沒有注意到 | 判定不了的設計問題：抽象是否恰當、命名 |
 
-規範檔還是要寫，但寫的是「為什麼」與「遇到需要例外時先停下來提出」；能機械判定的部分一律搬到測試。agent 撞到架構測試紅燈時，錯誤訊息本身就是最直接的回饋，它通常能自己修正。
+規範檔還是要寫，但寫的是「為什麼」與「遇到需要例外時先停下來提出」；能機械判定的部分一律搬到測試。agent 撞到架構測試紅燈時，錯誤訊息本身是最直接的回饋，它通常能自己修正。
 
 ### 例外怎麼處理
 
 總會有合理的例外，例如啟動程式（`app.main`）需要同時 import 每一層。處理方式：
 
 - 啟動與組裝的模組不放進任何一層，讓它不受分層限制。
-- 真的要對某條依賴開例外時，在設定裡**逐條列出**（import-linter 的 contract 支援忽略特定 import 的設定），並在 PR 說明理由。不要整條 contract 關掉。
+- 確定要對某條依賴開例外時，在設定裡**逐條列出**（import-linter 的 contract 支援忽略特定 import 的設定），並在 PR 說明理由。不要整條 contract 關掉。
 - 驗收清單裡加一條「不得修改架構 contract」，改 contract 需要人核准（見 [驗收設計](#/skill/acceptance-design)）。
 
 ## 架構圖也由程式碼產生：C4 與 Structurizr
@@ -223,7 +223,7 @@ workspace "掛號系統" {
 這份檔案放在 repo 裡（例如 `docs/architecture/workspace.dsl`），和程式碼一起 review。和架構測試搭配時有兩種做法：
 
 - **圖描述意圖、測試守住意圖**：DSL 裡的 component 關係（handlers → services → repos）與 import-linter 的 `layers` 是同一份規則的兩種表達。改分層時兩邊一起改，review 時對照。
-- **從程式產生模型**：用腳本掃描 import 圖，產生 DSL 的 component 與關係，再交給 Structurizr 渲染。這樣圖永遠跟程式一致，但也會忠實畫出違規的依賴——這正好是發現問題的方式。
+- **從程式產生模型**：用腳本掃描 import 圖，產生 DSL 的 component 與關係，再交給 Structurizr 渲染。這樣圖永遠跟程式一致，但也會忠實畫出違規的依賴，可以藉此發現問題。
 
 ## 常見錯誤與錯誤訊息
 
@@ -235,7 +235,7 @@ workspace "掛號系統" {
 | 檢查器漏掉 `from . import repo` | 相對 import 的 `module` 可能是 `None`，`level` 大於 0 | 依照檔案所在套件換算成絕對名稱 |
 | 架構測試全綠，但執行時還是出現循環 import | 依賴藏在 `importlib.import_module` 這類動態載入 | 用 lint 禁止動態 import，或把它限制在組裝層 |
 | agent 遇到紅燈後把 contract 刪掉 | contract 沒有保護 | contract 檔案列入 CODEOWNERS；驗收清單加禁止條款 |
-| `ImportError: cannot import name 'x' from partially initialized module` | 真的發生了循環 import | 畫出兩個模組的依賴，把共用的部分抽到更下層 |
+| `ImportError: cannot import name 'x' from partially initialized module` | 發生了循環 import | 畫出兩個模組的依賴，把共用的部分抽到更下層 |
 
 ## 動手
 

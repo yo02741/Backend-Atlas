@@ -4,7 +4,7 @@ const base = {
   'sql-basics': {
     points: [
       { b: '邏輯執行順序不是書寫順序', t: 'FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT。所以 WHERE 裡不能用 SELECT 的別名，HAVING 才能用聚合。（PostgreSQL 的擴充：ORDER BY 與 GROUP BY 可以用輸出欄位的別名，別的資料庫不一定。）' },
-      { b: 'NULL 不等於任何東西', t: '`NULL = NULL` 是 NULL 不是 true；要用 `IS NULL`。`COUNT(col)` 不算 NULL、`COUNT(*)` 算全部列。`NOT IN (含 NULL 的子查詢)` 會整個變空——經典地雷。' },
+      { b: 'NULL 不等於任何東西', t: '`NULL = NULL` 是 NULL 不是 true；要用 `IS NULL`。`COUNT(col)` 不算 NULL、`COUNT(*)` 算全部列。`NOT IN (含 NULL 的子查詢)` 會整個變空。' },
       { b: 'GROUP BY 之後只剩群組鍵與聚合', t: '想「每個使用者最新一筆訂單」不是 GROUP BY 能直接做的，要用視窗函數或 `DISTINCT ON`（PostgreSQL 特有）。' },
       { b: '型別要對', t: '金額用 `NUMERIC` 不用浮點、時間用 `TIMESTAMPTZ`、id 用 `BIGINT` 或 UUID、狀態用受限的文字加 CHECK 或 enum。' },
     ],
@@ -20,9 +20,9 @@ const base = {
   },
   'sql-joins': {
     points: [
-      { b: 'JOIN 是在配對列', t: 'ON 條件決定左表每列跟右表哪些列配成一列。一對多會讓左表「變多」——這是後續 SUM / COUNT 重複計算的根源。' },
+      { b: 'JOIN 是在配對列', t: 'ON 條件決定左表每列跟右表哪些列配成一列。一對多會讓左表「變多」，後續 SUM / COUNT 重複計算就是從這裡來的。' },
       { b: 'LEFT 保左、INNER 只留配對', t: '「所有使用者含沒訂單的」用 LEFT；「有訂單的使用者」用 INNER。RIGHT 幾乎都能改寫成 LEFT。' },
-      { b: 'anti-join：找孤兒', t: '`LEFT JOIN … WHERE 右.id IS NULL` 或 `NOT EXISTS` 找「沒有對應」的資料——從未下單的使用者、沒被引用的標籤。' },
+      { b: 'anti-join：找孤兒', t: '`LEFT JOIN … WHERE 右.id IS NULL` 或 `NOT EXISTS` 找「沒有對應」的資料，例如從未下單的使用者、沒被引用的標籤。' },
       { b: 'WHERE 與 ON 放條件的差別', t: 'LEFT JOIN 時，過濾右表的條件放 ON 才保得住左表；放 WHERE 會把右邊 NULL 的列一起濾掉，變成 INNER。' },
     ],
     checklist: [
@@ -183,7 +183,7 @@ const base = {
     points: [
       { b: '備份三件事', t: '自動化（每天 `pg_dump` 或受管服務快照）、異地存放、**定期還原演練**並記錄花多久（RTO）。有 WAL 歸檔才能做時間點還原（PITR）。' },
       { b: '連線是稀缺資源', t: 'PostgreSQL 每個連線是一個程序，`max_connections` 通常一兩百。API worker 數 × 每個 pool 大小要小於它；多實例時用 pgbouncer 做連線池。' },
-      { b: '慢查詢 log', t: '`log_min_duration_statement = 500ms` 把慢查詢記下來，配合 `pg_stat_statements` 看哪條查詢總耗時最高——優化從這裡開始，不是猜。' },
+      { b: '慢查詢 log', t: '`log_min_duration_statement = 500ms` 把慢查詢記下來，配合 `pg_stat_statements` 看哪條查詢總耗時最高，從那條開始優化。' },
       { b: 'VACUUM 與膨脹', t: 'MVCC 留下的舊版本靠 autovacuum 回收；大量 UPDATE / DELETE 的表會膨脹、索引變慢。看 `pg_stat_user_tables` 的 dead tuples，必要時調 autovacuum 參數。' },
       { b: '升級與 migration 上線', t: '大版本升級要先在副本演練；正式環境 migration 前先備份、避免長時間鎖表（加欄位帶 DEFAULT 在新版是即時的，加索引用 CONCURRENTLY）。' },
     ],
@@ -220,7 +220,7 @@ const base = {
       { b: 'aggregation 是管線', t: '`$match` → `$group` → `$sort` → `$project` 一階段接一階段，跟 SQL 的 WHERE / GROUP BY / ORDER BY 對應。`$match` 越早越好，才能用索引。' },
       { b: '索引規則跟 B-tree 一樣', t: '複合索引最左前綴、ESR 原則（Equality → Sort → Range 排欄位順序）、`explain("executionStats")` 看有沒有 COLLSCAN。' },
       { b: '更新運算子而非整份覆寫', t: '`$set`、`$inc`、`$push`、`$addToSet`：只送變更、原子、少傳輸。整份 replace 會在並發時互相覆蓋。' },
-      { b: '注意查詢運算子注入', t: '把使用者輸入直接當 filter（`{"password": req.body.password}`）會被 `{"$gt": ""}` 繞過——輸入要驗證成字串。' },
+      { b: '注意查詢運算子注入', t: '把使用者輸入直接當 filter（`{"password": req.body.password}`）會被 `{"$gt": ""}` 繞過，輸入要先驗證是字串。' },
     ],
     checklist: [
       '能寫出「每個作者的文章數，排序取前 10」的 aggregation',
@@ -233,11 +233,11 @@ const base = {
   },
   'redis-cache': {
     points: [
-      { b: 'cache-aside', t: '讀：先查快取，miss 才查 DB 並回寫快取（帶 TTL）。寫：更新 DB 後刪快取（不是更新快取——刪比較不會出錯）。' },
+      { b: 'cache-aside', t: '讀：先查快取，miss 才查 DB 並回寫快取（帶 TTL）。寫：更新 DB 後刪快取，不去更新快取（刪比較不會出錯）。' },
       { b: 'TTL 是安全網', t: '就算失效邏輯漏了，資料最多舊 TTL 那麼久。依「可以容忍多舊」決定 TTL。' },
       { b: '快取穿透、雪崩、擊穿', t: '查不存在的 key 每次都打 DB（快取空值）；大量 key 同時過期（TTL 加隨機抖動）；熱 key 過期瞬間大量 miss（加鎖或提前更新）。' },
       { b: 'Redis 不只是快取', t: '限流計數器（INCR + EXPIRE）、分散式鎖、排行榜（sorted set）、session 儲存、簡單佇列（list / stream）。' },
-      { b: 'key 要有命名規範', t: '`user:42:profile`、`ratelimit:login:ip:1.2.3.4`——有前綴才能批次管理與觀察。' },
+      { b: 'key 要有命名規範', t: '`user:42:profile`、`ratelimit:login:ip:1.2.3.4`。有前綴才能批次管理與觀察。' },
     ],
     checklist: [
       '能畫出 cache-aside 的讀寫流程並解釋為何寫入時「刪」而不是「更新」快取',
@@ -250,9 +250,9 @@ const base = {
   },
   'db-choice': {
     points: [
-      { b: '預設選關聯式', t: '交易、約束、JOIN、成熟工具鏈——大多數業務系統的需求。PostgreSQL 的 JSONB 還能兼顧半結構化資料。' },
+      { b: '預設選關聯式', t: '交易、約束、JOIN、成熟工具鏈，涵蓋大多數業務系統的需求。PostgreSQL 的 JSONB 還能兼顧半結構化資料。' },
       { b: '文件式適合的情境', t: '每筆資料形狀差異大、幾乎都是整份讀寫、需要水平擴展寫入、快速迭代原型。' },
-      { b: '一致性 vs 可用性', t: '分散式系統在網路分割時要選一邊（CAP）。單機 PostgreSQL 強一致；分散式 NoSQL 多半最終一致——業務能不能接受「短暫看到舊資料」是關鍵問題。' },
+      { b: '一致性 vs 可用性', t: '分散式系統在網路分割時要選一邊（CAP）。單機 PostgreSQL 強一致；分散式 NoSQL 多半最終一致。選之前先確認業務能不能接受「短暫看到舊資料」。' },
       { b: '多種資料庫各司其職', t: '主資料放 PostgreSQL、快取放 Redis、全文搜尋放 Elasticsearch、分析放列式資料庫。每多一種就多一個要備份、監控、升級的東西。' },
       { b: '備份與還原要演練', t: '不管選哪個：自動備份、定期還原測試、知道 RPO / RTO。沒還原過的備份不算備份。' },
     ],

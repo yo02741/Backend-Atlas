@@ -15,7 +15,7 @@ done
 
 同一週還有另一個事故：新環境部署時，環境變數名稱打成 `DATABSE_URL`。服務照常啟動、健康檢查也通過（它不碰資料庫），程式裡 `os.getenv("DATABASE_URL", "postgresql://localhost/app")` 默默用了預設值，直到第一個真實請求進來才連不上資料庫，而且是在流量已經切過去之後。
 
-這兩個事故對應這一課的三件事：**log 要能查詢（結構化、帶 request id）**、**錯誤要分類處理**、**設定要在啟動時驗證，錯了就不要啟動**。
+這兩個事故對應這一課的三件事：log 要能查詢（結構化、帶 request id）、錯誤要分類處理、設定要在啟動時驗證，錯了就不要啟動。
 
 ## logging 模組的四個角色
 
@@ -64,7 +64,7 @@ logger.info("order created %s", order_id)
 | 結構化欄位 | 自己拼字串 | `extra={...}` 或 Filter 加欄位，交給 JSON formatter |
 | 第三方套件 | 無法統一 | uvicorn、SQLAlchemy、httpx 都用 logging，一套設定管全部 |
 
-在容器裡跑 Python 時，也常設 `PYTHONUNBUFFERED=1`，讓真的有用到 `print` 的地方（或第三方套件）不被緩衝。
+在容器裡跑 Python 時，也常設 `PYTHONUNBUFFERED=1`，讓有用到 `print` 的地方（或第三方套件）不被緩衝。
 
 ## 結構化日誌與 request id
 
@@ -93,7 +93,7 @@ logger.info("order created %s", order_id)
 | 驗證錯誤 | 欄位型別錯、缺必填 | 422，列出每個欄位 | 通常不記，或 DEBUG |
 | 預期外的例外 | `AttributeError`、資料庫斷線、bug | 500，只回通用訊息與 request id | `logger.exception`：ERROR 加完整 traceback，觸發告警 |
 
-關鍵在第三類：traceback 只進 log，**不回給客戶端**（裡面有檔案路徑、SQL、甚至設定值）。客戶端拿到的是 `{"error": "internal_error", "request_id": "9f2c41e0"}`，工程師用 request id 查到完整內容。全域例外處理器在框架裡的位置見 [Web 框架與請求生命週期](#/skill/web-framework)。
+第三類要注意：traceback 只進 log，**不回給客戶端**（裡面有檔案路徑、SQL、甚至設定值）。客戶端拿到的是 `{"error": "internal_error", "request_id": "9f2c41e0"}`，工程師用 request id 查到完整內容。全域例外處理器在框架裡的位置見 [Web 框架與請求生命週期](#/skill/web-framework)。
 
 ## 設定：從環境變數來、啟動時驗證
 
@@ -104,7 +104,7 @@ logger.info("order created %s", order_id)
 - **集中在一個地方、啟動時讀一次**，轉成有型別的設定物件；程式其他地方不直接 `os.getenv`。
 - **必填的就是必填**，不給「看起來合理」的預設值：`DATABASE_URL` 沒設就是錯，預設成 localhost 只會讓錯誤延後出現。
 - **一次回報所有問題**：缺三個變數就列出三個，不要修一個、重新部署、再發現下一個。
-- **驗證失敗就讓行程以非零狀態結束**。新版本起不來，滾動更新就會卡住、舊版本繼續服務（Kubernetes 上會看到 Pod 反覆重啟的 `CrashLoopBackOff`），而不是讓壞掉的版本接到流量。
+- **驗證失敗就讓行程以非零狀態結束**。新版本起不來，滾動更新就會卡住、舊版本繼續服務（Kubernetes 上會看到 Pod 反覆重啟的 `CrashLoopBackOff`），壞掉的版本不會接到流量。
 
 用 pydantic-settings 時（需要安裝套件，不能在瀏覽器執行）：
 

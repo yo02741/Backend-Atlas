@@ -1,4 +1,4 @@
-// 題庫：P10 新課（m6 批）——enterprise-identity / security-operations
+// 題庫：P10 新課（m6 批）：enterprise-identity / security-operations
 export default [
   {
     skill: 'enterprise-identity',

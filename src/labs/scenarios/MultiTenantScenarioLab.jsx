@@ -48,7 +48,7 @@ UNION ALL
 -- 或：每個 DB 掛成 postgres_fdw 的 foreign server（×300），或 ETL 進資料倉儲再算` },
 }
 const EXPLAIN = {
-  shared: ['所有租戶擠在同一組表，靠每一列的 tenant_id 分家。隔離是邏輯的：程式每條查詢都要加 WHERE tenant_id——開「忘了加」看少了會怎樣，再開 RLS 看資料庫層怎麼兜底。', 'migration 只要跑一次、統計只要 GROUP BY；代價是 acme 的查詢與其他 299 家共用同一組索引、CPU 與連線池。'],
+  shared: ['所有租戶擠在同一組表，靠每一列的 tenant_id 分家。隔離是邏輯的：程式每條查詢都要加 WHERE tenant_id。「忘了加」模擬少了這個條件，RLS 是資料庫層的兜底。', 'migration 只要跑一次、統計只要 GROUP BY；代價是 acme 的查詢與其他 299 家共用同一組索引、CPU 與連線池。'],
   schema: ['同一個資料庫、300 個 schema，交易開頭 SET LOCAL search_path 決定看到誰的表。查錯 schema 會「表不存在」，比 tenant_id 多一層保護；單一租戶可以 pg_dump -n 整包搬走。', 'migration 要對每個 schema 各跑一次，一次失敗就是一半新一半舊；幾萬個 relation 讓 planner 統計與 autovacuum 都變慢。仍在同一台實例，noisy neighbor 跟共用表一樣。'],
   database: ['每個租戶一個資料庫（需要時獨立實例），連線字串就是邊界，拿錯連線才會出事。大租戶暴衝只影響自己，法規要求的資料落地、獨立金鑰都做得到。', 'maintenance 乘以 300：備份、監控、連線池、migration 各一份。跨租戶統計等於 ETL。兩個人維運的上限大概是十幾個，不是三百個。'],
 }
@@ -93,7 +93,7 @@ export default function MultiTenantScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="三種佈局，同一組操作：migration、暴衝查詢、忘了加 WHERE、跨租戶統計"
-         blurb="切換佈局後按下面的按鈕，看同一件事在三種佈局下各自的代價。時間與成本為示意。">
+         blurb="同一件事在三種佈局下各自的代價。時間與成本為示意。">
       <LabControls>
         <Seg tinted label="佈局" value={approach} onChange={setApproach} options={APPROACHES} />
         <span className="spacer" />
@@ -151,7 +151,7 @@ export default function MultiTenantScenarioLab() {
             <Stat label="每月成本（示意）" value={`$${fmtN(cost)}`} note={approach === 'shared' ? '1 台實例' : approach === 'schema' ? '1 台，但 relation 數 ×' + tenants : tenants + ' 個最小實例'} />
           </Stats>
           <LabExplain title={APPROACHES.find((a) => a.value === approach).label}>{EXPLAIN[approach].map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
-          <Callout title="什麼時候會真的踩到">共用表最常見的事故不是駭客，是一條漏了 tenant_id 的 ORM 查詢、或一支背景工作用了管理員連線——RLS 就是為那一天準備的。schema / database 版最常見的事故是 migration 跑到一半失敗，300 個租戶一半新一半舊。</Callout>
+          <Callout title="什麼時候會踩到">共用表最常見的事故不是駭客，是一條漏了 tenant_id 的 ORM 查詢、或一支背景工作用了管理員連線。RLS 就是為這種情況準備的。schema / database 版最常見的事故是 migration 跑到一半失敗，300 個租戶一半新一半舊。</Callout>
         </div>
       </LabGrid>
       <style>{`

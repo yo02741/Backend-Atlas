@@ -34,7 +34,7 @@ async def claim_coupon(user_id: int):
 | lost update | 兩個人同時編輯同一份資料，後存的蓋掉先存的 | 前一個人的修改無聲消失 |
 | 重複提交 | 連點兩次、客戶端逾時重試、佇列重送訊息 | 同一個動作被執行兩次：扣款兩次、寄兩封信 |
 
-lost update 其實是 read-modify-write 的結果；用庫存扣減說明 lost update 的完整時間線，見 [交易與隔離等級](#/skill/transactions)。重複提交比較特別：它不需要兩個「不同的」動作同時發生，同一個動作被送了兩次就夠了。
+lost update 是 read-modify-write 的結果；用庫存扣減說明 lost update 的完整時間線，見 [交易與隔離等級](#/skill/transactions)。重複提交比較特別：它不需要兩個「不同的」動作同時發生，同一個動作被送了兩次就夠了。
 
 判斷一段程式有沒有這類問題，問一個問題：**「讀到的值」到「根據它做決定並寫入」之間，別人能不能改掉那個值？** 能，就有 race。
 
@@ -76,7 +76,7 @@ def safe():
 - `threading.Lock`、`asyncio.Lock` 只在**同一個程序**內有效，別的 worker 看不到這把鎖。
 - 程序內的變數、`lru_cache`、全域 dict 也是每個 worker 各一份。
 
-跨程序的並發要交給一個**所有人共用的仲裁者**，最常見的就是資料庫本身：
+跨程序的並發要交給一個**所有人共用的仲裁者**，最常見的是資料庫本身：
 
 | 工具 | 有效範圍 | 用在 |
 |---|---|---|
@@ -227,14 +227,14 @@ await demo(ordered=False)
 await demo(ordered=True)
 ```
 
-PostgreSQL 會自己偵測死結：等鎖超過 `deadlock_timeout`（預設 1 秒）後檢查是否形成環，發現就中止其中一個交易。被中止的那方會收到錯誤，應用程式要重試整個交易。偵測只是兜底，固定上鎖順序才是根本的修法。資料庫裡的列鎖、表鎖、`lock_timeout` 與怎麼查出誰擋住誰，見 [鎖與死結](#/skill/locks-deadlocks)。
+PostgreSQL 會自己偵測死結：等鎖超過 `deadlock_timeout`（預設 1 秒）後檢查是否形成環，發現就中止其中一個交易。被中止的那方會收到錯誤，應用程式要重試整個交易。偵測只是兜底，根本的修法是固定上鎖順序。資料庫裡的列鎖、表鎖、`lock_timeout` 與怎麼查出誰擋住誰，見 [鎖與死結](#/skill/locks-deadlocks)。
 
 ## 常見錯誤與錯誤訊息
 
 | 錯誤訊息 | SQLSTATE | 意思 | 怎麼處理 |
 |---|---|---|---|
 | `deadlock detected`，DETAIL 類似 `Process 1234 waits for ShareLock on transaction 5678; blocked by process 4321.` | `40P01` | 資料庫偵測到死結並中止了你的交易 | 重試整個交易；DETAIL 會列出互相等待的程序與語句，據此統一上鎖順序 |
-| `duplicate key value violates unique constraint "coupon_claims_pkey"` | `23505` | 唯一約束擋下了重複資料，這正是它的工作 | 不要重試；轉成「已存在」（例如 HTTP 409）或改用 `ON CONFLICT` |
+| `duplicate key value violates unique constraint "coupon_claims_pkey"` | `23505` | 唯一約束照設計擋下了重複資料 | 不要重試；轉成「已存在」（例如 HTTP 409）或改用 `ON CONFLICT` |
 | `could not serialize access due to concurrent update` | `40001` | REPEATABLE READ 以上，要改的列在快照之後被別人改了 | 重試整個交易 |
 | `canceling statement due to lock timeout` | `55P03` | 設了 `lock_timeout`，等鎖超過時間 | 找出長時間持有鎖的交易（`pg_stat_activity`、`pg_locks`）；重試或回報忙碌 |
 | `RuntimeError: <asyncio.locks.Lock object at …> is bound to a different event loop` | | 同一把 `asyncio.Lock` 在不同的 event loop 裡使用 | 鎖要在同一個 loop 內建立與使用；不要在多個 `asyncio.run()` 之間共用 |
@@ -242,7 +242,7 @@ PostgreSQL 會自己偵測死結：等鎖超過 `deadlock_timeout`（預設 1 �
 不會出現錯誤訊息的情況反而更常見：
 
 - **數字對不上**：計數器少算、庫存變負、同一個人有兩筆紀錄。看到這些先找 check-then-act 與 read-modify-write。
-- **測試全過，上線才出事**：單元測試一次只跑一個請求。要重現，得讓請求真的並行：用 `asyncio.gather` 同時送多個請求、在讀和寫之間插入 `sleep` 拉大時間窗、或用壓測工具對同一筆資料打大量請求。
+- **測試全過，上線才出事**：單元測試一次只跑一個請求。要重現，得讓請求確實並行：用 `asyncio.gather` 同時送多個請求、在讀和寫之間插入 `sleep` 拉大時間窗、或用壓測工具對同一筆資料打大量請求。
 - **在 async 程式裡用 `threading.Lock` 或同步的 I/O**：整個 event loop 被卡住，所有請求一起變慢。async 程式用 `asyncio.Lock`。
 - **用程式內的鎖保護資料庫資料**：開發時單一程序沒問題，部署成多 worker 就失效。
 

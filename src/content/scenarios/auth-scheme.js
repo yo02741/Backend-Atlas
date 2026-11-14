@@ -59,9 +59,9 @@ export default {
     { id: 'spa-app', situation: 'SPA + iOS / Android App，全是自家客戶端，沒有第三方，要「登出所有裝置」1 分鐘內生效。', options: ['cookie-session', 'jwt-storage', 'bff', 'oauth-oidc'], answer: 'bff',
       explain: '瀏覽器這邊用 BFF：token 不進瀏覽器、撤銷砍 session 立即。App 直接跟登入服務拿 token 存在 Keychain / Keystore，各服務只驗簽章。要滿足 1 分鐘，App 的 access token 效期設 ≤ 1 分鐘、靠 refresh rotation 換新，撤銷時撤 refresh。授權伺服器能做到同樣的事，但為了自家客戶端多養一個系統不划算。' },
     { id: 'third-party', situation: '要讓第三方物流商用你的 API 查它負責的訂單，使用者要能授權、也要能收回。', options: ['cookie-session', 'jwt-storage', 'oauth-oidc'], answer: 'oauth-oidc',
-      explain: '第三方不能拿密碼，只能拿「使用者同意過、scope 限定、可撤銷」的 token——這正是 OAuth 2.0 授權碼流程定義的東西。cookie session 給不了外部程式；讓第三方拿 JWT 等於要使用者把密碼交出去。' },
+      explain: '第三方不能拿密碼，只能拿「使用者同意過、scope 限定、可撤銷」的 token，這是 OAuth 2.0 授權碼流程定義的東西。cookie session 給不了外部程式；讓第三方拿 JWT 等於要使用者把密碼交出去。' },
     { id: 'internal-sso', situation: '內部工具只有員工用，公司已有 Google Workspace；離職員工當天就要進不來。', options: ['cookie-session', 'jwt-storage', 'oauth-oidc'], answer: 'oauth-oidc',
-      explain: '登入交給公司的 IdP（OIDC），你的工具是 relying party：帳號停用就登不進來，不用自己管密碼與 MFA。驗完 id_token 之後，工具本身用同站的 cookie session 維持狀態並設短效期——不要把 id_token 存進 localStorage 當 session 用。' },
+      explain: '登入交給公司的 IdP（OIDC），你的工具是 relying party：帳號停用就登不進來，不用自己管密碼與 MFA。驗完 id_token 之後，工具本身用同站的 cookie session 維持狀態並設短效期；不要把 id_token 存進 localStorage 當 session 用。' },
   ],
   implementation: [
     { title: 'Cookie session：登入回應與後續請求（__Host- 前綴強制 Secure、無 Domain、Path=/）', lang: 'http', code: `POST /login HTTP/1.1

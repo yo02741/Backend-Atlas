@@ -115,15 +115,15 @@ const EXPLAIN = {
   dual: {
     title: '雙寫：兩次寫入之間沒有任何東西把它們綁在一起',
     body: [
-      '「commit 後 publish」：commit 成功、publish 之前程序被砍，或 publish 重試也失敗，事件就丟了——檢驗系統少收一筆預約。publish 逾時其實已送到，重試又送一份。',
-      '切到「交易裡 publish」：事件先送出，之後交易回滾（時段已滿）或 commit 前被砍，LINE 已經通知了一個不存在的掛號，這就是幽靈事件。兩種順序只是把錯誤從「丟」換成「多」。',
+      '「commit 後 publish」：commit 成功、publish 之前程序被砍，或 publish 重試也失敗，事件就丟了，檢驗系統少收一筆預約。publish 逾時但實際已送到時，重試又送一份。',
+      '「交易裡 publish」：事件先送出，之後交易回滾（時段已滿）或 commit 前被砍，LINE 已經通知了一個不存在的掛號，這叫幽靈事件。兩種順序只是把錯誤從「丟」換成「多」。',
     ],
   },
   outbox: {
     title: 'Outbox：事件跟業務資料同一個交易',
     body: [
       '掛號列與 outbox 列一起 commit、一起回滾，所以丟事件與幽靈事件都是 0。publish 失敗只會讓事件留在表裡，下一輪 relay 再送，代價是延遲多幾百毫秒。',
-      'relay 送出後、標記 sent_at 前掛掉，下一輪會再送一次；佇列本身也是至少一次。重複送達一定會發生，消費端的冪等鍵表決定它會不會變成「LINE 寄兩次」。把冪等關掉看看。',
+      'relay 送出後、標記 sent_at 前掛掉，下一輪會再送一次；佇列本身也是至少一次。重複送達一定會發生，消費端的冪等鍵表決定它會不會變成「LINE 寄兩次」。',
     ],
   },
   cdc: {
@@ -180,7 +180,7 @@ export default function EventConsistencyScenarioLab() {
 
   return (
     <Lab accent="red" kicker="SCENARIO LAB" title="掛號成功之後的事件：1,000 筆，三種送法"
-         blurb="調整送事件失敗率、程序中途被砍的機率、消費端重複收到的比例，按「跑 1,000 筆掛號」看丟了幾筆、重複幾筆、有沒有幽靈事件（全部示意）。">
+         blurb="送事件失敗、程序中途被砍、消費端重複收到時，1,000 筆掛號丟了幾筆、重複幾筆、有沒有幽靈事件（全部示意）。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         {mode === 'dual' && <Seg label="publish 時機" value={when} onChange={setWhen} options={WHEN} />}
@@ -223,7 +223,7 @@ export default function EventConsistencyScenarioLab() {
                            { key: 'dup', label: '重複生效', color: 'var(--serious)', values: sim.cum.dup },
                          ]} />
             </div>
-            <Caption>每格一筆掛號，40 × 25 格。4% 因時段已滿而回滾；publish 失敗有一半是「逾時但其實送到了」。亂數有固定種子，比例與延遲都是示意。</Caption>
+            <Caption>每格一筆掛號，40 × 25 格。4% 因時段已滿而回滾；publish 失敗有一半是「逾時但實際送到了」。亂數有固定種子，比例與延遲都是示意。</Caption>
           </LabStage>
           <Stats min={120}>
             <Stat label="丟掉的事件" value={lostNow} tone={lostNow ? 'bad' : 'ok'} note="檢驗系統少收" />
@@ -239,7 +239,7 @@ export default function EventConsistencyScenarioLab() {
             <p>三種做法吃同一組亂數：同一筆掛號在雙寫下被砍掉就丟了，在 outbox 下被砍掉就是整筆交易回滾（病患看到錯誤、重新掛號），不會出現「DB 有、事件沒有」。</p>
             <p>「重複送達」與「重複生效」要分開看：至少一次的系統一定會重複送達；只有消費端沒有冪等時，重複送達才會變成寄兩次。雙寫的現況沒有冪等鍵表。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">只要「寫資料庫」和「通知別人」是兩個系統的兩次寫入：寄信、推播、同步給另一個系統、更新搜尋索引或報表。平常 publish 幾乎不會失敗，所以一直沒事；直到部署時程序被砍、佇列短暫斷線、或逾時重試，才會出現少一筆或多一筆，而且很難從日誌裡看出來。</Callout>
+          <Callout title="什麼時候會踩到">只要「寫資料庫」和「通知別人」是兩個系統的兩次寫入：寄信、推播、同步給另一個系統、更新搜尋索引或報表。平常 publish 幾乎不會失敗，所以一直沒事；直到部署時程序被砍、佇列短暫斷線、或逾時重試，才會出現少一筆或多一筆，而且很難從日誌裡看出來。</Callout>
         </div>
       </LabGrid>
       <style>{`

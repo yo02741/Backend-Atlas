@@ -18,7 +18,7 @@ SELECT users.id, users.name FROM users WHERE users.id = 42
 ...（再 40 幾句，形狀一樣、只差參數）
 ```
 
-第一句取訂單，之後迴圈每碰一次 `o.user`，ORM 就送一句查使用者。每句只要 1–2 ms，但每趟都要付一次網路來回。這就是 **N+1 查詢**：1 句取清單，再加 N 句取每一筆的關聯資料。程式碼裡看不到任何 SQL，問題只在 log 裡看得見。
+第一句取訂單，之後迴圈每碰一次 `o.user`，ORM 就送一句查使用者。每句只要 1–2 ms，但每趟都要付一次網路來回。這叫 **N+1 查詢**：1 句取清單，再加 N 句取每一筆的關聯資料。程式碼裡看不到任何 SQL，問題只在 log 裡看得見。
 
 ## ORM 做了什麼
 
@@ -109,7 +109,7 @@ assert lazy() == joined() == selectin()     # 結果完全相同，差別只在�
 
 ### SQLAlchemy 2.0 的寫法
 
-以下需要真的資料庫與 SQLAlchemy 套件，不能在瀏覽器裡跑：
+以下需要實際的資料庫與 SQLAlchemy 套件，不能在瀏覽器裡跑：
 
 ```python
 from decimal import Decimal
@@ -252,7 +252,7 @@ ROLLBACK;
 | 改欄位名、改型別 | 新舊程式碼同時在跑時，其中一方一定找不到欄位 | expand–contract（下面說明） |
 | 大量回填資料 | 一句 UPDATE 千萬列：長交易、大量 WAL、表膨脹 | 分批（每批幾千列）、每批獨立 commit |
 
-`VALIDATE CONSTRAINT` 拿的是 `SHARE UPDATE EXCLUSIVE` 鎖，掃描期間一般讀寫不受影響，這是「先 NOT VALID、再 VALIDATE」安全的關鍵。
+`VALIDATE CONSTRAINT` 拿的是 `SHARE UPDATE EXCLUSIVE` 鎖，掃描期間一般讀寫不受影響，所以「先 NOT VALID、再 VALIDATE」是安全的。
 
 ### 加一個必填欄位：nullable → 回填 → 約束
 

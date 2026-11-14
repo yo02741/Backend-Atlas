@@ -42,7 +42,7 @@ GitLab 讀取 repo 根目錄的 `.gitlab-ci.yml`，每次 push、建立 merge re
 | `environment` | 這個 job 部署到哪個環境，GitLab 會記錄部署歷史 |
 | `tags` | 要在帶有這些標籤的 Runner 上執行 |
 
-`artifacts` 和 `cache` 常被混用：artifact 是**這條 pipeline 的產出**，保證傳給後面的 job；cache 是**加速用的**，不保證存在（不同 Runner 之間預設不共享），不能拿來傳 build 結果。
+`artifacts` 和 `cache` 常被混用：artifact 是這條 pipeline 的產出，保證傳給後面的 job；cache 是加速用的，不保證存在（不同 Runner 之間預設不共享），不能拿來傳 build 結果。
 
 ## 改寫後的完整範例
 
@@ -136,7 +136,7 @@ deploy-production:
 
 ## 執行順序：stages 與 needs
 
-**stage 是一道柵欄**：同一個 stage 的 job 平行執行；前一個 stage 的 job **全部成功**，下一個 stage 才開始。上面的範例在 main 分支上的時間線是這樣：
+**stage 是一道柵欄**：同一個 stage 的 job 平行執行；前一個 stage 的 job 全部成功，下一個 stage 才開始。上面的範例在 main 分支上的時間線是這樣：
 
 | 時間 | test stage | build stage | deploy stage |
 |---|---|---|---|
@@ -176,9 +176,9 @@ deploy-production:
 
 ### MR pipeline 與分支 pipeline
 
-push 一個分支會觸發**分支 pipeline**；這個分支有開著的 MR 時，GitLab 還可以觸發 **MR pipeline**（`CI_PIPELINE_SOURCE == "merge_request_event"`）。兩者都設定時，同一個 commit 會跑兩次。範例開頭的 `workflow: rules` 是 GitLab 文件提供的寫法：有開著的 MR 就只跑 MR pipeline，沒有 MR 時跑分支 pipeline。
+push 一個分支會觸發分支 pipeline；這個分支有開著的 MR 時，GitLab 還可以觸發 MR pipeline（`CI_PIPELINE_SOURCE == "merge_request_event"`）。兩者都設定時，同一個 commit 會跑兩次。範例開頭的 `workflow: rules` 是 GitLab 文件提供的寫法：有開著的 MR 就只跑 MR pipeline，沒有 MR 時跑分支 pipeline。
 
-在專案設定的 Merge requests 裡勾選「Pipelines must succeed」，MR 的 pipeline 沒有通過就不能合併——這是讓 main 永遠保持可部署的關鍵設定。
+在專案設定的 Merge requests 裡勾選「Pipelines must succeed」，MR 的 pipeline 沒有通過就不能合併。main 要保持可部署，靠的主要是這個設定。
 
 ## Runner：job 真正在哪裡執行
 
@@ -213,7 +213,7 @@ executor 決定 Runner 用什麼方式執行 job：
 
 ### 自架 GitLab 的網路位置
 
-Runner 要能連到 GitLab（輪詢 job、上傳 log 與 artifact），也要能連到 job 需要的東西：套件來源、Container Registry、要部署的主機。內網環境常見的問題是 Runner 不能直接連外網，`pip install` 或 `docker pull` 逾時——要設定 proxy 或內部的套件鏡像，排查方式見 [網路通不通](#/skill/network-troubleshooting)。
+Runner 要能連到 GitLab（輪詢 job、上傳 log 與 artifact），也要能連到 job 需要的東西：套件來源、Container Registry、要部署的主機。內網環境常見的問題是 Runner 不能直接連外網，`pip install` 或 `docker pull` 逾時，要設定 proxy 或內部的套件鏡像，排查方式見 [網路通不通](#/skill/network-troubleshooting)。
 
 ## 變數與機密：protected、masked
 
@@ -228,9 +228,9 @@ Runner 要能連到 GitLab（輪詢 job、上傳 log 與 artifact），也要能
 
 masked 的值要符合格式限制（例如單行、至少 8 個字元，字元種類也有限制），不符合時介面不允許勾選。
 
-**受保護分支**在 Settings → Repository → Protected branches 設定：誰可以 push、誰可以合併、能不能 force push。protected 變數、protected Runner 都依賴這個設定——main 沒有設成受保護分支，protected 變數在 main 上也拿不到。
+**受保護分支**在 Settings → Repository → Protected branches 設定：誰可以 push、誰可以合併、能不能 force push。protected 變數、protected Runner 都依賴這個設定：main 沒有設成受保護分支，protected 變數在 main 上也拿不到。
 
-masked 不是完整的保護：值被 base64 編碼後印出、或被寫進 artifact，就不會被遮蔽。真正的防線是 protected：讓只有經過 review、合進受保護分支的程式碼，才拿得到正式環境的機密。
+masked 不是完整的保護：值被 base64 編碼後印出、或被寫進 artifact，就不會被遮蔽。擋得住的是 protected：讓只有經過 review、合進受保護分支的程式碼，才拿得到正式環境的機密。
 
 GitLab 也會自動提供一些不用自己設定的機密，例如 `CI_JOB_TOKEN`（這個 job 的短期權杖）、`CI_REGISTRY_PASSWORD`（登入本專案 Container Registry 用）。它們只在 job 執行期間有效。
 
@@ -253,7 +253,7 @@ docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
 
 ## environments 與手動部署
 
-job 加上 `environment:` 之後，GitLab 會在 Operate → Environments 記錄每個環境的部署歷史：哪個 commit、誰觸發、什麼時候。在環境頁面可以對過去某次部署按「重新部署」，這就是最直接的回退方式——前提是部署 job 用的是固定的 image tag，而不是 `latest` 或 `git pull`。
+job 加上 `environment:` 之後，GitLab 會在 Operate → Environments 記錄每個環境的部署歷史：哪個 commit、誰觸發、什麼時候。在環境頁面可以對過去某次部署按「重新部署」，這是最直接的回退方式，前提是部署 job 用的是固定的 image tag，而不是 `latest` 或 `git pull`。
 
 與部署相關的幾個設定：
 

@@ -29,31 +29,31 @@ const SCEN = {
     text: ['資源用**名詞、複數**：`/orders` 是「訂單這個集合」，動作由 HTTP 方法表達，所以不需要 `getOrders`、`list` 這種動詞塞進路徑。', 'GET 是安全（不改狀態）又冪等的，中間的 CDN / proxy 才敢快取。回傳集合時用物件包起來（`{"data": [...]}`）而不是裸陣列，之後要加 `next_cursor`、`total` 才有地方放。'] },
   create: { label: '建立訂單', method: 'POST', path: '/orders', target: 'orders', code: '201 Created', wrong: ['POST /createOrder', 'GET /orders/new?customer=7'],
     title: 'POST 集合：新增一筆，回 201 + Location',
-    text: ['對集合 POST = 「在這個集合裡新增一筆」。成功回 **201 Created**（不是 200），並用 `Location` 標頭告訴 client 新資源住在哪。', 'POST **不是冪等的**：同樣的請求送兩次就是兩筆訂單——這正是「重送同一個建立請求」情境要處理的問題。'] },
+    text: ['對集合 POST = 「在這個集合裡新增一筆」。成功回 **201 Created**（不是 200），並用 `Location` 標頭告訴 client 新資源住在哪。', 'POST **不是冪等的**：同樣的請求送兩次就是兩筆訂單，「重送同一個建立請求」情境處理的就是這個問題。'] },
   get: { label: '看一筆', method: 'GET', path: '/orders/42', target: 'id', code: '200 OK', wrong: ['GET /getOrder?id=42', 'POST /orders/detail'],
     title: 'GET 單一資源：集合名 + id',
-    text: ['`/orders/42` 是**單一資源**：集合名接 id。巢狀最多兩層——`/orders/42/items` 可以，`/customers/7/orders/42/items/3` 就該拆成 `/order-items/3`。', '找不到回 **404**。錯誤回應全站統一格式 `{"error": {"code", "message"}}`，client 才能一致處理；4xx 是 client 的錯（要的東西不存在、格式不對、沒權限），5xx 才是 server 的錯。'] },
+    text: ['`/orders/42` 是**單一資源**：集合名接 id。巢狀最多兩層：`/orders/42/items` 可以，`/customers/7/orders/42/items/3` 就該拆成 `/order-items/3`。', '找不到回 **404**。錯誤回應全站統一格式 `{"error": {"code", "message"}}`，client 才能一致處理；4xx 是 client 的錯（要的東西不存在、格式不對、沒權限），5xx 才是 server 的錯。'] },
   patch: { label: '部分更新', method: 'PATCH', path: '/orders/42', target: 'id', code: '200 OK', wrong: ['POST /updateOrder', 'PUT /orders/42（只帶一個欄位）'],
     title: 'PATCH：只改我送的欄位',
-    text: ['PATCH = **只改 body 裡有的欄位**，沒送的不動——看表格，`status` 變了但 `note` 還在。這是「部分更新」的正確方法；`POST /updateOrder` 是把動詞塞進 URL 的 RPC 寫法。', 'PATCH 規範上不保證冪等（例如「數量 +1」這種語意的 patch），實務上多數是設值型、重送無害，但別依賴它。'] },
+    text: ['PATCH = **只改 body 裡有的欄位**，沒送的不動：表格裡 `status` 變了，`note` 還在。這是「部分更新」的正確方法；`POST /updateOrder` 是把動詞塞進 URL 的 RPC 寫法。', 'PATCH 規範上不保證冪等（例如「數量 +1」這種語意的 patch），實務上多數是設值型、重送無害，但別依賴它。'] },
   put: { label: '整筆取代', method: 'PUT', path: '/orders/42', target: 'id', code: '200 OK', wrong: ['POST /orders/42/update', 'PUT /orders（沒有 id）'],
     title: 'PUT：整筆取代，沒帶的欄位等於刪掉',
-    text: ['PUT 的 body 要帶**完整的資源表示**，server 用它整個換掉舊的——看表格，這次沒帶 `note`，所以 `note` 變成 NULL 了。', '因此 PUT 是冪等的（同樣 body 送幾次結果都一樣），但拿 PUT 做部分更新會意外清掉欄位，這是最常見的 PUT / PATCH 誤用。'] },
+    text: ['PUT 的 body 要帶**完整的資源表示**，server 用它整個換掉舊的：這次沒帶 `note`，所以 `note` 變成 NULL 了。', '因此 PUT 是冪等的（同樣 body 送幾次結果都一樣），但拿 PUT 做部分更新會意外清掉欄位，這是最常見的 PUT / PATCH 誤用。'] },
   delete: { label: '刪除', method: 'DELETE', path: '/orders/42', target: 'id', code: '204 No Content', wrong: ['GET /orders/delete/42', 'POST /orders/42/delete'],
     title: 'DELETE：成功回 204，沒有 body',
-    text: ['DELETE 單一資源，成功回 **204 No Content**。DELETE 是冪等的：第二次刪同一筆，最終狀態一樣（資源不存在），回 404 或 204 都有人用，團隊統一就好。', '絕對不要用 GET 做刪除——爬蟲、瀏覽器的連結預抓（prefetch）會幫你把資料刪光；GET 必須是安全的。'] },
+    text: ['DELETE 單一資源，成功回 **204 No Content**。DELETE 是冪等的：第二次刪同一筆，最終狀態一樣（資源不存在），回 404 或 204 都有人用，團隊統一就好。', '絕對不要用 GET 做刪除：爬蟲、瀏覽器的連結預抓（prefetch）會幫你把資料刪光；GET 必須是安全的。'] },
   retry: { label: '重送同一個建立請求', method: 'POST', path: '/orders', target: 'orders', twice: true, wrong: ['timeout 後直接重送，沒有任何識別'],
     title: '' },
   filter: { label: '篩選＋分頁', method: 'GET', path: '/orders?status=paid&limit=20&cursor=eyJpZCI6NDB9', target: 'orders', code: '200 OK', wrong: ['GET /orders/paid/page/3', 'POST /orders/search'],
     title: '篩選、排序、分頁都放 query string',
-    text: ['條件不要長進路徑（`/orders/paid/page/3`），放 query string：`?status=paid&limit=20`。路徑描述「哪個資源」，query 描述「怎麼看它」。', '分頁用 **cursor**：`next_cursor` 是「最後一筆的位置」編碼（這裡是 base64 的 `{"id":42}`），下一頁帶回來，server 做 `WHERE id > 42 LIMIT 20`——資料中途新增或刪除也不會跳頁、重複，大表不用 `OFFSET 100000` 從頭數。offset 分頁（`?page=3`）簡單、可跳頁，適合後台小表。'] },
+    text: ['條件不要長進路徑（`/orders/paid/page/3`），放 query string：`?status=paid&limit=20`。路徑描述「哪個資源」，query 描述「怎麼看它」。', '分頁用 **cursor**：`next_cursor` 是「最後一筆的位置」編碼（這裡是 base64 的 `{"id":42}`），下一頁帶回來，server 做 `WHERE id > 42 LIMIT 20`。資料中途新增或刪除也不會跳頁、重複，大表不用 `OFFSET 100000` 從頭數。offset 分頁（`?page=3`）簡單、可跳頁，適合後台小表。'] },
 }
 
 const RETRY = {
   off: { code: '201 ×2', title: '沒有 key：timeout 重送 = 重複下單',
-    text: ['Client 送出 POST 後網路 timeout，它不知道 server 到底收到沒，於是重送——server 收到兩個一模一樣的請求，老實地建了兩筆訂單（43、44）。', 'POST 本身不冪等；client SDK 的自動 retry、手機弱網、gateway 的重試策略都會把這個問題放大。任何「會扣款、會出貨」的 POST 都該防。'] },
+    text: ['Client 送出 POST 後網路 timeout，它不知道 server 到底收到沒，於是重送。server 收到兩個一模一樣的請求，老實地建了兩筆訂單（43、44）。', 'POST 本身不冪等；client SDK 的自動 retry、手機弱網、gateway 的重試策略都會把這個問題放大。任何「會扣款、會出貨」的 POST 都該防。'] },
   on: { code: '201（同一筆）', title: 'Idempotency-Key：同一把 key 只做一次',
-    text: ['Client 先產生一把唯一的 `Idempotency-Key`（UUID），兩次請求帶同一把。Server 第一次處理時把 key → 結果存起來（例如 Redis，設 24 小時 TTL）；第二次看到同一把 key，直接回存好的結果，**不再建立**。', '回應可以是原樣的 201 加 `Idempotent-Replayed: true` 標頭（Stripe 的做法），也有人回 200——重點是 **id 是同一筆**。這把 key 是 client 給的，server 不能自己猜。'] },
+    text: ['Client 先產生一把唯一的 `Idempotency-Key`（UUID），兩次請求帶同一把。Server 第一次處理時把 key → 結果存起來（例如 Redis，設 24 小時 TTL）；第二次看到同一把 key，直接回存好的結果，**不再建立**。', '回應可以是原樣的 201 加 `Idempotent-Replayed: true` 標頭（Stripe 的做法），也有人回 200，但 **id 一定是同一筆**。這把 key 是 client 給的，server 不能自己猜。'] },
 }
 
 function httpSample(k, v1, nf, key) {
@@ -191,7 +191,7 @@ export default function RestLab() {
 
   return (
     <Lab accent="aqua" kicker="API LAB" title="REST API 設計：資源、方法、狀態碼"
-         blurb="先想「我想對哪個資源做什麼」，再對照出正確的方法與路徑。切換情境看資源樹亮哪個節點、資料表怎麼變；重送情境可以打開 Idempotency-Key 看它怎麼擋住重複下單。">
+         blurb="從「對哪個資源做什麼」對照出方法與路徑，以及資源樹與資料表的變化；重送情境裡 Idempotency-Key 擋住重複下單。">
       <LabControls>
         <Seg label="我想要…" tinted value={k} onChange={setK}
              options={ORDER.map((x) => ({ value: x, label: SCEN[x].label }))} />

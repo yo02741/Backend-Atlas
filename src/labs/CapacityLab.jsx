@@ -102,7 +102,7 @@ export default function CapacityLab() {
 
   return (
     <Lab accent="var(--c-teal)" kicker="OPS LAB" title="容量估算：從尖峰人數推到幾核、幾台、幾 GB"
-         blurb="拉尖峰人數、每個請求的 CPU 時間與等待時間，看核心數、同時處理中的請求數、worker 與記憶體、磁碟怎麼跟著變；切到 Kubernetes 看 requests 換算成幾個 Pod、幾台節點；按「掛掉一台」檢查剩下的扛不扛得住。">
+         blurb="從尖峰人數、每個請求的 CPU 時間與等待時間，推到核心數、同時處理中的請求數、worker、記憶體與磁碟；Kubernetes 模式換算成幾個 Pod、幾台節點，並檢查掛掉一台後剩下的扛不扛得住。">
       <LabControls>
         <Seg label="部署方式" tinted value={mode} onChange={(v) => { setMode(v); setDown(false) }}
              options={[{ value: 'vm', label: 'VM' }, { value: 'k8s', label: 'Kubernetes' }]} />
@@ -178,14 +178,14 @@ export default function CapacityLab() {
               <LabExplain title="Kubernetes：requests 管排程，limits 管上限">
                 <p><strong>requests</strong> 是排程依據：scheduler 只看「節點剩下的可分配量放不放得下這個 Pod 的 requests」，不看實際用量。所以 Pod 數 = max(核心需求 ÷ 每 Pod CPU request, worker 需求 ÷ 每 Pod worker 數)，節點數再由「一台放得下幾個 Pod」換算。</p>
                 <p><strong>limits</strong> 是上限：記憶體超過會被 OOMKilled（exit code 137）重啟；CPU 超過不會被殺，而是被節流（throttle）變慢。記憶體 limit 常設成跟 request 一樣，行為最好預期；CPU limit 要不要設，各團隊做法不同。</p>
-                <p>試試把 Pod 調大、節點調小：requests 比整台節點的可分配量還大時，Pod 會一直 Pending。打開「掛掉一台」：剩下節點放不下的 Pod 也會 Pending——節點數要多留一台。</p>
+                <p>requests 比整台節點的可分配量還大時，Pod 會一直 Pending。掛掉一台後，剩下節點放不下的 Pod 也會 Pending，所以節點數要多留一台。</p>
               </LabExplain>
             </>
           ) : (
             <LabExplain title="CPU 看 CPU 時間，worker 看整段停留時間">
               <p>核心數只跟 CPU 時間有關：每秒 {f1(m.rps)} 個請求、每個吃 {cpuMs} ms CPU，平均就有 {f1(m.busy)} 顆核心一直在忙，再除以目標使用率留 headroom。</p>
               <p>worker 數看的是 Little&apos;s Law：同時在處理的請求數 L = 到達率 λ × 平均停留時間 W。等 DB、等外部 API 的時間不吃 CPU，但同步 worker 會被佔住。把「等 I/O」拉高：核心數不變，worker 與記憶體一路變多。</p>
-              <p>打開「掛掉一台」做 N+1 檢查：負載攤到剩下的機器，每台使用率跟著上升，超過目標就是警告色。只有一台時，掛了就是全停。</p>
+              <p>「掛掉一台」是 N+1 檢查：負載攤到剩下的機器，每台使用率跟著上升，超過目標就是警告色。只有一台時，掛了就是全停。</p>
             </LabExplain>
           )}
           <LabExplain title="估算是起點，不是答案">

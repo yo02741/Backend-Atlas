@@ -15,7 +15,7 @@
 - Carol 唯一的訂單被刪了，她的姓名、email、城市跟著消失（**刪除異常**）。
 - 要找「誰買過鍵盤」，只能寫 `products LIKE '%鍵盤%'`，連「鍵盤膜」也會被找到；「每個商品賣了幾件」根本算不出來。
 
-這些問題的共同原因是：**同一件事實存了很多份，或是好幾件事實擠在同一格**。正規化就是把它們拆開，讓每件事實只存在一個地方。
+這些問題的共同原因是：**同一件事實存了很多份，或是好幾件事實擠在同一格**。正規化把它們拆開，讓每件事實只存在一個地方。
 
 ## 正規化：一步一步拆
 
@@ -45,7 +45,7 @@
 
 ### 第三步（3NF）：欄位不能透過別的欄位間接依賴主鍵
 
-`orders(id, user_id, customer_email, customer_city, …)`：`customer_email` 不是由訂單決定的，而是由 `user_id` 決定（id → user_id → email）。這叫**遞移相依**。結果就是開頭的更新異常：同一位使用者的 email 分散在他每一張訂單上。
+`orders(id, user_id, customer_email, customer_city, …)`：`customer_email` 由 `user_id` 決定，與訂單無關（id → user_id → email）。這叫**遞移相依**，結果是開頭的更新異常：同一位使用者的 email 分散在他每一張訂單上。
 
 拆法：`orders` 只留 `user_id`，email、城市回到 `users`。需要時 JOIN。
 
@@ -150,7 +150,7 @@ SELECT uuid_extract_timestamp(uuidv7()) AS created_at_from_id;
 
 ## 外鍵與 ON DELETE
 
-外鍵讓資料庫保證「指向的那一列存在」。範例資料庫的 `orders.user_id` 刻意**沒有**外鍵，結果就是 105 號訂單指向不存在的 9 號使用者，而且沒人擋。現在想補上外鍵時：
+外鍵讓資料庫保證「指向的那一列存在」。範例資料庫的 `orders.user_id` 刻意**沒有**外鍵，結果是 105 號訂單指向不存在的 9 號使用者，而且沒人擋。現在想補上外鍵時：
 
 ```sql
 ALTER TABLE orders ADD FOREIGN KEY (user_id) REFERENCES users(id);
@@ -253,7 +253,7 @@ SELECT * FROM (VALUES
 
 正規化讓寫入正確，但讀取時要 JOIN。有些情況會刻意多存一份，前提是**知道哪一份是真相、誰負責同步**。
 
-**快照不是反正規化。**範例的 `products.price` 是「目前售價」，但訂單成立時的價格是另一件事實：商品之後漲價，舊訂單的金額不能跟著變。所以 `order_items` 應該存 `unit_price`（成交價），`order_items` 也常存一份 `product_name`（商品之後改名，發票上的品名不能變）。它們看起來跟 products 重複，其實記錄的是不同時間點的值。
+**快照不是反正規化。**範例的 `products.price` 是「目前售價」，但訂單成立時的價格是另一件事實：商品之後漲價，舊訂單的金額不能跟著變。所以 `order_items` 應該存 `unit_price`（成交價），`order_items` 也常存一份 `product_name`（商品之後改名，發票上的品名不能變）。它們看起來跟 products 重複，記錄的卻是不同時間點的值。
 
 ```sql run
 -- 範例的 order_items 沒有成交價，只能拿「目前售價」去推算訂單金額
@@ -282,7 +282,7 @@ ALTER TABLE order_items ADD COLUMN unit_price NUMERIC(10,2);
 | 做法 | 例子 | 代價 |
 |---|---|---|
 | 彙總欄位 | `orders.amount`（可以從品項算出）、`products.review_count` | 每次寫入品項都要同步更新；漏了就不一致 |
-| 冗餘欄位 | 在 orders 存 `user_city` 讓報表免 JOIN | 使用者搬家時要決定舊訂單改不改（這其實又變成快照的問題） |
+| 冗餘欄位 | 在 orders 存 `user_city` 讓報表免 JOIN | 使用者搬家時要決定舊訂單改不改（這又變成快照的問題） |
 | 物化視圖 | `CREATE MATERIALIZED VIEW daily_sales AS …` | 不會自動更新，要排程 `REFRESH MATERIALIZED VIEW` |
 
 判斷順序：先正規化 → 加索引、改寫查詢 → 量測後仍然不夠快，才反正規化。反正規化的欄位要寫清楚來源，最好有一個對帳查詢（像上面那段）能定期找出不一致。

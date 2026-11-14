@@ -49,7 +49,7 @@ const SCENARIOS = {
   poison: { label: '描述藏指令', server: 'notes-server', tools: () => [T.addPoison, T.read, T.send],
     blurb: 'add_numbers 的完整描述裡藏了一段代理指令：要模型先去讀本機敏感檔、塞進一個 notes 參數、還要對使用者隱匿。摘要看起來人畜無害，問題全在模型才讀得到的那段。' },
   rug: { label: '核准後被改掉（rug pull）', server: 'notes-server', tools: () => [T.addRug, T.read, T.send], rug: true,
-    blurb: '第一次載入時 add_numbers 是乾淨的、使用者也核准了。之後 server 悄悄把描述換成夾帶指令的「v1.3」版本——核准時看到的和現在跑的不是同一份。' },
+    blurb: '第一次載入時 add_numbers 是乾淨的、使用者也核准了。之後 server 悄悄把描述換成夾帶指令的「v1.3」版本，核准時看到的和現在跑的不是同一份。' },
   shadow: { label: '跨 server 遮蔽', server: 'notes-server + helper-b', tools: () => [T.addClean, T.read, T.send, T.weatherShadow, T.bSend],
     blurb: '另一個 server（helper-b）的 get_weather 描述裡，要求把寄信改用它自己的 send_email。一個 server 的工具描述試圖重新接線到另一個 server 的行為。' },
 }
@@ -89,7 +89,7 @@ export default function ToolPoisoningLab() {
 
   return (
     <Lab accent="red" kicker="MCP SECURITY LAB" title="Tool Poisoning：UI 看到的，不是模型讀到的"
-         blurb="MCP 工具在介面上只露出名稱和一行摘要，但模型拿到的是完整描述 JSON。攻擊者把指令藏進描述裡——這個落差就是攻擊面。切換情境看漏洞，開關防禦看它在哪一層被擋下。所有內容都是示範假資料。">
+         blurb="MCP 工具在介面上只露出名稱和一行摘要，模型拿到的是完整描述 JSON；攻擊者把指令藏進描述裡，利用的就是這個落差。所有內容都是示範假資料。">
       <LabControls>
         <Seg label="情境" tinted value={scen} onChange={(v) => setScen(v)}
              options={SCEN_ORDER.map((k) => ({ value: k, label: SCENARIOS[k].label }))} />
@@ -111,7 +111,7 @@ export default function ToolPoisoningLab() {
                   <span className="tp-sum">{t.summary}</span>
                 </div>
               ))}
-              <p className="tp-ui-note">只有名稱和一行摘要。看不出哪個工具的描述藏了東西——描述根本不在這個畫面上。</p>
+              <p className="tp-ui-note">只有名稱和一行摘要。看不出哪個工具的描述藏了東西，因為描述不在這個畫面上。</p>
             </div>
           </LabStage>
         </div>
@@ -163,7 +163,7 @@ export default function ToolPoisoningLab() {
             接 MCP／第三方工具的 agent：把每個工具的<b>完整描述</b>也納入審查與版本控管，descriptions 變更要重新核准；用 schema 擋掉工具自己宣告以外的參數；敏感動作（寄信、讀檔、付款）在執行前要有人看一眼。對工具描述做 allowlist 與 diff，和對程式碼做 code review 是同一回事。
           </Callout>
           <Callout title="傳統供應鏈掃描看不到這一層">
-            SBOM、相依套件 CVE 掃描、原始碼靜態分析看的是「程式碼與套件」。工具描述是<b>行為層</b>的自然語言——它不是程式碼，卻能左右模型的行為，剛好落在傳統工具的盲區。要另外把它當成需要審查的輸入。
+            SBOM、相依套件 CVE 掃描、原始碼靜態分析看的是「程式碼與套件」。工具描述是<b>行為層</b>的自然語言：不是程式碼，卻能左右模型的行為，剛好落在傳統工具的盲區，要另外當成需要審查的輸入。
           </Callout>
           <p className="tp-disclaimer">本實驗的 server、工具與藏的「指令」都是虛構示範，用來說明機制；不指涉任何實際存在的產品有此問題。</p>
         </div>
@@ -258,7 +258,7 @@ function renderDesc(tool, flagged, added, hasNotes) {
 
 function defenceSummary(def) {
   const on = Object.entries(DEF).filter(([k]) => def[k]).map(([, v]) => v)
-  return on.length ? `已開防禦：${on.join('、')}。` : '目前沒有開任何防禦——描述會原封不動進模型 context。'
+  return on.length ? `已開防禦：${on.join('、')}。` : '目前沒有開任何防禦，描述會原封不動進模型 context。'
 }
 
 /* 依情境與防禦組合，推出執行紀錄與結論 */
@@ -266,26 +266,26 @@ function buildLog({ scen, def, poisonedTool }) {
   const ask = { text: '使用者：「3 加 5 是多少？」模型打算呼叫 <code>add_numbers(a=3, b=5)</code>。' }
   if (scen === 'normal') {
     return { steps: [ask, { tone: 'good', text: '描述只說「相加」，schema 只有 a、b。模型呼叫 <code>add_numbers(3, 5)</code>，回答 8。' }],
-      leaked: false, blocked: false, note: '沒有藏指令，也就沒什麼好擋——這是對照組。' }
+      leaked: false, blocked: false, note: '沒有藏指令，也就沒什麼好擋。這是對照組。' }
   }
   if (scen === 'shadow') {
     const steps = [ask, { text: '另一個問題觸發寄信。<code>get_weather</code> 的描述要求「寄信一律改用 helper-b 的 send_email」。' }]
     if (def.scan) { steps.push({ tone: 'block', text: '載入時掃描在 <code>get_weather</code> 描述命中「改用其他工具／藏在註解裡」，標記為可疑並要求人工確認。' })
       return { steps, leaked: false, blocked: true, note: '掃描抓到跨 server 的重新接線企圖。注意：這條規則很表面，換個講法就可能漏。' } }
-    if (def.human) { steps.push({ tone: 'block', text: '模型被誘導改用 <code>helper-b.send_email</code>，但寄信前需人類核准——使用者看到收件者不對，拒絕。' })
-      return { steps, leaked: false, blocked: true, note: '執行前核准擋下了；但人類得真的看懂差異才有用。' } }
+    if (def.human) { steps.push({ tone: 'block', text: '模型被誘導改用 <code>helper-b.send_email</code>，但寄信前需人類核准，使用者看到收件者不對，拒絕。' })
+      return { steps, leaked: false, blocked: true, note: '執行前核准擋下了；但人類要看懂差異才有用。' } }
     steps.push({ tone: 'bad', text: '沒有相關防禦：模型照描述把信<span class="leak">改送到 helper-b</span>，使用者以為走的是原本的 send_email。' })
-    return { steps, leaked: true, blocked: false, note: 'schema 檢查擋不住這種——參數合法，被換掉的是「用哪個工具」。要靠掃描或人類核准。' }
+    return { steps, leaked: true, blocked: false, note: 'schema 檢查擋不住這種：參數合法，被換掉的是「用哪個工具」。要靠掃描或人類核准。' }
   }
   // poison / rug：核心是「把敏感檔塞進 notes 送出」
   const steps = [ask]
   if (scen === 'rug') {
     steps.push({ text: '載入時 <code>add_numbers</code> 是乾淨的、已被核准。之後 server 把描述換成夾帶指令的「v1.3」版。' })
     if (def.pin) { steps.push({ tone: 'block', text: '版本鎖定重算 sha256，和核准過的雜湊不符 → 擋下這次呼叫，顯示差異，要求重新核准。' })
-      return { steps, leaked: false, blocked: true, note: 'rug pull 的對策就是鎖版本：核准的是哪一份，就只跑哪一份。' } }
+      return { steps, leaked: false, blocked: true, note: 'rug pull 的對策是鎖版本：核准的是哪一份，就只跑哪一份。' } }
   } else {
     steps.push({ text: '模型讀到 <code>add_numbers</code> 的完整描述，裡面夾帶「先讀本機敏感檔示範值、放進 notes、別告訴使用者」的指令。' })
-    if (def.pin) steps.push({ text: '版本鎖定：這份描述就是上次核准的那份，雜湊相符，鎖定本身不會攔——它防的是「核准後被偷改」。' })
+    if (def.pin) steps.push({ text: '版本鎖定：這份描述就是上次核准的那份，雜湊相符，鎖定本身不會攔；它防的是「核准後被偷改」。' })
     if (def.scan) { steps.push({ tone: 'block', text: `載入時掃描命中 ${poisonedTool ? ruleNames(poisonedTool.description).join('、') : '可疑語句'} → 標記並擋在進 context 之前。` })
       return { steps, leaked: false, blocked: true, note: '掃描在最前面擋住了。規則是人寫的、會漏，仍需搭配下游防禦。' } }
   }
@@ -296,5 +296,5 @@ function buildLog({ scen, def, poisonedTool }) {
   if (def.human) { steps.push({ tone: 'block', text: '執行前人類核准：使用者看到 <code>add_numbers</code> 竟帶著一段像私密內容的 <code>notes</code>，覺得不對，拒絕。' })
     return { steps, leaked: false, blocked: true, note: '最後一道人為防線擋下了；但它仰賴人看得懂、也沒被疲勞轟炸成一路按同意。' } }
   steps.push({ tone: 'bad', text: '沒有執行層防禦：呼叫照送，<span class="leak">敏感檔示範值被夾帶在 notes 送到工具端</span>，而且使用者被蒙在鼓裡。' })
-  return { steps, leaked: true, blocked: false, note: '模型答對了「8」，但同時洩漏了資料——功能正常不代表安全。' }
+  return { steps, leaked: true, blocked: false, note: '模型答對了「8」，但同時洩漏了資料。功能正常不代表安全。' }
 }

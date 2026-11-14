@@ -86,7 +86,7 @@ unittest.TextTestRunner(stream=sys.stdout, verbosity=2).run(
     ],
     hints: [
       'Python 的格式規格可以加千分位：f"{n:,}"。',
-      'isinstance(True, int) 是 True——bool 要比 int 先檢查。',
+      'isinstance(True, int) 是 True，所以 bool 要比 int 先檢查。',
       '字串可以用 str.isdigit() 判斷是否只含數字；"-1" 與 "2.5" 都不會通過。',
     ],
   },

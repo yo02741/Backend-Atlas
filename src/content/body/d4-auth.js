@@ -24,7 +24,7 @@ const base = {
       { b: '簽章保證完整性', t: 'HS256 用共享 secret（單一服務）、RS256 / ES256 用私鑰簽、公鑰驗（多服務只需公鑰）。改一個字元簽章就不符。' },
       { b: '標準欄位', t: '`sub`（主體）、`iss`（發行者）、`aud`（受眾）、`exp` / `iat` / `nbf`（時間）。驗證時 exp、iss、aud 都要檢查，不只簽章。' },
       { b: 'access 短、refresh 長', t: 'access token 15 分鐘內、放記憶體或 Bearer；refresh token 幾天、放 HttpOnly cookie、用一次換一次（rotation），被盜用可偵測。' },
-      { b: 'alg 由伺服器決定', t: '驗證時指定允許的演算法，不要信 header 裡的 `alg`——`none` 與 HS/RS 混淆攻擊都靠這個。' },
+      { b: 'alg 由伺服器決定', t: '驗證時指定允許的演算法，不要信 header 裡的 `alg`。`none` 與 HS/RS 混淆攻擊都利用這個欄位。' },
     ],
     checklist: [
       '能手動解開一個 JWT 並指出三段各是什麼',
@@ -39,7 +39,7 @@ const base = {
   'oauth-oidc': {
     points: [
       { b: '四個角色', t: 'Resource Owner（使用者）、Client（你的 App）、Authorization Server（Google 的登入）、Resource Server（Google 的 API）。OAuth 解決的是「使用者授權 Client 存取 Resource Server」。' },
-      { b: '授權碼流程的關鍵在「換」', t: '導回時網址列只出現短命的 code，真正的 token 由 client 拿 code 向授權伺服器換：機密型 client（有後端）在後端帶 client_secret 換；公開型 client（SPA、手機）在自己這端帶 PKCE verifier 換。token 從不出現在網址列。' },
+      { b: '授權碼流程：拿 code 換 token', t: '導回時網址列只出現短命的 code，token 由 client 拿 code 向授權伺服器換：機密型 client（有後端）在後端帶 client_secret 換；公開型 client（SPA、手機）在自己這端帶 PKCE verifier 換。token 從不出現在網址列。' },
       { b: 'PKCE 給公開型 client', t: 'SPA 與手機 App 藏不住 secret，用 code_verifier / code_challenge 證明「換 token 的人就是發起請求的人」。現在所有 client 都建議用。' },
       { b: 'state 防 CSRF', t: '導向前產生隨機 state 存起來，回來時比對。少了它攻擊者能把自己的 code 塞給你。' },
       { b: 'OIDC = OAuth + 身分', t: 'OAuth 只說「可以存取」，OIDC 多回一個 id_token（JWT）告訴你「這個人是誰」。「用 Google 登入」用的是 OIDC。' },
@@ -78,7 +78,7 @@ const base = {
       { b: '`require_role("admin")` 依賴工廠', t: '回傳一個依賴函式，內部呼叫 get_current_user 再檢查角色，失敗丟 403。401 是「不知道你是誰」、403 是「知道你是誰但不行」。' },
       { b: '資源層的擁有權檢查', t: '`get_order_or_403(order_id, user)`：查到訂單後比對 owner；找不到回 404 而不是 403（避免洩漏存在性）。' },
       { b: '密碼比對用常數時間', t: '用 hasher 內建的 verify，不要自己 `==`。登入失敗訊息統一（不要說「帳號不存在」）。' },
-      { b: '測試要涵蓋三種身分', t: '未登入、登入但無權、有權——每個受保護 endpoint 至少三個測試。' },
+      { b: '測試要涵蓋三種身分', t: '未登入、登入但無權、有權，每個受保護 endpoint 至少三個測試。' },
     ],
     checklist: [
       '能寫出 get_current_user 與 require_role 兩個依賴並在 endpoint 使用',

@@ -127,7 +127,7 @@ export default function CertChainLab() {
 
   return (
     <Lab accent="green" className="cc" kicker="HTTPS LAB" title="憑證鏈驗證：用戶端到底在檢查什麼"
-         blurb="伺服器憑證由中繼 CA 簽發、中繼 CA 由根 CA 簽發，根 CA 必須在用戶端的信任清單裡。切換各種壞掉的狀況，逐步看驗證卡在哪一關、瀏覽器與 curl 各自報什麼錯。">
+         blurb="伺服器憑證由中繼 CA 簽發、中繼 CA 由根 CA 簽發，根 CA 必須在用戶端的信任清單裡。各種壞掉的狀況分別卡在哪一關，瀏覽器與 curl 各報什麼錯。">
       <LabControls>
         <Seg label="狀況" tinted value={cs} onChange={choose} options={Object.entries(CASES).map(([value, label]) => ({ value, label }))} />
       </LabControls>

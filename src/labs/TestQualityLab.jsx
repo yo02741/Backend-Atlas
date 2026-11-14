@@ -91,8 +91,8 @@ export default function TestQualityLab() {
   const focused = rows.find((r) => r.id === focus)
 
   return (
-    <Lab accent="green" kicker="TESTING LAB" title="測試品質：綠燈越多，品質為什麼沒變好"
-         blurb="一段能不能取消掛號的函式，兩組測試都把每一行跑過了，覆蓋率都是 100%。按「跑突變測試」：把程式故意改壞 8 次，看哪幾次測試仍然全綠——那些就是測試其實沒在驗的地方。開關單一測試，看殺死率怎麼掉。">
+    <Lab accent="green" kicker="TESTING LAB" title="測試品質：覆蓋率、假綠燈與突變測試"
+         blurb="一段判斷能不能取消掛號的函式，兩組測試都把每一行跑過了，覆蓋率都是 100%。突變測試把程式故意改壞 8 次，測試仍然全綠的那幾次，就是測試沒在驗的地方。">
       <LabControls>
         <Seg label="測試組" tinted value={suite} onChange={(v) => { setSuite(v); setRun(0); setFocus(null) }}
              options={SUITE_ORDER.map((k) => ({ value: k, label: SUITES[k].label }))} />
@@ -166,16 +166,16 @@ export default function TestQualityLab() {
 
       <LabGrid variant="even">
         <LabExplain title={run ? (survived ? `${S.label}：${survived} 個突變體活著回來` : `${S.label}：8 個突變體全部殺死`) : `${S.label}：先看測試長什麼樣`}>
-          {!run && <p>{suite === 'ai' ? '五個測試、綠燈全亮、每一行都跑過。但 T1 只檢查回傳型別，T4 連 assert 都沒有，T5 的期望值是從程式輸出抄來的——三個測試裡只有名字像在測東西。' : '六個測試每一個都寫清楚「給什麼、該回什麼」，而且專挑邊界打：期限當下、期限後一分鐘、剛好達上限、差一次達上限。'}</p>}
+          {!run && <p>{suite === 'ai' ? '五個測試、綠燈全亮、每一行都跑過。但 T1 只檢查回傳型別，T4 連 assert 都沒有，T5 的期望值是從程式輸出抄來的。這三個測試只有名字像在測東西。' : '六個測試每一個都寫清楚「給什麼、該回什麼」，而且專挑邊界打：期限當下、期限後一分鐘、剛好達上限、差一次達上限。'}</p>}
           {run && suite === 'ai' && <p>存活的三個全是邊界：<code>&gt;</code> 換成 <code>&gt;=</code>、<code>&gt;=</code> 換成 <code>&gt;</code>、上限 2 改 3。T4 明明用 cancel_count=2 跑過了那一行，卻因為沒有 assert 而什麼都沒驗；期限邊界則根本沒有測試站在那個時間點上。</p>}
-          {run && suite === 'fixed' && <p>每個突變體至少被一個測試紅掉。S3 與 S4 分別站在期限的兩側一分鐘內，S5 與 S6 站在上限的兩側——邊界兩邊各放一個測試，<code>&gt;</code> 和 <code>&gt;=</code> 就分得出來。</p>}
-          {run && <p>關掉幾個測試再看：殺死率掉了，覆蓋率仍是 100%——只要剩下的測試還是把每行跑過。滑過或點一列，左邊程式碼會標出被改的那行。</p>}
+          {run && suite === 'fixed' && <p>每個突變體至少被一個測試紅掉。S3 與 S4 分別站在期限的兩側一分鐘內，S5 與 S6 站在上限的兩側。邊界兩邊各放一個測試，<code>&gt;</code> 和 <code>&gt;=</code> 就分得出來。</p>}
+          {run && <p>關掉部分測試後殺死率會掉，覆蓋率卻仍是 100%，只要剩下的測試還是把每行跑過。</p>}
         </LabExplain>
         <div className="lab-stack">
           <Callout tone="warn" title="覆蓋率是跑過，不是驗過">
-            行覆蓋率回答的問題是「這行有沒有被執行」，不是「這行算錯了有沒有人發現」。沒有 assert 的測試、只檢查型別的測試、把現況抄成期望值的測試，都能把覆蓋率推到 100%，同時對任何改壞都毫無反應。突變測試量的才是後者：改壞程式，測試應該要紅；還綠著的地方，就是沒有被驗的地方。
+            行覆蓋率回答的問題是「這行有沒有被執行」，不是「這行算錯了有沒有人發現」。沒有 assert 的測試、只檢查型別的測試、把現況抄成期望值的測試，都能把覆蓋率推到 100%，同時對任何改壞都毫無反應。突變測試量的是後者：改壞程式，測試應該要紅；還綠著的地方，就是沒有被驗的地方。
           </Callout>
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             AI 產生的測試最容易出現這三種假綠燈，因為它看著現有程式寫測試，自然會把現在的行為當成正確答案。審查 AI 測試時先問：這個 assert 若程式回傳相反的值會不會紅？邊界的兩側各有一個案例嗎？CI 上掛一支突變測試工具（Python 常見 mutmut、cosmic-ray），把殺死率和覆蓋率一起看。
           </Callout>
         </div>

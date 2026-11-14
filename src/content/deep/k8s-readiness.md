@@ -137,11 +137,11 @@ Secret 的值在 API 裡只是 base64 **編碼**，任何能讀取這個 namespa
 
 ### 資料庫要不要放進叢集
 
-資料庫可以用 StatefulSet 或 operator（例如 PostgreSQL 的 CloudNativePG）跑在叢集裡，但備份、還原、升級、儲存效能都要團隊自己能掌握。導入初期常見的做法是**應用程式先上 K8s、資料庫維持在既有的 VM 或代管服務**，等團隊熟悉叢集的儲存與維運後再評估。這是取捨，不是唯一答案。
+資料庫可以用 StatefulSet 或 operator（例如 PostgreSQL 的 CloudNativePG）跑在叢集裡，但備份、還原、升級、儲存效能都要團隊自己能掌握。導入初期常見的做法是**應用程式先上 K8s、資料庫維持在既有的 VM 或代管服務**，等團隊熟悉叢集的儲存與維運後再評估。
 
 ## 滾動更新與 probe
 
-把 image tag 從 `3f9c2a1b` 改成 `8d1e7f40` 後，Deployment 建立新的 ReplicaSet，逐步把 Pod 換成新版本。預設的策略是 `RollingUpdate`，`maxSurge` 與 `maxUnavailable` 都是 25%（以 3 個副本計算，最多多開 1 個、最多少 0 個——25% 的 3 是 0.75，maxSurge 無條件進位成 1，maxUnavailable 無條件捨去成 0）。
+把 image tag 從 `3f9c2a1b` 改成 `8d1e7f40` 後，Deployment 建立新的 ReplicaSet，逐步把 Pod 換成新版本。預設的策略是 `RollingUpdate`，`maxSurge` 與 `maxUnavailable` 都是 25%（以 3 個副本計算，最多多開 1 個、最多少 0 個；25% 的 3 是 0.75，maxSurge 無條件進位成 1，maxUnavailable 無條件捨去成 0）。
 
 | 時間 | 舊版 Pod | 新版 Pod | Service 轉送給 |
 |---|---|---|---|
@@ -152,7 +152,7 @@ Secret 的值在 API 裡只是 base64 **編碼**，任何能讀取這個 namespa
 | … | … | … | … |
 | tn | 0 | 3 個 ready | 新 ×3 |
 
-關鍵在 **readiness probe**：新 Pod 的 readiness 通過之前，Service 不會把流量送給它，Deployment 也不會繼續砍舊的 Pod。沒有設定 readiness probe 時，容器一啟動就被視為 ready——應用程式還在載入、還沒連上資料庫，流量就進來了，使用者看到錯誤。所謂「零停機」，有一半是靠這個 probe 做到的。
+這個過程由 **readiness probe** 控制：新 Pod 的 readiness 通過之前，Service 不會把流量送給它，Deployment 也不會繼續砍舊的 Pod。沒有設定 readiness probe 時，容器一啟動就被視為 ready：應用程式還在載入、還沒連上資料庫，流量就進來了，使用者看到錯誤。所謂「零停機」，有一半是靠這個 probe 做到的。
 
 另一半是**優雅關閉**：舊 Pod 被刪除時，Kubernetes 先送 SIGTERM，等 `terminationGracePeriodSeconds`（預設 30 秒）後才送 SIGKILL。應用程式要在收到 SIGTERM 後停止接新請求、把手上的請求做完再結束。從 Service 移除 Pod 與送出 SIGTERM 是同時開始的，可能有少量請求在這段時間仍被送到要關閉的 Pod，常見做法是加一個短暫的 `preStop` 等待。
 
@@ -176,7 +176,7 @@ $ kubectl rollout undo deployment/booking-web -n booking    # 退回上一個版
 deployment.apps/booking-web rolled back
 ```
 
-新版的 readiness 一直不通過時，滾動更新會停住，舊版 Pod 仍在服務——這是 probe 設對的好處。資料庫 schema 變更要讓新舊版本能同時運作，見 [部署策略與資料庫遷移](#/skill/cd-strategies)。
+新版的 readiness 一直不通過時，滾動更新會停住，舊版 Pod 繼續服務。資料庫 schema 變更要讓新舊版本能同時運作，見 [部署策略與資料庫遷移](#/skill/cd-strategies)。
 
 ## 地端自建：要自己補的東西
 
@@ -219,7 +219,7 @@ Failed to pull image "registry.example.org/booking/web:3f9c2a1b": ... tls: faile
 
 **Ingress controller 的選擇**：Ingress 只是規則，實際處理流量的是 controller，選擇很多。要注意的是，Kubernetes 社群維護的 ingress-nginx 專案已宣布退役、停止後續維護（官方公告的停止時間是 2026 年 3 月），新的建置要評估其他 controller 或 Gateway API（Kubernetes 的新一代流量路由 API，已正式發布 v1）。選型前查清楚專案的維護狀態，這類資訊變動很快。
 
-**升級是持續的工作**：Kubernetes 大約每年發布三個 minor 版本，每個版本約有 14 個月的修補支援。也就是說，叢集大約每年要升級一到兩次才不會落到不再支援的版本，而且只能一個 minor 一個 minor 升。這要排進年度維運計畫，不是導入專案結束就沒事。
+**升級是持續的工作**：Kubernetes 大約每年發布三個 minor 版本，每個版本約有 14 個月的修補支援。也就是說，叢集大約每年要升級一到兩次才不會落到不再支援的版本，而且只能一個 minor 一個 minor 升。這要排進年度維運計畫，導入專案結束後仍要持續做。
 
 ## 雲端代管（EKS、GKE、AKS）差在哪
 
@@ -233,11 +233,11 @@ Amazon EKS、Google GKE、Azure AKS 這類服務，替你運作控制平面，�
 - 節點的版本升級節奏（多數服務會提醒或強制升級舊版本）。
 - 成本控管：節點、負載平衡器、磁碟、跨區與對外流量都分別計費。
 
-地端與雲端的選擇不只是技術問題，還牽涉資料能放在哪裡的法規要求、既有機房的投資、網路連線與團隊能力。見 [地端、雲端還是混合雲](#/skill/hosting-models)。
+地端與雲端的選擇除了技術，還牽涉資料能放在哪裡的法規要求、既有機房的投資、網路連線與團隊能力。見 [地端、雲端還是混合雲](#/skill/hosting-models)。
 
 ## 導入前，團隊與系統要先具備的能力
 
-Kubernetes 會把應用程式的問題放大，而不是解決它們。下面這份清單，每一項沒做到，搬上叢集後都會變成維運問題：
+Kubernetes 不會解決應用程式既有的問題，只會把它們放大。下面這份清單，每一項沒做到，搬上叢集後都會變成維運問題：
 
 | 能力 | 具體要做到 | 沒做到時在 K8s 上的後果 |
 |---|---|---|
@@ -279,5 +279,5 @@ Kubernetes 會把應用程式的問題放大，而不是解決它們。下面這
 
 1. 拿一個現有系統，對照「導入前要具備的能力」那張表逐項打勾，沒做到的項目就是導入前的工作清單。
 2. 用 kind 或 minikube 在自己的電腦上建一個測試叢集，套用上面的 Deployment 與 Service（image 換成任何一個公開的 web image），然後故意把 readiness probe 的路徑改錯，更新一次，觀察 `kubectl rollout status` 停住、舊版 Pod 仍在服務。
-3. 在同一個測試叢集裡建一個 `type: LoadBalancer` 的 Service，觀察 `EXTERNAL-IP` 停在 `<pending>`，這就是地端自建時要補負載平衡元件的原因。
+3. 在同一個測試叢集裡建一個 `type: LoadBalancer` 的 Service，觀察 `EXTERNAL-IP` 停在 `<pending>`：地端叢集沒有內建的負載平衡元件，要自己補。
 4. 把 [硬體資源與容量規劃](#/skill/capacity-planning) 裡的估算結果，換算成這個 Deployment 的 `replicas` 與 `resources`。

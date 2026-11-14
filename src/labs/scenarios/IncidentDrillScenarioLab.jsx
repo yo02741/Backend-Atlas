@@ -127,7 +127,7 @@ function simulate(mode, rf) {
 const EXPLAIN = {
   chaos: { title: '各自救火：每個人都在修，沒有人在指揮', body: ['四個人都看到告警，各自做了「看起來合理」的事：兩個人重啟同一組 Pod、一個人調大連線池、另一個人又改回去。單看每個動作都不算錯，疊在一起就互相抵銷，還把資料庫打掛了一次。', '沒有人負責對外說明，客服到 08:38 才自己貼公告；最關鍵的問題「最近改了什麼」，08:45 才有人問。'] },
   ic: { title: '事故指揮：先宣告、分工，再動手', body: ['IC 在 08:08 宣告事故並分派角色，第一件事是問「最近改了什麼」。宣告與分派花了幾分鐘，但之後每個動作都只做一次，沒有互相抵銷。', '先保存連線與慢查詢狀態再回滾，事後才查得到原因。溝通窗口 08:10 就讓櫃台改走替代流程。回滾失敗時，IC 不讓人重試同一招，改走降級再往前修。'] },
-  auto: { title: '自動化優先：機器先止血，人再接手判斷', body: ['燃燒率告警成立就自動回滾，08:10 恢復，人還在開電腦。前提是事先做好：不可變的 image、可以安全回滾的 migration、可靠的多視窗告警。', '自動化只會照劇本走。開啟「回滾本身失敗」看看：降級接住了大部分，但自動重試和人同時動手會打架——人接手的第一件事是暫停自動化。'] },
+  auto: { title: '自動化優先：機器先止血，人再接手判斷', body: ['燃燒率告警成立就自動回滾，08:10 恢復，人還在開電腦。前提是事先做好：不可變的 image、可以安全回滾的 migration、可靠的多視窗告警。', '自動化只會照劇本走。回滾本身失敗時，降級接住了大部分，但自動重試和人同時動手會打架，所以人接手的第一件事是暫停自動化。'] },
 }
 const FLOWS = {
   chaos: [{ label: '告警', value: '丟進群組' }, { label: 'A、B、C、D', value: '各自看到', hot: true }, { label: '正式環境', value: '四個人同時改', bad: true }],
@@ -162,7 +162,7 @@ export default function IncidentDrillScenarioLab() {
 
   return (
     <Lab accent="red" kicker="SCENARIO LAB" title="08:00 掛號尖峰，錯誤率 25%：三種處理方式的 90 分鐘"
-         blurb="按「開始事故」逐分鐘播放；切換做法比較錯誤率曲線、錯誤預算、MTTR、重複或衝突的操作次數與對外公告延遲，再開啟「回滾本身失敗」看備案。">
+         blurb="一場事故逐分鐘的錯誤率曲線、錯誤預算、MTTR、重複或衝突的操作次數與對外公告延遲，以及回滾本身失敗時的備案。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         <Toggle label="回滾本身失敗" checked={rf} onChange={setRf} />
@@ -192,7 +192,7 @@ export default function IncidentDrillScenarioLab() {
             </div>
             <Caption>
               告警 {clock(sim.alertAt)} 成立（5 分鐘與 1 小時視窗都超過 14.4×），{sim.clearAt >= 0 ? `${clock(sim.clearAt)} 因短視窗回落而解除` : '到 09:30 仍未解除'}；
-              只看 1 小時視窗的話，{sim.longOnlyClear >= 0 ? `要響到 ${clock(sim.longOnlyClear)}` : '09:30 還在響'}——這就是要搭配短視窗的原因（示意）
+              只看 1 小時視窗的話，{sim.longOnlyClear >= 0 ? `要響到 ${clock(sim.longOnlyClear)}` : '09:30 還在響'}，所以要搭配短視窗（示意）
             </Caption>
             <Flow title="告警之後誰動手" steps={FLOWS[mode]} back={mode === 'chaos' ? '互相覆蓋的設定、重複的重啟' : ''} />
             <ol className="id-log" aria-label="事件時間線">
@@ -227,7 +227,7 @@ export default function IncidentDrillScenarioLab() {
         <div className="lab-stack">
           <LabExplain title={ex.title}>{ex.body.map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
           <LabExplain title={mode === 'chaos' ? '事後：咎責式檢討' : '事後：不咎責的 postmortem'}><p>{sim.after}</p></LabExplain>
-          <Callout title="什麼時候會真的踩到">尖峰前剛上線、告警丟進大群組、每個人都有正式環境權限——三件事同時成立時，第一個十分鐘幾乎一定會出現重複重啟和互相改回的設定。事故指揮與自動回滾都要在平常演練過，臨場才用得出來。</Callout>
+          <Callout title="什麼時候會踩到">尖峰前剛上線、告警丟進大群組、每個人都有正式環境權限：三件事同時成立時，第一個十分鐘幾乎一定會出現重複重啟和互相改回的設定。事故指揮與自動回滾都要在平常演練過，臨場才用得出來。</Callout>
         </div>
       </LabGrid>
       <style>{`

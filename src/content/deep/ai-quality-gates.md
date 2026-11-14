@@ -133,7 +133,7 @@ test:
 
 這份設定假設 ruff、mypy、pytest、coverage、deptry 都列在專案的開發依賴裡，`uv run` 才找得到；pip-audit 用 `uvx` 臨時執行。secret 掃描也可以改用 GitLab 內建的 Secret Detection 樣板（`include: - template: …`），樣板名稱、預設 stage 與它在 MR pipeline 中的行為依 GitLab 版本有差異，採用前先對照所用版本的文件。
 
-### 讓閘門真的擋得住
+### 讓閘門擋得住
 
 YAML 寫好只完成一半。還要在專案設定裡：
 

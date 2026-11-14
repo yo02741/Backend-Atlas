@@ -83,7 +83,7 @@ RETURNING id, stock;
 | t3 | `COMMIT`，釋放鎖 | |
 | t4 | | 拿到鎖，用**最新版本**（stock = 0）重新檢查 `stock > 0`，不成立，更新 0 列 |
 
-B 收到「更新了 0 列」（`RETURNING` 回空），應用程式就知道售完了，不建立訂單。關鍵在 t4：READ COMMITTED 下，被擋住的 `UPDATE` 拿到鎖後，會用那一列的最新版本重新評估 WHERE 條件。
+B 收到「更新了 0 列」（`RETURNING` 回空），應用程式就知道售完了，不建立訂單。決定結果的是 t4：READ COMMITTED 下，被擋住的 `UPDATE` 拿到鎖後，會用那一列的最新版本重新評估 WHERE 條件。
 
 ### 需要先讀再決定時：鎖住那一列
 
@@ -102,7 +102,7 @@ COMMIT;
 
 ## 實際程式：交易要短，失敗要能重試
 
-Python 裡用 psycopg（PostgreSQL 官方推薦的驅動）時，交易大致長這樣（需要真的資料庫，不能在瀏覽器裡跑）：
+Python 裡用 psycopg（PostgreSQL 官方推薦的驅動）時，交易大致長這樣（需要實際的資料庫，不能在瀏覽器裡跑）：
 
 ```python
 import psycopg

@@ -18,7 +18,7 @@ Bob 的 `total` 是 14,570。但 Bob 只有兩張訂單：103 號 7,990 元、10
 
 ### 先想成「全部配一遍，再用 ON 篩」
 
-邏輯上，`A JOIN B ON 條件` 等於：把 A 的每一列和 B 的每一列都配一次（笛卡兒積，`CROSS JOIN`），再只留下 ON 條件為 true 的組合。資料庫實際上不會真的產生笛卡兒積（它會用 Nested Loop、Hash Join、Merge Join 這些演算法），但結果和這個定義一致。
+邏輯上，`A JOIN B ON 條件` 等於：把 A 的每一列和 B 的每一列都配一次（笛卡兒積，`CROSS JOIN`），再只留下 ON 條件為 true 的組合。資料庫實際上不會產生笛卡兒積（它會用 Nested Loop、Hash Join、Merge Join 這些演算法），但結果和這個定義一致。
 
 範例資料庫有 5 位使用者、6 張訂單：
 
@@ -258,7 +258,7 @@ LATERAL 的 `ORDER BY … LIMIT N` 很直白地表達「每組前 N 筆」。`or
 | `invalid reference to FROM-clause entry for table "u"` | `42P01` | FROM 裡的子查詢引用了同層的 `u` | 訊息的 HINT 會直接寫 `To reference that table, you must mark this subquery with LATERAL.`：加上 LATERAL |
 | `operator does not exist: bigint = text` | `42883` | ON 的兩邊型別不同（例如拿 user_id 去比 name） | 通常是 JOIN 錯欄位；確定沒錯才轉型 |
 | `FULL JOIN is only supported with merge-joinable or hash-joinable join conditions` | `0A000` | FULL JOIN 的 ON 用了 `<`、`>` 這類不等式 | FULL JOIN 改用等值條件；不等式需求拆成 LEFT + RIGHT 再 UNION |
-| `syntax error at end of input` | `42601` | `FROM users JOIN orders` 沒寫 ON | 補上 `ON …`；真的要全部配對就明寫 `CROSS JOIN` |
+| `syntax error at end of input` | `42601` | `FROM users JOIN orders` 沒寫 ON | 補上 `ON …`；確定要全部配對就明寫 `CROSS JOIN` |
 
 不會報錯、但結果錯的寫法：
 

@@ -135,7 +135,7 @@ export default function VersioningScenarioLab() {
 
   return (
     <Lab accent="aqua" kicker="SCENARIO LAB" title="同一份回應改四個地方，四種客戶端誰會壞"
-         blurb="開關四個變更、切換做法，右邊的客戶端卡片立刻告訴你誰讀不到什麼欄位。所有數字為示意。">
+         blurb="四個變更在各做法下，哪個客戶端讀不到哪些欄位。所有數字為示意。">
       <LabControls>
         <Seg tinted label="做法" value={approach} onChange={setApproach} options={APPROACHES} />
       </LabControls>
@@ -179,7 +179,7 @@ export default function VersioningScenarioLab() {
             <Stat label="deprecated 欄位" value={shown.marks.length} tone={stuck ? 'warn' : ''} note={stuck ? 'internal_note 刪不掉' : ''} />
           </Stats>
           <LabExplain title={explain.title}>{explain.body.map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
-          <Callout title="什麼時候會真的踩到">改型別（字串 → 物件、數字 → 字串）與改名最常見，通常發生在「當初設計太簡單」的欄位上。刪欄位看起來無害，但沒寫在文件的欄位照樣有人在用；刪之前先用日誌或 gateway 統計誰還在讀。</Callout>
+          <Callout title="什麼時候會踩到">改型別（字串 → 物件、數字 → 字串）與改名最常見，通常發生在「當初設計太簡單」的欄位上。刪欄位看起來無害，但沒寫在文件的欄位照樣有人在用；刪之前先用日誌或 gateway 統計誰還在讀。</Callout>
         </div>
       </LabGrid>
       <style>{`
@@ -235,7 +235,7 @@ function Timeline({ months, step }) {
 
 const EXPLAIN = {
   none: { title: '四個變更一次上線：只有跟後端一起部署的 Web 沒事', body: [
-    'iOS 舊版與夥伴把 status 當字串、讀 customer_name；Android 拿 internal_note 顯示備註——沒人「該」用的欄位還是有人用，這就是刪欄位危險的原因。',
+    'iOS 舊版與夥伴把 status 當字串、讀 customer_name；Android 拿 internal_note 顯示備註。沒人「該」用的欄位還是有人用，所以刪欄位危險。',
     '把右邊三個開關關掉、只留「加欄位」：沒有人壞。加欄位本來就不是破壞性變更，正確寫的客戶端會忽略不認識的欄位。',
   ] },
   additive: { title: '舊欄位一個都不拿掉，新欄位用新名字加進來', body: [
@@ -243,7 +243,7 @@ const EXPLAIN = {
     '代價：「刪欄位」做不到，internal_note 只能標 deprecated 繼續回。回應裡紅標的欄位會越積越多，而且 status 這個好名字永遠被舊型別佔著。',
   ] },
   path: { title: '/v1 原封不動，/v2 回新格式，客戶端自己選', body: [
-    '沒有人壞：舊客戶端根本沒碰 /v2。切上面的 v1 / v2 看兩份回應——它們是兩支 handler、兩組測試、兩份 CDN 快取。',
+    '沒有人壞：舊客戶端沒碰 /v2。v1 與 v2 是兩支 handler、兩組測試、兩份 CDN 快取。',
     'v1 要維護到 iOS 舊版退場（至少 6 個月）；Sunset 標頭先把日期講出去。版本是整個 API 一起跳，之後每個小改都要想「這算不算 v3」。',
   ] },
   header: { title: 'URL 不變，用 Accept 選版本', body: [
@@ -252,10 +252,10 @@ const EXPLAIN = {
   ] },
   expand0: { title: '① 加新欄位，值先是 null', body: [
     '資料庫加欄、API 開始回 status_detail 與 customer，但舊資料還沒回填，所以是 null。舊欄位不動，舊客戶端無感。',
-    'Web 如果這一步就切去讀新欄位，會拿到 null——右邊的黃燈。expand 的第一步只是「準備好容器」。',
+    'Web 如果這一步就切去讀新欄位，會拿到 null（右邊的黃燈）。expand 的第一步只是「準備好容器」。',
   ] },
   expand1: { title: '② 雙寫 + 回填：新舊兩組欄位都有值', body: [
-    '應用程式寫入時同時填新舊欄，舊資料分批回填。從這一刻起，任何客戶端讀哪一組都對，這就是相容窗口。',
+    '應用程式寫入時同時填新舊欄，舊資料分批回填。從這一刻起，任何客戶端讀哪一組都對，這段期間叫相容窗口。',
     '窗口要開多久由最慢的客戶端決定；期間每個寫入都要維持兩份一致。',
   ] },
   expand2: { title: '③ 通知客戶端改讀新欄位，統計誰還在讀舊的', body: [

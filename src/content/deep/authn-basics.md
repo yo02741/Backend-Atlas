@@ -8,7 +8,7 @@
 - 「改密碼」更新了密碼雜湊，但伺服器驗 JWT 時只檢查簽章與 `exp`，不查資料庫。那張 token 在 7 天內一直有效。
 - 「登出所有裝置」這個按鈕呼叫的 API 什麼也沒做，因為伺服器根本沒有「目前有哪些登入」的紀錄可以刪。
 
-如果同一個網站用的是伺服器端 session，刪掉這位使用者的所有 session 紀錄，網咖那台的下一個請求就會被擋下。兩種做法都叫「登入」，差別在**登入狀態存在哪裡**、**怎麼被帶在請求裡**，以及隨之而來的撤銷、擴展與攻擊面。
+如果同一個網站用的是伺服器端 session，刪掉這位使用者的所有 session 紀錄，網咖那台的下一個請求就會被擋下。兩種做法都叫「登入」，差別在登入狀態存在哪裡、怎麼被帶在請求裡，以及隨之而來的撤銷、擴展與攻擊面。
 
 先把兩個常被混用的詞分開：
 
@@ -28,7 +28,7 @@ HTTP 每個請求彼此獨立，伺服器不會記得上一個請求是誰發的
 - **參照（reference）**：一個隨機字串，本身沒有意義，伺服器拿它去查表才知道是誰。傳統的 session id、opaque access token 都是這種。
 - **自帶（self-contained）**：憑證裡直接寫著「我是 u_42、角色 member、幾點到期」，再加上簽章防竄改。JWT 是最常見的格式。
 
-另一個獨立的維度是**怎麼帶**：放在 cookie（瀏覽器自動附上）還是放在 `Authorization` header（程式自己加）。一般說「session vs token」時，其實把這兩個維度綁在一起講了：
+另一個獨立的維度是**怎麼帶**：放在 cookie（瀏覽器自動附上）還是放在 `Authorization` header（程式自己加）。一般說「session vs token」時，是把這兩個維度綁在一起講：
 
 | | 放在 cookie（瀏覽器自動帶） | 放在 Authorization header（程式自己帶） |
 |---|---|---|
@@ -123,7 +123,7 @@ Authorization: Bearer eyJhbGciOiJSUzI1NiIs…
 | 停用帳號 | 刪 session，或每次查表時一併檢查帳號狀態 | 同上；要立即生效就得在驗 token 時查帳號狀態，等於又變回查表 |
 | 失效延遲 | 0 | 最長等於 access token 的效期（所以要短，常見 5～15 分鐘） |
 
-開頭的事故就是落在右欄最差的組合：7 天效期、沒有 refresh 這一層、伺服器端沒有任何可撤銷的紀錄。
+開頭的事故落在右欄最差的組合：7 天效期、沒有 refresh 這一層、伺服器端沒有任何可撤銷的紀錄。
 
 ### 擴展：查表的成本與共用儲存
 
@@ -231,7 +231,7 @@ forged = b64(json.dumps({"sub": "bob", "exp": NOW + 7 * 86400}).encode()) + "." 
 print("竄改後的 token →", check_token(forged, NOW + 60))
 ```
 
-最後一段說明自帶型 token 的另一面：伺服器不查表也能確定內容沒被改過，因為只有持有 `SECRET` 的人算得出正確的簽章。代價就是上面看到的撤銷問題。
+最後一段說明自帶型 token 的另一面：伺服器不查表也能確定內容沒被改過，因為只有持有 `SECRET` 的人算得出正確的簽章。代價是上面看到的撤銷問題。
 
 在真正的框架裡，session 通常由框架或套件處理（例如 Starlette 的 `SessionMiddleware` 是把資料簽章後整包放進 cookie，屬於自帶型；要伺服器端 session 得另外接 Redis 之類的儲存）。選套件時先確認它是哪一種，撤銷行為完全不同。
 
@@ -246,7 +246,7 @@ print("竄改後的 token →", check_token(forged, NOW + 60))
 
 ## 動手
 
-1. 在上面的 Python 範例裡，把 `issue_token` 的 `ttl` 改成 `900`（15 分鐘），再看「登出所有裝置之後」那一行：失效延遲從 7 天縮到 15 分鐘，這就是短效 access token 的用意。
+1. 在上面的 Python 範例裡，把 `issue_token` 的 `ttl` 改成 `900`（15 分鐘），再看「登出所有裝置之後」那一行：失效延遲從 7 天縮到 15 分鐘，短效 access token 的用意在此。
 2. 幫 `check_token` 加一個「撤銷清單」：`revoked = set()` 存被撤銷的 token，`logout_all` 時把已知的 token 放進去。想一想：這個清單要放在哪、所有伺服器怎麼共用？做完會發現它就是一個 session 表。
 3. 打開瀏覽器 DevTools 的 Application（或 Storage）面板，看一個你常用網站的 cookie，找出它的 session cookie 設了哪些屬性。
 4. 到設計情境 [SPA 加手機 App 的登入方案](#/scenario/auth-scheme)，用四個情況比較 cookie session、JWT 放 localStorage、BFF、授權伺服器的取捨。

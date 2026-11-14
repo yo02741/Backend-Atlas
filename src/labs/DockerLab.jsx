@@ -63,7 +63,7 @@ export default function DockerLab() {
 
   return (
     <Lab className="dkr" accent="yellow" kicker="DEPLOY LAB" title="Dockerfile 每一行都是一層：順序決定快取命中"
-         blurb="按「docker build」看每行指令怎麼變成一層唯讀 layer。切換「這次改了什麼」觀察哪些層能直接用快取、哪些得從頭重做——再把 COPY . . 挪到依賴安裝前面，感受壞順序有多痛。">
+         blurb="每行指令變成一層唯讀 layer。改動不同的檔案時，哪些層直接用快取、哪些從頭重做，以及 COPY . . 放在依賴安裝前面的代價。">
       <LabControls>
         <Seg label="Dockerfile 順序" tinted value={order} onChange={setOrder}
              options={Object.entries(ORDERS).map(([v, o]) => ({ value: v, label: o.label }))} />
@@ -134,21 +134,21 @@ function explainFor(step, keys, change, order, inv) {
     title: 'docker build：先把 build context 送給引擎',
     text: [
       '`docker build .` 會把目前目錄（build context）整包送給 Docker 引擎，Dockerfile 裡的 `COPY` 只能拿這裡面的檔案。用 `.dockerignore` 排除 `.venv/`、`.git/`、`node_modules/`，否則 context 又大又慢，`COPY . .` 的快取也更容易失效。',
-      '接著每一行指令依序執行，各自產生一層**唯讀 layer** 疊在前一層上面。按 → 逐層看它怎麼來、什麼時候能用快取。',
+      '接著每一行指令依序執行，各自產生一層**唯讀 layer** 疊在前一層上面。',
     ],
   }
   const k = keys[step - 1]
   const status = step - 1 >= inv ? 'rebuilt' : 'hit'
   const chain = '快取是鏈狀的：**某一層失效，它上面的每一層一律重做**，不管內容有沒有變。'
   const tail = status === 'rebuilt'
-    ? (step - 1 === inv ? '這層就是第一個失效的：它的輸入變了，從這裡開始往上全部重建。' : '這層本身沒變，但父層已經失效，所以也得重做。')
+    ? (step - 1 === inv ? '這層是第一個失效的：它的輸入變了，從這裡開始往上全部重建。' : '這層本身沒變，但父層已經失效，所以也得重做。')
     : '指令沒變、父層也命中 → 直接拿快取，幾乎零秒。'
   const T = {
-    base: ['FROM：拉基底映像，體積最大、最少變動', ['從 registry 拉 `python:3.12-slim` 當底——它本身就是好幾層疊起來的映像。tag 沒換這層就永遠命中，所以放最底層最划算。', tail]],
+    base: ['FROM：拉基底映像，體積最大、最少變動', ['從 registry 拉 `python:3.12-slim` 當底，它本身也是好幾層疊起來的映像。tag 沒換這層就永遠命中，所以放最底層最划算。', tail]],
     work: ['WORKDIR：只改設定，0 B 的 metadata 層', ['之後的指令都在 `/app` 下執行。這種指令（還有 `ENV`、`EXPOSE`、`CMD`）只寫進映像設定，不產生檔案，`docker history` 會看到 0 B。', tail]],
-    lock: ['COPY 依賴描述檔：先只複製兩個小檔', ['COPY 的快取比對的是**檔案內容的 checksum**：`pyproject.toml` 與 `uv.lock` 沒變就命中。只複製這兩個檔，讓下一層安裝依賴的快取只在「依賴真的變了」時失效。', change === 'deps' ? '你改了 `pyproject.toml`，checksum 變了 → 這層 rebuilt。' + chain : tail]],
-    deps: ['RUN uv sync：最花時間的一層', ['RUN 的快取**只看指令字串和父層**，不會真的去檢查 pyproject 有沒有變——所以它能不能命中，完全取決於前面那個 COPY 有沒有失效。', order === 'bad' && change === 'app'
-      ? '壞順序下 `COPY . .` 在它前面：改一行 `app.py` 就讓父層失效，`uv sync` 得重跑 40 秒——這就是「程式碼放依賴前面」的代價。'
+    lock: ['COPY 依賴描述檔：先只複製兩個小檔', ['COPY 的快取比對的是**檔案內容的 checksum**：`pyproject.toml` 與 `uv.lock` 沒變就命中。只複製這兩個檔，讓下一層安裝依賴的快取只在「依賴變了」時失效。', change === 'deps' ? '你改了 `pyproject.toml`，checksum 變了 → 這層 rebuilt。' + chain : tail]],
+    deps: ['RUN uv sync：最花時間的一層', ['RUN 的快取**只看指令字串和父層**，不會去檢查 pyproject 有沒有變，所以它能不能命中，完全取決於前面那個 COPY 有沒有失效。', order === 'bad' && change === 'app'
+      ? '壞順序下 `COPY . .` 在它前面：改一行 `app.py` 就讓父層失效，`uv sync` 得重跑 40 秒，這是「程式碼放依賴前面」的代價。'
       : tail]],
     code: ['COPY . .：程式碼最常改，放最後', ['把整個 context（扣掉 `.dockerignore`）複製進來。程式碼幾乎每次 build 都不同，所以放越後面越好：它失效時，上面只剩 `CMD` 這種 0 B 的層要重做。', order === 'bad' ? '這裡它被放在 `RUN uv sync` 前面：只要任何檔案變動，整個依賴安裝就跟著失效。' + chain : tail]],
     cmd: ['CMD：container 啟動時要跑什麼，build 完成', ['`CMD` 只寫進映像設定，告訴 container 啟動時執行哪個程序；不產生檔案。到這裡映像就建好了，可以 `docker run` 起 container。', status === 'rebuilt' ? '它是 0 B，所以雖然標 rebuilt 也幾乎不花時間。' : tail, '進階：**multi-stage build** 先在一個 stage 裝好編譯工具做出成品，再用 `COPY --from=builder` 只把成品搬進乾淨的最終映像，讓映像更小、攻擊面更少。']],

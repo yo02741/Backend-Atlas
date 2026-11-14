@@ -12,7 +12,7 @@ LIMIT 20;
 
 上線時 orders 只有幾千筆，回應時間幾毫秒。半年後表長到幾百萬筆，同一頁要 1 秒以上，資料庫 CPU 長期偏高，尖峰時連其他查詢也一起變慢。程式碼一行都沒改。
 
-原因是這句查詢每次都要把 orders 從頭讀到尾，逐列檢查 `user_id`，最後才排序取 20 筆。資料量翻 100 倍，讀的量就翻 100 倍。修法是一行 `CREATE INDEX`，但要建對欄位、建對順序，並且知道怎麼確認資料庫真的用了它。
+原因是這句查詢每次都要把 orders 從頭讀到尾，逐列檢查 `user_id`，最後才排序取 20 筆。資料量翻 100 倍，讀的量就翻 100 倍。修法是一行 `CREATE INDEX`，但要建對欄位、建對順序，並且知道怎麼確認資料庫用了它。
 
 ## 運作原理：B-tree 是一份排好序的目錄
 
@@ -32,7 +32,7 @@ B-tree 索引是把某個欄位的值**排序後**另外存一份，每個值旁
 
 查 `user_id = 42`：從根頁開始，每一層比較分界值、往下走一頁，到葉頁就找到所有 42 的 TID，再去表裡讀那幾列。
 
-- 每一頁預設 8 KB，可以放幾百個分界值，所以樹非常矮：幾百萬到幾億筆通常只有 3 到 4 層。查一個值只要讀幾頁索引，而不是幾萬頁資料。
+- 每一頁預設 8 KB，可以放幾百個分界值，所以樹很矮：幾百萬到幾億筆通常只有 3 到 4 層。查一個值只要讀幾頁索引，而不是幾萬頁資料。
 - 葉頁彼此串連、而且排好序，所以範圍查詢（`BETWEEN`、`>`、`<`）找到起點後往右讀就好；`ORDER BY` 這個欄位時，照索引順序讀出來就已經排好，不用另外排序。
 - 代價是每次 `INSERT`、更新索引欄位的 `UPDATE`、`DELETE`，都要同步維護每一棵索引樹。
 
@@ -104,7 +104,7 @@ EXPLAIN ANALYZE SELECT * FROM orders WHERE user_id = 2;
 RESET enable_seqscan;
 ```
 
-`enable_seqscan = off` 不是真的禁止 Seq Scan，而是讓規劃器只要有別的路就不選它；沒有其他可行的計畫時照樣會用。它只適合用來觀察「如果走索引會怎樣」，不能拿來修效能問題。
+`enable_seqscan = off` 讓規劃器只要有別的路就不選 Seq Scan；沒有其他可行的計畫時照樣會用。它只適合用來觀察「如果走索引會怎樣」，不能拿來修效能問題。
 
 ### 用 generate_series 做出 10 萬筆
 
@@ -137,10 +137,10 @@ EXPLAIN ANALYZE SELECT * FROM big_orders WHERE id = 42;
 EXPLAIN ANALYZE SELECT id FROM big_orders WHERE id BETWEEN 1 AND 100;
 ```
 
-幾個值得注意的地方：
+幾個細節：
 
 - 建索引後 `user_id = 42` 用的是 Bitmap 掃描而不是 Index Scan：這 10 列分散在 10 個不同的頁，規劃器選擇先收集位置、依頁排序後再讀。照主鍵查一筆時就是單純的 Index Scan。
-- 最後一句是 Index Only Scan，但 `Heap Fetches: 100` 表示每一列仍然回表確認了可見性。資料表要經過 `VACUUM` 把頁面標成 all-visible，Index Only Scan 才真的不用回表。本站的 Playground 會把整個區塊當成一個交易執行，`VACUUM` 放在區塊裡會報 `VACUUM cannot run inside a transaction block`；在真的資料庫上單獨執行 `VACUUM big_orders;` 之後再看，Heap Fetches 會變成 0。
+- 最後一句是 Index Only Scan，但 `Heap Fetches: 100` 表示每一列仍然回表確認了可見性。資料表要經過 `VACUUM` 把頁面標成 all-visible，Index Only Scan 才會不回表。本站的 Playground 會把整個區塊當成一個交易執行，`VACUUM` 放在區塊裡會報 `VACUUM cannot run inside a transaction block`；在真的資料庫上單獨執行 `VACUUM big_orders;` 之後再看，Heap Fetches 會變成 0。
 - 時間數字每次跑都不一樣，要看的是數量級和節點種類。
 
 ## 複合索引：欄位順序決定能服務哪些查詢

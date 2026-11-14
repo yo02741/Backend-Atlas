@@ -113,7 +113,7 @@ export default function NotificationsFanoutScenarioLab() {
 
   return (
     <Lab accent="red" kicker="SCENARIO LAB" title="發一則文，10 萬個追蹤者怎麼收到通知"
-         blurb="按「發文」看四種做法下：API 卡多久、佇列堆多高、10 萬人（每格 100 人）多快變綠。開「worker 當機重試」比較有沒有冪等鍵的差別。所有數字為示意。">
+         blurb="四種做法下 API 卡多久、佇列堆多高、10 萬人（每格 100 人）多快收到，以及 worker 當機重試時有沒有冪等鍵的差別。所有數字為示意。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
       </LabControls>
@@ -164,21 +164,21 @@ export default function NotificationsFanoutScenarioLab() {
         <div className="lab-stack">
           {mode === 'sync' && (
             <LabExplain title="8 分鐘的 HTTP 請求">
-              <p>10 萬人 × 每則 5 ms = 500 秒。發文的請求在 30 秒就被客戶端 timeout，發文者看到失敗、重按，伺服器其實還在第一輪裡——第二輪從頭再送，前面的人全部收到兩次。</p>
-              <p>開「當機重試」：程序在第 40 秒重啟，沒有任何紀錄知道送到哪，只能從頭。沒有冪等鍵就是 8,000 個紅點；有冪等鍵（推播服務用 post_id + user_id 去重）紅點消失，但時間一樣浪費。</p>
+              <p>10 萬人 × 每則 5 ms = 500 秒。發文的請求在 30 秒就被客戶端 timeout，發文者看到失敗、重按，伺服器還在跑第一輪，第二輪從頭再送，前面的人全部收到兩次。</p>
+              <p>當機重試時，程序在第 40 秒重啟，沒有任何紀錄知道送到哪，只能從頭。沒有冪等鍵就是 8,000 個紅點；有冪等鍵（推播服務用 post_id + user_id 去重）紅點消失，但時間一樣浪費。</p>
               <p>推播服務回 429 時這個迴圈也只能 sleep，因為沒有佇列可以把工作放回去。</p>
             </LabExplain>
           )}
           {mode === 'fanout-write' && (
             <LabExplain title="展開成工作，讓 worker 慢慢送">
               <p>發文時一句 <code>INSERT … SELECT</code> 把 12 萬筆工作（10 萬推播 + 2 萬 email，已依偏好算好管道）寫進工作表，API 0.8 秒回 202。佇列深度瞬間到頂，然後被 worker 以每秒 {fmtN(f.rate)} 則消化：{workers} 個 worker × 200 與推播上限 {fmtN(cap)} 取小。</p>
-              <p>把 worker 拉到 20 個：吞吐停在推播上限，多的 worker 只會拿到 429。真正的解法是提高上限或跟平台談配額，不是加機器。</p>
+              <p>worker 加到 20 個，吞吐仍停在推播上限，多的 worker 只會拿到 429。要提高上限或跟平台談配額，加機器沒用。</p>
               <p>開「當機重試」：送到 40% 時全部 worker 重啟，手上那批（{workers} × 200 筆）有一半已經送出但還沒標記 sent；5 秒後佇列把整批重新投遞。沒有冪等鍵 → {fmtN(workers * PER_WORKER / 2)} 個人收到兩次（紅）；有 <code>UNIQUE (post_id, user_id)</code> 或推播服務的 idempotency key → 0 個。</p>
             </LabExplain>
           )}
           {mode === 'fanout-read' && (
             <LabExplain title="發文時什麼都不做，打開 App 時再算">
-              <p>發文只寫一列，API 50 ms 回應，佇列與 worker 都沒事做。點陣不會變綠——沒有人被推播。使用者打開 App 時查「我追蹤的人在我上次看之後有什麼新貼文」，才看到（藍）。</p>
+              <p>發文只寫一列，API 50 ms 回應，佇列與 worker 都沒事做。點陣不會變綠，因為沒有人被推播。使用者打開 App 時查「我追蹤的人在我上次看之後有什麼新貼文」，才看到（藍）。</p>
               <p>成本搬到讀取端：每次打開 App 都是一次 JOIN（追蹤表 × 貼文表），追蹤 300 人的使用者示意 15 ms，追蹤 5,000 人的就會慢。10 萬人陸續打開就是 10 萬次查詢，但分散在幾小時裡，而且偏好與追蹤關係永遠是最新的。</p>
               <p>要主動送達（推播）就得另外走一則 topic 推播：平台幫你送給訂閱這個名人的所有裝置，不用逐人展開。</p>
             </LabExplain>
@@ -190,7 +190,7 @@ export default function NotificationsFanoutScenarioLab() {
               <p>代價是兩條路徑都要維護；好處是幾百個大 V 不會讓 500 萬筆工作塞爆佇列、拖慢所有人的通知。</p>
             </LabExplain>
           )}
-          <Callout title="什麼時候會真的踩到">追蹤者破萬的帳號第一次發文、行銷部門「發給全部會員」的活動通知、部署重啟時 worker 手上的那一批。重複通知比沒收到更傷信任——冪等鍵在第一天就要有。</Callout>
+          <Callout title="什麼時候會踩到">追蹤者破萬的帳號第一次發文、行銷部門「發給全部會員」的活動通知、部署重啟時 worker 手上的那一批。重複通知比沒收到更傷信任，冪等鍵在第一天就要有。</Callout>
         </div>
       </LabGrid>
 

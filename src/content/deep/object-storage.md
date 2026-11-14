@@ -148,13 +148,13 @@ print("十分鐘後：            ", verify("PUT", url, now + 600))
 
 ## 權限與公開 bucket 的外洩
 
-「bucket 被設成公開，任何人都能列出與下載裡面的檔案」是反覆發生的資料外洩原因：身分證影本、合約、資料庫備份，被掃描公開 bucket 的工具找到。原因通常不是駭客技術，而是設定：為了讓前端能顯示圖片，把整個 bucket 打開。
+「bucket 被設成公開，任何人都能列出與下載裡面的檔案」是反覆發生的資料外洩原因：身分證影本、合約、資料庫備份，被掃描公開 bucket 的工具找到。原因通常是設定，用不到駭客技術：為了讓前端能顯示圖片，把整個 bucket 打開。
 
 原則：
 
 - **上傳用的 bucket 永遠私有**。使用者的檔案一律透過 API 檢查權限後簽短效網址存取。
 - **開啟 Block Public Access**。AWS S3 從 2023 年 4 月起，新建 bucket 預設開啟 Block Public Access 並停用 ACL；舊 bucket 與其他服務要自己確認。帳號層級也可以開啟，避免有人在某個 bucket 上誤開。
-- **真的要公開的東西放另一個 bucket**。網站的靜態資源、公開下載的檔案放在專用的 bucket，前面接 CDN；不要和使用者上傳的檔案混在一起。
+- **要公開的東西放另一個 bucket**。網站的靜態資源、公開下載的檔案放在專用的 bucket，前面接 CDN；不要和使用者上傳的檔案混在一起。
 - **應用程式的憑證只給需要的權限**：只能存取自己的 bucket（甚至只有某個前綴），只有 `GetObject` / `PutObject` 等必要動作。在雲端用執行角色（role）取得臨時憑證，不要把長期的存取金鑰放進環境變數或映像檔。
 - **隨機的 key 不是權限控制**。key 難猜可以降低被列舉的風險，但 bucket 一旦公開，有人拿到一個網址就能下載；「不容易猜到」不能取代「沒有授權就拿不到」。
 - **列舉權限也要管**。`ListBucket` 的權限讓人看到所有 key，key 裡如果有使用者 id 或檔名，本身就是資訊洩漏。
@@ -226,7 +226,7 @@ S3 的生命週期設定大致長這樣（JSON 格式，用 SDK 或 CLI 套用�
 | `EntityTooLarge` | 400 | 超過單一 PUT 上限，或超過 presigned POST 的 `content-length-range` | 大檔改用分段上傳；確認大小限制是否符合需求 |
 | `EntityTooSmall` | 400 | 分段上傳時，非最後一段小於 5 MiB | 調整分段大小 |
 
-瀏覽器直傳時最常見的錯誤其實在瀏覽器 console：`No 'Access-Control-Allow-Origin' header is present on the requested resource`。這代表 bucket 沒有設定 CORS，或設定的來源、方法、標頭不包含這次請求。伺服器 log 不會有任何紀錄。
+瀏覽器直傳時最常見的錯誤出現在瀏覽器 console：`No 'Access-Control-Allow-Origin' header is present on the requested resource`。這代表 bucket 沒有設定 CORS，或設定的來源、方法、標頭不包含這次請求。伺服器 log 不會有任何紀錄。
 
 不會出現錯誤訊息、但會出事的情況：
 

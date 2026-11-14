@@ -125,8 +125,8 @@ function narrative(step, failTest, feature, ci) {
     title: feature ? 'push 到 feature/x：pipeline 一樣被觸發' : 'push 到 main：觸發 pipeline',
     text: [
       gh ? '`on: push` 沒有限制分支，所以任何分支的 push 都會建立一個 workflow run，接著把 job 排給 runner。'
-         : 'GitLab 預設每次 push 都會建立 pipeline，`stages` 決定各 job 的先後順序；哪些 job 真的執行則由每個 job 的 `rules` 決定。',
-      '為什麼每個分支都要跑？因為 lint 和 test 對每一次 commit 都有價值——問題越早被抓到，修起來越便宜。',
+         : 'GitLab 預設每次 push 都會建立 pipeline，`stages` 決定各 job 的先後順序；哪些 job 實際執行則由每個 job 的 `rules` 決定。',
+      '為什麼每個分支都要跑？因為 lint 和 test 對每一次 commit 都有價值：問題越早被抓到，修起來越便宜。',
     ],
   }
   if (failTest && step === 3) return {
@@ -141,14 +141,14 @@ function narrative(step, failTest, feature, ci) {
     title: '結束：deploy 兩階段沒有執行',
     text: [
       gh ? '`if: github.ref == \'refs/heads/main\'` 在 feature branch 上是 false，job 被標成 skipped，不佔 runner 時間。'
-         : '`rules: - if: $CI_COMMIT_BRANCH == "main"` 沒有任何一條命中，這個 job 連加進 pipeline 都不會——pipeline 圖上直接看不到它。',
-      '這就是「CI 每個分支都跑、CD 只有 main 才跑」的實作方式：程式碼要先合併進 main，才有機會被部署。',
+         : '`rules: - if: $CI_COMMIT_BRANCH == "main"` 沒有任何一條命中，這個 job 連加進 pipeline 都不會，pipeline 圖上直接看不到它。',
+      '「CI 每個分支都跑、CD 只有 main 才跑」就是這樣實作的：程式碼要先合併進 main，才有機會被部署。',
     ],
   }
   const byStep = {
     1: { title: 'lint 執行中', text: ['runner 是一台乾淨的暫時機器：先 checkout 程式碼、安裝依賴、跑 linter。這裡不需要任何 secret，也是整條管線最便宜、最快的關卡。', '想省時間就對 node_modules / pip cache 做快取：鍵值通常用 lockfile 的 hash，lockfile 沒變就直接還原。'] },
     2: { title: 'test 執行中', text: [gh ? '`needs: lint` 保證 lint 通過後才啟動 test；沒有 `needs` 的 job 會平行跑。' : 'test 在第二個 stage，GitLab 會等前一個 stage 全部成功才進入。同一個 stage 的 job 之間會平行跑。', '測試通常最花時間。常見加速法：切成多個 job 平行（shard）、資料庫用 service container 起在 runner 旁邊。'] },
-    3: { title: 'build：打 docker image', text: ['用 commit SHA 當 image tag，每個 build 都可追溯到原始碼版本；之後 staging 和 prod 部署的是「同一顆」image，不再重新編譯。', gh ? 'job 之間檔案不共享——image 推到 registry，或用 upload-artifact / download-artifact 傳遞產物。' : '`artifacts:` 可以把 build 產物交給後面 stage 的 job；image 則是推到 GitLab Container Registry。'] },
+    3: { title: 'build：打 docker image', text: ['用 commit SHA 當 image tag，每個 build 都可追溯到原始碼版本；之後 staging 和 prod 部署的是「同一顆」image，不再重新編譯。', gh ? 'job 之間檔案不共享：image 推到 registry，或用 upload-artifact / download-artifact 傳遞產物。' : '`artifacts:` 可以把 build 產物交給後面 stage 的 job；image 則是推到 GitLab Container Registry。'] },
     4: { title: 'deploy staging（自動）', text: [gh ? '`if` 判定這是 main 分支，job 才會跑；`environment: staging` 讓 GitHub 記錄這個環境的部署歷史，並把綁在該 environment 的 secrets 注入進來。' : '`rules` 命中 main，job 執行；`environment: staging` 讓 GitLab 記錄部署歷史，並套用該環境的 protected variables。', '部署到 staging 是自動的：main 上的每個 commit 都應該能在 staging 被驗證，這是 continuous delivery 的前提。'] },
     5: { title: '等待手動核准', text: [gh ? '`environment: production` 在 repo 設定裡加了 required reviewers，job 會停在這裡，直到指定的人按下 approve。' : '`when: manual` 讓這個 job 變成一顆播放鈕，pipeline 停在 blocked 狀態，等有權限的人按下去。', '這一步就是 continuous delivery 和 continuous deployment 的分水嶺：delivery 是「隨時可上、人決定何時」，deployment 是「合併即上線」。'] },
     6: { title: 'deploy prod 完成', text: ['整條 pipeline 綠燈。部署用的金鑰只存在 secrets / CI variables，從頭到尾沒有進過 repo，也不會出現在 log（會被 mask）。', 'Protected branch 讓沒過 CI 的 code 進不了 main；protected environment 讓沒經審核的人碰不到 prod。兩道門缺一不可。'] },
@@ -186,7 +186,7 @@ export default function PipelineLab() {
 
   return (
     <Lab accent="green" className="cicd-lab" kicker="CI/CD LAB" title="CI/CD 管線：GitHub Actions 與 GitLab CI 對照"
-         blurb="同一條 lint → test → build → deploy 的管線，左右兩家的寫法擺在一起看。按播放逐階段跑，切開關看測試失敗、feature branch 時管線怎麼反應。">
+         blurb="同一條 lint → test → build → deploy 的管線，兩家的寫法並排；測試失敗、feature branch 時管線怎麼反應。">
       <LabControls>
         <Seg label="平台" tinted value={ci} onChange={setCi}
              options={[{ value: 'gha', label: 'GitHub Actions' }, { value: 'gitlab', label: 'GitLab CI' }]} />
@@ -205,7 +205,7 @@ export default function PipelineLab() {
             {n.text.map((t, i) => <p key={i} dangerouslySetInnerHTML={{ __html: md(t) }} />)}
           </LabExplain>
           <LabExplain title="幾個一定要分清楚的概念">
-            <p><strong>CI vs CD</strong>：CI（integration）是每次 push 都自動 lint / test / build；CD 有兩種——continuous <em>delivery</em> 是產物隨時可上線、由人按核准，continuous <em>deployment</em> 是合併即自動上線。</p>
+            <p><strong>CI vs CD</strong>：CI（integration）是每次 push 都自動 lint / test / build；CD 有兩種：continuous <em>delivery</em> 是產物隨時可上線、由人按核准，continuous <em>deployment</em> 是合併即自動上線。</p>
             <p><strong>cache vs artifact</strong>：cache 是「加速用、丟了也沒關係」的依賴（node_modules）；artifact 是「這次 build 的產物」，要在 job 之間傳遞或留檔。兩者機制不同，不要混用。</p>
             <p><strong>secrets 永不進 repo</strong>：金鑰放平台的 secrets / CI variables，執行時以環境變數注入，log 中會被遮罩。任何寫進 YAML 或 code 的 token 都要當作已洩漏。</p>
           </LabExplain>
@@ -214,7 +214,7 @@ export default function PipelineLab() {
         <div className="lab-stack">
           <Code lang="yaml" title={ci === 'gha' ? '.github/workflows/ci.yml' : '.gitlab-ci.yml'} highlight={hl} dim>{src}</Code>
           <Callout title="工作上什麼時候用">
-            新專案先把 <b>lint + test</b> 跑起來就贏一半——它讓壞 code 進不了 main，成本只是一個 YAML。部署階段永遠留一道<b>手動核准</b>（environment reviewers / <code>when: manual</code>），等團隊對測試有信心再談自動上 prod。
+            新專案先把 <b>lint + test</b> 跑起來：它讓壞 code 進不了 main，成本只是一個 YAML。部署階段永遠留一道手動核准（environment reviewers / <code>when: manual</code>），等團隊對測試有信心再談自動上 prod。
           </Callout>
         </div>
       </LabGrid>

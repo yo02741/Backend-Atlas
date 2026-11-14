@@ -51,7 +51,7 @@ print(c.calls[-1])
       { name: '值透過 params 傳', code: `_c = FakeCursor()\nfind_user(_c, "alice' OR '1'='1")\n_sql, _params = _c.calls[-1]\nassert _params is not None and "alice' OR '1'='1" in tuple(_params), "params 沒有帶到使用者輸入"` },
       { name: 'SQL 用佔位符', code: `_c = FakeCursor()\nfind_user(_c, "bob")\n_sql, _ = _c.calls[-1]\nassert "%s" in _sql or "?" in _sql, "沒有用 %s 或 ? 佔位"` },
     ],
-    hints: ['psycopg 的寫法：cursor.execute("… WHERE username = %s", (username,))。', '注意 (username,) 的逗號——單元素 tuple 一定要有逗號。'],
+    hints: ['psycopg 的寫法：cursor.execute("… WHERE username = %s", (username,))。', '注意 (username,) 的逗號：單元素 tuple 一定要有逗號。'],
   },
   {
     id: 'password-storage-1', skill: 'password-storage', kind: 'python', level: 1,

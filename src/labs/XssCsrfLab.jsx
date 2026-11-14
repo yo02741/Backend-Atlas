@@ -88,7 +88,7 @@ export default function XssCsrfLab() {
 
   return (
     <Lab className="xc" accent="red" kicker="SECURITY LAB" title="XSS 與 CSRF：兩種攻擊各擋在哪一層"
-         blurb="XSS 是攻擊者的程式在你的網站頁面裡執行；CSRF 是別的網站借用瀏覽器自動附上的 cookie 送出請求。機制相反，防線也不同。切換情境，一道一道打開防線，看它在哪一層生效、哪些防線根本不相干。">
+         blurb="XSS 是攻擊者的程式在你的網站頁面裡執行；CSRF 是別的網站借用瀏覽器自動附上的 cookie 送出請求。機制相反，防線也不同：每道防線在哪一層生效、對哪種攻擊沒有作用。">
       <LabControls>
         <Seg label="情境" tinted value={scen} onChange={setScen}
              options={[{ value: 'xss', label: 'XSS：頁面顯示使用者輸入' }, { value: 'csrf', label: 'CSRF：別的網站替你送出轉帳表單' }]} />
@@ -172,12 +172,12 @@ export default function XssCsrfLab() {
               <p><Md>{def.escape ? c.asText : c.parsed}</Md></p>
               <p><Md>{x.more}</Md></p>
             </> : <p><Md>{text}</Md></p>}
-            {scen === 'csrf' && step === 0 && <p>按「送出跨站請求」逐步播放；防線可以隨時開關，結果會跟著變。</p>}
+
           </LabExplain>
         </div>
-        <Callout title="什麼時候會真的踩到">
+        <Callout title="什麼時候會踩到">
           <b>XSS</b>：模板用了 safe 過濾器、<code>Markup()</code> 或 React 的 <code>dangerouslySetInnerHTML</code>，關掉了自動跳脫；屬性值沒加引號；為了消除主控台訊息，在 CSP 加上 <code>'unsafe-inline'</code>。<br />
-          <b>CSRF</b>：用 cookie 認人，框架卻沒有內建 CSRF middleware（FastAPI 這類 API 框架要自己補）；cookie 設成 <code>SameSite=None</code>；用 GET 改狀態——<code>Lax</code> 允許頂層 GET 帶 cookie。<br />
+          <b>CSRF</b>：用 cookie 認人，框架卻沒有內建 CSRF middleware（FastAPI 這類 API 框架要自己補）；cookie 設成 <code>SameSite=None</code>；用 GET 改狀態（<code>Lax</code> 允許頂層 GET 帶 cookie）。<br />
           有 XSS 時 CSRF 防護基本上失效：script 在你的頁面裡，可以先讀出 CSRF token 再送請求。常見的組合是 <code>SameSite=Lax; Secure; HttpOnly</code>、改狀態只用非 GET 方法、伺服器檢查 Origin，表單型網站再加 CSRF token。
         </Callout>
       </LabGrid>

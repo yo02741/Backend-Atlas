@@ -29,7 +29,7 @@ CMD uv run uvicorn app.main:app --host 0.0.0.0
 
 | tag 例子 | 底層 | 特性 | 適合 |
 |---|---|---|---|
-| `python:3.12` | Debian 完整版 | 有 gcc、標頭檔與大量工具，可以編譯原始碼套件；體積最大 | 建置階段，或真的需要這些工具時 |
+| `python:3.12` | Debian 完整版 | 有 gcc、標頭檔與大量工具，可以編譯原始碼套件；體積最大 | 建置階段，或確實需要這些工具時 |
 | `python:3.12-slim` | Debian 精簡版 | 只有執行 Python 必要的套件；glibc，可以直接用 PyPI 上大部分的 wheel | **多數正式環境的起點** |
 | `python:3.12-alpine` | Alpine Linux | 體積最小；C 函式庫是 **musl** 而不是 glibc | 依賴很少、而且確認都有 musl wheel 時 |
 
@@ -59,7 +59,7 @@ glibc 的 wheel 不能裝在 musl 上。某個套件沒有發布 musllinux wheel
 ```dockerfile
 # 1. 只複製描述依賴的兩個檔案
 COPY pyproject.toml uv.lock ./
-# 2. 只安裝依賴，不安裝專案本身——這一層只在依賴改變時失效
+# 2. 只安裝依賴，不安裝專案本身；這一層只在依賴改變時失效
 RUN uv sync --locked --no-dev --no-install-project
 # 3. 最後才複製程式碼
 COPY app/ ./app/
@@ -78,7 +78,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 ## 多階段建置：建置工具不進最終 image
 
-一個 Dockerfile 可以有好幾個 `FROM`，每個開始一個階段。最後一個階段才是輸出的 image，前面的階段只是「工作台」，用 `COPY --from=<階段名>` 把需要的成品搬過去：
+一個 Dockerfile 可以有好幾個 `FROM`，每個開始一個階段。最後一個階段是輸出的 image，前面的階段只是「工作台」，用 `COPY --from=<階段名>` 把需要的成品搬過去：
 
 ```text
 builder 階段：python:3.12-slim + uv + 下載快取（+ 需要時的 gcc、-dev 套件）
@@ -90,7 +90,7 @@ runtime 階段：python:3.12-slim + 非 root 使用者      ← 這個才是輸�
 （builder 階段本身被丟掉，裡面的 uv、快取、編譯工具都不會出現在最終 image）
 ```
 
-一個容易踩到的細節：虛擬環境裡的 `python` 是一個**指向建立它的那個直譯器的符號連結**（在官方映像裡是 `/usr/local/bin/python3`）。所以 builder 與 runtime 要用**同一個 Python 基底**，把 `.venv` 搬到一個 Python 路徑或版本不同的映像，執行時會出現找不到檔案的錯誤。
+一個容易踩到的細節：虛擬環境裡的 `python` 是一個指向建立它的那個直譯器的符號連結（在官方映像裡是 `/usr/local/bin/python3`）。所以 builder 與 runtime 要用**同一個 Python 基底**，把 `.venv` 搬到一個 Python 路徑或版本不同的映像，執行時會出現找不到檔案的錯誤。
 
 ## 非 root 使用者
 
@@ -103,7 +103,7 @@ USER app
 
 - 固定數字 UID / GID（這裡用 10001），在主機或 Kubernetes 上設定檔案權限、`runAsUser` 時才對得上。
 - 程式碼與 `.venv` **維持 root 擁有、app 只能讀**（`COPY` 預設就是 root 擁有）。程式被攻破時，攻擊者無法改寫程式碼本身。
-- 真的需要寫入的目錄（例如暫存）明確建立並交給 app；更好的做法是根檔案系統唯讀、需要寫的地方掛 tmpfs 或 volume。
+- 需要寫入的目錄（例如暫存）明確建立並交給 app；更好的做法是根檔案系統唯讀、需要寫的地方掛 tmpfs 或 volume。
 - 非 root 預設不能聽 1024 以下的埠。容器裡聽 8000，對外的 80 / 443 交給前面的 nginx 或負載平衡器。
 
 ## `.dockerignore`
@@ -287,7 +287,7 @@ docker ps   # STATUS 欄會在 start-period 後顯示 (healthy)
 
 ### 建置時需要秘密
 
-私有套件庫的 token 不要用 `ARG` 或 `ENV` 傳——`ARG` 的值會留在 image 的建置紀錄裡（`docker history` 看得到），`ENV` 更是直接存在 image 設定中。用 BuildKit 的 secret mount，只在那一個 `RUN` 期間以檔案形式出現：
+私有套件庫的 token 不要用 `ARG` 或 `ENV` 傳：`ARG` 的值會留在 image 的建置紀錄裡（`docker history` 看得到），`ENV` 更是直接存在 image 設定中。用 BuildKit 的 secret mount，只在那一個 `RUN` 期間以檔案形式出現：
 
 ```dockerfile
 RUN --mount=type=secret,id=index_token \
@@ -322,7 +322,7 @@ trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 shop/api:8d1
 讀報告時：
 
 - 大部分發現來自**基底映像的系統套件**。修法通常是重建（拉到已修補的基底），而不是自己逐一升級套件。
-- **還沒有修補版本**的漏洞，掃描器照樣會列出來；要記錄、評估是否真的影響你（例如那個套件在執行時根本沒被用到），而不是讓它永遠卡住建置。
+- **還沒有修補版本**的漏洞，掃描器照樣會列出來；要記錄、評估是否影響你（例如那個套件在執行時沒被用到），而不是讓它永遠卡住建置。
 - 基底越小，要評估的項目越少，這也是 slim 與 distroless 的好處之一。
 - 掃描只看得到「已知漏洞」，看不到你自己程式的漏洞與設定錯誤。
 

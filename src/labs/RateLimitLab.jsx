@@ -111,7 +111,7 @@ export default function RateLimitLab() {
 
   return (
     <Lab accent="magenta" className="rl-lab" kicker="ALGO LAB" title="Rate limiting：token bucket 怎麼擋住暴衝"
-         blurb="桶子裡的 token 每秒慢慢補、每個請求拿走一個；桶空了就回 429。自己按幾下、開自動送，看拒絕什麼時候發生。切到固定視窗，看最簡單的作法為什麼會在邊界漏一倍。">
+         blurb="桶子裡的 token 每秒補一些、每個請求拿走一個，桶空了就回 429。對照的固定視窗做法在邊界會放進兩倍的請求。">
       <LabControls>
         <Seg label="演算法" tinted value={mode} onChange={setMode}
              options={[{ value: 'bucket', label: 'Token bucket' }, { value: 'window', label: '固定視窗（fixed window）' }]} />
@@ -164,12 +164,12 @@ export default function RateLimitLab() {
           {isBucket ? (
             <LabExplain title="Token bucket：容量管暴衝，速率管平均">
               <p>水龍頭每秒補 <code>rate</code> 個 token，桶子最多裝 <code>capacity</code> 個，滿了就溢出丟掉。每個請求進來拿走一個；<strong>桶空了就拒絕</strong>（HTTP 429 Too Many Requests）。</p>
-              <p>所以它同時管兩件事：閒置很久之後最多也只能一口氣放行 capacity 個（暴衝有上限），而長期平均永遠不會超過 rate。試試把「每秒請求數」調到比補充速率高，過幾秒桶就見底，429 開始出現。</p>
+              <p>所以它同時管兩件事：閒置很久之後最多也只能一口氣放行 capacity 個（暴衝有上限），而長期平均永遠不會超過 rate。「每秒請求數」比補充速率高時，過幾秒桶就見底，429 開始出現。</p>
               <p>實作不需要背景 timer：每次請求進來時用「距上次多久 × rate」一次補齊即可（右邊程式碼第 7–9 行）；多台 app 共用時把 tokens 與 last 存在 Redis，用 Lua script 讓讀改寫是原子的。</p>
             </LabExplain>
           ) : (
             <LabExplain title="Fixed window：最簡單，但邊界會漏一倍">
-              <p>每個 key 一個計數器，每 10 秒歸零——Redis 一個 <code>INCR</code> 加一個 <code>EXPIRE</code> 就做完，因此非常常見。</p>
+              <p>每個 key 一個計數器，每 10 秒歸零。Redis 一個 <code>INCR</code> 加一個 <code>EXPIRE</code> 就做完，所以很常見。</p>
               <p>問題在邊界：視窗 1 的最後 2 秒塞滿 N 個，視窗 2 的最前 2 秒再塞滿 N 個，兩邊各自都「沒超過上限」，但實際上 <strong>4 秒內通過了 2N 個</strong>，是名義速率的好幾倍。</p>
               <p>修法：sliding window log（記每筆時間戳，準但吃記憶體）、sliding window counter（用前一視窗的加權近似），或直接用 token bucket。</p>
             </LabExplain>
@@ -198,7 +198,7 @@ export default function RateLimitLab() {
             <Code lang="python" title="fixed window（Redis INCR + EXPIRE）" highlight={[4, 6]}>{PY_WINDOW}</Code>
           )}
           <Callout title="工作上什麼時候用">
-            <b>登入、註冊、簡訊 / OTP 發送、密碼重設、昂貴的搜尋或匯出</b>——這些端點上線第一天就要限流，不然等到被刷簡訊帳單或撞庫時就太晚了。先用 nginx 一行擋 IP，再在應用層依 user 做第二層。
+            <b>登入、註冊、簡訊 / OTP 發送、密碼重設、昂貴的搜尋或匯出</b>：這些端點上線第一天就要限流，不然等到被刷簡訊帳單或撞庫時就太晚了。先用 nginx 一行擋 IP，再在應用層依 user 做第二層。
           </Callout>
         </div>
       </LabGrid>

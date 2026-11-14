@@ -73,7 +73,7 @@ export default function WikiGraphLab() {
 
   return (
     <Lab accent="violet" kicker="KNOWLEDGE GRAPH LAB" title="wikilink 長成知識圖譜"
-         blurb="左邊是 7 頁互相連結的 markdown 筆記，右邊即時把每個 [[頁面]] 畫成一條有向邊。改內容看圖跟著變；點節點看誰連出去、誰連進來；孤兒頁與斷鏈即時列出；選兩頁找最短路徑。">
+         blurb="7 頁互相連結的 markdown 筆記，每個 [[頁面]] 即時畫成一條有向邊，並列出反向連結、孤兒頁、斷鏈與兩頁之間的最短路徑。">
       <LabControls>
         <Seg label="編輯頁面" tinted value={page} onChange={pick} options={NAMES.map((n) => ({ value: n, label: n }))} />
         <span className="spacer" />
@@ -102,7 +102,7 @@ export default function WikiGraphLab() {
             <select aria-label="終點" value={to} onChange={(e) => setTo(e.target.value)}>{NAMES.map((n) => <option key={n}>{n}</option>)}</select>
             <Toggle label="在圖上顯示" checked={showPath} onChange={setShowPath} />
           </div>
-          <LabStage label="wikilink 有向圖" caption="箭頭 = 連結方向。藍 = 選取頁連出去，橘 = 連到選取頁（反向連結），紫 = 最短路徑；虛線節點 = 不存在的頁面。點節點切換選取。">
+          <LabStage label="wikilink 有向圖" caption="箭頭 = 連結方向。藍 = 選取頁連出去，橘 = 連到選取頁（反向連結），紫 = 最短路徑；虛線節點 = 不存在的頁面。">
             <Graph g={g} sel={sel} onPick={pick} path={showPath ? path : null} />
           </LabStage>
         </div>
@@ -135,7 +135,7 @@ export default function WikiGraphLab() {
         <div className="lab-stack">
           <LabExplain title="wikilink 就是圖的邊">
             <p>每寫一個 <code>[[頁面]]</code> 就多一條從這頁指向那頁的有向邊；<code>[[頁面|顯示文字]]</code> 只改顯示文字，邊還是指向同一頁。不需要另外維護圖，圖是從文字裡「長」出來的。</p>
-            <p>Obsidian 的 graph view 與 backlinks 面板就是這個概念：反向連結讓「誰提到我」一目瞭然；點一下不存在的連結，Obsidian 會幫你建立那一頁。讓 LLM 持續整理的 wiki 也會定期 lint：孤兒頁要補連結或併入別頁，斷鏈要建頁或改連結。</p>
+            <p>Obsidian 的 graph view 與 backlinks 面板就是這個概念：反向連結列出「誰提到我」；點一下不存在的連結，Obsidian 會幫你建立那一頁。讓 LLM 持續整理的 wiki 也會定期 lint：孤兒頁要補連結或併入別頁，斷鏈要建頁或改連結。</p>
           </LabExplain>
           <Callout title="實際用在哪裡">
             個人或團隊的筆記庫（Obsidian、Logseq 這類工具）、交給 LLM 維護的知識庫、內部技術文件。定期跑一次孤兒頁與斷鏈檢查，比等到有人找不到東西再修便宜得多。
@@ -268,14 +268,14 @@ function pickExplain(g, sel, ins, outs, path, from, to) {
     : [`從「${from}」沿著連結方向走不到「${to}」。連結是有方向的：A 連到 B，不代表能從 B 走回 A；沒有任何頁連進來的孤兒頁，從別處永遠走不到。`]
   if (!NAMES.includes(sel)) return {
     title: `斷鏈：「${sel}」這頁不存在`,
-    text: [`${ins.map((l) => l.src).join('、')} 連到了「${sel}」，但沒有這一頁——讀者點下去是空的。`, '修法有兩種：真的需要這個主題就建立頁面；只是寫錯名字或主題已併入別頁，就改連結指向現有的頁。', ...tail],
+    text: [`${ins.map((l) => l.src).join('、')} 連到了「${sel}」，但沒有這一頁，讀者點下去是空的。`, '修法有兩種：確實需要這個主題就建立頁面；只是寫錯名字或主題已併入別頁，就改連結指向現有的頁。', ...tail],
   }
   if (g.orphans.includes(sel)) return {
     title: `孤兒頁：沒有人連到「${sel}」`,
-    text: [`「${sel}」連出去 ${outs.length} 條，但反向連結是 0：除非直接搜尋，否則從任何一頁都逛不到它。`, '在相關的頁面（例如「交易」提到 commit 的地方）加上連結，它就會被接進圖裡。試著在左邊編輯看看。', ...tail],
+    text: [`「${sel}」連出去 ${outs.length} 條，但反向連結是 0：除非直接搜尋，否則從任何一頁都逛不到它。`, '在相關的頁面（例如「交易」提到 commit 的地方）加上連結，它就會被接進圖裡。', ...tail],
   }
   return {
     title: `「${sel}」：連出去 ${outs.length}、被連進來 ${ins.length}`,
-    text: [`藍色是「${sel}」頁面裡寫的連結；橘色是別的頁面寫了 [[${sel}]]——這些反向連結不需要「${sel}」自己記錄，是從全部頁面反查出來的。`, ...tail],
+    text: [`藍色是「${sel}」頁面裡寫的連結；橘色是別的頁面寫了 [[${sel}]]。這些反向連結不需要「${sel}」自己記錄，是從全部頁面反查出來的。`, ...tail],
   }
 }

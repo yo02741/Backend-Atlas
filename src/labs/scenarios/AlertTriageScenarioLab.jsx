@@ -15,7 +15,7 @@ const MODES = [
 ]
 const ERRS = [
   { value: 'none', label: '判斷正常' },
-  { value: 'cause', label: '根因判斷錯', title: '02:40 那則：agent 說是 pod 連線洩漏，其實是傍晚上線的新查詢' },
+  { value: 'cause', label: '根因判斷錯', title: '02:40 那則：agent 說是 pod 連線洩漏，實際原因是傍晚上線的新查詢' },
   { value: 'noise', label: '把真問題當誤報', title: '04:10 那則：agent 以為是已知的暫時性錯誤' },
 ]
 const T_END = 360, PER_TICK = 3
@@ -131,7 +131,7 @@ const hhmm = (m) => `0${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
 const EXPLAIN = {
   manual: { title: '人工全部看：每則都叫醒人，每次從零查起', body: ['11 則告警都呼叫 on-call。8 則誤報裡，備份、報表、重複告警佔大多數，但人得一則一則照 runbook 查完才知道是誤報。', '真問題的確認時間包含「醒來、登入、找儀表板、查最近變更」，示意約 24 分鐘，已經超過 15 分鐘的要求。一晚被叫好幾次之後，最後那則的判斷品質很難保證。'] },
   readonly: { title: 'agent 唯讀調查：先篩、先查，動作仍由人做', body: ['agent 用唯讀憑證查指標、日誌、最近部署與 runbook，認得出的誤報降級成工單；對不上已知模式的（04:40 那則）仍然叫人。', '真問題叫醒人時摘要與證據已經在那裡，確認時間示意縮到十幾分鐘。agent 判斷錯時最壞是摘要寫錯：系統不會被動到，但人要對照證據，不能照單全收。'] },
-  auto: { title: 'agent 低風險自動：清單內的動作自己做，變更要核准', body: ['01:15 的連線洩漏與 04:10 的副本不足都在低風險清單裡（重啟一個 pod、副本 +1），agent 自己做完、通知但不叫醒；02:40 要回滾版本，是變更類，只能提案、由人核准。', '切到「根因判斷錯」：agent 會真的重啟一個不相干的 pod——這就是錯誤動作。擋住損害的是次數上限與升級規則：同一告警做過一次就不再自動動作，10 分鐘沒恢復就叫人。'] },
+  auto: { title: 'agent 低風險自動：清單內的動作自己做，變更要核准', body: ['01:15 的連線洩漏與 04:10 的副本不足都在低風險清單裡（重啟一個 pod、副本 +1），agent 自己做完、通知但不叫醒；02:40 要回滾版本，是變更類，只能提案、由人核准。', '根因判斷錯時，agent 會實際重啟一個不相干的 pod，這是錯誤動作。擋住損害的是次數上限與升級規則：同一告警做過一次就不再自動動作，10 分鐘沒恢復就叫人。'] },
 }
 const ERR_NOTE = {
   none: '',
@@ -161,7 +161,7 @@ export default function AlertTriageScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="一個人 on-call 的夜晚：11 則告警，三種讓 agent 介入的方式"
-         blurb="按「夜間開始」逐分鐘播放 00:00–06:00 的告警（8 則誤報、3 則真問題）。切換做法看誰被叫醒、多久確認原因；再讓 agent 判斷出錯，看各做法的後果（全部示意）。">
+         blurb="00:00–06:00 的告警逐分鐘播放（8 則誤報、3 則真問題）：各做法下誰被叫醒、多久確認原因，以及 agent 判斷出錯時的後果（全部示意）。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         <Seg label="agent 判斷" value={err} onChange={setErr} options={ERRS} />
@@ -178,7 +178,7 @@ export default function AlertTriageScenarioLab() {
           <LabStage plain label="告警時間線與處理路徑">
             <div className="dtable-wrap">
               <table className="dtable at-table">
-                <caption>告警與處理結果（點一列看路徑）</caption>
+                <caption>告警與處理結果</caption>
                 <thead><tr><th>時間</th><th>告警</th><th>實際</th><th>這個做法</th></tr></thead>
                 <tbody>
                   {sim.rows.map(({ a, r }) => {
@@ -229,7 +229,7 @@ export default function AlertTriageScenarioLab() {
           <LabExplain title={ex.title}>{ex.body.map((p, i) => <p key={i}>{p}</p>)}{err !== 'none' && <p><b>這次的變化：</b>{ERR_NOTE[err]}{mode === 'manual' ? '人工全看不經過 agent，不受影響。' : ''}</p>}</LabExplain>
           <div className="dtable-wrap">
             <table className="dtable at-compare">
-              <caption>同一個夜晚、同一個「agent 判斷」條件下（示意，點一列切換）</caption>
+              <caption>同一個夜晚、同一個「agent 判斷」條件下（示意）</caption>
               <thead><tr><th>做法</th><th>確認</th><th>叫醒</th><th>動錯</th></tr></thead>
               <tbody>
                 {MODES.map((m) => {
@@ -246,9 +246,9 @@ export default function AlertTriageScenarioLab() {
           </div>
           <LabExplain title="怎麼讀">
             <p>Flow 裡框起來的步驟是人做的。三種做法差在「調查」與「動作」由誰做：人工全看四步幾乎都是人；唯讀調查把調查交給 agent，決定與動作留給人；低風險自動連動作都交出去，只有變更類動作回到人。</p>
-            <p>agent 判斷出錯時，唯讀調查的代價是時間，低風險自動的代價是一次真的錯誤動作。差別由權限決定，不是由 agent 準不準決定。</p>
+            <p>agent 判斷出錯時，唯讀調查的代價是時間，低風險自動的代價是一次實際執行的錯誤動作。差別由權限決定，和 agent 準不準無關。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">夜間告警多到 on-call 開始不看、同一份 runbook 每晚照查一次、或是有人提議「讓 AI 直接處理告警」的時候。先給唯讀權限、累積一段時間它判斷對不對的紀錄，再一個一個把可逆、有上限的動作加進清單；回滾、改設定、改資料庫永遠留給人核准。</Callout>
+          <Callout title="什麼時候會踩到">夜間告警多到 on-call 開始不看、同一份 runbook 每晚照查一次、或是有人提議「讓 AI 直接處理告警」的時候。先給唯讀權限、累積一段時間它判斷對不對的紀錄，再一個一個把可逆、有上限的動作加進清單；回滾、改設定、改資料庫永遠留給人核准。</Callout>
         </div>
       </LabGrid>
       <style>{`

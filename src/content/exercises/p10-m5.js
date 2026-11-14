@@ -1,4 +1,4 @@
-// 程式題：P10 新課（m5 批）——llm-api-integration / context-engineering / self-hosted-models
+// 程式題：P10 新課（m5 批）：llm-api-integration / context-engineering / self-hosted-models
 export default [
   {
     id: 'llm-api-integration-1', skill: 'llm-api-integration', kind: 'python', level: 2,

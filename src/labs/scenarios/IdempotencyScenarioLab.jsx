@@ -26,14 +26,14 @@ function buildSteps(approach, exp, { wait, noUnique }) {
     if (approach === 'none') {
       step(C, A, 'POST /payments', 'POST /payments {order_id: 1001, amount: 500}')
       step(A, D, 'INSERT payments → p_1', 'INSERT payments → p_1，扣款 500', charge('p_1'))
-      step(A, C, '201 {p_1}', '201 {payment_id: p_1}——回應在網路上遺失，客戶端等不到', null, { lost: true })
+      step(A, C, '201 {p_1}', '201 {payment_id: p_1}；回應在網路上遺失，客戶端等不到', null, { lost: true })
       step(C, A, '逾時，重送', '逾時 → App 自動重送同一個 POST（使用者沒有再按）')
       step(A, D, 'INSERT payments → p_2', 'INSERT payments → p_2，再扣 500', charge('p_2'), { tone: 'bad' })
       step(A, C, '201 {p_2}', '201 {payment_id: p_2}。DB 兩筆、扣了 1,000；客戶端只知道 p_2。', got('201 p_2'))
     } else if (approach === 'unique') {
       step(C, A, 'POST /payments', 'POST /payments {order_id: 1001, amount: 500}')
       step(A, D, 'INSERT (order_id=1001) ✓', 'INSERT payments (order_id=1001) → 成功 p_1，扣款 500', charge('p_1'))
-      step(A, C, '201 {p_1}', '201 {payment_id: p_1}——回應在網路上遺失', null, { lost: true })
+      step(A, C, '201 {p_1}', '201 {payment_id: p_1}；回應在網路上遺失', null, { lost: true })
       step(C, A, '逾時，重送', '逾時 → 重送同一個 POST')
       step(A, D, 'INSERT → UNIQUE 違反', 'INSERT payments (order_id=1001) → 違反 UNIQUE；API 改查既有那筆 → p_1', null, { tone: 'ok' })
       step(A, C, '409 {existing: p_1}', '409 Conflict {existing: p_1}。沒有重複扣款，但客戶端拿到的是 409 不是 201，要懂「已經付過，去查」。', got('409 (p_1)'))
@@ -41,10 +41,10 @@ function buildSteps(approach, exp, { wait, noUnique }) {
       step(C, A, isHash ? 'POST（算 hash）' : `POST · Key ${KEY}`, isHash ? `POST /payments；API 對 user_id + body 算 hash = ${HASH}` : `POST /payments，標頭 Idempotency-Key: ${KEY}`)
       step(A, D, `INSERT ${kname} ✓`, `INSERT ${kname} (${kval}, processing) → 成功：這是新的請求`, (s) => { s.keys.push(krow('processing')) })
       step(A, D, 'INSERT payments → p_1', `INSERT payments → p_1，扣款 500；${kname} 改成 done 並存下回應`, (s) => { charge('p_1')(s); s.keys[0] = krow('done', '201 {p_1}') })
-      step(A, C, '201 {p_1}', '201 {payment_id: p_1}——回應在網路上遺失', null, { lost: true })
+      step(A, C, '201 {p_1}', '201 {payment_id: p_1}；回應在網路上遺失', null, { lost: true })
       step(C, A, isHash ? '逾時，重送（同 body）' : '逾時，重送（同 Key）', isHash ? `逾時 → 重送同一個 body → 算出同一個 hash ${HASH}` : `逾時 → 重送，帶同一個 Idempotency-Key: ${KEY}`)
       step(A, D, `INSERT ${kname} → 撞 UNIQUE`, `INSERT ${kname} → 違反 UNIQUE → 讀出 status=done 與存好的回應`, null, { tone: 'ok' })
-      step(A, C, '201 {p_1}（存的回應）', isHash ? '201 {payment_id: p_1}，原樣回存的回應。DB 一筆、扣 500。但使用者若真的要再付一筆一模一樣的款，也會被當成重送。' : '201 {payment_id: p_1}，原樣回存的回應。DB 一筆、扣 500，客戶端拿到和第一次一樣的結果。', got('201 p_1'))
+      step(A, C, '201 {p_1}（存的回應）', isHash ? '201 {payment_id: p_1}，原樣回存的回應。DB 一筆、扣 500。但使用者若確實要再付一筆一模一樣的款，也會被當成重送。' : '201 {payment_id: p_1}，原樣回存的回應。DB 一筆、扣 500，客戶端拿到和第一次一樣的結果。', got('201 p_1'))
     }
   } else if (approach === 'none') {
     step(C, A, 'A、B 相差 5 ms 到達', 'A、B 兩個 POST /payments 相差 5 ms 到達（連點兩下）')
@@ -111,7 +111,7 @@ export default function IdempotencyScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="同一筆付款送兩次：DB 裡會有幾筆？"
-         blurb="回應在網路上遺失後客戶端重送，或使用者連點兩下。切換做法，逐步看 payments 表多出幾筆、扣款幾次、客戶端最後拿到什麼。全部示意。">
+         blurb="回應在網路上遺失後客戶端重送，或使用者連點兩下：payments 表多出幾筆、扣款幾次、客戶端最後拿到什麼。全部示意。">
       <LabControls>
         <Seg label="做法" tinted value={approach} onChange={setApproach} options={[
           { value: 'none', label: '不處理' }, { value: 'key', label: 'Idempotency-Key' }, { value: 'unique', label: 'UNIQUE 約束' }, { value: 'hash', label: '內容 hash' },
@@ -174,8 +174,8 @@ export default function IdempotencyScenarioLab() {
             {exp === 'double' && keyed && noUnique && <p>目前關掉了 UNIQUE：兩個請求都先 SELECT、都沒查到、都去 INSERT。這是最常見的「有做冪等但沒擋住」寫法。</p>}
             {exp === 'double' && keyed && !noUnique && <p>第二個請求撞到 processing 的 key：{wait ? '等第一個完成再回同一份回應，客戶端最省事，但要有等待上限。' : '回 409 最簡單，客戶端稍後用同一個 key 重送即可拿到結果。'}</p>}
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
-            上線幾週後財務對帳發現有幾十筆金額相同、相差 3 秒的付款——不是使用者按兩次，是 App 的 HTTP client 在逾時後自動重試。任何會產生金錢或不可逆副作用的 POST（付款、寄信、建立訂單、扣庫存）都要在第一版就決定用哪一種去重，事後補要先清歷史重複資料。
+          <Callout title="什麼時候會踩到">
+            上線幾週後財務對帳發現有幾十筆金額相同、相差 3 秒的付款，原因是 App 的 HTTP client 在逾時後自動重試，不是使用者按兩次。任何會產生金錢或不可逆副作用的 POST（付款、寄信、建立訂單、扣庫存）都要在第一版就決定用哪一種去重，事後補要先清歷史重複資料。
           </Callout>
         </div>
       </LabGrid>

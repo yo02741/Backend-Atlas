@@ -1,4 +1,4 @@
-// 程式題：P9 新課（l4 批）——semantic-layer、finops、aiops、event-driven
+// 程式題：P9 新課（l4 批）：semantic-layer、finops、aiops、event-driven
 // SQL 題的資料表都由 setup 建立（虛構的掛號、訂單、庫存資料，沒有真實個資）
 
 // 虛構的門診掛號；metrics 是指標清單（定義寫在這裡）
@@ -224,7 +224,7 @@ print("實際呼叫：", calls)
   {
     id: 'event-driven-1', skill: 'event-driven', kind: 'sql', level: 2,
     title: '訂單與 outbox 事件寫在同一個交易',
-    prompt: '使用者 42 付款 1280 元，訂單編號 9001。在**同一個交易**裡完成兩件事：\n\n1. 在 `orders` 新增訂單（`id = 9001`、`user_id = 42`、`amount = 1280`，status 用預設值 `paid`）\n2. 在 `outbox` 新增事件：`aggregate_type = \'order\'`、`aggregate_id = \'9001\'`、`event_type = \'order.paid\'`、`payload` 是 `{"order_id": 9001, "amount": 1280}`（JSONB），`published_at` 留空等 relay 送出\n\n起始碼只寫了訂單，事件要等 commit 之後另外送——這正是雙寫問題。交卷時會檢查訂單與事件都存在、payload 正確，而且兩筆是同一個交易寫入的（`xmin` 相同）。',
+    prompt: '使用者 42 付款 1280 元，訂單編號 9001。在**同一個交易**裡完成兩件事：\n\n1. 在 `orders` 新增訂單（`id = 9001`、`user_id = 42`、`amount = 1280`，status 用預設值 `paid`）\n2. 在 `outbox` 新增事件：`aggregate_type = \'order\'`、`aggregate_id = \'9001\'`、`event_type = \'order.paid\'`、`payload` 是 `{"order_id": 9001, "amount": 1280}`（JSONB），`published_at` 留空等 relay 送出\n\n起始碼只寫了訂單，事件要等 commit 之後另外送，這是雙寫問題。交卷時會檢查訂單與事件都存在、payload 正確，而且兩筆是同一個交易寫入的（`xmin` 相同）。',
     setup: OUTBOX, setupKey: 'p9-outbox',
     starter: `BEGIN;
 INSERT INTO orders (id, user_id, amount) VALUES (9001, 42, 1280);

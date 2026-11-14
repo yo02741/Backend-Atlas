@@ -21,7 +21,7 @@ def get_order(order_id: int, request: Request):
 - token 過期時有的回 `401`、有的回 `500`（`jwt.decode` 丟出的例外沒被處理）、有的回 `403`。
 - 帳號停用後，只有一半的 endpoint 檢查 `user.is_active`。
 
-驗證與授權的邏輯本身不難（前幾課都講過），難的是**每個 endpoint 都一致、都沒漏**。框架提供的 middleware、dependency、decorator、guard 就是用來把這段邏輯寫一次、在每個 endpoint 用一行掛上，並且讓「漏掛」變得容易被發現。
+驗證與授權的邏輯本身不難（前幾課都講過），難的是**每個 endpoint 都一致、都沒漏**。框架提供的 middleware、dependency、decorator、guard 用來把這段邏輯寫一次、在每個 endpoint 用一行掛上，並且讓「漏掛」變得容易被發現。
 
 ## 運作原理：一個請求經過的關卡
 
@@ -51,7 +51,7 @@ def get_order(order_id: int, request: Request):
 
 **dependency**（或 guard、decorator）掛在個別路由上，適合做「這個路由需要什麼」：必須登入、必須是 admin、必須是這張訂單的擁有者。
 
-常見的分工是：middleware 只**解析**，不**拒絕**（沒有 token 就標成匿名），由 dependency 決定這個路由要不要拒絕匿名。原因是：middleware 很難知道哪些路由是公開的（健康檢查、登入頁、公開文件），在 middleware 裡維護一份「公開路由清單」很容易和實際路由不同步。
+常見的分工是：middleware 只解析，不拒絕（沒有 token 就標成匿名），由 dependency 決定這個路由要不要拒絕匿名。原因是：middleware 很難知道哪些路由是公開的（健康檢查、登入頁、公開文件），在 middleware 裡維護一份「公開路由清單」很容易和實際路由不同步。
 
 FastAPI 有一個細節：在 `@app.middleware("http")` 裡丟出 `HTTPException` 不會被轉成正常的 HTTP 錯誤回應，因為處理 `HTTPException` 的例外處理器位在使用者 middleware 的內層。middleware 要拒絕請求時，直接回傳 `JSONResponse`。
 
@@ -194,11 +194,11 @@ def test_admin_route_forbidden_for_member():
 
 `app.dependency_overrides` 是 FastAPI 給測試用的機制：把某個 dependency 換成另一個函式。授權測試用它換掉「目前使用者」，驗證本身（token 解析、過期、簽章）另外用少數幾個測試帶真的 token 驗。
 
-還可以加一個**掃描型測試**：列出 `app.routes`，對每個不在「公開清單」裡的路由，不帶 token 發一次請求，斷言回 `401`。新加的 endpoint 忘了掛檢查，這個測試就會失敗——開頭那個匯出 endpoint 會在 CI 被抓到。
+還可以加一個**掃描型測試**：列出 `app.routes`，對每個不在「公開清單」裡的路由，不帶 token 發一次請求，斷言回 `401`。新加的 endpoint 忘了掛檢查，這個測試就會失敗，開頭那個匯出 endpoint 會在 CI 被抓到。
 
 ## 實際程式：用純函式模擬 middleware 鏈
 
-框架裡的 middleware 與 dependency，本質上是一串函式：每一層拿到請求，決定要「往下傳」還是「直接回應」。下面不用任何框架，把上面的關卡寫成可以組合的函式，跑過各種身分的請求，最後用同樣的三種身分寫測試。
+框架裡的 middleware 與 dependency 是一串函式：每一層拿到請求，決定要「往下傳」還是「直接回應」。下面不用任何框架，把上面的關卡寫成可以組合的函式，跑過各種身分的請求，最後用同樣的三種身分寫測試。
 
 ```python run
 from dataclasses import dataclass, field
@@ -315,7 +315,7 @@ for path, (no_perm, ok) in PROTECTED.items():
 print("\n三種身分的測試全部通過")
 ```
 
-輸出裡值得對照的幾行：`/orders/2` 與 `/orders/9` 對 alice 回一樣的 `404`；停用的 carol 拿著有效 token 也是 `401`；alice 打 `/admin/users` 是 `403`。`error_middleware` 放在最外層，所以任何一層丟出的 `HTTPError` 都會被轉成回應，這就是框架的例外處理器在做的事。
+輸出裡值得對照的幾行：`/orders/2` 與 `/orders/9` 對 alice 回一樣的 `404`；停用的 carol 拿著有效 token 也是 `401`；alice 打 `/admin/users` 是 `403`。`error_middleware` 放在最外層，所以任何一層丟出的 `HTTPError` 都會被轉成回應，框架的例外處理器做的是同一件事。
 
 ## 常見錯誤與錯誤訊息
 
@@ -331,7 +331,7 @@ print("\n三種身分的測試全部通過")
 
 ## 動手
 
-1. 在上面的 `python run` 範例裡，把 `compose` 的 middleware 順序改成 `auth_middleware, error_middleware`，再跑一次，看結果有沒有變；然後讓 `auth_middleware` 在沒有 token 時直接 `raise HTTPError(401, …)`，看 `/health` 變成什麼——這就是「middleware 只解析、不拒絕」的原因。
+1. 在上面的 `python run` 範例裡，把 `compose` 的 middleware 順序改成 `auth_middleware, error_middleware`，再跑一次，看結果有沒有變；然後讓 `auth_middleware` 在沒有 token 時直接 `raise HTTPError(401, …)`，看 `/health` 變成什麼。結果說明了 middleware 為什麼只解析、不拒絕。
 2. 把 `own_order` 裡的 `order["owner"] != user["id"]` 拿掉，看哪一個 assert 失敗、失敗訊息指向哪個路由。
 3. 加一個 `require_scope("orders.write")` dependency：token 對照表改成記錄 scope，權限不足時回 403 並帶 `WWW-Authenticate: Bearer error="insufficient_scope"`。
 4. 在自己的專案裡，列出所有路由與它們掛的驗證／授權 dependency，找出沒有掛任何檢查、又不在公開清單上的路由。

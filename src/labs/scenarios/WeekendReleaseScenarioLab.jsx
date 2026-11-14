@@ -144,7 +144,7 @@ function summarize(plan) {
 }
 
 const EXPLAIN = {
-  bigbang: { title: '一次上線：步驟最少，但每一步都沒有退路', body: ['沒有故障時，它和維護窗口的停機時間差不多，而且不用寫任何相容程式——這是它吸引人的地方。', '問題出在「出事之後」：migration 慢了沒有停損點、介面不通時沒有寫好的回滾條件，大家會傾向往前修；回滾要還原備份，花多久沒人量過。三個故障一起開，就會拖過週一 08:00。'] },
+  bigbang: { title: '一次上線：步驟最少，但每一步都沒有退路', body: ['沒有故障時，它和維護窗口的停機時間差不多，而且不用寫任何相容程式，這是它吸引人的地方。', '問題出在「出事之後」：migration 慢了沒有停損點、介面不通時沒有寫好的回滾條件，大家會傾向往前修；回滾要還原備份，花多久沒人量過。三個故障同時發生，就會拖過週一 08:00。'] },
   phased: { title: '分批上線：把一次大變更拆成好幾次可以退的小變更', body: ['expand 只新增欄位，回填在背景跑，新版程式部署時旗標關著，所以每一步都不必停機；慢、沒簽核、介面不通，代價都只是「時程往後推」。', '週一開診不依賴新版有沒有上：旗標關著就是舊流程。代價是雙寫、回填、相容程式與旗標清理，工期拉長；contract（刪舊欄位）還要另一張變更。'] },
   window: { title: '維護窗口 + 預演：停機一樣要停，但時間與退路都量過', body: ['預演在正式資料量的複本上跑，migration 慢的問題在週三就被發現，週六只是照表操課；回滾也實際做過一次，回復時間是 58 分而不是「應該很快」。', '外部介面只有正式環境測得到，所以設第二個 go/no-go：條件不成立就回滾，不在半夜往前修。沒簽核的步驟在第一個檢核點就被擋下，稽核紀錄完整。'] },
 }
@@ -172,7 +172,7 @@ export default function WeekendReleaseScenarioLab() {
 
   return (
     <Lab accent="blue" kicker="SCENARIO LAB" title="同一份改版，三種上線法：週一 08:00 趕不趕得上"
-         blurb="選做法、開啟故障，再逐步播放時間軸；看停機多久、回滾要多久、受影響多少人次、週一能不能開診、稽核紀錄齊不齊。">
+         blurb="週末上線出故障時，各做法停機多久、回滾要多久、受影響多少人次、週一能不能開診、稽核紀錄齊不齊。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={(v) => { setMode(v); setStep(0) }} options={MODES} />
         <Toggle label="migration 慢 3 倍" checked={slow} onChange={setSlow} />
@@ -208,7 +208,7 @@ export default function WeekendReleaseScenarioLab() {
                 </li>
               ))}
             </ol>
-            <Caption>目前：{clock(s.t)} {s.title}（示意；點任一列可跳到該步）</Caption>
+            <Caption>目前：{clock(s.t)} {s.title}（示意）</Caption>
           </LabStage>
           <Stats min={118}>
             <Stat label="停機時間" value={sum.downMin ? hm(sum.downMin) : '0'} tone={sum.downMin > 600 ? 'bad' : sum.downMin ? 'warn' : 'ok'} />
@@ -224,7 +224,7 @@ export default function WeekendReleaseScenarioLab() {
           <LabExplain title="這一步">
             <p><b>{s.title}</b>：{s.detail.replace(/`/g, '')}</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">資料轉換在測試機上跑得很快，到正式資料量就慢好幾倍；外部廠商的測試環境和正式環境不同版；凌晨三點有人說「這個小修正我直接下 SQL」。三件事都很常見，差別只在於事先有沒有量過時間、寫好回滾條件，以及每一步是不是都走有紀錄的管道。</Callout>
+          <Callout title="什麼時候會踩到">資料轉換在測試機上跑得很快，到正式資料量就慢好幾倍；外部廠商的測試環境和正式環境不同版；凌晨三點有人說「這個小修正我直接下 SQL」。三件事都很常見，差別只在於事先有沒有量過時間、寫好回滾條件，以及每一步是不是都走有紀錄的管道。</Callout>
         </div>
       </LabGrid>
       <style>{`

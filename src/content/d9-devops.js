@@ -138,7 +138,7 @@ export default {
       title: '數據中台之前：資料治理',
       en: 'Data governance',
       level: 2,
-      summary: '資料盤點、主資料與代碼表、欄位定義、資料擁有者、品質規則、權限分級與去識別化——沒先做好，數據中台只是把混亂集中到一處。',
+      summary: '資料盤點、主資料與代碼表、欄位定義、資料擁有者、品質規則、權限分級與去識別化。這些沒先做好，數據中台只會把混亂的資料集中到一處。',
       example: { primary: '資料目錄 + 擁有者 + 品質檢查 SQL', alts: ['主資料管理（MDM）', '資料湖 / 資料倉儲'] },
       keywords: ['SQL', 'PostgreSQL'],
       lab: null,

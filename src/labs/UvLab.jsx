@@ -38,7 +38,7 @@ const STEPS = [
   { label: '建專案', cmd: 'uv init api && cd api', out: 'Initialized project `api` at `/home/me/api`',
     files: { 'pyproject.toml': 'new', '.python-version': 'new', 'main.py': 'new', 'README.md': 'new', '.gitignore': 'new' }, py: PY_BASE, hl: [1, 6, 7],
     title: 'uv init：一個指令長出專案骨架',
-    text: ['`uv init api` 建立資料夾，生出 `pyproject.toml`（專案的身分證：名稱、需要的 Python 版本、依賴清單）、`.python-version`（釘住這個專案用哪個 Python）、一個 `main.py` 範例、README 與 `.gitignore`，還會順手 `git init`。', '這時候還沒有 `.venv`——uv 是懶惰的，需要時才建。'] },
+    text: ['`uv init api` 建立資料夾，生出 `pyproject.toml`（專案的身分證：名稱、需要的 Python 版本、依賴清單）、`.python-version`（釘住這個專案用哪個 Python）、一個 `main.py` 範例、README 與 `.gitignore`，還會順手 `git init`。', '這時候還沒有 `.venv`：uv 需要時才建。'] },
   { label: '加依賴', cmd: 'uv add fastapi uvicorn', out: 'Resolved 11 packages in 310ms\nInstalled 10 packages in 40ms\n + fastapi\n + starlette\n + pydantic\n + uvicorn\n + h11\n + click\n …',
     files: { 'pyproject.toml': 'mod', 'uv.lock': 'new', '.venv/': 'new' }, py: PY_DEPS, hl: [7, 8, 9, 10], pkgs: 10,
     title: 'uv add：改 pyproject、解析、鎖版本、裝進 .venv，一次做完',
@@ -49,12 +49,12 @@ const STEPS = [
     text: ['測試、lint 工具只有開發時需要，放進 `[dependency-groups]` 的 `dev` 群組（PEP 735），不算這個套件的正式依賴。', '`uv sync` 預設會一起裝 dev 群組；部署時用 `uv sync --no-dev`，pytest 就不會跑進正式環境。'] },
   { label: '鎖定', cmd: 'uv lock', out: 'Resolved 17 packages in 4ms\n# 沒有變動：add 的時候已經鎖好了',
     files: { 'uv.lock': 'mod' }, py: PY_DEV, hl: [], pkgs: 16,
-    title: 'uv lock：其實剛才已經自動做了',
+    title: 'uv lock：剛才已經自動做了',
     text: ['`uv add` 每次都會順手更新 lock，所以這裡 `uv lock` 沒有變動。它單獨存在的用途：手動編輯 `pyproject.toml` 之後重新解析；`uv lock --upgrade` 把所有套件升到允許範圍內的最新版；`uv lock --check` 在 CI 驗證 lock 是否過期。', '`uv.lock` 記的是**跨平台**的完整解析結果（每個套件的精確版本、來源、wheel 的 hash），所以 macOS 上鎖的檔在 Linux 上一樣能用。'] },
   { label: '同步', cmd: 'uv sync', out: 'Resolved 17 packages in 3ms\nAudited 16 packages in 1ms\n# .venv 已和 uv.lock 一致，沒動作',
     files: { '.venv/': 'mod' }, py: PY_DEV, hl: [], pkgs: 16,
     title: 'uv sync：讓 .venv 長得和 uv.lock 一模一樣',
-    text: ['`uv sync` 讀的是 `uv.lock`（不是 pyproject），把 `.venv` 調整成完全一致：缺的裝上、多的移除——你手動 `pip install` 進去的、不在 lock 裡的套件會被拔掉。', '這就是「可重現環境」：同一份 lock，在哪台機器 sync 出來都一樣。'] },
+    text: ['`uv sync` 讀的是 `uv.lock`（不是 pyproject），把 `.venv` 調整成完全一致：缺的裝上、多的移除：你手動 `pip install` 進去的、不在 lock 裡的套件會被拔掉。', '「可重現環境」指的是：同一份 lock，在哪台機器 sync 出來都一樣。'] },
   { label: '執行', cmd: 'uv run uvicorn main:app --reload', out: 'INFO:     Uvicorn running on http://127.0.0.1:8000\nINFO:     Application startup complete.',
     files: { 'main.py': 'mod', '.venv/': 'mod' }, py: PY_DEV, hl: [], pkgs: 16,
     title: 'uv run：不用 activate，跑之前先確認環境對',
@@ -62,7 +62,7 @@ const STEPS = [
   { label: '同事 clone', cmd: 'git clone git@…:team/api && cd api\nuv sync --frozen', out: 'Using CPython 3.12\nCreating virtual environment at: .venv\nInstalled 16 packages in 80ms',
     files: { '.venv/': 'new', 'uv.lock': 'lock', '.python-version': 'lock' }, py: PY_DEV, hl: [6], pkgs: 16, clone: true,
     title: '同事 clone：uv sync --frozen 一次到位',
-    text: ['clone 下來有 `pyproject.toml`、`uv.lock`、`.python-version`，沒有 `.venv`（它在 `.gitignore` 裡，本來就不進版控）。`--frozen` 的意思是「照 lock 檔裝，不要重新解析、不要動 lock」。', 'uv 會依 `.python-version` 自動下載對的 Python、建 `.venv`、裝好全部套件。CI 與 Dockerfile 也是同一行；`--locked` 更嚴：lock 過期就直接失敗，適合在 CI 把關。這也是 lock 檔一定要進版控的原因——沒有它，同事解析出來的版本可能和你不同。'] },
+    text: ['clone 下來有 `pyproject.toml`、`uv.lock`、`.python-version`，沒有 `.venv`（它在 `.gitignore` 裡，本來就不進版控）。`--frozen` 的意思是「照 lock 檔裝，不要重新解析、不要動 lock」。', 'uv 會依 `.python-version` 自動下載對的 Python、建 `.venv`、裝好全部套件。CI 與 Dockerfile 也是同一行；`--locked` 更嚴：lock 過期就直接失敗，適合在 CI 把關。所以 lock 檔一定要進版控：沒有它，同事解析出來的版本可能和你不同。'] },
 ]
 
 const FILES = [
@@ -93,7 +93,7 @@ export default function UvLab() {
 
   return (
     <Lab accent="blue" kicker="PYTHON LAB" title="uv：從空資料夾到能跑的專案"
-         blurb="七個指令走一遍：看檔案樹怎麼長出來、pyproject.toml 記了什麼、uv.lock 又多記了什麼，最後同事 clone 下來一行就能跑。">
+         blurb="七個指令：檔案樹怎麼長出來、pyproject.toml 記了什麼、uv.lock 又多記了什麼，最後同事 clone 下來一行就能跑。">
       <LabControls>
         <Stepper step={step} total={STEPS.length} onStep={setStep} playing={playing} onPlay={toggle} labels={STEPS.map((x) => x.label)} />
       </LabControls>
@@ -234,7 +234,7 @@ function DepGraph({ step }) {
           <text className="ver" x={n.x + NW / 2} y={Y2 + NH + 11} textAnchor="middle">v… · sha256:…</text>
         </g>
       ))}
-      {step === 0 && <text className="svg-text small" x={W / 2} y={Y2 + 14} textAnchor="middle">還沒有任何依賴——下一步 uv add 之後這裡會長出來</text>}
+      {step === 0 && <text className="svg-text small" x={W / 2} y={Y2 + 14} textAnchor="middle">還沒有任何依賴（下一步 uv add 之後出現）</text>}
       {step >= 1 && SUB.filter(vis).length < SUB.length && (
         <g className="ghost">
           {SUB.filter((n) => !vis(n)).map((n) => <rect key={n.id} className="svg-node sub" x={n.x} y={Y2} width={NW} height={NH} rx="4" />)}

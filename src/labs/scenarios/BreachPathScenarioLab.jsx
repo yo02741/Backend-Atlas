@@ -133,7 +133,7 @@ export default function BreachPathScenarioLab() {
 
   return (
     <Lab accent="aqua" kicker="SCENARIO LAB" title="從一個容器到正式資料庫：同一條路徑，四道防線"
-         blurb="依公開事件報告改寫成五個抽象步驟。開關防線、切換條件，按「重播事件」看攻擊停在哪一步、損害範圍有多大（示意）。">
+         blurb="依公開事件報告改寫成五個抽象步驟：防線與條件不同時，攻擊停在哪一步、損害範圍有多大（示意）。">
       <LabControls>
         <Seg label="做法" tinted value={preset} onChange={(v) => setDef(PRESETS[v])} options={PRESET_OPTS} />
         <Seg label="條件" value={cond} onChange={setCond} options={CONDS.map(({ value, label }) => ({ value, label }))} />
@@ -232,8 +232,8 @@ export default function BreachPathScenarioLab() {
             <p>每道防線各管一步：應用層修補管入口、網路隔離管「從內網讀到平台快取」、金鑰範圍與期限管「拿到的金鑰能做什麼、能用多久」、最高權限不日常使用管「最壞會多壞」。路徑停在第一道有效的防線。</p>
             <p>單一防線的價值要在它失效時看：切到「0-day ＋ 網路政策漏一條」，只開網路隔離時一路到底，縱深防禦則由後面的金鑰邊界接住。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
-            只要平台跑的是別人的程式碼——PaaS、CI runner、notebook 服務、agent 的工具執行環境——就要假設某個工作負載總有一天會被打穿。這時要問的是：它所在的網路連得到什麼、環境變數裡有什麼、平台元件之間用的金鑰有沒有範圍與期限、雲端最高權限是否存在於任何自動化碰得到的地方。
+          <Callout title="什麼時候會踩到">
+            只要平台跑的是別人的程式碼（PaaS、CI runner、notebook 服務、agent 的工具執行環境），就要假設某個工作負載總有一天會被打穿。這時要問的是：它所在的網路連得到什麼、環境變數裡有什麼、平台元件之間用的金鑰有沒有範圍與期限、雲端最高權限是否存在於任何自動化碰得到的地方。
           </Callout>
         </div>
       </LabGrid>
@@ -275,7 +275,7 @@ function Compare({ cond, tenants, preset, onPick }) {
   return (
     <div className="dtable-wrap">
       <table className="dtable bp-compare">
-        <caption>同一條件下五種做法（示意，點一列套用）</caption>
+        <caption>同一條件下五種做法（示意）</caption>
         <thead><tr><th>做法</th><th>停在</th><th>租戶</th><th>憑證</th></tr></thead>
         <tbody>
           {rows.map((r) => (

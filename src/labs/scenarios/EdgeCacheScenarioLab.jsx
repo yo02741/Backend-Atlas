@@ -101,7 +101,7 @@ export default function EdgeCacheScenarioLab() {
 
   return (
     <Lab accent="orange" kicker="SCENARIO LAB" title="快取到期那一秒，原站看到什麼"
-         blurb={`每秒 ${fmt(RPS)} 次讀、${keys} 個熱門 key 在 t=0 同時填入快取。按「快取到期」看 60 秒內原站的每秒請求數；切做法比較尖峰。所有數字為示意。`}>
+         blurb={`每秒 ${fmt(RPS)} 次讀、${keys} 個熱門 key 在 t=0 同時填入快取；快取到期後 60 秒內原站的每秒請求數。所有數字為示意。`}>
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
       </LabControls>
@@ -147,7 +147,7 @@ export default function EdgeCacheScenarioLab() {
           {mode === 'ttl' && (
             <LabExplain title="空窗期：到期到回填之間，每個請求都是 miss">
               <p>t={ttl}s 那一秒 key 消失，接下來 {sim.L} 秒內到達的 {fmt(RPS * sim.L)} 個請求全部 miss、全部去查 DB、全部在等。DB 能處理的只有幾百個，其餘排在連線池外面。</p>
-              <p>開「原站回應變慢」：空窗從 1 秒變 2 秒，打到原站與等待的請求都翻倍。真實世界更糟——DB 被打到變慢，空窗又拉長，正回饋直到掛掉。</p>
+              <p>原站回應變慢時，空窗從 1 秒變 2 秒，打到原站與等待的請求都翻倍。實際情況更糟：DB 被打到變慢，空窗又拉長，正回饋直到掛掉。</p>
               <p>把 key 數拉到 1：尖峰還是 {fmt(RPS)}。這是擊穿（stampede），跟幾個 key 無關，只跟這個 key 有多熱有關。</p>
             </LabExplain>
           )}
@@ -155,13 +155,13 @@ export default function EdgeCacheScenarioLab() {
             <LabExplain title="回舊值，讓背景那一個請求去更新">
               <p>到期後的請求照樣拿到快取裡的舊值，只有第一個發現「過期了」的請求派一個背景更新。原站每個 key 每輪只收到 1 次：{keys} 個 key 就是 {keys} 次，而不是 {fmt(RPS)}。</p>
               <p>代價是「等原站回來的請求」歸零、「拿到舊值的請求」變成 {fmt(RPS * sim.L)}：那 {sim.L} 秒裡使用者看到的是上一版資料。首頁可以，餘額不行。</p>
-              <p>注意尖峰仍等於 key 數——{keys} 個 key 同一秒各更新一次，這是雪崩的殘影，要靠抖動攤平。</p>
+              <p>尖峰仍等於 key 數：{keys} 個 key 同一秒各更新一次，這是雪崩的殘影，要靠抖動攤平。</p>
             </LabExplain>
           )}
           {mode === 'singleflight' && (
             <LabExplain title="同一個 key 同時只放一個請求出去">
               <p>到期瞬間大家搶 <code>SET lock:key NX PX 3000</code>，搶到的那一個去查 DB 再回填，其餘的等鎖釋放後重新讀快取。原站每個 key 每輪只收 1 次，和 swr 一樣。</p>
-              <p>差別在等待：其他 {fmt(sim.r * sim.L)} 個請求要等原站那一趟（{sim.L} 秒）。開「原站回應變慢」看等待數翻倍——這是用延遲換新鮮度。</p>
+              <p>差別在等待：其他 {fmt(sim.r * sim.L)} 個請求要等原站那一趟（{sim.L} 秒）。原站回應變慢時等待數會翻倍。這是用延遲換新鮮度。</p>
               <p>它對從沒載入過的冷 key 也有效，swr 沒有舊值可回時就得靠它。鎖要設過期時間，持鎖者掛掉才不會全部卡死。</p>
             </LabExplain>
           )}
@@ -169,10 +169,10 @@ export default function EdgeCacheScenarioLab() {
             <LabExplain title="不要讓它們同一秒到期，也不要真的到期">
               <p>每個 key 的 TTL 乘上 0.8–1.0 的隨機數，{keys} 個 key 的更新時間攤開到 {Math.round(ttl * 0.2)} 秒左右的區間裡，尖峰從 {keys} 掉到每秒幾個。</p>
               <p>更新在到期前由背景完成（提前更新），快取裡永遠是未過期的值：沒有人等、沒有人拿到過期資料。</p>
-              <p>把 key 數拉到 1：這個做法對單一 key 的效果只剩「提前更新」那一次請求——抖動解決的是雪崩，不是擊穿。實務上四種做法會疊著用：抖動 + swr 或 singleflight。</p>
+              <p>key 數只有 1 時，這個做法的效果只剩「提前更新」那一次請求：抖動解決的是雪崩，不是擊穿。實務上四種做法會疊著用：抖動 + swr 或 singleflight。</p>
             </LabExplain>
           )}
-          <Callout title="什麼時候會真的踩到">部署或重啟後快取是空的、排程同一秒灌進幾百個 key、Redis 故障切換後全部 miss、活動開跑首頁瞬間十倍流量。平常 TTL 到期沒事，是因為流量還沒大到讓 1 秒的空窗塞爆 DB。</Callout>
+          <Callout title="什麼時候會踩到">部署或重啟後快取是空的、排程同一秒灌進幾百個 key、Redis 故障切換後全部 miss、活動開跑首頁瞬間十倍流量。平常 TTL 到期沒事，是因為流量還沒大到讓 1 秒的空窗塞爆 DB。</Callout>
         </div>
       </LabGrid>
 

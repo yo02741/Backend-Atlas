@@ -19,7 +19,7 @@ CREATE TABLE registrations (
 
 這張表在上線第一週就會出問題：醫師改名要改幾千列；兩位同名病患分不清楚；`visit_date` 是文字，`'2026/11/3'` 與 `'2026-11-03'` 都進得來，也沒辦法排序；同一個號碼可以被掛兩次；`status` 可以是任何字，包括打錯的 `'canceled'`。這些錯誤都不會在寫入時被擋下，而是在幾個月後的報表裡才被發現。
 
-這一課照著需求一步一步建表，重點是**把需求裡的每一條規則落到某個約束上**。正規化的觀念（一件事實只存一處、1NF 到 3NF）在 [資料建模與正規化](#/skill/data-modeling)。
+這一課照著需求一步一步建表，把需求裡的每一條規則落到某個約束上。正規化的觀念（一件事實只存一處、1NF 到 3NF）在 [資料建模與正規化](#/skill/data-modeling)。
 
 ## 運作原理：從需求句子到資料表
 
@@ -290,7 +290,7 @@ SELECT source, count(*) FROM appointments GROUP BY source ORDER BY source;
 | 外鍵一律 `ON DELETE CASCADE` | 誤刪一列，連帶刪光歷史紀錄 | 有獨立意義的紀錄用預設的 NO ACTION |
 | 「只能有一筆有效」寫成一般 `UNIQUE` | 取消後不能重掛 | 部分唯一索引加 `WHERE` 條件 |
 | 時間點存成 `timestamp` 或文字 | 跨時區、夏令時間或換主機後時間錯亂，無法正確排序 | `timestamptz`；日曆日期用 `date` |
-| 存年齡、剩餘名額這類衍生值卻沒人負責更新 | 數字慢慢跟事實脫節 | 存原始資料，查詢時算；真的要存就在同一個交易裡維護 |
+| 存年齡、剩餘名額這類衍生值卻沒人負責更新 | 數字慢慢跟事實脫節 | 存原始資料，查詢時算；一定要存的話，就在同一個交易裡維護 |
 | 約束交給預設名稱 | 錯誤訊息裡的 `appointments_session_id_patient_id_key` 看不出業務意義 | 重要約束自己命名 |
 
 錯誤訊息的讀法：`violates check constraint "<名稱>"` 找 CHECK、`violates foreign key constraint` 看 DETAIL 的 `Key (...)=(...)` 是哪個值不存在、`duplicate key value violates unique constraint` 看 DETAIL 是哪一組值重複。訊息裡的約束名稱是追查的起點，這也是要好好命名的原因。

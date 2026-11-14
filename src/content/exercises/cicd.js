@@ -317,7 +317,7 @@ assert(/run:.*pytest/.test(job('test')), 'test job 沒有 pytest')
   {
     id: 'environments-secrets-1', skill: 'environments-secrets', kind: 'config', level: 2, file: '.github/workflows/deploy.yml',
     title: '同一個 image 從 staging 晉升到 production',
-    prompt: '這份部署 workflow 有三個問題：staging 和 production 各自 `docker build` 一次（production 跑的不是 staging 驗過的那個 image）、production 的資料庫連線字串連同密碼寫死在檔案裡、`deploy-production` 沒有綁定 environment——所以在 Settings → Environments 為 `production` 設定的 required reviewers（人工核准）完全不會生效，job 也拿不到 production 環境的 secrets。\n\n修改成：\n\n- 新增一個 `build` job：build 並推送 image，用 job 的 `outputs` 輸出 image 的位置（建議用 `docker/build-push-action` 的 `digest` 輸出組成 `image@sha256:...`）\n- `deploy-staging` 與 `deploy-production` **都不能再 build 或 push**，部署時都用 `needs.build.outputs` 裡**同一個** output\n- `deploy-production` 要在 `deploy-staging` 成功之後才執行（注意：要讀 `needs.build.outputs`，`build` 也必須列在這個 job 的 `needs` 裡）\n- `deploy-staging` 綁定 `environment: staging`，`deploy-production` 綁定 `environment: production`（核准規則在平台設定，YAML 只要綁定）\n- 檔案裡不能有寫死的密碼；兩個 deploy job 的 `DATABASE_URL` 都用 `${{ secrets.DATABASE_URL }}`（綁了哪個 environment，就拿到那個環境的值）',
+    prompt: '這份部署 workflow 有三個問題：staging 和 production 各自 `docker build` 一次（production 跑的不是 staging 驗過的那個 image）、production 的資料庫連線字串連同密碼寫死在檔案裡、`deploy-production` 沒有綁定 environment，所以在 Settings → Environments 為 `production` 設定的 required reviewers（人工核准）完全不會生效，job 也拿不到 production 環境的 secrets。\n\n修改成：\n\n- 新增一個 `build` job：build 並推送 image，用 job 的 `outputs` 輸出 image 的位置（建議用 `docker/build-push-action` 的 `digest` 輸出組成 `image@sha256:...`）\n- `deploy-staging` 與 `deploy-production` **都不能再 build 或 push**，部署時都用 `needs.build.outputs` 裡**同一個** output\n- `deploy-production` 要在 `deploy-staging` 成功之後才執行（注意：要讀 `needs.build.outputs`，`build` 也必須列在這個 job 的 `needs` 裡）\n- `deploy-staging` 綁定 `environment: staging`，`deploy-production` 綁定 `environment: production`（核准規則在平台設定，YAML 只要綁定）\n- 檔案裡不能有寫死的密碼；兩個 deploy job 的 `DATABASE_URL` 都用 `${{ secrets.DATABASE_URL }}`（綁了哪個 environment，就拿到那個環境的值）',
     starter: `name: deploy
 
 on:
@@ -531,7 +531,7 @@ assert _r2 == "hold", _r2` },
   {
     id: 'observability-1', skill: 'observability', kind: 'python', level: 2,
     title: '延遲百分位數、錯誤率與結構化 log',
-    prompt: '實作三個函式：\n\n- `percentile(values, p)`：用 **nearest-rank** 方法——排序後取第 `ceil(p / 100 * n)` 個（從 1 開始數）。`values` 是空的就 `raise ValueError`。不能改動傳進來的 list\n- `summarize(samples)`：`samples` 是 `(延遲毫秒, HTTP 狀態碼)` 的 list，回傳 `{"count", "p50", "p95", "p99", "error_rate"}` 這五個 key 的 dict。只有 **5xx** 算錯誤（4xx 是客戶端的問題，不算服務的錯誤）\n- `log_line(level, msg, **fields)`：回傳**一行** JSON 字串，包含 `level`、`msg` 與所有 `fields`。`msg` 裡有換行也要維持一行；欄位值是 `datetime` 這類 `json` 不認得的型別時，轉成字串，不能丟例外',
+    prompt: '實作三個函式：\n\n- `percentile(values, p)`：用 **nearest-rank** 方法：排序後取第 `ceil(p / 100 * n)` 個（從 1 開始數）。`values` 是空的就 `raise ValueError`。不能改動傳進來的 list\n- `summarize(samples)`：`samples` 是 `(延遲毫秒, HTTP 狀態碼)` 的 list，回傳 `{"count", "p50", "p95", "p99", "error_rate"}` 這五個 key 的 dict。只有 **5xx** 算錯誤（4xx 是客戶端的問題，不算服務的錯誤）\n- `log_line(level, msg, **fields)`：回傳**一行** JSON 字串，包含 `level`、`msg` 與所有 `fields`。`msg` 裡有換行也要維持一行；欄位值是 `datetime` 這類 `json` 不認得的型別時，轉成字串，不能丟例外',
     starter: `import json
 from datetime import datetime, timezone
 
@@ -636,7 +636,7 @@ assert "2026-10-20" in _d["at"], _d` },
   {
     id: 'reliability-1', skill: 'reliability', kind: 'python', level: 2,
     title: 'liveness 與 readiness：依賴掛掉時誰該失敗',
-    prompt: '實作兩個健康檢查函式，都回傳 `(HTTP 狀態碼, body dict)`：\n\n- `liveness(state, now)`：只回答「這個程序有沒有卡死」。事件迴圈的心跳（`state.loop_heartbeat`）距離 `now` 不超過 `HEARTBEAT_LIMIT` 秒 → `200`，否則 `503`。**不檢查任何外部依賴**——資料庫掛了，重啟程序也救不了\n- `readiness(state, now)`：回答「現在能不能接流量」\n  - 還沒啟動完成（`started` 為 False）、正在關閉（`draining`）、程序卡死、或必要依賴資料庫掛掉（`db_ok` 為 False）→ `503`\n  - 只有可降級的快取掛掉（`cache_ok` 為 False）→ 仍然 `200`，body 是 `{"status": "degraded", "degraded": ["cache"]}`\n  - 都正常 → `200`，body 的 `status` 是 `"ok"`\n\n失敗時 body 的內容不限，但要是 dict。',
+    prompt: '實作兩個健康檢查函式，都回傳 `(HTTP 狀態碼, body dict)`：\n\n- `liveness(state, now)`：只回答「這個程序有沒有卡死」。事件迴圈的心跳（`state.loop_heartbeat`）距離 `now` 不超過 `HEARTBEAT_LIMIT` 秒 → `200`，否則 `503`。**不檢查任何外部依賴**，因為資料庫掛了，重啟程序也救不了\n- `readiness(state, now)`：回答「現在能不能接流量」\n  - 還沒啟動完成（`started` 為 False）、正在關閉（`draining`）、程序卡死、或必要依賴資料庫掛掉（`db_ok` 為 False）→ `503`\n  - 只有可降級的快取掛掉（`cache_ok` 為 False）→ 仍然 `200`，body 是 `{"status": "degraded", "degraded": ["cache"]}`\n  - 都正常 → `200`，body 的 `status` 是 `"ok"`\n\n失敗時 body 的內容不限，但要是 dict。',
     starter: `from dataclasses import dataclass
 
 HEARTBEAT_LIMIT = 10.0

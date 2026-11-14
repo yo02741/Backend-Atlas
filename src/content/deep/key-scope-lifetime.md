@@ -28,7 +28,7 @@
 
 ### 用三個控制面回看事件
 
-下表是推論：如果每個控制面存在，**可能**在哪一步縮小傷害。這不是說有了它就一定擋得住，而是每一層都在縮小攻擊者下一步能拿到的東西。
+下表是推論：如果每個控制面存在，**可能**在哪一步縮小傷害。有了它不代表一定擋得住；每一層縮小的是攻擊者下一步能拿到的東西。
 
 | 步驟 | 範圍 | 壽命 | 可觀測 |
 |---|---|---|---|
@@ -195,7 +195,7 @@ checks = [
 for label, k, scope, res, t in checks:
     print(f"{label:<14}", *authorize(k, scope, res, t))
 
-# 對照組：沒有範圍、沒有期限的舊式金鑰——什麼都能做，十年後也能用
+# 對照組：沒有範圍、沒有期限的舊式金鑰：什麼都能做，十年後也能用
 legacy = create_key("legacy admin", ["deploy:write", "team:admin", "billing:admin"], None, "unknown", now, days=36500)
 print()
 for scope, res in [("team:admin", "project:site"), ("billing:admin", "project:billing")]:

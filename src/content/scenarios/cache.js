@@ -1,4 +1,4 @@
-// 設計情境：API 快取——放哪一層、放多久、怎麼失效
+// 設計情境：API 快取：放哪一層、放多久、怎麼失效
 export default {
   id: 'cache',
   order: 2,
@@ -16,7 +16,7 @@ export default {
     '購物車是個人資料：不能被別人看到，自己改完要立刻看到',
     '訂單付款狀態不能顯示舊值',
     'PostgreSQL 目前能穩定承受約 500 次 / 秒的這類查詢',
-    '所有數字都是示意，重點是量級與方向',
+    '所有數字都是示意，只看量級與方向',
   ],
   options: [
     {
@@ -52,7 +52,7 @@ export default {
     { id: 'cart', situation: '個人購物車：每秒 200 次讀、加減商品頻繁寫入，使用者改完要立刻看到，查詢要 join 三張表約 30 ms。', options: ['http', 'redis', 'none'], answer: 'redis',
       explain: '個人資料必須 `private`，CDN 幫不上忙；瀏覽器快取又清不掉，改完會看到舊車。Redis 以 `cart:{user_id}` 當 key，寫入時 DEL，讀取立刻一致，還省掉 join 的 30 ms。200 次 / 秒不快取 DB 也撐得住，但每次都付 join 的成本。' },
     { id: 'payment', situation: '訂單付款狀態 `GET /orders/{id}/payment`：付款完成後前端輪詢，顯示舊值會讓使用者重複付款。', options: ['http', 'redis', 'none'], answer: 'none',
-      explain: '任何舊值都會直接造成錯誤操作，這類端點就是不該快取：回 `Cache-Control: no-store`，每次到 DB。流量是輪詢等級，DB 撐得住；若真的撐不住，該改的是用 webhook 或 SSE 推送，不是加快取。' },
+      explain: '任何舊值都會直接造成錯誤操作，這類端點不該快取：回 `Cache-Control: no-store`，每次到 DB。流量是輪詢等級，DB 撐得住；若真的撐不住，該改的是用 webhook 或 SSE 推送，不是加快取。' },
     { id: 'leaderboard', situation: '活動排行榜：全站共用、排程每分鐘重算一次寫進 DB，活動期間全球流量湧入，接受最多 1 分鐘舊資料。', options: ['http', 'redis', 'none'], answer: 'http',
       explain: '共用資料 + 明確的更新週期 + 可容忍一分鐘舊值，`public, s-maxage=60` 讓 CDN 在每個地區各自只回源一次。Redis 也可以（TTL 60 秒），但流量會全部湧回單一區域的 API，邊緣快取更省。' },
   ],

@@ -72,10 +72,10 @@ const QUESTIONS = {
         why: '「本週」用的是建立時間：下週的診這週掛的算進來、這週的診上週掛的被漏掉；而且取消的也算。' },
       { name: 'B', key: 'session|true', value: weekAppts.length,
         sql: `SELECT COUNT(*) FROM appointments a\nJOIN sessions s ON s.id = a.session_id\nWHERE s.date BETWEEN '${WEEK[0]}' AND '${WEEK[1]}';`,
-        why: '以診次日期歸週是對的，但把 cancelled 一起算了——欄位名沒說取消算不算。' },
+        why: '以診次日期歸週是對的，但把 cancelled 一起算了，欄位名沒說取消算不算。' },
       { name: 'C', key: 'session|false', value: weekAppts.filter((a) => a.status !== 'cancelled').length,
         sql: `SELECT COUNT(*) FROM appointments a\nJOIN sessions s ON s.id = a.session_id\nWHERE s.date BETWEEN '${WEEK[0]}' AND '${WEEK[1]}'\n  AND a.status <> 'cancelled';`,
-        why: '排除了 cancelled，但 no_show 留著——這也是一種假設，只是這次剛好和定義一致。' },
+        why: '排除了 cancelled，但 no_show 留著。這也是一種假設，只是這次剛好和定義一致。' },
     ],
   },
   cancel: {
@@ -86,7 +86,7 @@ const QUESTIONS = {
     guesses: [
       { name: 'A', key: 'cancelled_at|everything', value: pct(joined.filter((a) => a.cancelled_at && inWeek(a.cancelled_at)).length, joined.length),
         sql: `SELECT COUNT(cancelled_at) * 1.0 / COUNT(*)\nFROM appointments\nWHERE cancelled_at BETWEEN '${WEEK[0]}' AND '${WEEK[1]}'\n   OR cancelled_at IS NULL;`,
-        why: '分子看 cancelled_at 落在本週，分母卻是歷史上所有掛號——分子分母不同期間，比率沒有意義。' },
+        why: '分子看 cancelled_at 落在本週，分母卻是歷史上所有掛號。分子分母不同期間，比率沒有意義。' },
       { name: 'B', key: 'session|noncancelled', value: pct(weekAppts.filter((a) => a.status === 'cancelled').length, weekAppts.filter((a) => a.status !== 'cancelled').length),
         sql: `SELECT SUM(a.status = 'cancelled') * 1.0\n     / SUM(a.status <> 'cancelled')\nFROM appointments a JOIN sessions s ON s.id = a.session_id\nWHERE s.date BETWEEN '${WEEK[0]}' AND '${WEEK[1]}';`,
         why: '分母漏掉取消的本身，算出來是「取消：未取消」的比值，不是比率，會比定義高。' },
@@ -132,7 +132,7 @@ export default function SemanticLayerLab() {
 
   return (
     <Lab accent="aqua" kicker="DATA LAB" title="Semantic Layer：讓 agent 查資料不用猜欄位"
-         blurb="同一個問題，agent 看著欄位名可以寫出好幾種合理的 SQL，每一種算出來的數字都不一樣。Semantic Layer 把「指標怎麼算」先定義好，問法再多，也只對到一個定義、一個數字。切問題、開關定義、換問法，看兩邊怎麼變。">
+         blurb="同一個問題，agent 看著欄位名可以寫出好幾種合理的 SQL，每一種算出來的數字都不一樣。Semantic Layer 先定義好「指標怎麼算」，問法再多也只對到一個定義、一個數字。">
       <LabControls>
         <Seg label="問題" tinted value={q} onChange={(v) => { setQ(v); setPhraseIdx(0) }}
              options={Q_ORDER.map((k) => ({ value: k, label: QUESTIONS[k].label }))} />
@@ -206,10 +206,10 @@ export default function SemanticLayerLab() {
         <div className="lab-stack">
           <LabExplain title={`${Q.label}：為什麼猜會猜出 ${distinct(q)} 種答案`}>
             <p>{EXPLAIN[q]}</p>
-            <p>開關「定義」時，右邊的數字會變，但仍然只有一個；左邊哪個猜法剛好對上也會跟著換——它們本來就不是對或錯，只是沒人說清楚要哪一種。</p>
+            <p>「定義」改變時，右邊的數字會變，但仍然只有一個；左邊剛好對上的猜法也跟著換。這些猜法沒有對錯，只是沒人說清楚要哪一種。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
-            三種情況最常見：同一個指標在兩份報表裡數字對不起來（各自寫了不同的 WHERE）；agent 回答得頭頭是道、SQL 也合法，但分母選錯了；改一次「取消要不要算」的業務規則，得去翻幾十支查詢。把公式、粒度、允許的篩選、負責人寫進一份定義檔，讓 agent 與報表都只對這份定義查，就是 Semantic Layer 在做的事。
+          <Callout title="什麼時候會踩到">
+            三種情況最常見：同一個指標在兩份報表裡數字對不起來（各自寫了不同的 WHERE）；agent 回答得頭頭是道、SQL 也合法，但分母選錯了；改一次「取消要不要算」的業務規則，得去翻幾十支查詢。Semantic Layer 把公式、粒度、允許的篩選、負責人寫進一份定義檔，讓 agent 與報表都只對這份定義查。
           </Callout>
         </div>
         <div className="lab-stack">

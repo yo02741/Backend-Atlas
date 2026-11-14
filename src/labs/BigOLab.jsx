@@ -21,27 +21,27 @@ const CURVES = [
 const EXPLAIN = {
   all: {
     title: 'Big-O 說的是「成長率」，不是秒數',
-    text: ['橫軸是資料量 n，縱軸是操作次數。五條線在 n 很小時擠在一起——這時候常數項（一次網路往返、一次磁碟讀取）比曲線形狀重要得多。', 'n 一路拉到 100，O(n²) 已經是 10,000 次，把其他線全部壓成地板；打開「對數刻度」才看得清楚下面四條線彼此差多少。', '選一條曲線，看它在後端具體長什麼樣子。'],
+    text: ['橫軸是資料量 n，縱軸是操作次數。五條線在 n 很小時擠在一起，這時候常數項（一次網路往返、一次磁碟讀取）比曲線形狀重要得多。', 'n 一路拉到 100，O(n²) 已經是 10,000 次，把其他線全部壓成地板；切到對數刻度才看得清楚下面四條線彼此差多少。'],
   },
   c1: {
     title: 'O(1)：不管 n 多大，都是一步',
-    text: ['依 key 從 dict / hash map 取值、Redis 的 GET / SET、依主鍵從已載入的 map 找物件——成本不隨資料量改變。', '但 O(1) 不等於「快」：一次 Redis GET 仍是一次網路往返（通常 0.1–1 ms），比記憶體裡的 dict 慢上千倍。它只保證「不會因為資料變多而變慢」。'],
+    text: ['依 key 從 dict / hash map 取值、Redis 的 GET / SET、依主鍵從已載入的 map 找物件：成本不隨資料量改變。', '但 O(1) 不等於「快」：一次 Redis GET 仍是一次網路往返（通常 0.1–1 ms），比記憶體裡的 dict 慢上千倍。它只保證「不會因為資料變多而變慢」。'],
   },
   logn: {
     title: 'O(log n)：每走一步就砍掉一大半',
-    text: ['PostgreSQL / MySQL 的索引是 B-tree：從根節點往下，每一層都把候選範圍縮小數百倍，一百萬列大約 3–4 層就找到。binary search 同理。', '這就是「加索引」有效的數學理由：WHERE user_id = ? 有索引是 O(log n)，沒索引是 O(n) 的全表掃描。n 翻十倍，前者幾乎沒感覺，後者慢十倍。'],
+    text: ['PostgreSQL / MySQL 的索引是 B-tree：從根節點往下，每一層都把候選範圍縮小數百倍，一百萬列大約 3–4 層就找到。binary search 同理。', 'WHERE user_id = ? 有索引是 O(log n)，沒索引是 O(n) 的全表掃描。n 翻十倍，前者幾乎沒感覺，後者慢十倍。'],
   },
   n: {
     title: 'O(n)：資料翻倍、時間翻倍',
-    text: ['全表掃描（EXPLAIN 裡的 Seq Scan）、`[x for x in items if …]`、沒索引欄位的 WHERE、把整張表撈進程式再過濾——都是把每一筆看過一遍。', '小表完全無感（一千列掃完不到 1 ms），所以問題總是在上線半年、資料長到百萬列後才冒出來。看到 Seq Scan 出現在熱路徑，就是這條線。'],
+    text: ['全表掃描（EXPLAIN 裡的 Seq Scan）、`[x for x in items if …]`、沒索引欄位的 WHERE、把整張表撈進程式再過濾，都是把每一筆看過一遍。', '小表完全無感（一千列掃完不到 1 ms），所以問題總是在上線半年、資料長到百萬列後才冒出來。看到 Seq Scan 出現在熱路徑，就是這條線。'],
   },
   nlogn: {
     title: 'O(n log n)：排序的底線',
-    text: ['比較式排序最好就是 O(n log n)：Python 的 sorted()、merge sort、資料庫沒索引時的 ORDER BY。', '資料庫排序若超過記憶體額度（PostgreSQL 的 work_mem）會落到磁碟做 external sort，常數瞬間變大。若 ORDER BY 的欄位有索引，可以直接沿索引順序讀，退回 O(n) 甚至配合 LIMIT 更少。'],
+    text: ['比較式排序最好是 O(n log n)：Python 的 sorted()、merge sort、資料庫沒索引時的 ORDER BY。', '資料庫排序若超過記憶體額度（PostgreSQL 的 work_mem）會落到磁碟做 external sort，常數瞬間變大。若 ORDER BY 的欄位有索引，可以直接沿索引順序讀，退回 O(n) 甚至配合 LIMIT 更少。'],
   },
   n2: {
     title: 'O(n²)：巢狀迴圈，n 翻十倍慢一百倍',
-    text: ['對每筆資料再把全部資料掃一次：兩層 for 找重複、兩邊都沒索引的 nested loop join。100 筆 = 10,000 次，10,000 筆 = 一億次。', '後端最常見的變形是「迴圈裡打 query」：n 筆資料就打 n 次查詢，而每次查詢在資料庫裡又可能是一次 O(m) 掃描——外層在程式、內層藏在資料庫，加起來就是巢狀迴圈。下面的 N+1 舞台就是這件事。'],
+    text: ['對每筆資料再把全部資料掃一次：兩層 for 找重複、兩邊都沒索引的 nested loop join。100 筆 = 10,000 次，10,000 筆 = 一億次。', '後端最常見的變形是「迴圈裡打 query」：n 筆資料就打 n 次查詢，而每次查詢在資料庫裡又可能是一次 O(m) 掃描。外層在程式、內層藏在資料庫，加起來就是巢狀迴圈；下面的 N+1 舞台畫的是這件事。'],
   },
 }
 
@@ -71,7 +71,7 @@ export default function BigOLab() {
 
   return (
     <Lab accent="magenta" kicker="ALGO LAB" title="Big-O：n 變大時，誰先撐不住"
-         blurb="拖動 n 看五條成長曲線在同一個資料量下各要做幾次操作；把 y 軸切成對數刻度，被 O(n²) 壓扁的線才會現形。選一條曲線，看它在後端具體長什麼樣子。">
+         blurb="五條成長曲線在同一個資料量下各要做幾次操作，以及各自在後端的例子。被 O(n²) 壓扁的線要切到對數刻度才看得出來。">
       <LabControls>
         <Slider label="資料量 n" min={1} max={100} value={n} onChange={setN} />
         <Toggle label="y 軸對數刻度" checked={logY} onChange={setLogY} />
@@ -120,12 +120,12 @@ export default function BigOLab() {
           <LabExplain title="讀 Big-O 的三個原則">
             <p><strong>它是成長率，不是秒數。</strong>O(n) 的記憶體過濾可能比 O(1) 的 Redis 往返快一千倍；Big-O 回答的是「資料變十倍，會慢幾倍」。</p>
             <p><strong>小 n 時常數說了算。</strong>五條線左端幾乎重疊；資料少的時候先把 code 寫對、寫清楚，別為了 O(log n) 提早複雜化。</p>
-            <p><strong>後端的陷阱是 I/O 次數，不是 CPU。</strong>一次資料庫往返抵得上幾十萬次 CPU 運算，所以「打了幾次 query、讀了幾次磁碟」才是真正該數的 n。</p>
+            <p>一次資料庫往返抵得上幾十萬次 CPU 運算，所以後端該數的 n 是 <strong>I/O 次數</strong>：打了幾次 query、讀了幾次磁碟。</p>
           </LabExplain>
         </div>
       </LabGrid>
 
-      <p className="bigo-sub">第二舞台：N+1 問題——同一件事，查詢次數差幾倍</p>
+      <p className="bigo-sub">第二舞台：N+1 問題（同一件事，查詢次數差幾倍）</p>
       <LabControls>
         <Slider label="文章數 n" min={1} max={50} value={posts} onChange={setPosts} />
       </LabControls>

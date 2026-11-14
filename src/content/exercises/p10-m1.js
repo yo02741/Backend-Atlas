@@ -200,7 +200,7 @@ assert _ps == _before, "傳進來的 payments 被改動了"` },
   {
     id: 'load-testing-1', skill: 'load-testing', kind: 'python', level: 2,
     title: '從各併發級的量測結果找出飽和點與安全上限',
-    prompt: '一次逐步加壓的壓測，每一級記下一筆結果：`{"vus": 併發數, "rps": 吞吐, "p95_ms": p95 延遲, "error_rate": 錯誤率}`。\n\n實作 `analyze(levels, slo_p95_ms, max_error_rate, min_gain=0.05)`，回傳有三個 key 的 dict：\n\n- `saturation_vus`：**飽和點**——依 `vus` 由小到大看，第一個「吞吐相對前一級成長不到 `min_gain`」的級（`rps < 前一級的 rps * (1 + min_gain)`）。每一級都還在成長就是 `None`\n- `max_ok_vus`：**安全上限**——從最低的一級往上，連續符合 SLO 的最高一級。符合的條件是 `p95_ms <= slo_p95_ms` 而且 `error_rate <= max_error_rate`。一旦有一級不符合，更高的級就算數字剛好符合也不算；第一級就不符合是 `None`\n- `safe_rps`：`max_ok_vus` 那一級的吞吐；沒有就是 `0`\n\n`levels` 的順序不保證由小到大，而且不能改動傳進來的 list。\n\n起始碼把「吞吐最高的那一級」當成飽和點、把「所有符合 SLO 的級裡最大的」當成安全上限，兩個都不對。',
+    prompt: '一次逐步加壓的壓測，每一級記下一筆結果：`{"vus": 併發數, "rps": 吞吐, "p95_ms": p95 延遲, "error_rate": 錯誤率}`。\n\n實作 `analyze(levels, slo_p95_ms, max_error_rate, min_gain=0.05)`，回傳有三個 key 的 dict：\n\n- `saturation_vus`：**飽和點**：依 `vus` 由小到大看，第一個「吞吐相對前一級成長不到 `min_gain`」的級（`rps < 前一級的 rps * (1 + min_gain)`）。每一級都還在成長就是 `None`\n- `max_ok_vus`：**安全上限**：從最低的一級往上，連續符合 SLO 的最高一級。符合的條件是 `p95_ms <= slo_p95_ms` 而且 `error_rate <= max_error_rate`。一旦有一級不符合，更高的級就算數字剛好符合也不算；第一級就不符合是 `None`\n- `safe_rps`：`max_ok_vus` 那一級的吞吐；沒有就是 `0`\n\n`levels` 的順序不保證由小到大，而且不能改動傳進來的 list。\n\n起始碼把「吞吐最高的那一級」當成飽和點、把「所有符合 SLO 的級裡最大的」當成安全上限，兩個都不對。',
     starter: `LEVELS = [
     {"vus": 4, "rps": 86.7, "p95_ms": 40, "error_rate": 0.0},
     {"vus": 8, "rps": 177.5, "p95_ms": 40, "error_rate": 0.0},

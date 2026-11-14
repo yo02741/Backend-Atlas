@@ -259,7 +259,7 @@ ORDER BY xact_start NULLS LAST;
 
 事後要修的是程式：找出為什麼交易沒結束（交易裡呼叫外部 API、例外路徑沒 rollback、在交易中等使用者操作），並設好 `idle_in_transaction_session_timeout`。
 
-> 本站的 PostgreSQL 跑在瀏覽器裡、只有一個連線，沒辦法真的重現兩個交易互等；上面的鎖範例只能看到「自己」持有的鎖。要實際看到等待與死結，需要一個真的 PostgreSQL，開兩個 psql 視窗照轉帳的時間線輸入。
+> 本站的 PostgreSQL 跑在瀏覽器裡、只有一個連線，沒辦法重現兩個交易互等；上面的鎖範例只能看到「自己」持有的鎖。要實際看到等待與死結，需要一台實際的 PostgreSQL，開兩個 psql 視窗照轉帳的時間線輸入。
 
 ## 動手
 

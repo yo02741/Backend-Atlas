@@ -1,4 +1,4 @@
-// 題庫：P10 新課（m4 批）——data-pipelines / dimensional-modeling
+// 題庫：P10 新課（m4 批）：data-pipelines / dimensional-modeling
 export default [
   {
     skill: 'data-pipelines',

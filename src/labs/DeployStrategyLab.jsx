@@ -130,7 +130,7 @@ export default function DeployStrategyLab() {
 
   return (
     <Lab accent="green" className="dps-lab" kicker="CI/CD LAB" title="部署策略：rolling、blue-green、canary 怎麼換版"
-         blurb="選一種策略，按「開始部署」看 6 個實例怎麼從舊版換成新版、流量怎麼分。打開「新版有 bug」比較受影響的請求與回滾速度；打開「含 schema 變更」看新舊版本同時存在時，舊版碰到新 schema 會不會壞。">
+         blurb="6 個實例從舊版換成新版時流量怎麼分；新版有 bug 時受影響的請求與回滾速度，含 schema 變更時舊版碰到新 schema 會不會壞。">
       <LabControls>
         <Seg label="策略" tinted value={st} onChange={change(setSt)} options={Object.entries(STRATS).map(([k, s]) => ({ value: k, label: s.label }))} />
         <Toggle label="新版有 bug（錯誤率高）" checked={bug} onChange={change(setBug)} />
@@ -180,8 +180,8 @@ export default function DeployStrategyLab() {
             <p>規則只有一條：<strong>任何時刻正在跑的所有版本，都要能跟當下的 schema 一起運作</strong>。資料庫通常只有一個，三種策略的新舊版本都共用它。</p>
             <p>expand–contract 把一個破壞性的變更拆成幾個各自相容的步驟：先擴張（新增欄位、雙寫、回填），等所有舊版本都消失、確定不會回滾之後，再收縮（刪除舊欄位）。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
-            第一次在部署裡改欄位名稱或刪欄位；實例變多、rolling 拉長到十幾分鐘，新舊並存的時間跟著變長；想回滾時才發現上一版已經讀不懂現在的 schema。流量小的服務做 canary，5% 只有幾個請求，看不出差別——拉長觀察時間，或直接用較大的比例。
+          <Callout title="什麼時候會踩到">
+            第一次在部署裡改欄位名稱或刪欄位；實例變多、rolling 拉長到十幾分鐘，新舊並存的時間跟著變長；想回滾時才發現上一版已經讀不懂現在的 schema。流量小的服務做 canary，5% 只有幾個請求，看不出差別，要拉長觀察時間，或直接用較大的比例。
           </Callout>
         </div>
       </LabGrid>

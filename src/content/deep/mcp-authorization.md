@@ -251,7 +251,7 @@ MCP client ──Bearer T（aud=tickets.example.com/mcp）──▶ MCP server �
 
 - **audience 對不上**。工單 API 如果有好好檢查 `aud`，會拒絕；如果它照單全收，代表它接受「發給任何人的 token」，開頭的事件就會在它身上重演。
 - **MCP server 的控制被繞過**。速率限制、工具層的授權、稽核紀錄都在 MCP server。token 能直接打下游，攻擊者偷到之後就不必經過 MCP server。
-- **稽核分不清是誰**。下游看到的是使用者的 token，不知道請求其實是經過某個 MCP server、由 agent 發出的。
+- **稽核分不清是誰**。下游看到的是使用者的 token，不知道請求是經過某個 MCP server、由 agent 發出的。
 - **權限混淆**（confused deputy）。MCP server 用使用者給它的憑證去做事，沒有自己的身分，出事時無法限縮。
 
 正確的做法有兩種：

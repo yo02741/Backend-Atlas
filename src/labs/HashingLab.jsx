@@ -27,19 +27,19 @@ async function pbkdf2(text, saltHex, iterations) {
 const FOCUS = {
   b64: {
     label: '編碼', title: 'Base64 是編碼，不是安全機制',
-    text: ['編碼的目的是**換一種表示法**（讓二進位資料能塞進只接受文字的地方），任何人都能無條件解回來——按「解回來」就是證明。它沒有金鑰、沒有祕密。', '在資料庫或設定檔裡看到 Base64 過的密碼、token，安全性和明文一模一樣；只是多了一層讓人誤以為有保護的假象。'],
+    text: ['編碼的目的是**換一種表示法**（讓二進位資料能塞進只接受文字的地方），任何人都能無條件解回來。它沒有金鑰、沒有祕密。', '在資料庫或設定檔裡看到 Base64 過的密碼、token，安全性和明文一模一樣；只是多了一層讓人誤以為有保護的假象。'],
   },
   sha: {
     label: '雜湊', title: '雜湊是單向的：只能驗證，不能取回',
-    text: ['雜湊把任意長度的輸入壓成固定長度的指紋，設計上無法反推。登入時把使用者輸入的密碼再雜湊一次、比對指紋即可——系統**從頭到尾不需要知道原密碼**。', '但 SHA-256 是為「快」設計的（檔案校驗、簽章）：一張 GPU 每秒能算數十億次。攻擊者拿到指紋後只要用字典逐一猜，而且沒有 salt 時，同一個密碼的指紋全世界都一樣——查表（彩虹表）就破了。'],
+    text: ['雜湊把任意長度的輸入壓成固定長度的指紋，設計上無法反推。登入時把使用者輸入的密碼再雜湊一次、比對指紋即可，系統**從頭到尾不需要知道原密碼**。', '但 SHA-256 是為「快」設計的（檔案校驗、簽章）：一張 GPU 每秒能算數十億次。攻擊者拿到指紋後只要用字典逐一猜，而且沒有 salt 時，同一個密碼的指紋全世界都一樣，查表（彩虹表）就破了。'],
   },
   kdf: {
     label: '加鹽慢雜湊', title: 'salt 打敗查表，work factor 打敗暴力',
-    text: ['salt 是每位使用者各自的隨機值，和密碼一起雜湊、明文存在旁邊。它不是祕密——它的工作是讓**同一個密碼在每個帳號產生不同的指紋**，預先算好的表沒用，攻擊者也不能一次猜對全部使用者。', 'iterations（work factor）讓每次計算刻意變慢：對登入的使用者是幾十毫秒，對要猜十億次的攻擊者是幾十年。硬體變快就把參數調高，舊帳號在下次登入時重算。實務上用 argon2id 或 bcrypt（吃記憶體，GPU 更難平行化）；瀏覽器內建只有 PBKDF2，所以這裡拿它示範。'],
+    text: ['salt 是每位使用者各自的隨機值，和密碼一起雜湊、明文存在旁邊。它不是祕密，作用是讓**同一個密碼在每個帳號產生不同的指紋**，預先算好的表沒用，攻擊者也不能一次猜對全部使用者。', 'iterations（work factor）讓每次計算刻意變慢：對登入的使用者是幾十毫秒，對要猜十億次的攻擊者是幾十年。硬體變快就把參數調高，舊帳號在下次登入時重算。實務上用 argon2id 或 bcrypt（吃記憶體，GPU 更難平行化）；瀏覽器內建只有 PBKDF2，所以這裡拿它示範。'],
   },
   enc: {
-    label: '那加密呢？', title: '密碼永遠不加密——加密是給「要拿回來」的資料用的',
-    text: ['加密是可逆的：有金鑰就能解回明文。把密碼加密存起來，等於整個系統的安全押在一把金鑰上——金鑰外洩（設定檔進了 git、備份被拿走）就全部明文。密碼只需要「驗證」，所以用雜湊，根本沒有金鑰可以漏。', '加密用在真的需要拿回原值的地方：傳輸中的資料用 TLS（HTTPS）、靜態資料用磁碟／欄位加密（信用卡號、身分證字號），而且金鑰要放在 KMS 這種獨立的地方，不跟資料同處。'],
+    label: '那加密呢？', title: '密碼永遠不加密：加密是給「要拿回來」的資料用的',
+    text: ['加密是可逆的：有金鑰就能解回明文。把密碼加密存起來，等於整個系統的安全押在一把金鑰上：金鑰外洩（設定檔進了 git、備份被拿走）就全部明文。密碼只需要「驗證」，所以用雜湊，沒有金鑰可以漏。', '加密用在需要拿回原值的地方：傳輸中的資料用 TLS（HTTPS）、靜態資料用磁碟／欄位加密（信用卡號、身分證字號），而且金鑰要放在 KMS 這種獨立的地方，不跟資料同處。'],
   },
 }
 const FOCUS_ORDER = ['b64', 'sha', 'kdf', 'enc']
@@ -77,7 +77,7 @@ export default function HashingLab() {
 
   return (
     <Lab className="hsh" accent="red" kicker="SECURITY LAB" title="編碼、雜湊、加密：密碼該怎麼存"
-         blurb="改一改密碼，看同一個輸入經過 Base64、SHA-256、加鹽 PBKDF2 各變成什麼。打開「兩個使用者用同一組密碼」看哪些結果會撞在一起；拉動 iterations 感受「慢」是刻意設計的。">
+         blurb="同一個密碼經過 Base64、SHA-256、加鹽 PBKDF2 的結果，兩個使用者用同一組密碼時哪些會撞在一起，以及 iterations 刻意造成的慢。">
       <LabControls>
         <label className="hsh-pw">
           <span className="seg-label">密碼</span>
@@ -130,11 +130,11 @@ export default function HashingLab() {
         <div className="lab-stack">
           <LabExplain title={f.title}>
             {f.text.map((t, i) => <p key={i} dangerouslySetInnerHTML={{ __html: md(t) }} />)}
-            {two && focus !== 'enc' && <p><strong>同密碼的兩位使用者：</strong>Base64 與 SHA-256 的結果一模一樣——攻擊者破一個就等於破全部，還能直接看出「這兩個人密碼相同」；PBKDF2 因為 salt 不同，兩個指紋毫無關聯。</p>}
+            {two && focus !== 'enc' && <p><strong>同密碼的兩位使用者：</strong>Base64 與 SHA-256 的結果一模一樣：攻擊者破一個就等於破全部，還能直接看出「這兩個人密碼相同」；PBKDF2 因為 salt 不同，兩個指紋毫無關聯。</p>}
           </LabExplain>
           <Callout title="工作上什麼時候用">
             存密碼一律用框架內建的 password hasher（Django 的 <code>make_password</code>、Rails 的 <code>has_secure_password</code>、Node 的 <code>argon2</code> / <code>bcrypt</code> 套件），它們幫你處理 salt、參數與升級。
-            <b>別自己發明</b>：自己拼 SHA-256 + salt、自己選 iterations，幾乎一定比預設弱。忘記密碼是「重設」，永遠不是「寄回原密碼」——存得對就寄不出來。
+            <b>別自己發明</b>：自己拼 SHA-256 + salt、自己選 iterations，幾乎一定比預設弱。忘記密碼是「重設」，永遠不是「寄回原密碼」：存得對就寄不出來。
           </Callout>
         </div>
       </LabGrid>
@@ -192,8 +192,8 @@ function Row({ who, value, same, diff, busy }) {
     <div className="hsh-row">
       <span className="hsh-who">{who}</span>
       <code className={`hsh-out${same ? ' same' : diff ? ' diff' : ''}${busy ? ' busy' : ''}`}>{busy ? '計算中…' : value || '（空字串）'}</code>
-      {same && <span className="hsh-cmp same">✕ 與 A 完全相同——撞出一個就撞出全部</span>}
-      {diff && <span className="hsh-cmp diff">✓ 與 A 不同——salt 不同，指紋就不同</span>}
+      {same && <span className="hsh-cmp same">✕ 與 A 完全相同：撞出一個就撞出全部</span>}
+      {diff && <span className="hsh-cmp diff">✓ 與 A 不同：salt 不同，指紋就不同</span>}
     </div>
   )
 }
@@ -240,7 +240,7 @@ function SpeedChart({ perSec, iters }) {
           )
         })}
       </svg>
-      <p className="hsh-note">你的瀏覽器單執行緒 PBKDF2（{iters.toLocaleString()} 次）：{perSec ? <>每秒約 <b>{perSec.toLocaleString()}</b> 次</> : '量測中…'}——GPU 叢集會再快幾個數量級，所以參數要留餘裕。</p>
+      <p className="hsh-note">你的瀏覽器單執行緒 PBKDF2（{iters.toLocaleString()} 次）：{perSec ? <>每秒約 <b>{perSec.toLocaleString()}</b> 次</> : '量測中…'}。GPU 叢集會再快幾個數量級，所以參數要留餘裕。</p>
     </div>
   )
 }

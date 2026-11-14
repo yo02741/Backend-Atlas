@@ -27,9 +27,9 @@ function buildYaml(healthy) {
 
 const DNS = {
   nginx: '網路內名字 nginx；主機 :80 綁到它的 :80，是唯一從外面進得來的服務',
-  api: '同網路的容器用 http://api:8000 找到它——服務名就是 hostname',
+  api: '同網路的容器用 http://api:8000 找到它：服務名就是 hostname',
   db: 'postgresql://app:secret@db:5432/app：db 不是 IP，是 compose 自動註冊的 DNS 名',
-  redis: 'redis://redis:6379——不用查 IP、不用寫 links',
+  redis: 'redis://redis:6379，不用查 IP、不用寫 links',
   pgdata: 'named volume，由 Docker 管理、放在主機上；compose down 不會刪它',
 }
 const STATUS_TEXT = { off: '', starting: 'starting…', up: 'up', healthy: 'healthy ✓', down: 'exited (1)' }
@@ -77,7 +77,7 @@ export default function ComposeLab() {
 
   return (
     <Lab className="cmp" accent="yellow" kicker="DEPLOY LAB" title="docker compose：一份 YAML 起整套服務"
-         blurb="點 YAML 的服務段落或圖上的節點，看它在拓樸裡的位置與網路內的 DNS 名字。按「compose up」依 depends_on 順序啟動；打開「db 沒 ready」看為什麼 depends_on 不等於就緒。">
+         blurb="YAML 的每個服務在拓樸裡的位置與網路內的 DNS 名字，compose up 依 depends_on 的啟動順序，以及 depends_on 為什麼不等於就緒。">
       <LabControls>
         <Toggle label="db 沒 ready（啟動慢）" checked={slow} onChange={(v) => { setSlow(v); setSel(null) }} />
         <Toggle label="condition: service_healthy" checked={healthy} onChange={(v) => { setHealthy(v); setSel(null) }} />
@@ -87,11 +87,11 @@ export default function ComposeLab() {
 
       <LabGrid variant="even">
         <div className="cmp-code" onClick={onCodeClick} title="點服務段落可在圖上標出它">
-          <Code lang="yaml" title="compose.yaml（點服務段落）" highlight={hl} dim>{src}</Code>
+          <Code lang="yaml" title="compose.yaml" highlight={hl} dim>{src}</Code>
         </div>
 
         <div className="lab-stack" ref={box}>
-          <LabStage label="compose 拓樸圖" caption={info ? DNS[info] : '穿出「主機」框的線 = ports；沒穿出的 = expose（只在網路內）。滑過或點節點看它的 DNS 名字。'}>
+          <LabStage label="compose 拓樸圖" caption={info ? DNS[info] : '穿出「主機」框的線 = ports；沒穿出的 = expose（只在網路內）'}>
             <Topology sel={sel} st={st} step={step} apiDown={apiDown} slow={slow} healthy={healthy} onPick={pick} onHover={setHover} narrow={narrow} />
           </LabStage>
           <LabExplain title={explain.title}>
@@ -99,7 +99,7 @@ export default function ComposeLab() {
           </LabExplain>
           <Callout title="工作上什麼時候用">
             本機開發一鍵起 db / redis / nginx（<code>docker compose up -d</code>），團隊每個人拿到一模一樣的環境，CI 也能用同一份跑整合測試。
-            <strong>不要把 compose 當正式環境的編排器</strong>：它是單機工具，沒有多節點、滾動更新、自動復原——那是 Kubernetes 或雲端託管服務的事。環境差異用 <code>compose.override.yaml</code> 疊加，不要複製整份。
+            <strong>不要把 compose 當正式環境的編排器</strong>：它是單機工具，沒有多節點、滾動更新、自動復原，那些交給 Kubernetes 或雲端託管服務。環境差異用 <code>compose.override.yaml</code> 疊加，不要複製整份。
           </Callout>
         </div>
       </LabGrid>
@@ -147,19 +147,19 @@ function md(s) { return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').rep
 function svcExplain(id) {
   return {
     nginx: { title: 'nginx：對外的唯一入口', text: [
-      '`ports: "80:80"` 把主機的 80 埠綁到這個容器的 80 埠，所以瀏覽器打 `localhost:80` 進得來——這是圖上唯一穿出主機框的線。',
+      '`ports: "80:80"` 把主機的 80 埠綁到這個容器的 80 埠，所以瀏覽器打 `localhost:80` 進得來。這是圖上唯一穿出主機框的線。',
       '它把請求轉給 `http://api:8000`：`api` 不是 IP，是 compose 在 `default` 網路裡自動註冊的 DNS 名字，**服務名就是 hostname**。`depends_on: [api]` 只決定啟動順序。'] },
     api: { title: 'api：自己 build 的應用，只在網路內開放', text: [
-      '`build: .` 用目前目錄的 Dockerfile 建映像。`expose: ["8000"]` 只是宣告，沒有把埠綁到主機——外面連不到，但同網路的 nginx 可以用 `api:8000` 連進來。',
+      '`build: .` 用目前目錄的 Dockerfile 建映像。`expose: ["8000"]` 只是宣告，沒有把埠綁到主機：外面連不到，但同網路的 nginx 可以用 `api:8000` 連進來。',
       '環境變數裡的 `db:5432`、`redis:6379` 一樣是服務名。這裡用 `environment` 直接寫死是為了示範；實務上放 `.env`（compose 會自動讀）或 `env_file`，密碼不要進版控。'] },
     db: { title: 'db：資料放 volume，容器重建也還在', text: [
       '容器的檔案系統是拋棄式的：`docker compose down` 再 `up`，容器內寫的東西全沒了。`pgdata:/var/lib/postgresql/data` 把 Postgres 的資料目錄掛到 named volume `pgdata`，資料活在主機上、跟容器生命週期脫鉤。',
-      '`healthcheck` 每 5 秒跑一次 `pg_isready`，讓 compose 知道它「真的能接連線」，而不只是程序啟動了——這正是 `condition: service_healthy` 需要的訊號。'] },
+      '`healthcheck` 每 5 秒跑一次 `pg_isready`，讓 compose 知道它能接連線了，而不只是程序啟動了；`condition: service_healthy` 等的就是這個訊號。'] },
     redis: { title: 'redis：一行就有的快取', text: [
-      '`image: redis:7` 直接用官方映像，不用 build、不用設定。沒掛 volume，重啟資料就沒了——快取本來就可以丟；要持久化再掛。',
+      '`image: redis:7` 直接用官方映像，不用 build、不用設定。沒掛 volume，重啟資料就沒了。快取本來就可以丟；要持久化再掛。',
       '其他服務用 `redis://redis:6379` 連它。它沒有 `depends_on`，所以第一波就啟動。'] },
     pgdata: { title: 'named volume：跟容器脫鉤的儲存', text: [
-      '頂層 `volumes: pgdata:` 宣告一個由 Docker 管理的 named volume，實際目錄在主機上（`docker volume inspect pgdata` 看得到）。它不在 compose 網路裡——網路是給容器互連的，volume 是儲存。',
+      '頂層 `volumes: pgdata:` 宣告一個由 Docker 管理的 named volume，實際目錄在主機上（`docker volume inspect pgdata` 看得到）。它不在 compose 網路裡：網路是給容器互連的，volume 是儲存。',
       '`docker compose down` 不會刪 volume，`down -v` 才會。清資料庫之前先想清楚。'] },
   }[id]
 }
@@ -171,7 +171,7 @@ function stepExplain(step, slow, healthy, apiDown) {
       '接著讀 `depends_on` 算出啟動順序：沒有依賴的先跑，被依賴的先於依賴它的。']],
     ['第一波：db、redis（沒有依賴誰）', [
       '兩個都沒寫 `depends_on`，所以同時啟動。',
-      slow ? '這次 db 啟動慢（例如第一次初始化資料目錄、或在做 recovery）：容器狀態是 running，但 Postgres 還不能接連線——healthcheck 還沒通過。'
+      slow ? '這次 db 啟動慢（例如第一次初始化資料目錄、或在做 recovery）：容器狀態是 running，但 Postgres 還不能接連線，healthcheck 還沒通過。'
            : 'db 很快就能接連線、healthcheck 通過；redis 也就緒。']],
     ['第二波：api', [
       slow && !healthy
@@ -179,9 +179,9 @@ function stepExplain(step, slow, healthy, apiDown) {
         : slow && healthy
           ? '改成 `condition: service_healthy` 後，compose 會等 db 的 healthcheck 回報 healthy 才啟動 api（redis 沒有 healthcheck，用 `service_started` 即可）。api 一起來連線就成功。'
           : healthy ? 'db 的 healthcheck 已通過，api 立刻啟動、連線成功。'
-                    : 'db、redis 剛好都就緒了，api 連線成功——但這只是運氣好：換台慢一點的機器（或 db 要跑 migration）就會踩到 depends_on 不等就緒的坑。試試打開「db 沒 ready」。']],
+                    : 'db、redis 剛好都就緒了，api 連線成功。這只是運氣好：換台慢一點的機器（或 db 要跑 migration）就會踩到 depends_on 不等就緒的坑。']],
     ['第三波：nginx', [
-      '`depends_on: [api]`——只要 api 容器「啟動過」就算數。',
+      '`depends_on: [api]`：只要 api 容器「啟動過」就算數。',
       apiDown ? 'api 早就 exited 了，nginx 照樣啟動：它不知道、也不管 api 死活。' : 'api 就緒，nginx 開始把 80 埠的請求轉給 `http://api:8000`。']],
     ['請求進來：localhost:80 → nginx → api → db / redis', [
       apiDown

@@ -26,19 +26,19 @@ const JOINS = {
   inner: {
     label: 'INNER', clause: 'INNER JOIN', where: '', regions: ['mid'],
     title: 'INNER JOIN：只留兩邊都對得上的',
-    text: ['ON 條件成立的配對才會出現。沒有訂單的使用者（Dave、Eve）消失，找不到使用者的訂單（#105）也消失。', '這是預設的 JOIN——寫 `JOIN` 不加修飾詞就是 INNER。'],
+    text: ['ON 條件成立的配對才會出現。沒有訂單的使用者（Dave、Eve）消失，找不到使用者的訂單（#105）也消失。', '這是預設的 JOIN：寫 `JOIN` 不加修飾詞就是 INNER。'],
     work: '報表「每筆訂單的買家是誰」用它：你只關心有對應關係的資料。',
   },
   left: {
     label: 'LEFT', clause: 'LEFT JOIN', where: '', regions: ['left', 'mid'],
     title: 'LEFT JOIN：左表全保留，右邊補 NULL',
-    text: ['以 FROM 後面那張表（users）為主：每個使用者一定出現；有訂單的展開成多列，沒訂單的右側欄位填 NULL。', '注意 Alice 有兩筆訂單，所以出現兩列——JOIN 會讓左表「變多」，是 N+1 與重複計算 bug 的來源。'],
-    work: '「列出所有使用者與他們的訂單數（含 0 筆）」——LEFT JOIN 再 COUNT(o.id)。',
+    text: ['以 FROM 後面那張表（users）為主：每個使用者一定出現；有訂單的展開成多列，沒訂單的右側欄位填 NULL。', '注意 Alice 有兩筆訂單，所以出現兩列。JOIN 會讓左表「變多」，是 N+1 與重複計算 bug 的來源。'],
+    work: '「列出所有使用者與他們的訂單數（含 0 筆）」：LEFT JOIN 再 COUNT(o.id)。',
   },
   right: {
     label: 'RIGHT', clause: 'RIGHT JOIN', where: '', regions: ['mid', 'right'],
     title: 'RIGHT JOIN：右表全保留，左邊補 NULL',
-    text: ['和 LEFT 對稱：每筆訂單一定出現，找不到使用者的訂單（#105）左側欄位填 NULL。', '實務上很少寫 RIGHT JOIN——把兩張表對調改寫成 LEFT JOIN 可讀性更好，大多數團隊規範也這樣要求。'],
+    text: ['和 LEFT 對稱：每筆訂單一定出現，找不到使用者的訂單（#105）左側欄位填 NULL。', '實務上很少寫 RIGHT JOIN：把兩張表對調改寫成 LEFT JOIN 可讀性更好，大多數團隊規範也這樣要求。'],
     work: '資料修復時找「使用者被刪了但訂單還在」的孤兒資料。',
   },
   full: {
@@ -50,13 +50,13 @@ const JOINS = {
   leftOnly: {
     label: 'LEFT 排除', clause: 'LEFT JOIN', where: 'WHERE o.id IS NULL', regions: ['left'],
     title: 'LEFT JOIN + IS NULL：只要左邊的孤兒',
-    text: ['先 LEFT JOIN 保留所有使用者，再用 WHERE 把「右邊有值」的濾掉——剩下就是沒有任何訂單的使用者。', '這叫 anti-join。也可寫成 `WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)`，在 PostgreSQL 通常執行計畫更好。'],
+    text: ['先 LEFT JOIN 保留所有使用者，再用 WHERE 把「右邊有值」的濾掉，剩下的就是沒有任何訂單的使用者。', '這叫 anti-join。也可寫成 `WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)`，在 PostgreSQL 通常執行計畫更好。'],
     work: '「找出從未下單的使用者」發行銷 email；「找出沒被任何文章引用的標籤」清理資料。',
   },
   rightOnly: {
     label: 'RIGHT 排除', clause: 'RIGHT JOIN', where: 'WHERE u.id IS NULL', regions: ['right'],
     title: 'RIGHT JOIN + IS NULL：只要右邊的孤兒',
-    text: ['對稱版本：保留所有訂單，濾掉有使用者的，剩下的就是找不到主人的訂單。', '如果資料表有正確的外鍵約束（FOREIGN KEY），這種孤兒根本不該存在——這正是外鍵的價值。'],
+    text: ['對稱版本：保留所有訂單，濾掉有使用者的，剩下的就是找不到主人的訂單。', '如果資料表有正確的外鍵約束（FOREIGN KEY），這種孤兒根本寫不進去。'],
     work: '資料健檢：外鍵沒設好的舊系統常靠這招找壞資料。',
   },
   fullOnly: {
@@ -112,7 +112,7 @@ ${j.clause} orders o
 
   return (
     <Lab accent="violet" kicker="SQL LAB" title="JOIN 七兄弟：文氏圖與真實結果同步變化"
-         blurb="切換 JOIN 類型看結果表怎麼變。點來源表任何一列可以「假裝刪掉它」，觀察配對關係怎麼跟著改變；滑過結果列會亮出它來自哪兩列。">
+         blurb="七種 JOIN 的結果表與配對關係，以及來源表少了一列時配對怎麼跟著改變。">
       <LabControls>
         <Seg label="JOIN" tinted value={type} onChange={setType}
              options={ORDER.map((k) => ({ value: k, label: JOINS[k].label }))} />
@@ -154,7 +154,7 @@ ${j.clause} orders o
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <tr><td colSpan={5} className="muted">（空結果——沒有任何一列符合）</td></tr>
+                  <tr><td colSpan={5} className="muted">（空結果：沒有任何一列符合）</td></tr>
                 )}
                 {rows.map((r) => (
                   <tr key={`${type}-${r.key}`} className="row-in"

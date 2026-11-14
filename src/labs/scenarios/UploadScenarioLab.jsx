@@ -118,7 +118,7 @@ export default function UploadScenarioLab() {
 
   return (
     <Lab accent="aqua" kicker="SCENARIO LAB" title="100 MB 的檔案經過誰：三種上傳路線的資料流"
-         blurb="按「上傳 100 MB」看位元組在四個節點間怎麼流、API 的記憶體與 worker 被占多久；開「網路中斷」看哪種做法能續傳；拉「同時上傳人數」看 API 什麼時候撐不住。">
+         blurb="上傳 100 MB 時位元組在四個節點間怎麼流、API 的記憶體與 worker 被占多久，網路中斷後哪種做法能續傳，同時上傳多少人時 API 撐不住。">
       <LabControls>
         <Seg tinted label="做法" value={mode} onChange={setMode} options={MODES} />
         <Toggle label="網路在傳到約 70% 時中斷一次" checked={cut} onChange={setCut} />
@@ -153,7 +153,7 @@ export default function UploadScenarioLab() {
         </div>
         <div className="lab-stack">
           <LabExplain title={MODES[modeIdx].label}>{TEXT[mode].map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             檔案超過幾 MB、或同時上傳的人超過 API worker 數的時候。症狀不是上傳變慢，而是<b>整個 API 變慢</b>：worker 都在等使用者的網路吐位元組，health check 跟著超時。行動網路上 100 MB 傳到一半斷線是常態，不是例外。
           </Callout>
         </div>

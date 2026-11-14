@@ -66,7 +66,7 @@ export default function AccessControlLab() {
 
   return (
     <Lab accent="orange" kicker="AUTH LAB" title="RBAC vs ABAC：誰能做什麼"
-         blurb="同一個問題「這個人能不能做這件事」，兩種答法。RBAC 把權限掛在角色上、人掛角色；ABAC 拿人、資源、環境的屬性去跑政策規則。點矩陣、拉屬性，判定和追蹤過程即時變。">
+         blurb="「這個人能不能做這件事」的兩種答法：RBAC 把權限掛在角色上、人掛角色；ABAC 拿人、資源、環境的屬性去跑政策規則。">
       <LabControls>
         <Seg label="模型" tinted value={mode} onChange={setMode} options={[{ value: 'rbac', label: 'RBAC' }, { value: 'abac', label: 'ABAC' }]} />
         {rbac ? (
@@ -167,8 +167,8 @@ export default function AccessControlLab() {
         <div className="lab-stack ac-col">
           {rbac ? (
             <LabExplain title={rbacOk ? `RBAC：${user} 透過 ${grants.join(' / ')} 拿到 ${perm}` : `RBAC：${user} 的角色裡沒有一個有 ${perm}`}>
-              <p>RBAC 把「誰」和「能做什麼」拆開：人只掛角色，角色才掛權限。判定只有一步——把使用者所有角色的權限聯集起來，看裡面有沒有這個動作。</p>
-              <p>好處是簡單、好稽核（看矩陣就知道全貌）、換人不用改權限。壞處是<strong>粗粒度</strong>：它回答不了「editor 能不能改<em>別人</em>的文章」——要嘛全部能、要嘛全部不能。</p>
+              <p>RBAC 把「誰」和「能做什麼」拆開：人只掛角色，角色才掛權限。判定只有一步：把使用者所有角色的權限聯集起來，看裡面有沒有這個動作。</p>
+              <p>好處是簡單、好稽核（看矩陣就知道全貌）、換人不用改權限。壞處是<strong>粗粒度</strong>：它回答不了「editor 能不能改<em>別人</em>的文章」，要嘛全部能、要嘛全部不能。</p>
               <p>硬要用角色表達細節就會出現 <strong>role explosion</strong>：editor_own、editor_team、editor_after_hours……角色數爆炸，矩陣反而沒人看得懂。</p>
             </LabExplain>
           ) : (

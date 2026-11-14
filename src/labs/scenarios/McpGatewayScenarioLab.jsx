@@ -136,7 +136,7 @@ export default function McpGatewayScenarioLab() {
 
   return (
     <Lab accent="aqua" kicker="SCENARIO LAB" title="三種 agent × 三個 MCP server：憑證放在哪裡"
-         blurb="切換做法看矩陣每一格靠什麼憑證連線；按事件按鈕逐步播放，看員工離職、工具描述被改、agent 迴圈在每種做法下要動幾處、攔不攔得下。">
+         blurb="矩陣每一格靠什麼憑證連線，以及員工離職、工具描述被改、agent 迴圈在每種做法下要動幾處、攔不攔得下。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         <Slider label="工程部人數（IDE agent）" min={5} max={80} step={5} value={n} onChange={setN} format={(v) => `${v} 人`} />
@@ -196,7 +196,7 @@ export default function McpGatewayScenarioLab() {
             {mode === 'direct' ? <Status>離職後無法確認全部失效</Status> : <Status ok>停用 IdP 帳號即全部失效</Status>}
             {mode === 'exchange' ? <Status ok>工單依客服本人權限</Status> : <Status warn>客服只能用群組層級授權</Status>}
           </div>
-          <Callout title="什麼時候會真的踩到">第一次有人離職、第一次有人在聊天室貼出含 token 的 agent 設定檔、第一次有人問「上週是誰的 agent 關掉了那張工單」。MCP server 從一個變成三個以上，或開始有共用 token 在傳來傳去時，就該把它們收進 gateway；下游本身有使用者權限模型時，再考慮 Token Exchange。</Callout>
+          <Callout title="什麼時候會踩到">第一次有人離職、第一次有人在聊天室貼出含 token 的 agent 設定檔、第一次有人問「上週是誰的 agent 關掉了那張工單」。MCP server 從一個變成三個以上，或開始有共用 token 在傳來傳去時，就該把它們收進 gateway；下游本身有使用者權限模型時，再考慮 Token Exchange。</Callout>
         </div>
       </LabGrid>
       <style>{`

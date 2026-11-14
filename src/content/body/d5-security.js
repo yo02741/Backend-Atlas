@@ -24,7 +24,7 @@ const base = {
   'injection': {
     points: [
       { b: '程式碼與資料的邊界', t: '`f"... WHERE name = \'{name}\'"` 讓輸入可以「關掉引號、寫自己的 SQL」。參數化把 SQL 與值分開送，資料庫永遠把值當值。' },
-      { b: 'ORM 預設安全，但有逃生口', t: 'SQLAlchemy 的 `text()` 裡如果自己 f-string 一樣會中。動態的表名 / 欄名 / 排序欄位無法參數化——用白名單對照。' },
+      { b: 'ORM 預設安全，但有逃生口', t: 'SQLAlchemy 的 `text()` 裡如果自己 f-string 一樣會中。動態的表名 / 欄名 / 排序欄位無法參數化，要用白名單對照。' },
       { b: 'NoSQL 也會被注入', t: 'MongoDB 的 filter 直接放使用者 JSON 會被 `{"$ne": null}` 繞過；輸入型別要驗證成純值。' },
       { b: 'OS 命令注入', t: '`os.system(f"convert {filename}")` 讓檔名變命令。用 `subprocess.run([...])` 陣列形式、不經 shell。' },
       { b: '最小權限的資料庫帳號', t: 'API 用的帳號不該能 DROP TABLE；就算被注入，損害也有上限。' },
@@ -42,9 +42,9 @@ const base = {
     points: [
       { b: '三個詞三件事', t: '編碼是換表示法（誰都能解）；雜湊是單向摘要（驗證用、不能還原）；加密是有金鑰的可逆轉換（傳輸與靜態資料用）。密碼要的是雜湊。' },
       { b: 'salt 讓相同密碼不同雜湊', t: '每個使用者一個隨機 salt 存在雜湊旁邊；彩虹表與「一次破全部」失效。' },
-      { b: '慢是特性', t: '雜湊要故意慢（幾十到幾百毫秒），攻擊者每秒只能試幾千次而不是幾十億次。work factor 隨硬體進步調高。' },
+      { b: '雜湊要故意慢', t: '每次雜湊花幾十到幾百毫秒，攻擊者每秒只能試幾千次而不是幾十億次。work factor 隨硬體進步調高。' },
       { b: '用函式庫的 hash / verify', t: '`argon2-cffi`、`bcrypt`、Django / passlib 內建。它們處理 salt、格式、常數時間比對，你只呼叫兩個函式。' },
-      { b: '為什麼不加密', t: '加密需要金鑰，金鑰放在伺服器上——外洩時金鑰跟著走，等於明文。而且驗證密碼根本不需要還原它。' },
+      { b: '為什麼不加密', t: '加密需要金鑰，金鑰放在伺服器上，外洩時金鑰跟著走，等於明文。而且驗證密碼不需要還原它。' },
     ],
     checklist: [
       '能解釋為什麼 SHA-256(password) 不夠、加了 salt 還是不夠',
@@ -79,7 +79,7 @@ const base = {
       { b: 'CSP 是最後一道', t: '`Content-Security-Policy: default-src \'self\'` 讓注入的 inline script 跑不起來。從 report-only 模式開始調。' },
       { b: 'CSRF：瀏覽器自動帶 cookie 的副作用', t: '惡意網站的表單能讓使用者的瀏覽器帶著你的 cookie 送 POST。`SameSite=Lax` 擋掉大多數；狀態改變操作用 POST 不用 GET；表單型網站加 CSRF token。' },
       { b: '安全標頭基本盤', t: '`Strict-Transport-Security`、`X-Content-Type-Options: nosniff`、`X-Frame-Options` / `frame-ancestors`、`Referrer-Policy`。在 nginx 或 middleware 一次加。' },
-      { b: 'Bearer token 不會被 CSRF', t: 'Authorization 標頭不會被瀏覽器自動帶，所以純 token API 天生免疫 CSRF——但要防 XSS 偷 token。' },
+      { b: 'Bearer token 不會被 CSRF', t: 'Authorization 標頭不會被瀏覽器自動帶，所以純 token API 不受 CSRF 影響，但要防 XSS 偷 token。' },
     ],
     checklist: [
       '能說出 cookie session 與 Bearer token 各要防 CSRF 還是 XSS、為什麼',
@@ -93,10 +93,10 @@ const base = {
   'input-validation': {
     points: [
       { b: '在邊界一次驗完', t: '請求進來就轉成型別明確的 model；之後的程式碼相信這個 model。內部函式不重複驗。' },
-      { b: '白名單優於黑名單', t: '狀態只能是三個值之一、排序欄位只能是明列的幾個、上傳只接受特定副檔名與 MIME——列出允許的，其他全拒。' },
-      { b: '長度與數量上限', t: '字串長度、陣列元素數、分頁 limit 上限、request body 大小（nginx `client_max_body_size`）。沒上限就是 DoS 入口。' },
+      { b: '白名單優於黑名單', t: '狀態只能是三個值之一、排序欄位只能是明列的幾個、上傳只接受特定副檔名與 MIME。列出允許的，其他全拒。' },
+      { b: '長度與數量上限', t: '字串長度、陣列元素數、分頁 limit 上限、request body 大小（nginx `client_max_body_size`）。沒設上限的地方都能拿來做 DoS。' },
       { b: '檔案上傳', t: '檢查 MIME 與 magic bytes 而非副檔名、重新命名成隨機檔名、存到物件儲存不存在 web root、圖片重新編碼（去除惡意內容）、掃毒視需求。' },
-      { b: '別信 Content-Length 與客戶端算的值', t: '總金額由伺服器算、折扣由伺服器查——前端傳來的價格只是參考。' },
+      { b: '別信 Content-Length 與客戶端算的值', t: '總金額由伺服器算、折扣由伺服器查，前端傳來的價格只是參考。' },
     ],
     checklist: [
       '能為一個「建立訂單」API 列出每個欄位的驗證規則',
@@ -110,7 +110,7 @@ const base = {
     points: [
       { b: '.env 只在本機', t: '`.env` 進 `.gitignore`，repo 放 `.env.example`（只有 key 沒有值）。pre-commit 加 secret 掃描（gitleaks）。' },
       { b: 'CI/CD 的 secrets 功能', t: 'GitHub Actions secrets / GitLab CI/CD variables（masked + protected）。log 會自動遮罩，但別自己 echo 出來。' },
-      { b: 'Docker image 裡不能有 secret', t: '`COPY .env` 或 build arg 傳 secret 都會留在層裡。build 時真的需要（例如私有套件庫）用 BuildKit 的 `RUN --mount=type=secret,id=…`，不進任何層；runtime 用環境變數或 secret mount。' },
+      { b: 'Docker image 裡不能有 secret', t: '`COPY .env` 或 build arg 傳 secret 都會留在層裡。build 時需要（例如私有套件庫）用 BuildKit 的 `RUN --mount=type=secret,id=…`，不進任何層；runtime 用環境變數或 secret mount。' },
       { b: '輪替要能做', t: '任何 secret 都假設會外洩：能不停機換、知道誰在用、有到期日。簽 JWT 的 key 也要能換（kid 標頭）。' },
       { b: '外洩了怎麼辦', t: '立刻撤銷與輪替、查 log 看有沒有被用、從 git 歷史清掉只是順便（已經被爬走了）。' },
     ],
@@ -125,7 +125,7 @@ const base = {
   },
   'logs-pii': {
     points: [
-      { b: '外洩點比想像的多', t: '整包記下的請求 body、URL 的 query string（`?token=…`）、`Authorization` 與 `Cookie` 標頭、例外訊息裡的輸入值、ORM 印出的 SQL 參數。這些經常不是誰刻意寫的，是框架或預設設定帶進來的。' },
+      { b: '常見的外洩點', t: '整包記下的請求 body、URL 的 query string（`?token=…`）、`Authorization` 與 `Cookie` 標頭、例外訊息裡的輸入值、ORM 印出的 SQL 參數。這些經常不是誰刻意寫的，是框架或預設設定帶進來的。' },
       { b: '白名單優於黑名單', t: '結構化日誌只輸出明列的欄位（method、path、status、duration、request_id）；黑名單式遮罩（看到 password 就遮）永遠漏新欄位。白名單之外，再加一層 pattern 遮罩當保險（身分證字號、email、Bearer token）。' },
       { b: '遮罩要在寫出之前', t: '在 logging Filter / processor 裡處理，日誌一離開程式就會被複製到收集器、搜尋引擎、備份，事後刪不乾淨。' },
       { b: '稽核紀錄是另一種東西', t: '稽核紀錄回答「誰、何時、對哪筆資料、做了什麼、結果如何」，要完整、不可竄改、保存較久、存取受限；一般日誌是除錯用，可以抽樣、可以較短保存。兩者分開存、分開授權。' },
@@ -147,7 +147,7 @@ const base = {
       { b: 'lock 檔固定版本與 hash', t: '沒有 lock，今天跟明天裝到的東西不同；有 hash 才能確定沒被掉包。' },
       { b: '定期掃描依賴', t: '`pip-audit` / `uv` 生態的漏洞掃描、GitHub Dependabot 自動開 PR。放進 CI 每週跑。' },
       { b: 'image 也要掃', t: 'base image 的系統套件有漏洞很常見。用 slim / distroless base、定期重 build、Trivy 掃描。' },
-      { b: '別裝來路不明的套件', t: 'typosquatting（名字差一個字母）真的存在；新依賴看一下下載量、維護狀態、原始碼。' },
+      { b: '別裝來路不明的套件', t: 'typosquatting（名字差一個字母的仿冒套件）是實際發生過的攻擊；新依賴看一下下載量、維護狀態、原始碼。' },
       { b: 'CI 的 action 也是依賴', t: 'GitHub Actions 的第三方 action 釘 commit SHA 而非 tag；最小權限的 `permissions:`。' },
     ],
     checklist: [

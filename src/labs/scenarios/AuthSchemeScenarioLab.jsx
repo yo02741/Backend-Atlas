@@ -73,7 +73,7 @@ const PLAYS = {
 }
 const EXPLAIN = {
   'cookie-session': ['瀏覽器把 cookie 當黑盒子：script 讀不到、但每個同站請求都自動帶上。前者擋 XSS 偷憑證，後者就是 CSRF 的來源，所以 SameSite 與 CSRF token 不是選配。', '撤銷靠伺服器端狀態，所以「登出所有裝置」是一句 DEL。代價是 6 個微服務每個請求都得查一次 Redis，或者在 gateway 查一次把身分塞進內部標頭。'],
-  'jwt-storage': ['把 token 交給 JavaScript 保管，等於交給頁面上每一段 script——包含被注入的那段、第三方 SDK、被污染的 npm 套件。偷走之後不需要瀏覽器，攻擊者在自己機器上用到 exp。', '無狀態的另一面是收不回來。要滿足「1 分鐘內失效」，效期得設 1 分鐘（拉 Slider 看），或每個服務都查一次撤銷名單——那就不無狀態了。'],
+  'jwt-storage': ['把 token 交給 JavaScript 保管，等於交給頁面上每一段 script，包含被注入的那段、第三方 SDK、被污染的 npm 套件。偷走之後不需要瀏覽器，攻擊者在自己機器上用到 exp。', '無狀態的另一面是收不回來。要滿足「1 分鐘內失效」，效期得設 1 分鐘，或每個服務都查一次撤銷名單，那就不是無狀態了。'],
   bff: ['SPA 面前放一個同站的 BFF，瀏覽器只拿到 HttpOnly cookie；BFF 用 session 換出後端的 token 再轉呼叫。瀏覽器端的安全性等同 cookie session，後端各服務卻只要驗簽章。', '多一個元件要部署、監控、擴展。App 不需要它：App 直接拿 token，存進 Keychain / Keystore。'],
   'oauth-oidc': ['所有客戶端統一向授權伺服器換 token：App 走授權碼 + PKCE，第三方註冊成 client、使用者同意 scope。這是唯一能給第三方用、又不交出密碼的做法。', 'SPA 端 token 仍在瀏覽器記憶體，被注入時偷得到；撤銷只能立刻撤 refresh，access 要等 exp。所以正式部署常是「授權伺服器 + SPA 走 BFF」兩者疊起來。'],
 }
@@ -139,7 +139,7 @@ export default function AuthSchemeScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="三種客戶端 × 四種做法：點一格，再對它發動攻擊"
-         blurb="矩陣裡每一格是一個組合。按下面三個按鈕，看四種做法在同一件事上各自發生什麼。所有時間為示意。">
+         blurb="矩陣裡每一格是一個組合：四種做法在同一件事上各自發生什麼。所有時間為示意。">
       <LabControls>
         <button className="btn small" onClick={() => run('xss')}>模擬 XSS 注入</button>
         <button className="btn small" onClick={() => run('csrf')}>模擬 CSRF 表單</button>
@@ -223,7 +223,7 @@ export default function AuthSchemeScenarioLab() {
             </div>
           </div>
           <LabExplain title={approach.name}>{EXPLAIN[sel.a].map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
-          <Callout title="什麼時候會真的踩到">最常見的兩種事故：把 JWT 放 localStorage 然後被某個第三方 script 帶走；以及「登出後對方還能操作十幾分鐘」被客服當 bug 回報——那是 access token 效期，不是 bug。第三方需求一出現，前三種做法都得補上授權伺服器。</Callout>
+          <Callout title="什麼時候會踩到">最常見的兩種事故：把 JWT 放 localStorage 然後被某個第三方 script 帶走；以及「登出後對方還能操作十幾分鐘」被客服當 bug 回報（那是 access token 效期，不是 bug）。第三方需求一出現，前三種做法都得補上授權伺服器。</Callout>
         </div>
       </LabGrid>
       <style>{`

@@ -89,7 +89,7 @@ export default function TokenCostLab() {
     ]],
     cache: ['prompt 快取：重複的那段打折', [
       `把每次相同的前綴（系統提示詞、工具定義）標成可快取；命中時這段用折扣價計算。這裡命中率 ${hit}%、折扣 ${p.discount}%，每月從 ${money(base.monthly)} 變成 ${money(cur.monthly)}（省 ${Math.round(saving * 100)}%）。`,
-      '限制：快取只對「完全相同的前綴」有效，固定內容要放在最前面、動態內容放後面；命中率取決於請求間隔與前綴是否真的一字不差。實際方案通常還有寫入快取的費用，這裡略過。',
+      '限制：快取只對「完全相同的前綴」有效，固定內容要放在最前面、動態內容放後面；命中率取決於請求間隔與前綴是否一字不差。實際方案通常還有寫入快取的費用，這裡略過。',
     ]],
     trim: ['限制長度並摘要：少送就是少付', [
       `對話歷史與查回來的資料只留最近 ${TRIM_KEEP * 100}%，前面的壓成一段約 ${SUMMARY_TOKENS} token 的摘要。輸入 token 從 ${ktok(base.inTokens)} 降到 ${ktok(cur.inTokens)}。`,
@@ -99,7 +99,7 @@ export default function TokenCostLab() {
 
   return (
     <Lab accent="yellow" kicker="FINOPS LAB" title="FinOps：一個 agent 工作流一個月花多少"
-         blurb="先填你自己拿到的單價（每百萬 token），再拉請求數、context 長度、輸出長度，看一個月的帳單怎麼組成；切換三種做法，看快取與摘要各省在哪裡。">
+         blurb="一個月的帳單怎麼由單價、請求數、context 長度、輸出長度組成，以及快取與摘要各省在哪裡。單價（每百萬 token）要填你自己拿到的價格。">
       <LabControls>
         <div className="tc-prices" role="group" aria-label="單價輸入">
           <label>每百萬輸入 token<input value={pinStr} onChange={(e) => setPin(e.target.value)} inputMode="decimal" placeholder="填單價" aria-label="每百萬輸入 token 單價" /></label>
@@ -175,15 +175,15 @@ export default function TokenCostLab() {
           <LabExplain title={EX[0]}>{EX[1].map((t, i) => <p key={i}>{t}</p>)}</LabExplain>
           <LabExplain title="計費結構：為什麼 token 帳單和機器帳單不一樣">
             <p>雲端機器按「開著多久」算錢，token 按「送了多少、回了多少」算錢，而且輸入與輸出單價不同。所以同樣的流量，context 長一倍、費用就接近一倍；而一個「順便把整份文件塞進去」的設計，上線後才會在帳單上現形。</p>
-            <p>先把每次請求拆成固定段、變動段、輸出三塊，分別乘上單價，再乘請求數——這張算式就是這個工作流的成本模型，之後所有優化都在這張算式上動手。</p>
+            <p>先把每次請求拆成固定段、變動段、輸出三塊，分別乘上單價，再乘請求數。這張算式是這個工作流的成本模型，之後的優化都從它下手。</p>
           </LabExplain>
           <LabExplain title="agent 的「一次請求」常常不只一次">
             <p>使用者眼中的一個任務，agent 可能繞好幾圈：每圈呼叫一次模型、每圈都把越來越長的 context 重送一次。所以「每天請求數」要算的是<strong>模型呼叫次數</strong>，不是使用者按了幾次送出。</p>
             <p>估成本時先量「平均每個任務幾次呼叫、每次 context 多長」，再乘上任務量；只拿單次呼叫去估，常常差好幾倍。</p>
-            <p>輸出單價通常比輸入高，但 agent 的輸出往往短、context 很長，帳單多半是輸入占大頭——看「輸入 vs 輸出」占比決定先從哪邊下手。</p>
+            <p>輸出單價通常比輸入高，但 agent 的輸出往往短、context 很長，帳單多半是輸入占大頭。先看「輸入 vs 輸出」的占比，再決定從哪邊下手。</p>
           </LabExplain>
           <Callout title="看得見 → 分攤 → 優化">
-            <b>看得見</b>：每個請求記下 input / output / cached token 數與呼叫的功能，不然月底只有一個總數。<b>分攤</b>：用這些標籤把費用歸到功能、團隊或客戶，才知道是誰在花。<b>優化</b>：有了數字再動手——先快取固定段、再限制 context、最後才談換模型或降流量。順序顛倒就是在猜。
+            「看得見」：每個請求記下 input / output / cached token 數與呼叫的功能，不然月底只有一個總數。「分攤」：用這些標籤把費用歸到功能、團隊或客戶，才知道是誰在花。「優化」：有了數字再動手，先快取固定段、再限制 context、最後才談換模型或降流量。
           </Callout>
         </div>
       </LabGrid>

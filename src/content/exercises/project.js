@@ -454,7 +454,7 @@ for _args in [(_appt, datetime(2026, 11, 2, 12, 0)), (datetime(2026, 11, 3, 9, 0
 - 第二：這個診次的有效掛號數已達 \`capacity\` → \`SessionFull\`
 - 第三：這位病患在**同一天**（\`session_date\` 相同的所有診次）已有 3 筆有效掛號 → \`DailyLimitExceeded\`
 
-通過就建立 \`Appointment\`、append 進 \`appointments\` 並回傳。號碼是這個診次**所有**掛號（含已取消）最大號碼 + 1，沒有就從 1 開始——取消的號碼不回收。`,
+通過就建立 \`Appointment\`、append 進 \`appointments\` 並回傳。號碼是這個診次**所有**掛號（含已取消）最大號碼 + 1，沒有就從 1 開始；取消的號碼不回收。`,
     starter: String.raw`from dataclasses import dataclass
 from datetime import date
 
@@ -865,7 +865,7 @@ assert not can({"role": "doctor"}, "read", {"id": 1, "patient_id": 7, "status": 
   {
     id: 'project-auth-2', project: 'auth', skill: 'auth-in-practice', kind: 'python', level: 3,
     title: '把權限推進查詢：列表只回看得到的',
-    prompt: `「列出掛號」不能先撈全部再在 Python 裡過濾——要在 SQL 的 \`WHERE\` 就只取看得到的列。
+    prompt: `「列出掛號」不能先撈全部再在 Python 裡過濾，要在 SQL 的 \`WHERE\` 就只取看得到的列。
 
 實作 \`list_appointment_ids(conn, user) -> list[int]\`（\`conn\` 是 \`sqlite3\` 連線，資料表見起始碼）：
 
@@ -1176,7 +1176,7 @@ assert len(_calls) == 3, "別的醫師不受影響"` },
     ],
     hints: [
       '存 `(到期時間, 值)`，到期時間 = 存入時的 `clock() + ttl`；讀取時 `clock() < 到期時間` 才算命中。',
-      '判斷命中用 `is not None`，不要用 `if cached:`——空 list 是 falsy。',
+      '判斷命中用 `is not None`，不要用 `if cached:`，因為空 list 是 falsy。',
       '`dict.pop(key, None)` 刪除不存在的 key 也不會出錯。',
     ],
   },

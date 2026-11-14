@@ -129,7 +129,7 @@ export default function InjectionDefenseScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="一份被下毒的文件：從上傳到寄出，四道防線各擋哪一步"
-         blurb="開關四道防線、切換文件來源，按「重播」逐步看這一次停在哪；右邊統計是同樣條件下 200 次被讀到的推算（示意）。只畫抽象步驟。">
+         blurb="四道防線與文件來源的組合下，這一次注入停在哪一步；右邊統計是同樣條件下 200 次被讀到的推算（示意）。只畫抽象步驟。">
       <LabControls>
         <Seg label="做法" tinted value={preset} onChange={(v) => setDef(PRESETS[v])} options={PRESET_OPTS} />
         <Seg label="被下毒的文件" value={src} onChange={setSrc} options={SOURCES} />
@@ -152,7 +152,7 @@ export default function InjectionDefenseScenarioLab() {
                   ariaLabel="被下毒文件的六個抽象步驟"
                   steps={steps}
                   notes={[
-                    done && run.blockedAt === 3 && '注意：這次是模型沒照做，不是架構擋下。按「再重播一次」，同樣設定下次可能就照做了。',
+                    done && run.blockedAt === 3 && '這次是模型沒照做，不是架構擋下；同樣設定下次重播可能就照做了。',
                     done && run.blockedAt < 0 && '模型照做之後，沒有任何一道模型以外的防線把關。',
                   ]} />
             <div className="pi-ctx" aria-label="context 的組成（抽象）">
@@ -214,7 +214,7 @@ export default function InjectionDefenseScenarioLab() {
           )}
           <div className="dtable-wrap">
             <table className="dtable pi-compare">
-              <caption>同條件下五種組合，200 次（示意，點一列套用）</caption>
+              <caption>同條件下五種組合，200 次（示意）</caption>
               <thead><tr><th>做法</th><th>外洩</th><th>誤寄</th><th>防線攔下</th></tr></thead>
               <tbody>
                 {all.map((o) => (
@@ -230,10 +230,10 @@ export default function InjectionDefenseScenarioLab() {
           </div>
           <LabExplain title="提示詞與模型的拒絕不是安全邊界">
             <p>把滑桿拉到 0%，「只靠提示詞」看起來就安全了；但這個數字沒有人能保證，換個說法、換個模型版本就會變。檢索層與工具層的效果不受滑桿影響，因為它們限制的是資料能不能進來、動作能不能發生。</p>
-            <p>{src === 'external' ? '外部抓回的文件屬於低等級來源，檢索層預設不檢索，這條路在第 2 步就斷了。切到「院內人員上傳」看看：來源分級擋不住內部文件，只剩權限過濾減少能被帶走的資料。'
+            <p>{src === 'external' ? '外部抓回的文件屬於低等級來源，檢索層預設不檢索，這條路在第 2 步就斷了。換成「院內人員上傳」時，來源分級擋不住內部文件，只剩權限過濾減少能被帶走的資料。'
               : '院內上傳的文件是高等級來源，檢索層不會擋它；它的貢獻變成 context 裡只有提問者本來就能看的資料。這時寄信能不能發生，取決於工具層。'}</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">只要三件事同時成立：模型會讀到不是自己人寫的內容（上傳文件、抓回的網頁、email、工單）、context 裡有敏感資料、而且它能呼叫會對外送出或寫入的工具。三者少一個，攻擊路徑就斷一段；防線要放在讓路徑斷掉的那幾層，而不是只放在提示詞裡。</Callout>
+          <Callout title="什麼時候會踩到">只要三件事同時成立：模型會讀到不是自己人寫的內容（上傳文件、抓回的網頁、email、工單）、context 裡有敏感資料、而且它能呼叫會對外送出或寫入的工具。三者少一個，攻擊路徑就斷一段；防線要放在讓路徑斷掉的那幾層，而不是只放在提示詞裡。</Callout>
         </div>
       </LabGrid>
       <style>{`

@@ -172,7 +172,7 @@ SELECT '全表 UPDATE 後' AS 時機, pg_size_pretty(pg_relation_size('events'))
 幾個關鍵事實：
 
 - **一般的 `VACUUM` 不會把檔案變小**（只有檔案尾端整段空出來時才會截掉），它讓空間可以被之後的寫入重用。表不會無限長大，但也不會縮回去。
-- **`VACUUM FULL` 會重寫整張表、真的縮小**，但全程拿 ACCESS EXCLUSIVE 鎖，大表上等於停機。不停機縮表常見的做法是第三方工具 pg_repack。
+- **`VACUUM FULL` 會重寫整張表、實際縮小檔案**，但全程拿 ACCESS EXCLUSIVE 鎖，大表上等於停機。不停機縮表常見的做法是第三方工具 pg_repack。
 - **autovacuum 的觸發條件**：dead tuple 數超過 `autovacuum_vacuum_threshold + autovacuum_vacuum_scale_factor × 表的列數`，預設是 50 + 0.2 × 列數。1 億列的表要累積 2,000 萬個 dead tuple 才會觸發，對大表太晚；可以針對單一表調整：`ALTER TABLE orders SET (autovacuum_vacuum_scale_factor = 0.01);`。
 
 ```sql run

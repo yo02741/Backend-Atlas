@@ -112,7 +112,7 @@ Seq Scan on users
 
   return (
     <Lab accent="violet" kicker="DATABASE LAB" title="索引為什麼快：循序掃描 vs B-tree"
-         blurb="同一句 WHERE id = X，左邊的資料表只能一格一格比，右邊的 B-tree 一層層縮小範圍。拉大列數看兩邊的工作量怎麼拉開；關掉索引看資料庫只剩什麼選擇。">
+         blurb="同一句 WHERE id = X，左邊的資料表只能一格一格比，右邊的 B-tree 一層層縮小範圍；列數越多，兩邊的工作量差得越遠。">
       <LabControls>
         <Slider label="資料列數" min={8} max={64} step={4} value={n} onChange={changeN} format={(v) => `${v} 列`} />
         <Toggle label="這個欄位有索引" checked={indexed} onChange={(v) => { reset(); setIndexed(v) }} />
@@ -125,7 +125,7 @@ Seq Scan on users
 
       <LabGrid variant="wide">
         <div className="lab-stack">
-        <LabStage label="循序掃描與索引掃描同步動畫" caption="點任一格可以換目標 id。heap 的格子順序是刻意打亂的：資料表本身沒有排序。">
+        <LabStage label="循序掃描與索引掃描同步動畫" caption="heap 的格子順序是刻意打亂的：資料表本身沒有排序。">
           <div className="idx-stage">
             <div>
               <div className="idx-head">
@@ -253,7 +253,7 @@ function pickExplain({ started, done, indexed, n, h, lit }) {
     title: '同一個查詢，兩條路',
     text: [
       '索引是資料表之外另一份**排好序、分層**的資料結構：內部節點只放「分隔 key」告訴你該往哪個子節點走，葉節點放實際的 key 和指向 heap 列的指標（TID）。',
-      `每往下一層，候選範圍就縮小成 1/${FAN}，所以 ${n} 列只要 ${h} 層。按「執行」看兩邊同時跑。`,
+      `每往下一層，候選範圍就縮小成 1/${FAN}，所以 ${n} 列只要 ${h} 層。`,
     ],
   }
   if (!done) return {
@@ -264,10 +264,10 @@ function pickExplain({ started, done, indexed, n, h, lit }) {
     ],
   }
   return {
-    title: `${n} 次 vs ${h} 層：這就是 O(n) 和 O(log n)`,
+    title: `${n} 次 vs ${h} 層：O(n) 和 O(log n)`,
     text: [
-      `Seq Scan 比較了 ${n} 次；Index Scan 只讀 ${h} 個節點再回表 1 次。資料多 ${FAN} 倍，B-tree 只多 1 層——這是 log 的意思。`,
-      '真實的 PostgreSQL 一個節點就是一個 8KB 的頁，能放幾百個 key，fan-out 是幾百而不是 4，所以上億列的表也只要 3–4 層。代價是每次寫入都要順手維護這棵樹。',
+      `Seq Scan 比較了 ${n} 次；Index Scan 只讀 ${h} 個節點再回表 1 次。資料多 ${FAN} 倍，B-tree 只多 1 層，這是 log 的意思。`,
+      '實際的 PostgreSQL 一個節點是一個 8KB 的頁，能放幾百個 key，fan-out 是幾百而不是 4，所以上億列的表也只要 3–4 層。代價是每次寫入都要順手維護這棵樹。',
     ],
   }
 }

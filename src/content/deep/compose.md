@@ -129,9 +129,9 @@ PostgreSQL 官方映像有一個和 volume 相關的行為常讓人困惑：`POS
 
 ## `depends_on` 只保證順序，不保證就緒
 
-`depends_on: [db]` 的意思是「先建立並啟動 db 容器，再啟動 api」，判斷標準是**容器啟動了**，不是**資料庫可以接受連線**。PostgreSQL 容器啟動後，還要初始化（第一次）、做復原、開始監聽，這段時間連過去就是 `Connection refused`。
+`depends_on: [db]` 的意思是「先建立並啟動 db 容器，再啟動 api」，判斷標準是容器啟動了，不是**資料庫可以接受連線**。PostgreSQL 容器啟動後，還要初始化（第一次）、做復原、開始監聽，這段時間連過去就是 `Connection refused`。
 
-要等到真的就緒，給 db 一個 healthcheck，api 用長格式的 `depends_on` 指定條件：
+要等到資料庫就緒，給 db 一個 healthcheck，api 用長格式的 `depends_on` 指定條件：
 
 ```yaml
 services:

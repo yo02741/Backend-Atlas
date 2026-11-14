@@ -10,7 +10,7 @@ export default {
   week: 10,
   lab: 'NotificationsFanoutScenarioLab',
   summary: '名人一發文，10 萬個追蹤者要收到推播。誰來展開這 10 萬筆工作、什麼時候展開、失敗重試怎麼不重複？',
-  situation: '社群 App：名人發一則貼文，10 萬個追蹤者要收到通知——全部走 App 推播，其中 2 成的人另外勾了 email。每個人的通知偏好不同（靜音、只收 email、全部關掉）。推播服務（APNs / FCM 前面的自家 gateway）每秒只收 2,000 則。發文的 API 要在 1 秒內回應。worker 會失敗、會被重啟、會重試。',
+  situation: '社群 App：名人發一則貼文，10 萬個追蹤者要收到通知，全部走 App 推播，其中 2 成的人另外勾了 email。每個人的通知偏好不同（靜音、只收 email、全部關掉）。推播服務（APNs / FCM 前面的自家 gateway）每秒只收 2,000 則。發文的 API 要在 1 秒內回應。worker 會失敗、會被重啟、會重試。',
   constraints: [
     '發文 API 必須 1 秒內回應，不能等通知送完',
     '推播服務每秒最多收 2,000 則，超過就回 429',
@@ -61,7 +61,7 @@ export default {
     { id: 'announcement', situation: '系統公告要讓全站 2,000 萬使用者都看到，不急，打開 App 看到就好。', options: ['sync', 'fanout-write', 'fanout-read', 'hybrid'], answer: 'fanout-read',
       explain: '對每個人都一樣的內容沒有理由寫 2,000 萬列。公告存一列，打開 App 時把「未讀公告」併進通知列表，讀取成本是一個小表的查詢。要主動送達再用平台的 topic 推播一次，不需要逐人展開。' },
     { id: 'security-alert', situation: '偵測到某個帳號在陌生裝置登入，要立刻通知該使用者本人，不能等佇列排隊。', options: ['sync', 'fanout-write', 'fanout-read', 'hybrid'], answer: 'sync',
-      explain: '收件人只有一個，沒有扇出問題；重點是立刻與確定送出。在登入流程裡直接呼叫推播與 email，設 timeout 與一次重試，失敗才落到高優先佇列補送。丟進共用佇列會排在 10 萬筆貼文通知後面，安全警示晚 10 分鐘等於沒送。' },
+      explain: '收件人只有一個，沒有扇出問題，要的是立刻與確定送出。在登入流程裡直接呼叫推播與 email，設 timeout 與一次重試，失敗才落到高優先佇列補送。丟進共用佇列會排在 10 萬筆貼文通知後面，安全警示晚 10 分鐘等於沒送。' },
   ],
   implementation: [
     { title: '通知工作表：唯一鍵去重、狀態與重試', lang: 'sql', code: `CREATE TABLE notification_jobs (

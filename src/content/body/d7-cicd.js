@@ -6,7 +6,7 @@ const base = {
       { b: '分支活不過幾天', t: '功能拆小、常合回 main；長分支 = 大衝突 + 難 review。未完成的功能用 feature flag 藏起來。' },
       { b: 'main 受保護', t: '禁止直接 push、必須 PR、CI 綠燈、至少一人 review。這是 CD 能自動部署 main 的前提。' },
       { b: 'commit 訊息是給未來的自己', t: '`fix(auth): reject expired refresh tokens` 這種格式（Conventional Commits）能自動產 changelog；一個 commit 做一件事，能單獨 revert。' },
-      { b: 'rebase 還是 merge', t: '本機整理用 rebase、合進 main 用 squash 或 merge——團隊選一種寫進規範。共享分支不 force push。' },
+      { b: 'rebase 還是 merge', t: '本機整理用 rebase、合進 main 用 squash 或 merge，團隊選一種寫進規範。共享分支不 force push。' },
     ],
     checklist: [
       '能說出 trunk-based 與 Git Flow 的差別與適用情境',
@@ -52,7 +52,7 @@ const base = {
   },
   'cd-strategies': {
     points: [
-      { b: 'rolling：逐台換', t: '新版起來、readiness 通過、舊版下線，一台一台。過程中新舊版同時服務——這是相容性要求的來源。' },
+      { b: 'rolling：逐台換', t: '新版起來、readiness 通過、舊版下線，一台一台。過程中新舊版同時服務，所以新版必須跟舊版相容。' },
       { b: 'blue-green：兩套切換', t: '新版整套起好，流量一次切過去；出事切回來。成本是兩倍資源，好處是回滾秒級。' },
       { b: 'canary：先給 5%', t: '小部分流量吃新版，看錯誤率與延遲，再逐步放大。需要指標與自動化。' },
       { b: 'migration 的 expand / contract', t: '先加（新欄位、可空）→ 程式碼雙寫 → 回填 → 切讀 → 再刪舊的。每一步都與前後版本相容；migration 在部署前跑、且要能 rollback。' },
@@ -69,7 +69,7 @@ const base = {
       { b: '四個黃金訊號', t: '延遲、流量、錯誤率、飽和度。每個服務至少有這四張圖與對應告警。' },
       { b: 'metrics 是聚合、log 是事件', t: '「每分鐘 500 錯誤幾次」看 metrics；「那次 500 的 stack trace」看 log。不要用 log 算指標。' },
       { b: 'trace 看跨服務', t: 'OpenTelemetry 自動幫 FastAPI、SQLAlchemy、httpx 加 span；一個請求在哪一段花最久一眼看到。' },
-      { b: '錯誤追蹤工具', t: 'Sentry 類工具把例外聚合、附 context、通知——比翻 log 快十倍。' },
+      { b: '錯誤追蹤工具', t: 'Sentry 類工具把例外聚合、附 context、通知，找問題比翻 log 快十倍。' },
       { b: '告警要可行動', t: '每個告警要有「收到後做什麼」；會被忽略的告警等於沒有。' },
     ],
     checklist: [
@@ -86,7 +86,7 @@ const base = {
       { b: 'SLO 讓「可靠」可量化', t: '例如「99.9% 的請求在 500ms 內成功」。有目標才知道什麼時候該停下來還技術債。' },
       { b: '備份三問', t: '多久備一次（RPO）、還原要多久（RTO）、上次成功還原是什麼時候。自動化 + 異地 + 定期演練。' },
       { b: 'runbook', t: '常見狀況（DB 連線滿、磁碟滿、憑證過期）的處理步驟寫下來，半夜被叫醒也能照做。' },
-      { b: 'postmortem 不咎責', t: '事故後寫：時間軸、根因、影響、行動項。目標是改系統，不是找人。' },
+      { b: 'postmortem 不咎責', t: '事故後寫：時間軸、根因、影響、行動項。行動項改的是系統與流程，不追究個人。' },
       { b: '降級與斷路器', t: '外部服務掛了要能降級（顯示快取、關掉非核心功能）而不是整站跟著掛。' },
     ],
     checklist: [

@@ -1,4 +1,4 @@
-// 題庫：P10 新課（m5 批）——llm-api-integration / context-engineering / self-hosted-models
+// 題庫：P10 新課（m5 批）：llm-api-integration / context-engineering / self-hosted-models
 export default [
   {
     skill: 'llm-api-integration',

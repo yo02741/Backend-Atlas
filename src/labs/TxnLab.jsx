@@ -63,7 +63,7 @@ function build(iso, how) {
     add('T1', SEL, 'stock = 1', 'ok', { t1: { sees: '1' } }, 'T1 讀到 1，應用程式算出新值 0',
       ['普通 SELECT 不加鎖。應用程式判斷「還有貨」，在記憶體裡算 1 − 1 = 0，準備寫回去。'])
     add('T2', SEL, 'stock = 1', 'ok', { t2: { sees: '1' } }, 'T2 也讀到 1，也算出 0',
-      ['T1 還沒寫，T2 讀到的一樣是 1、一樣判斷有貨。兩邊都根據同一個即將過時的值做決定——問題在這裡埋下。'])
+      ['T1 還沒寫，T2 讀到的一樣是 1、一樣判斷有貨。兩邊都根據同一個即將過時的值做決定，問題在這裡埋下。'])
     add('T1', UPD0, 'UPDATE 1', 'ok', { lock: 'T1', pend: 0, t1: { sees: '0' } }, 'T1 寫回 0，拿到列鎖',
       ['UPDATE 會鎖住這一列（row lock），直到 T1 COMMIT 或 ROLLBACK 才放。新版本 stock = 0 尚未提交，只有 T1 自己看得到。'])
     add('T2', UPD0, '等待 T1 的列鎖…', 'wait', { t2: { st: 'wait' } }, 'T2 也要寫，卡在鎖上',
@@ -141,7 +141,7 @@ export default function TxnLab() {
 
   return (
     <Lab accent="orange" className="tx" kicker="DATABASE LAB" title="兩個交易同時搶最後一件商品"
-         blurb="庫存剩 1，T1、T2 同時下單。切換隔離等級與扣庫存的寫法，逐步看每句 SQL 看到什麼、誰在等鎖、最後成立幾張訂單。">
+         blurb="庫存剩 1，T1、T2 同時下單：各隔離等級與扣庫存寫法下，每句 SQL 看到什麼、誰在等鎖、最後成立幾張訂單。">
       <LabControls>
         <Seg label="隔離等級" tinted value={iso} onChange={(v) => pick(how, v)}
              options={[{ value: 'rc', label: 'READ COMMITTED' }, { value: 'rr', label: 'REPEATABLE READ' }]} />
@@ -190,7 +190,7 @@ export default function TxnLab() {
           </LabExplain>
           <div className="dtable-wrap">
             <table className="dtable tx-matrix">
-              <caption>六種組合的結果（點一格切換）</caption>
+              <caption>六種組合的結果</caption>
               <thead><tr><th>做法</th><th>READ<br />COMMITTED</th><th>REPEATABLE<br />READ</th></tr></thead>
               <tbody>
                 {Object.entries(HOWS).map(([h, v]) => (

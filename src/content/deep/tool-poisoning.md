@@ -82,7 +82,7 @@ MCP 的 `tools/list` 回傳每個工具的 `name`、`description`、`inputSchema
 - 和核准時存下的指紋比對；不一致就列出差異。
 - 用幾條簡單規則標出可疑特徵。
 
-範例裡「被改過的版本」用佔位文字代表新增的段落，重點是偵測流程。
+範例裡「被改過的版本」用佔位文字代表新增的段落，示範的是偵測流程。
 
 ```js run
 // 穩定序列化：物件鍵排序後再 JSON 化，同樣內容一定得到同樣字串
@@ -168,6 +168,6 @@ for (const tool of [approved, reloaded]) {
 
 1. 執行上面的程式，確認核准版顯示「相同」、重新載入版列出差異與可疑項目。
 2. 把 `reloaded` 改成只多一個 `note` 參數、描述不變，確認指紋仍然改變。
-3. 在 `approved` 的 `inputSchema` 裡把鍵的順序對調（例如把 `required` 寫在 `type` 前面），確認指紋不變——這就是穩定序列化的作用。
+3. 在 `approved` 的 `inputSchema` 裡把鍵的順序對調（例如把 `required` 寫在 `type` 前面），確認指紋不變，這是穩定序列化的作用。
 4. 為 `suspicious` 加一條規則：描述中出現網址（`https?://`）時標記，因為加法工具的說明不需要連結。
 5. 想一想你會把 `lock` 存在哪裡：存在 server 能改到的地方就失去意義。比較「存在 client 設定檔」與「存在 gateway 的資料庫」各自的優缺點，再讀 [行為層的供應鏈管理](#/skill/agent-supply-chain)。

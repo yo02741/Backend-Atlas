@@ -27,7 +27,7 @@ const D_START = [
     text: ['device_code 很長，只有 CLI 自己留著，之後輪詢時拿來問「核准了沒」；user_code 很短（例如 WDJB-MJHT），是要讓人手動輸入的。', 'expires_in 是這組代碼的壽命（秒），interval 是輪詢最短間隔（秒，沒給就是 5）。這兩個數字是伺服器說了算，CLI 必須照做。'],
     code: { src: `HTTP/1.1 200 OK\nContent-Type: application/json\nCache-Control: no-store\n\n{\n  "device_code": "${DC}",\n  "user_code": "${UC}",\n  "verification_uri": "https://sso.example.com/device",\n  "verification_uri_complete": "https://sso.example.com/device?user_code=${UC}",\n  "expires_in": 900,\n  "interval": 5\n}`, hl: [6, 7, 8, 10, 11] } },
   { from: 2, to: 0, kind: 'oob', label: `顯示網址與 ${UC}`, title: '③ CLI 把網址和 user_code 印給人看',
-    text: ['這一步不是 HTTP：使用者看著終端機，自己拿手機或筆電打開網址、輸入代碼。授權因此可以發生在「另一台」有瀏覽器的裝置上。', '也可以把 verification_uri_complete 印成 QR code，掃了就不必手打代碼——但要不要核准仍由使用者在瀏覽器上決定。'],
+    text: ['這一步不是 HTTP：使用者看著終端機，自己拿手機或筆電打開網址、輸入代碼。授權因此可以發生在「另一台」有瀏覽器的裝置上。', '也可以把 verification_uri_complete 印成 QR code，掃了就不必手打代碼，但要不要核准仍由使用者在瀏覽器上決定。'],
     code: { src: `$ atlas login\n\n請用瀏覽器開啟：https://sso.example.com/device\n並輸入代碼：    ${UC}\n\n（代碼 15 分鐘內有效，等待核准中…）`, hl: [3, 4] } },
   { from: 2, to: 1, kind: 'rt', tone: 'bad', label: '/token → pending · t=5s', title: '④ CLI 開始輪詢：還沒核准',
     text: ['CLI 每 interval 秒拿 device_code 打一次 /token。grant_type 是一長串 URN，告訴伺服器「這是裝置流程」。', '使用者還沒核准，所以回 400 authorization_pending。這不是錯誤，是「繼續等」的意思。'],
@@ -41,7 +41,7 @@ const D_OK = [
     text: ['登入（含 MFA）發生在 SSO 的網域，CLI 從頭到尾碰不到密碼。輸入 user_code 後，核准頁要清楚寫出「哪個應用、要哪些權限」。', '使用者按拒絕的話，CLI 下一次輪詢會拿到 access_denied。/device 之後的頁面與欄位是各家 SSO 自訂的，下面只是示意。'],
     code: { src: `GET /device?user_code=${UC} HTTP/1.1\nHost: sso.example.com\nCookie: sso_session=…（登入 + MFA 之後）\n\n核准畫面（示意）：\n  atlas-cli 想要存取：projects.read、離線存取\n  代碼 ${UC}——請確認和你終端機上的一致\n  [核准]  [拒絕]\n\nPOST /device/consent HTTP/1.1   ← 實作自訂\nuser_code=${UC}&decision=approve`, hl: [6, 7, 11] } },
   { from: 2, to: 1, kind: 'rt', tone: 'good', label: '/token → 200 · t=27s', title: '⑦ 下一次輪詢拿到 token',
-    text: ['t=17s 那次仍是 pending（省略）；使用者約在 t=20s 核准，t=27s 的輪詢就拿到 access_token 和 refresh_token。device_code 用過即失效。', 'refresh_token 讓 CLI 在 access_token 過期後默默續期，使用者不必每小時重登一次——也因此它比 access_token 更值得保護。'],
+    text: ['t=17s 那次仍是 pending（省略）；使用者約在 t=20s 核准，t=27s 的輪詢就拿到 access_token 和 refresh_token。device_code 用過即失效。', 'refresh_token 讓 CLI 在 access_token 過期後默默續期，使用者不必每小時重登一次，也因此它比 access_token 更值得保護。'],
     code: { src: `POST /oauth2/token HTTP/1.1   ← t=27s\n…（同上）\n\nHTTP/1.1 200 OK\nContent-Type: application/json\nCache-Control: no-store\n\n{\n  "access_token": "eyJhbGciOiJSUzI1NiIs…",\n  "token_type": "Bearer",\n  "expires_in": 3600,\n  "refresh_token": "8xLOxBtZp8…",\n  "scope": "openid offline_access projects.read"\n}`, hl: [1, 9, 12] } },
   { from: 2, to: 2, kind: 'self', label: '存進 OS keyring', title: '⑧ token 存進作業系統 keyring，不寫設定檔',
     text: ['token 交給作業系統的憑證儲存：macOS Keychain、Windows Credential Manager、Linux 的 Secret Service。它們有存取控制，也不會跟著 dotfiles 被同步或 commit。', '設定檔只放「連哪台 SSO、用哪個帳號」這種不敏感的東西。沒有 keyring 的環境（例如容器裡）要明確提示使用者風險，而不是默默寫明文檔。'],
@@ -73,10 +73,10 @@ const REDIRECT = 'com.example.notes:/callback'
 const pkceSteps = ({ v, c, av, ah, attack }) => {
   const start = [
     { from: 0, to: 0, kind: 'self', label: 'verifier → challenge', title: '① App 自己產生 code_verifier，算出 code_challenge',
-      text: ['手機或桌面 App 是公開客戶端：程式碼在使用者手上，藏不住 client_secret。PKCE 改成每次登入現做一把一次性的鑰匙。', `這裡真的用 WebCrypto 產生 32 bytes 亂數，base64url 後是 ${v.length} 字元的 code_verifier（規範要求 43–128 字元）；再算 SHA-256、base64url、去掉 padding 得到 code_challenge。`],
+      text: ['手機或桌面 App 是公開客戶端：程式碼在使用者手上，藏不住 client_secret。PKCE 改成每次登入現做一把一次性的鑰匙。', `這裡用 WebCrypto 產生 32 bytes 亂數，base64url 後是 ${v.length} 字元的 code_verifier（規範要求 43–128 字元）；再算 SHA-256、base64url、去掉 padding 得到 code_challenge。`],
       code: { src: `crypto.getRandomValues(32 bytes) → base64url\n  code_verifier  = "${v}"\n                   （${v.length} 字元，留在 App 裡）\n\nBASE64URL(SHA256(code_verifier))，無 padding\n  code_challenge = "${c}"`, hl: [2, 6] } },
     { from: 0, to: 1, label: '/authorize + challenge', title: '② App 打開系統瀏覽器，送出 code_challenge',
-      text: ['授權請求帶上 code_challenge 與 code_challenge_method=S256。challenge 是雜湊值，被看到也推不回 verifier。', '用系統瀏覽器而不是 App 內嵌 WebView：使用者能看到真的網址列，App 也碰不到密碼欄位。'],
+      text: ['授權請求帶上 code_challenge 與 code_challenge_method=S256。challenge 是雜湊值，被看到也推不回 verifier。', '用系統瀏覽器而不是 App 內嵌 WebView：使用者能看到真實的網址列，App 也碰不到密碼欄位。'],
       code: { src: `GET /authorize\n  ?response_type=code\n  &client_id=notes-app\n  &redirect_uri=${REDIRECT}\n  &scope=openid%20notes.read\n  &state=af0ifjsldkj\n  &code_challenge=${c}\n  &code_challenge_method=S256\nHost: auth.example.com`, hl: [7, 8] } },
     { from: 1, to: 2, label: '登入 + 同意', title: '③ 使用者登入並同意；伺服器把 challenge 綁在 code 上',
       text: ['帳密與 MFA 都在授權伺服器的頁面上完成。使用者同意後，伺服器產生一次性的授權碼，並記下它對應的 client_id、redirect_uri 與 code_challenge。', '從這一刻起，這個 code 只能由「拿得出對應 verifier 的人」兌換。'],
@@ -98,7 +98,7 @@ const pkceSteps = ({ v, c, av, ah, attack }) => {
       text: ['授權伺服器 302 到 redirect_uri，系統把網址交給 App。App 先比對 state，確認這是自己發起的那一次。', 'code 不是 token，而且綁著 challenge：就算被看到，少了 verifier 也換不到東西。'],
       code: { src: `HTTP/1.1 302 Found\nLocation: ${REDIRECT}\n  ?code=SplxlOBeZQQYbYS6WxSbIA\n  &state=af0ifjsldkj\n\n→ App 檢查 state 與自己存的相同`, hl: [3, 6] } },
     { from: 0, to: 2, label: '/token + code_verifier', title: '⑤ App 拿 code + code_verifier 換 token',
-      text: ['這次送出的是 verifier 原文。伺服器自己算 BASE64URL(SHA256(verifier))，和第 ③ 步存的 challenge 比對。', '比對用的是同一個公式，所以右邊的「重算結果」就是瀏覽器剛剛實際算出來的值——兩者一致。'],
+      text: ['這次送出的是 verifier 原文。伺服器自己算 BASE64URL(SHA256(verifier))，和第 ③ 步存的 challenge 比對。', '比對用的是同一個公式，所以右邊的「重算結果」是瀏覽器剛剛實際算出來的值，兩者一致。'],
       code: { src: `POST /token HTTP/1.1\nHost: auth.example.com\nContent-Type: application/x-www-form-urlencoded\n\ngrant_type=authorization_code\n&code=SplxlOBeZQQYbYS6WxSbIA\n&redirect_uri=${REDIRECT}\n&client_id=notes-app\n&code_verifier=${v}\n\n→ 伺服器重算 BASE64URL(SHA256(code_verifier))\n  = ${c}\n  ✓ 等於授權時存的 code_challenge`, hl: [9, 12, 13] } },
     { from: 2, to: 0, tone: 'good', label: '200 access_token', title: '⑥ 拿到 token',
       text: ['比對通過，回 access_token（通常也有 refresh_token，視伺服器政策）。公開客戶端從頭到尾沒有用到任何 secret。', 'App 一樣把 token 存進系統的安全儲存（iOS Keychain、Android Keystore 加密的儲存），而不是一般偏好設定檔。'],
@@ -169,7 +169,7 @@ export default function DeviceCodeLab() {
 
   return (
     <Lab accent="blue" kicker="AUTH LAB" title="三種授權流程：Device Code、PKCE、Client Credentials"
-         blurb="同樣是「拿到 access token」，裝置上有沒有瀏覽器、有沒有使用者、藏不藏得住秘密，決定了該走哪條路。逐步播放每條流程，右邊是每一步的 HTTP 原文；PKCE 的雜湊是瀏覽器當場用 WebCrypto 算的。">
+         blurb="裝置上有沒有瀏覽器、有沒有使用者、藏不藏得住秘密，決定拿 access token 該走哪條流程。每一步附 HTTP 原文；PKCE 的雜湊由瀏覽器用 WebCrypto 當場計算。">
       <LabControls>
         <Seg label="流程" tinted value={flow} onChange={pick} options={[
           { value: 'device', label: 'Device Code' }, { value: 'pkce', label: '授權碼 + PKCE' }, { value: 'cc', label: 'Client Credentials' }]} />
@@ -210,10 +210,10 @@ export default function DeviceCodeLab() {
           <Callout title="實際用在哪裡">
             <b>Device Code：</b>CLI 登入（例如 <code>az login --use-device-code</code>、<code>gh auth login</code> 顯示一次性代碼的那種）、智慧電視、IoT、SSH 進去的遠端機器。
             <b>授權碼 + PKCE：</b>手機 App、SPA、桌面 App；一般有後端的網站也建議加上。
-            <b>Client Credentials：</b>排程任務、微服務互相呼叫、CI 呼叫內部 API——任何「沒有人在場」的情境。
+            <b>Client Credentials：</b>排程任務、微服務互相呼叫、CI 呼叫內部 API，任何「沒有人在場」的情境。
           </Callout>
           <Callout tone="warn" title="Device Code 的釣魚風險">
-            攻擊者可以自己發起 /device_authorization，把拿到的 user_code 傳給受害者：「請到 sso.example.com/device 輸入 {UC} 完成驗證」。網址是真的公司 SSO，受害者登入核准後，token 卻進了攻擊者的機器——「檢查網址」防不住這招。
+            攻擊者可以自己發起 /device_authorization，把拿到的 user_code 傳給受害者：「請到 sso.example.com/device 輸入 {UC} 完成驗證」。網址是真的公司 SSO，受害者登入核准後，token 卻進了攻擊者的機器。「檢查網址」防不住這招。
             核准頁要寫清楚是哪個應用在要權限、提醒「只輸入你自己剛在裝置上看到的代碼」；用不到的組織可以停用這個流程或限定可用的 client。
           </Callout>
           <Callout tone="good" title="token 不放設定檔">

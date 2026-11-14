@@ -6,7 +6,7 @@
 Access to fetch at 'https://api.shop.example/orders' from origin 'https://shop.example' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 ```
 
-團隊先去檢查 CORS 設定：`CORSMiddleware` 好好地掛著，允許的來源也寫對了；其他 API 都正常。真正的原因在後端 log 裡：handler 丟出一個沒有被處理的例外，回了 500。
+團隊先去檢查 CORS 設定：`CORSMiddleware` 好好地掛著，允許的來源也寫對了；其他 API 都正常。原因在後端 log 裡：handler 丟出一個沒有被處理的例外，回了 500。
 
 為什麼 500 會變成 CORS 錯誤？在 Starlette（FastAPI 的底層）裡，負責把「沒人處理的例外」變成 500 回應的那一層，位在**所有自己加的 middleware 外面**。例外一路往外冒，穿過 `CORSMiddleware`，它沒有機會在回應上加 `Access-Control-Allow-Origin`；最外層產生的 500 沒有這個標頭，瀏覽器就拒絕讓前端讀取回應，只回報 CORS 錯誤。實際用 `TestClient(app, raise_server_exceptions=False)` 帶 `Origin` 標頭打一個會丟例外的 endpoint，回應的標頭只有 `content-length` 和 `content-type`；同一個 client 打正常的 endpoint，才看得到 `access-control-allow-origin`。
 

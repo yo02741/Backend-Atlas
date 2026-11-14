@@ -6,7 +6,7 @@ export default {
       { b: '連線很貴，重用它', t: 'TCP 三向交握 + TLS 握手要來回好幾趟。keep-alive / HTTP/2 多工讓同一條連線跑很多請求；後端呼叫外部服務也要用連線池。' },
       { b: '標頭各司其職', t: '`Content-Type` 說 body 格式、`Authorization` 帶憑證、`Cache-Control` / `ETag` 管快取、`Set-Cookie` 種 cookie、`Location` 指新位置。' },
       { b: '狀態碼是 API 的第一層語意', t: '2xx 成功、3xx 去別處、4xx 客戶端的錯、5xx 伺服器的錯。回錯狀態碼會讓監控、重試、快取全部判斷錯。' },
-      { b: '冪等與安全方法', t: 'GET / HEAD 安全（不改狀態）；GET / PUT / DELETE 冪等（重複執行結果相同）；POST 兩者都不是——重試邏輯與快取都靠這個性質。' },
+      { b: '冪等與安全方法', t: 'GET / HEAD 安全（不改狀態）；GET / PUT / DELETE 冪等（重複執行結果相同）；POST 兩者都不是。重試邏輯與快取都依這兩個性質決定能不能做。' },
     ],
     checklist: [
       '能說出一個 HTTPS 請求從輸入網址到拿到回應經過的 7 個階段',
@@ -70,7 +70,7 @@ export default {
   },
   'resilience': {
     points: [
-      { b: '沒有 timeout 就是無上限的等待', t: '`httpx.Client(timeout=5.0)`、DB `statement_timeout`、佇列任務 time limit。連線與讀取分開設；預設值通常是「永遠等」。' },
+      { b: '每個外部呼叫都設 timeout', t: '`httpx.Client(timeout=5.0)`、DB `statement_timeout`、佇列任務 time limit。連線與讀取分開設；預設值通常是「永遠等」。' },
       { b: '重試要退避加抖動', t: '失敗後等 0.5s、1s、2s… 再加隨機抖動，避免所有客戶端同時重打（thundering herd）。次數有上限，總時間有上限。' },
       { b: '只重試冪等的、只重試值得的', t: 'GET / PUT / DELETE 可重試；POST 要有 Idempotency-Key 才能。5xx、逾時、連線錯誤值得重試；4xx 不值得（再打也一樣）。' },
       { b: '斷路器：連續失敗就先不打', t: '錯誤率超過門檻就「打開」一段時間直接快速失敗（回降級結果或錯誤），期間偶爾放一個請求試探，成功再「關上」。保護自己也保護對方。' },
@@ -89,7 +89,7 @@ export default {
     points: [
       { b: 'FastAPI 從型別自動產出規格', t: 'pydantic model + 路由宣告 = `/openapi.json` + Swagger UI，零額外工作。這是選它當範例的原因之一。' },
       { b: 'code-first 與 schema-first', t: '從程式碼產規格（FastAPI）適合小團隊快速迭代；先寫規格再實作適合多團隊並行。兩者都要把規格當合約看待。' },
-      { b: '用規格產 client', t: 'openapi-typescript、orval 等工具把規格變成型別安全的前端呼叫；後端改了回應型別，前端編譯就會失敗——這是好事。' },
+      { b: '用規格產 client', t: 'openapi-typescript、orval 等工具把規格變成型別安全的前端呼叫；後端改了回應型別，前端編譯就會失敗，不相容在上線前就被抓到。' },
       { b: '規格差異當 CI 檢查', t: '比對 PR 前後的 openapi.json，破壞性變更要顯式標記，避免默默改壞前端。' },
     ],
     checklist: [
@@ -102,14 +102,14 @@ export default {
   },
   'cors-cookies': {
     points: [
-      { b: 'CORS 是瀏覽器的規則，不是伺服器的防線', t: 'curl 不理 CORS。它保護的是「使用者的瀏覽器不被其他網站拿去打你的 API」，真正的授權還是要靠 token / session。' },
+      { b: 'CORS 是瀏覽器的規則，不是伺服器的防線', t: 'curl 不理 CORS。它保護的是「使用者的瀏覽器不被其他網站拿去打你的 API」，授權還是要靠 token / session。' },
       { b: 'preflight 的來回', t: '非簡單請求（自訂標頭、JSON、PUT）先送 `OPTIONS`，伺服器回 `Access-Control-Allow-Origin / Methods / Headers`，通過才送真請求。`Access-Control-Max-Age` 可快取這個結果。' },
       { b: '帶 cookie 的請求規則更嚴', t: '`Access-Control-Allow-Credentials: true` 時 origin 不能是 `*`，必須明列。' },
       { b: 'Cookie 三個旗標', t: '`HttpOnly`（JS 讀不到，防 XSS 偷）、`Secure`（只走 HTTPS）、`SameSite=Lax/Strict`（防 CSRF）。session id 與 refresh token 放 cookie 時三個都要。' },
     ],
     checklist: [
       '能寫出允許前端 dev server 帶 cookie 呼叫 API 的正確 CORS 設定',
-      '能解釋為什麼 CORS 不是安全機制、真正的防線是什麼',
+      '能解釋為什麼 CORS 不是安全機制、防線該放在哪裡',
       '能說出 HttpOnly / Secure / SameSite 各防什麼',
     ],
     refs: [
@@ -121,7 +121,7 @@ export default {
       { b: '`Cache-Control` 的幾個字', t: '`no-store`（別存）、`no-cache`（存但每次要驗證）、`max-age=60`（60 秒內直接用）、`private`（只有瀏覽器能存，CDN 不行）、`public`。' },
       { b: '304 Not Modified', t: '回應帶 `ETag`，客戶端下次帶 `If-None-Match`；沒變就回 304 不帶 body，省頻寬也省序列化。' },
       { b: 'API 回應多半 `private, no-cache`', t: '個人化資料不能被共用快取存；公開且變動慢的資料（商品目錄）才給 `public, max-age`。' },
-      { b: '靜態資產用檔名 hash + 長快取', t: '`app.abc123.js` 配 `max-age=31536000, immutable`：檔名帶內容 hash，改了內容就是新檔名，舊快取自然失效。這是 nginx / CDN 層的事。' },
+      { b: '靜態資產用檔名 hash + 長快取', t: '`app.abc123.js` 配 `max-age=31536000, immutable`：檔名帶內容 hash，改了內容就是新檔名，舊快取自然失效。這在 nginx / CDN 層設定。' },
     ],
     checklist: [
       '能為「個人訂單列表」「公開商品頁」「靜態 JS」各挑一組正確的快取標頭',
@@ -133,10 +133,10 @@ export default {
   },
   'tls-dns': {
     points: [
-      { b: 'DNS 紀錄的幾種', t: 'A / AAAA 指 IP、CNAME 指另一個名字、TXT 做驗證。TTL 決定改紀錄多久生效——換機器前先把 TTL 調短。' },
+      { b: 'DNS 紀錄的幾種', t: 'A / AAAA 指 IP、CNAME 指另一個名字、TXT 做驗證。TTL 決定改紀錄多久生效，換機器前先把 TTL 調短。' },
       { b: 'TLS 握手在做什麼', t: '驗證伺服器憑證（CA 簽的）、協商金鑰、之後整條連線加密。TLS 1.3 把握手縮到一趟來回。' },
       { b: 'TLS 終結在邊界', t: '憑證只放在 nginx / 負載平衡器，內網用 HTTP。後端要靠 `X-Forwarded-Proto` 知道原始請求是 HTTPS。' },
-      { b: '憑證自動更新', t: "Let's Encrypt 憑證 90 天，而且業界已決議逐步把公開憑證最長效期縮到 47 天（2029 年前分階段）——手動換憑證不再可行，用 certbot / acme.sh 自動續，並監控到期日。" },
+      { b: '憑證自動更新', t: "Let's Encrypt 憑證 90 天，而且業界已決議逐步把公開憑證最長效期縮到 47 天（2029 年前分階段），手動換憑證會跟不上，用 certbot / acme.sh 自動續，並監控到期日。" },
     ],
     checklist: [
       '能解釋瀏覽器如何判斷一張憑證可信',

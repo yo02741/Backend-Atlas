@@ -1,4 +1,4 @@
-// 設計情境：快取到期的瞬間——雪崩（avalanche）與擊穿（stampede）
+// 設計情境：快取到期的瞬間：雪崩（avalanche）與擊穿（stampede）
 export default {
   id: 'edge-cache',
   order: 17,
@@ -23,7 +23,7 @@ export default {
       id: 'ttl', name: '單純 TTL',
       summary: '`SETEX key 60 value`。到期就沒了，下一個請求 miss 去載入並回填。',
       pros: ['最簡單，任何快取都內建', '到期後第一個請求拿到的一定是新資料'],
-      cons: ['到期到回填之間的空窗，所有請求都 miss、都打原站——流量越大空窗越致命', '原站一慢，空窗變長，等待的請求越堆越多，形成正回饋'],
+      cons: ['到期到回填之間的空窗，所有請求都 miss、都打原站；流量越大，空窗裡打到原站的請求越多', '原站一慢，空窗變長，等待的請求越堆越多，形成正回饋'],
     },
     {
       id: 'swr', name: 'Stale-while-revalidate',
@@ -57,9 +57,9 @@ export default {
     { id: 'hot-products', situation: '首頁「熱門商品」區塊，每秒 10,000 次讀，商品資料每幾分鐘變一次，顯示 60 秒內的舊值完全可以接受。', options: ['ttl', 'swr', 'singleflight', 'jitter'], answer: 'swr',
       explain: '可以容忍舊值，就用最不影響使用者的做法：到期後照樣回舊值、背景更新一次。使用者延遲永遠是快取命中的延遲，原站每 60 秒只收到 1 次。singleflight 也能保護 DB，但等待的請求要吃原站的延遲，這裡沒必要。' },
     { id: 'balance', situation: '使用者錢包餘額 API：讀多寫少，但顯示舊餘額會引來客訴甚至讓人重複下單。', options: ['ttl', 'swr', 'singleflight', 'jitter'], answer: 'singleflight',
-      explain: 'swr 與提前更新都可能回舊值，出局。單純 TTL 到期會擊穿。singleflight 讓同一個 key 同時只有一個請求去查主庫，其他請求等它回來後讀到的都是新值——沒有人拿到舊資料，DB 也只被打一次。更嚴格的做法是餘額根本不快取、寫入時同步刪 key。' },
+      explain: 'swr 與提前更新都可能回舊值，出局。單純 TTL 到期會擊穿。singleflight 讓同一個 key 同時只有一個請求去查主庫，其他請求等它回來後讀到的都是新值。沒有人拿到舊資料，DB 也只被打一次。更嚴格的做法是餘額不快取、寫入時同步刪 key。' },
     { id: 'hourly-report', situation: '後台儀表板有 300 個報表 key，每小時整點由排程重算、同時寫進快取、TTL 都是 3,600 秒。', options: ['ttl', 'swr', 'singleflight', 'jitter'], answer: 'jitter',
-      explain: '問題不是單一 key 太熱，而是 300 個 key 同一秒到期後同時去重算——這是雪崩。每個 key 的 TTL 加隨機抖動，到期時間就攤開到幾分鐘裡；再搭配提前更新，重算在到期前就完成。swr 或 singleflight 只處理單一 key，300 個 key 還是會同一秒各打原站一次。' },
+      explain: '這裡是 300 個 key 同一秒到期後同時去重算，屬於雪崩，不是單一 key 太熱的擊穿。每個 key 的 TTL 加隨機抖動，到期時間就攤開到幾分鐘裡；再搭配提前更新，重算在到期前就完成。swr 或 singleflight 只處理單一 key，300 個 key 還是會同一秒各打原站一次。' },
     { id: 'viral', situation: '一個冷門商品頁突然被網紅貼出來，一分鐘內從每秒 0 次讀衝到每秒 5,000 次，快取裡從來沒有這個 key。', options: ['ttl', 'swr', 'singleflight', 'jitter'], answer: 'singleflight',
       explain: '冷 key 沒有舊值可以回，swr 與提前更新都幫不上忙；抖動只影響到期時間，第一次載入照樣所有請求同時 miss。singleflight 讓第一個請求搶到鎖去載入，其餘 4,999 個等它回填後再讀快取，DB 只被打一次。實務上 singleflight 與 swr 會一起用：冷 key 靠鎖、熱 key 到期靠舊值。' },
   ],

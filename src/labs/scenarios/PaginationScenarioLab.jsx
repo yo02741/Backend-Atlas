@@ -18,7 +18,7 @@ export default function PaginationScenarioLab() {
   const [exp, setExp] = useState('drift')
   return (
     <Lab accent="aqua" kicker="SCENARIO LAB" title="分頁三個實驗：翻頁時資料在變、頁數變深、排序鍵撞在一起"
-         blurb="三個獨立的小實驗，各自對應一個真正會出事的情況。">
+         blurb="三個獨立的小實驗，各對應一種會出事的情況。">
       <LabControls>
         <Seg tinted value={exp} onChange={setExp} options={[
           { value: 'drift', label: '① 翻頁時有新資料' },
@@ -133,7 +133,7 @@ function Drift() {
           <button className="btn ghost small" onClick={insert}>插入一筆新評論</button>
           <button className="btn ghost small" onClick={remove}>刪除一筆</button>
           <span className="spacer" />
-          {dirty && <span className="muted" style={{ fontSize: '0.78rem' }}>資料庫已變動，按「下一頁」看效果</span>}
+          {dirty && <span className="muted" style={{ fontSize: '0.78rem' }}>資料庫已變動，下一頁才會反映</span>}
           <button className="btn ghost small" onClick={reset}>重來</button>
         </LabControls>
         <div className="pg2">
@@ -172,10 +172,10 @@ function Drift() {
       </div>
       <div className="lab-stack">
         <LabExplain title="同一個「下一頁」，兩種截然不同的結果">
-          <p>畫面上是「上次查回來的那一頁」，資料庫在背後被插入或刪除，按「下一頁」重新查詢時才看得到差別。先按「插入一筆新評論」再按「下一頁」：新評論排在最前面，把後面所有列往後推一格，OFFSET 用「跳過幾筆」定位，所以上一頁的最後一筆會再出現一次。刪除則相反：後面的列往前補，OFFSET 直接跳過一筆，使用者永遠看不到它。</p>
+          <p>畫面上是「上次查回來的那一頁」，資料庫在背後被插入或刪除，重新查詢下一頁時才看得到差別。插入一筆新評論後再查下一頁：新評論排在最前面，把後面所有列往後推一格，OFFSET 用「跳過幾筆」定位，所以上一頁的最後一筆會再出現一次。刪除則相反：後面的列往前補，OFFSET 直接跳過一筆，使用者永遠看不到它。</p>
           <p>Cursor 記的是「最後看過那一筆的排序鍵」，下一頁查的是「比它更舊的」。前面插入、刪除，都動不到這個邊界。</p>
         </LabExplain>
-        <Callout title="什麼時候會真的踩到">列表越活躍越明顯：留言、動態、通知、訂單流水。後台冷資料的表格幾乎不會遇到，所以那裡用 OFFSET 沒關係。</Callout>
+        <Callout title="什麼時候會踩到">列表越活躍越明顯：留言、動態、通知、訂單流水。後台冷資料的表格幾乎不會遇到，所以那裡用 OFFSET 沒關係。</Callout>
       </div>
     </LabGrid>
   )
@@ -250,7 +250,7 @@ function Deep() {
         <LabExplain title="OFFSET 不是跳過，是讀完再丟掉">
           <p>`OFFSET 4000 LIMIT 20` 資料庫得沿索引走過 4,020 列，把前 4,000 列丟掉。頁數乘以 20 就是成本，使用者捲越深伺服器越忙。</p>
           <p>Cursor 把「上一頁最後一筆的鍵」放進 WHERE，索引直接定位到那個位置往下讀 20 列。第 1 頁與第 2,500 頁的成本一樣。</p>
-          <p>實測按鈕會在瀏覽器裡建一張 5 萬筆的表與複合索引，用 `EXPLAIN (ANALYZE)` 跑兩種查詢，數字是真的。</p>
+          <p>實測按鈕會在瀏覽器裡建一張 5 萬筆的表與複合索引，用 `EXPLAIN (ANALYZE)` 跑兩種查詢，數字是實際量測的。</p>
         </LabExplain>
         <Callout title="讀計畫的重點">兩邊都是 Index Scan，差在 OFFSET 那邊的「實際掃過列數」跟著頁數長；cursor 永遠 20 左右。資料量小時毫秒數看不出差別，列數才是趨勢。</Callout>
       </div>

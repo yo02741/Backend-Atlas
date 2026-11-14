@@ -126,17 +126,17 @@ export default function LoadTestLab() {
   const EX = cpuBn
     ? ['CPU 先滿：請求在 worker 前面排隊', [
         `${W} 個 worker 一次各算一個請求，每個請求要 ${cpu} ms 的 CPU，所以每秒最多 ${capTxt(m.capC)} 個。併發加到這個量之後，吞吐不再增加，多出來的請求只是排在 worker 前面，延遲跟著併發一路變長。`,
-        `連線池在最高那一級也只用到 ${pct(m.rows[TOP].utilP)}，把它加大不會有任何改善。要提高上限：找出最花 CPU 的那段程式並縮短它，或增加 worker——前提是機器還有空的核心，worker 比核心多只是換成在作業系統裡排隊。`,
+        `連線池在最高那一級也只用到 ${pct(m.rows[TOP].utilP)}，把它加大不會有任何改善。要提高上限：找出最花 CPU 的那段程式並縮短它，或增加 worker，前提是機器還有空的核心；worker 比核心多只是換成在作業系統裡排隊。`,
       ]]
     : ['連線池先滿：CPU 算完了，卡在等連線', [
-        `${P} 條連線、每個請求平均佔用 ${Math.round(m.dbEff)} ms，所以每秒最多 ${capTxt(m.capP)} 個。worker 在最高那一級也只忙到 ${pct(m.rows[TOP].utilW)}——只看 CPU 使用率，會以為系統還很有餘裕。`,
+        `${P} 條連線、每個請求平均佔用 ${Math.round(m.dbEff)} ms，所以每秒最多 ${capTxt(m.capP)} 個。worker 在最高那一級也只忙到 ${pct(m.rows[TOP].utilW)}。只看 CPU 使用率，會以為系統還很有餘裕。`,
         '這時加 worker 沒有用。加大連線池有效，但資料庫能同時處理的連線有限，而且每個服務副本各有一個池，數量會相加；縮短每個請求佔用連線的時間（補索引、減少查詢次數、用完就還）通常更根本。',
       ]]
   const slowTxt = `慢查詢打開後，1% 的請求佔用連線 ${fmtMs(db * SLOW_X)}。低併發時平均只多了約 ${Math.round(m.dbEff - db)} ms、p95 幾乎不動，p99 卻直接跳到 ${fmtMs(m.rows[0].p99)}：平均把那 1% 攤掉了，p95 只管最快的 95%。慢查詢還佔著連線不放，連線池的上限因此降到 ${capTxt(m.capP)} req/s。`
 
   return (
     <Lab accent="orange" className="lt" kicker="PERF LAB" title="逐步加壓：找出飽和點，再看卡在哪個資源"
-         blurb="調 worker 數、連線池大小與每個請求的 CPU、資料庫時間，按「開始加壓」讓併發從 1 逐級加到 60：吞吐在哪裡變平、延遲從哪裡開始爬、平均和 p95 / p99 差多少、哪一段在排隊。">
+         blurb="併發從 1 逐級加到 60：吞吐在哪裡變平、延遲從哪裡開始爬、平均和 p95 / p99 差多少、哪一段在排隊。">
       <LabControls>
         <Slider label="worker 數" min={1} max={16} value={W} onChange={setW} format={(v) => `${v} 個`} />
         <Slider label="連線池大小" min={2} max={30} value={P} onChange={setP} format={(v) => `${v} 條`} />
@@ -152,7 +152,7 @@ export default function LoadTestLab() {
 
       <LabGrid variant="wide">
         <div className="lab-stack">
-          <LabStage label="吞吐與延遲對併發" caption={`圖上的直立線 = 量到的飽和點；滑過圖表或拉下面的滑桿可以看任一級。延遲只算成功的請求，排隊超過 ${QT} ms 的算錯誤。`}>
+          <LabStage label="吞吐與延遲對併發" caption={`圖上的直立線 = 量到的飽和點。延遲只算成功的請求，排隊超過 ${QT} ms 的算錯誤。`}>
             <div className="lt-charts">
               <LineChart title={`吞吐 req/s${lv >= m.sat ? ` · 飽和點 ≈ 併發 ${LEVELS[m.sat]}` : ''}`} height={150} left={40} xMax={TOP} upto={lv} xTicks={xTicks}
                          yMax={nice(Math.max(m.cap, m.maxX) * 1.12)} fmtX={(i) => LEVELS[i]} fmtY={(v) => fmtN(Math.round(v))}
@@ -196,7 +196,7 @@ export default function LoadTestLab() {
           </div>
           <div className="dtable-wrap">
             <table className="dtable lt-tbl">
-              <caption>各級距的結果（示意；點一列看那一級）</caption>
+              <caption>各級距的結果（示意）</caption>
               <thead><tr><th>併發</th><th>吞吐</th><th>平均</th><th>p95</th><th>p99</th><th>錯誤率</th></tr></thead>
               <tbody>
                 {TABLE.map((i) => {
@@ -221,11 +221,11 @@ export default function LoadTestLab() {
             {slow && <p>{slowTxt}</p>}
           </LabExplain>
           <LabExplain title="怎麼讀這兩張圖">
-            <p>飽和點之前，吞吐跟著併發等比例上升、延遲幾乎不動；過了飽和點，吞吐變平，延遲隨併發直線上升——多送進來的請求沒有被更快處理，只是等更久。</p>
+            <p>飽和點之前，吞吐跟著併發等比例上升、延遲幾乎不動；過了飽和點，吞吐變平，延遲隨併發直線上升：多送進來的請求沒有被更快處理，只是等更久。</p>
             <p>p95 一直在平均上方，所以同一個延遲目標，p95 比平均更早超標；只盯平均會晚一步發現。打開慢查詢、切到 p99，差距最明顯。</p>
             <p>延遲曲線在最右邊變平不是好轉：等超過 {QT} ms 的請求被丟掉、沒算進延遲，要和錯誤率一起看。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             活動開跑或排程在整點同時啟動，併發短時間內衝過飽和點；資料庫變慢，每個請求佔用連線的時間拉長，連線池的上限跟著往下掉；多開服務副本，每個副本各帶一個連線池，加起來超過資料庫的連線上限。上線前逐級加壓，記下飽和點與瓶頸資源，告警門檻訂在飽和點之前。
           </Callout>
         </div>

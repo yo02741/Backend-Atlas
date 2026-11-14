@@ -100,7 +100,7 @@ const EXPLAIN = {
   split: {
     title: '依敏感度分流：敏感的留院內，其餘送雲端',
     body: [
-      '只有敏感請求進地端，GPU 依敏感請求的尖峰準備就好；衛教問答的暴增交給雲端，不會拖慢病歷摘要。把「敏感請求比例」拉高，地端的負擔跟著上升，比例到 100% 時就和全部地端一樣。',
+      '只有敏感請求進地端，GPU 依敏感請求的尖峰準備就好；衛教問答的暴增交給雲端，不會拖慢病歷摘要。敏感請求比例越高，地端的負擔越重，比例到 100% 時就和全部地端一樣。',
       '代價是兩條路徑都要維護，人力最高。分流規則本身是安全邊界：沒有標示的請求要當成敏感，敏感路由不能有雲端備援。',
     ],
   },
@@ -137,7 +137,7 @@ export default function ModelHostingScenarioLab() {
 
   return (
     <Lab accent="aqua" kicker="SCENARIO LAB" title="衛教問答與病歷摘要：模型放雲端、地端，還是分流"
-         blurb="調請求量、敏感請求比例、地端 GPU 台數與尖峰倍數，切換三種做法，按「跑一天」逐小時看：敏感資料有沒有離開院內、地端排多久、成本是固定還是變動。再注入一台 GPU 故障，看各做法怎麼退化。">
+         blurb="一天逐小時：敏感資料有沒有離開院內、地端排多久、成本是固定還是變動，以及一台 GPU 故障時各做法怎麼退化。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         <Slider label="每日請求量" min={1000} max={20000} step={1000} value={daily} onChange={setDaily} format={(v) => `${fmtN(v)} 筆`} />
@@ -206,7 +206,7 @@ export default function ModelHostingScenarioLab() {
               </p>
             )}
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             gateway 的 fallback 沒有區分資料分級，地端一滿載病歷就被送到雲端；依平均流量買 GPU，上午查房後全院一起排隊；
             只有一台 GPU，故障那天才發現沒有人工流程；成本只比硬體報價與 token 單價，漏掉人力與閒置。
           </Callout>
@@ -283,7 +283,7 @@ function Compare({ p, mode, onPick }) {
     <div className="dtable-wrap">
       <table className="dtable mh-table">
         <caption>
-          同一組參數，三種做法並排（示意；點一列切換做法）
+          同一組參數，三種做法並排（示意）
           <span className="mh-key f">固定</span><span className="mh-key v">變動</span>
         </caption>
         <thead>

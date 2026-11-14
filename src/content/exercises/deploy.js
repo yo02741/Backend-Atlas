@@ -362,7 +362,7 @@ server {
 }
 `,
     hints: [
-      '兩個 server 區塊：一個 listen 80 只 return 301，一個 listen 443 ssl 處理真正的請求。',
+      '兩個 server 區塊：一個 listen 80 只 return 301，一個 listen 443 ssl 處理實際的請求。',
       '$proxy_add_x_forwarded_for 會把 $remote_addr 接在客戶端送來的 X-Forwarded-For 後面。',
       '$scheme 在 443 server 裡是 https，後端靠 X-Forwarded-Proto 知道原始請求是 HTTPS。',
     ],

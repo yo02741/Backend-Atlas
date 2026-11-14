@@ -2,7 +2,7 @@
 
 一個前後端分離的服務，前端是 SPA 的靜態檔，後端 API 用 uvicorn 跑在 8000 埠。上線前在最前面放了一台 nginx，設定寫好、`nginx -t` 通過、重新載入。第一天就收到三種回報：
 
-**第一個：API 全部 404。** 後端的路由是 `/users`、`/orders`，nginx 設定是 `location /api/ { proxy_pass http://127.0.0.1:8000; }`。後端的 access log 裡收到的請求是 `GET /api/users`——多了一個 `/api`。
+**第一個：API 全部 404。** 後端的路由是 `/users`、`/orders`，nginx 設定是 `location /api/ { proxy_pass http://127.0.0.1:8000; }`。後端的 access log 裡收到的請求是 `GET /api/users`，多了一個 `/api`。
 
 **第二個：上傳大頭貼失敗。** 瀏覽器看到 `413 Request Entity Too Large`，後端完全沒有收到請求。nginx 的 error log：
 
@@ -31,7 +31,7 @@
 - 每一條連線都有自己的逾時；任何一段逾時，客戶端就會看到錯誤。
 - nginx 預設會**緩衝**請求本體與回應：上傳慢的客戶端由 nginx 慢慢收完再一次送給後端，後端的 worker 不會被慢速客戶端拖住。
 
-nginx 由一個 master 行程與數個 worker 行程組成。`nginx -s reload`（或 `systemctl reload nginx`）讓 master 讀新設定、啟動新的 worker，舊的 worker 把手上的連線處理完才結束——重新載入不會中斷進行中的請求。設定寫錯時，master 會拒絕新設定、繼續用舊的跑，所以**永遠先 `nginx -t` 再 reload**：
+nginx 由一個 master 行程與數個 worker 行程組成。`nginx -s reload`（或 `systemctl reload nginx`）讓 master 讀新設定、啟動新的 worker，舊的 worker 把手上的連線處理完才結束，所以重新載入不會中斷進行中的請求。設定寫錯時，master 會拒絕新設定、繼續用舊的跑，所以**永遠先 `nginx -t` 再 reload**：
 
 ```bash
 $ sudo nginx -t
@@ -118,7 +118,7 @@ for uri in ["/health", "/healthz", "/static/app.css", "/img/logo.PNG", "/api/use
 開頭的第一個問題就在這裡。規則只有一條：
 
 - `proxy_pass` 的位址**沒有 URI 部分**（`http://127.0.0.1:8000`），請求的路徑**原封不動**送給後端。
-- `proxy_pass` 的位址**有 URI 部分**——哪怕只是一個 `/`（`http://127.0.0.1:8000/`）——請求路徑中**符合 location 的那一段，會被換成這個 URI**。
+- `proxy_pass` 的位址**有 URI 部分**（哪怕只是一個 `/`，例如 `http://127.0.0.1:8000/`），請求路徑中**符合 location 的那一段，會被換成這個 URI**。
 
 | location | proxy_pass | 請求 `/api/users?id=7` 送給後端的是 |
 |---|---|---|
@@ -179,7 +179,7 @@ location /api/ {
 
 後端要**設定成採信這些標頭**，而且只採信來自 nginx 的。uvicorn 用 `--forwarded-allow-ips` 指定信任的代理位址（預設只有 `127.0.0.1`）；`X-Forwarded-For` 的最左邊可以被客戶端偽造，信任邊界怎麼畫見 [負載平衡](#/skill/load-balancing)。
 
-一個常見的陷阱：`proxy_set_header` 是**整組繼承**的。`server` 層設了五個 `proxy_set_header`，某個 `location` 裡只要寫了**任何一個** `proxy_set_header`，這個 location 就不再繼承 server 層的那五個。`add_header` 也是同樣的規則。共用的標頭可以放在一個檔案裡，在每個 location `include`。
+一個常見的陷阱：`proxy_set_header` 是**整組繼承**的。`server` 層設了五個 `proxy_set_header`，某個 `location` 裡只要寫了任何一個 `proxy_set_header`，這個 location 就不再繼承 server 層的那五個。`add_header` 也是同樣的規則。共用的標頭可以放在一個檔案裡，在每個 location `include`。
 
 WebSocket 需要把升級請求轉過去：
 
@@ -202,7 +202,7 @@ location /ws/ {
 
 ## upstream 與負載平衡
 
-開頭的第三個問題——部署時只有一個後端、它重啟期間全部 502——要靠多個後端加上逐一更新。`upstream` 定義一組後端：
+開頭的第三個問題（部署時只有一個後端、它重啟期間全部 502）要靠多個後端加上逐一更新。`upstream` 定義一組後端：
 
 ```nginx
 upstream api_backend {
@@ -230,7 +230,7 @@ upstream api_backend {
 | `client_body_timeout` | 60s | 讀客戶端請求本體時，兩次讀取之間的間隔 |
 | `keepalive_timeout` | 75s | 客戶端閒置連線保留多久 |
 
-逾時要整條鏈一起看：最外層（雲端負載平衡器、CDN）的逾時 ≥ nginx 的 `proxy_read_timeout` ≥ 應用程式的請求逾時 ≥ 資料庫的 `statement_timeout`。內層先放棄，外層才收得到有意義的錯誤；反過來，nginx 先逾時回 504，後端其實還在做，做完了也沒人收。需要長時間處理的工作改成非同步（回 202、背景處理、輪詢結果），而不是把 `proxy_read_timeout` 一路調大。
+逾時要整條鏈一起看：最外層（雲端負載平衡器、CDN）的逾時 ≥ nginx 的 `proxy_read_timeout` ≥ 應用程式的請求逾時 ≥ 資料庫的 `statement_timeout`。內層先放棄，外層才收得到有意義的錯誤；反過來，nginx 先逾時回 504，後端還在做，做完了也沒人收。需要長時間處理的工作改成非同步（回 202、背景處理、輪詢結果），而不是把 `proxy_read_timeout` 一路調大。
 
 ## 靜態檔與 SPA
 
@@ -294,7 +294,7 @@ server {
 
 `ssl_certificate` 要指向**含中繼憑證的完整鏈**（`fullchain.pem`），只放伺服器憑證時，部分客戶端會驗證失敗。憑證的申請與續約見 [HTTPS 憑證：要買哪種、怎麼續](#/skill/https-certificates)。HSTS 一旦送出，瀏覽器在 `max-age` 內都不會再用 HTTP 連這個網域，確定全站都能走 HTTPS 再開。
 
-`client_max_body_size` 解決開頭的第二個問題。它可以設在 `http`、`server` 或 `location`，例如整站維持較小的值，只在上傳的 location 放大。上傳檔案更好的做法是讓瀏覽器直傳物件儲存，見 [物件儲存：檔案不要放在應用程式主機上](#/skill/object-storage)。
+`client_max_body_size` 解決開頭的第二個問題。它可以設在 `http`、`server` 或 `location`，例如整站維持較小的值，只在上傳的 location 放大。上傳檔案更好的做法是讓瀏覽器直傳物件儲存，見 [物件儲存：bucket、預簽網址與生命週期](#/skill/object-storage)。
 
 ## 502 與 504：從 error log 找原因
 

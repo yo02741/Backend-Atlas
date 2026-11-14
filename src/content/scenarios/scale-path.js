@@ -57,7 +57,7 @@ export default {
     { id: 'small', situation: 'QPS 從 100 要漲到 1,000，單機 CPU 目前 40%，DB 15%。團隊兩個人，下個月上線。', options: ['vertical', 'horizontal', 'cache', 'db'], answer: 'vertical',
       explain: '10 倍還在單機的範圍內：換大一號的機器、uvicorn 開 4 個 worker 就到了，一小時完成，零風險。這時做水平擴展要先處理無狀態，做快取要處理失效，都是在花時間解一個還不存在的問題。' },
     { id: 'content', situation: '內容網站，讀 99% 寫 1%，熱門文章佔 80% 的讀。DB 讀已經到 80%，API 實例 CPU 才 30%。', options: ['vertical', 'horizontal', 'cache', 'db'], answer: 'cache',
-      explain: '瓶頸在 DB 讀，而且流量高度集中在少數熱門 key——快取命中率會非常高，一台 Redis 就能把 DB 讀砍掉九成。加 API 實例對 DB 沒有幫助；加副本比快取貴十倍還多了延遲問題。' },
+      explain: '瓶頸在 DB 讀，而且流量高度集中在少數熱門 key，快取命中率會很高，一台 Redis 就能把 DB 讀砍掉九成。加 API 實例對 DB 沒有幫助；加副本比快取貴十倍還多了延遲問題。' },
     { id: 'iot', situation: 'IoT 裝置上報。寫 95% 讀 5%，每秒 8,000 筆 INSERT，每筆一個 commit；主庫 CPU 90%、磁碟 fsync 排隊。', options: ['vertical', 'horizontal', 'cache', 'db'], answer: 'db',
       explain: '讀太少，快取與副本都幫不上；API 實例加再多，寫入還是一筆一筆 commit 到同一台主庫。把上報先寫進佇列，worker 每 100 ms 批次 INSERT 一次，一次 commit 幾百筆，fsync 次數降兩個數量級。回 202 給裝置就好，它不在乎立刻讀回來。' },
     { id: 'budget', situation: '預算只夠做一件事。單機 API 的 CPU 已經 90%，DB 只有 20%，活動尖峰只有 3 小時。', options: ['vertical', 'horizontal', 'cache', 'db'], answer: 'horizontal',

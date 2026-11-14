@@ -1,4 +1,4 @@
-// 設計情境：付款請求的冪等與重試——重送不能變成重複扣款
+// 設計情境：付款請求的冪等與重試，重送不能變成重複扣款
 export default {
   id: 'idempotency',
   order: 3,
@@ -10,7 +10,7 @@ export default {
   week: 10,
   lab: 'IdempotencyScenarioLab',
   summary: '`POST /payments` 每天上萬筆，手機 App 逾時會重試 3 次。同一筆付款送兩次，DB 該有幾筆？',
-  situation: '付款 API `POST /payments {order_id, amount}`：每天上萬筆。手機 App 的網路不穩，請求送出後常常等不到回應就逾時，App 內建的 HTTP client 會自動重試 3 次。回應在網路上遺失時，伺服器其實已經扣款成功，只是客戶端不知道。另外「送出」按鈕沒有防連點，兩個請求會在幾毫秒內先後到達。',
+  situation: '付款 API `POST /payments {order_id, amount}`：每天上萬筆。手機 App 的網路不穩，請求送出後常常等不到回應就逾時，App 內建的 HTTP client 會自動重試 3 次。回應在網路上遺失時，伺服器已經扣款成功，只是客戶端不知道。另外「送出」按鈕沒有防連點，兩個請求會在幾毫秒內先後到達。',
   constraints: [
     '同一筆訂單絕不能扣兩次款',
     '重送的請求要拿到和第一次一樣的結果（同一個 payment_id），客戶端才能收斂',

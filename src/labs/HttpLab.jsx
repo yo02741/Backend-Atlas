@@ -20,10 +20,10 @@ const STEPS = [
 const N = ['①', '②', '③', '④', '⑤', '⑥', '⑦']
 
 const STEP_TEXT = [
-  ['① DNS：把網域名稱換成 IP', '瀏覽器先問：`api.example.com` 的 IP 是多少？答案通常已快取在瀏覽器或作業系統裡，真正跑出去問的機會不多；第一次問要經過遞迴解析器一路查到權威伺服器。', 'TTL 到期前都用快取——這就是改 DNS 紀錄後「有人看得到新站、有人看不到」的原因。'],
+  ['① DNS：把網域名稱換成 IP', '瀏覽器先問：`api.example.com` 的 IP 是多少？答案通常已快取在瀏覽器或作業系統裡，實際跑出去問的機會不多；第一次問要經過遞迴解析器一路查到權威伺服器。', 'TTL 到期前都用快取，所以改 DNS 紀錄後會「有人看得到新站、有人看不到」。'],
   ['② TCP：先握手，才有連線', '有了 IP，雙方要先建立 TCP 連線：SYN → SYN-ACK → ACK，剛好一個來回（RTT）。這一步只是「確認彼此在線、談好序號」，還沒有任何 HTTP 內容。', '跨海的 RTT 動輒 100–200 ms，所以建立連線的成本主要來自距離，不是頻寬。'],
   ['③ TLS：在 TCP 之上再握一次手', 'HTTPS 要交換支援的加密套件、伺服器出示憑證、雙方算出對稱金鑰。TLS 1.3 只要 1 個 RTT（1.2 要 2 個）。', '之後所有 HTTP 內容都在加密通道裡走，中間節點只看得到 IP 與 SNI 裡的網域名稱。'],
-  ['④ 請求：起始行 + 標頭 + 空行 + body', 'HTTP 本身**無狀態**：伺服器不記得上一個請求，所以身份要每次自帶（Cookie 或 `Authorization` 標頭），`Content-Type` 告訴對方 body 怎麼解讀。', '方法有語意：GET 安全且冪等、PUT / DELETE 冪等（重送結果一樣）、POST 不冪等——重試邏輯與快取都建立在這個約定上。'],
+  ['④ 請求：起始行 + 標頭 + 空行 + body', 'HTTP 本身**無狀態**：伺服器不記得上一個請求，所以身份要每次自帶（Cookie 或 `Authorization` 標頭），`Content-Type` 告訴對方 body 怎麼解讀。', '方法有語意：GET 安全且冪等、PUT / DELETE 冪等（重送結果一樣）、POST 不冪等。重試邏輯與快取都建立在這個約定上。'],
   ['⑤ 伺服器：nginx → app → db', '請求先到反向代理（nginx）：終止 TLS、擋掉明顯異常、轉給應用程式。app 解析路由、驗證身份與輸入、查資料庫、組回應。愈早擋下的錯誤成本愈低。'],
   ['⑥ 回應：狀態行 + 標頭 + body', '狀態碼分五類：1xx 資訊、2xx 成功、3xx 重新導向、4xx 客戶端錯、5xx 伺服器錯。分類決定了誰該修、能不能重試、要不要快取。'],
   ['⑦ 瀏覽器：讀標頭，決定怎麼處理', '`Cache-Control` / `ETag` 決定要不要存起來、下次要不要帶 `If-None-Match` 去問；`Set-Cookie` 寫入 cookie；`Content-Type` 決定 body 交給誰（JSON 回給呼叫 fetch 的程式，HTML 進渲染管線）。'],
@@ -43,7 +43,7 @@ const SCENARIOS = {
   304: { reason: 'Not Modified', cls: 3, meaning: '資源沒變，body 省掉：瀏覽器用自己快取裡的那份。', reach: 2, srvMs: 25, srvNote: 'app 仍要算出目前的 ETag 來比對', brwNote: '沿用快取的 body，延長快取期限',
     req: ['GET /api/posts/42 HTTP/1.1', 'Host: api.example.com', 'If-None-Match: "a1b2c3"'], reqHl: [3],
     res: ['HTTP/1.1 304 Not Modified', 'ETag: "a1b2c3"', 'Cache-Control: private, max-age=60'], resHl: [1, 2] },
-  401: { reason: 'Unauthorized', cls: 4, meaning: '沒認證（不知道你是誰）：缺 token 或已過期。名字叫 Unauthorized，意思其實是 Unauthenticated。', reach: 1, srvMs: 4, srvNote: 'app 的認證 middleware 擋下，沒查 db', brwNote: '導去登入頁，或刷新 token 後重試',
+  401: { reason: 'Unauthorized', cls: 4, meaning: '沒認證（不知道你是誰）：缺 token 或已過期。名字叫 Unauthorized，意思卻是 Unauthenticated。', reach: 1, srvMs: 4, srvNote: 'app 的認證 middleware 擋下，沒查 db', brwNote: '導去登入頁，或刷新 token 後重試',
     req: ['GET /api/me HTTP/1.1', 'Host: api.example.com', 'Accept: application/json'], reqHl: [1],
     res: ['HTTP/1.1 401 Unauthorized', 'WWW-Authenticate: Bearer realm="api"', 'Content-Type: application/json', '', '{"error": "missing or expired token"}'], resHl: [1, 2] },
   403: { reason: 'Forbidden', cls: 4, meaning: '已認證但沒權限：知道你是 bob，但這篇是 alice 的。重試沒用，別和 401 混用。', reach: 2, srvMs: 12, srvNote: 'app 查 db 取得作者，比對後拒絕', brwNote: '顯示「沒有權限」，不要導去登入頁',
@@ -75,7 +75,7 @@ export default function HttpLab() {
 
   return (
     <Lab className="htp" accent="aqua" kicker="WEB LAB" title="一個 HTTP 請求的一生"
-         blurb="按「播放」跟著一個請求從 DNS 走到瀏覽器渲染。切換狀態碼看原始請求與回應長什麼樣、伺服器在哪一層回頭；打開連線重用看第二次請求省了哪幾步。">
+         blurb="一個請求從 DNS 走到瀏覽器渲染；各狀態碼的原始請求與回應、伺服器在哪一層回頭，以及連線重用讓第二次請求省掉哪幾步。">
       <LabControls>
         <Stepper step={step} total={7} onStep={setStep} playing={playing} onPlay={toggle} labels={STEPS.map((s) => s.label)} />
         <span className="spacer" />
@@ -108,7 +108,7 @@ export default function HttpLab() {
           </LabExplain>
           <Callout title="工作上什麼時候用">
             API 回錯要<b>挑對狀態碼</b>：驗證失敗 422（或 400）、沒登入 401、沒權限 403、找不到 404、自己炸了 500、暫時不可用 503 加 <code>Retry-After</code>。
-            別把所有錯誤都包成 200 + <code>{'{"ok": false}'}</code>——瀏覽器快取、fetch 的錯誤處理、重試、監控告警全都靠狀態碼分流，你會讓每一層都失明。只有冪等方法（GET / PUT / DELETE）能放心自動重試。
+            別把所有錯誤都包成 200 + <code>{'{"ok": false}'}</code>：瀏覽器快取、fetch 的錯誤處理、重試、監控告警全都靠狀態碼分流，包成 200 之後每一層都分不出錯誤。只有冪等方法（GET / PUT / DELETE）能放心自動重試。
           </Callout>
         </div>
       </LabGrid>
@@ -292,7 +292,7 @@ function Timeline({ step, sc, keep }) {
           <text x={(setup * k) / 2} y={72 + 12} textAnchor="middle" className="svg-text small">跳過 ①②③：省下 {setup} ms</text>
         </>}
       </svg>
-      <p className="lab-caption">毫秒是示意值，用來看比例：建立連線（①②③）常常比伺服器真正工作的時間還長。</p>
+      <p className="lab-caption">毫秒是示意值，用來看比例：建立連線（①②③）常常比伺服器處理請求的時間還長。</p>
     </div>
   )
 }

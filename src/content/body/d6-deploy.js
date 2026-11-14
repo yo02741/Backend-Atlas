@@ -4,7 +4,7 @@ export default {
     points: [
       { b: '程序與訊號', t: '`ps aux`、`top`、`kill -TERM`（優雅停止）與 `-KILL`（強制）。容器的 PID 1 收到 SIGTERM 要能正確退出，否則 `docker stop` 會等 10 秒再硬殺。' },
       { b: '網路與埠', t: '`ss -ltnp` 看誰在聽哪個埠、`curl -v` 看完整請求回應、`dig` 查 DNS。「連不上」先分清是 DNS、防火牆、還是服務沒起來。' },
-      { b: '檔案權限與使用者', t: '`chmod` / `chown`、`ls -l` 的 rwx、不要用 root 跑服務。容器裡的 UID 與掛載 volume 的權限問題就是這裡。' },
+      { b: '檔案權限與使用者', t: '`chmod` / `chown`、`ls -l` 的 rwx、不要用 root 跑服務。容器裡的 UID 與掛載 volume 的權限問題都出在這裡。' },
       { b: 'systemd 與 log', t: '`systemctl status/restart`、`journalctl -u 服務 -f`；容器外的服務由 systemd 管、開機自動起、崩潰自動重啟。' },
       { b: '環境變數、路徑與 shell 習慣', t: '`export`、`env`、`$PATH`、`set -euo pipefail` 讓腳本出錯就停；管線 `|`、`grep`、`awk`、`jq` 處理 log 與 JSON。' },
     ],
@@ -20,7 +20,7 @@ export default {
       { b: 'image vs container', t: 'image 像 class、container 像 instance：同一個 image 可以跑很多 container，各自有一層可寫層，image 本身不變。' },
       { b: '每個指令一層，層可快取', t: '`COPY`、`RUN` 各產生一層；只要該層的輸入（檔案內容、指令）沒變就用快取。一旦某層失效，它之後的所有層都重做。' },
       { b: '順序：越少變的越前面', t: '先 `COPY pyproject.toml uv.lock` 再 `RUN uv sync`，最後才 `COPY . .`。改程式碼不會重裝依賴。' },
-      { b: '.dockerignore', t: '排除 `.git`、`.venv`、`node_modules`、`.env`——不然 `COPY . .` 又肥又慢，還可能把 secret 帶進去。' },
+      { b: '.dockerignore', t: '排除 `.git`、`.venv`、`node_modules`、`.env`。不然 `COPY . .` 又肥又慢，還可能把 secret 帶進去。' },
       { b: 'container 是無狀態的', t: '容器刪掉可寫層就沒了。資料要放 volume 或外部服務；log 寫 stdout 讓 Docker 收。' },
     ],
     checklist: [
@@ -57,7 +57,7 @@ export default {
       { b: '現在叫 `docker compose`', t: '舊的 `docker-compose`（v1、獨立二進位）已停止維護；現行是 Docker CLI 的子命令 `docker compose`，檔名慣例 `compose.yaml`。兩種說法指的是同一件事。' },
       { b: 'ports vs expose', t: '`ports: "5432:5432"` 發布到主機（你本機工具能連）；`expose` 只在 compose 網路內可見。正式環境不要把 DB 發布出去。' },
       { b: 'volume 讓資料活過重建', t: '`pgdata:/var/lib/postgresql/data`；`docker compose down` 不刪 volume、`down -v` 才刪。' },
-      { b: 'depends_on 只管啟動順序', t: '要等 DB 真的能連，加 `healthcheck` 並用 `condition: service_healthy`。' },
+      { b: 'depends_on 只管啟動順序', t: '要等 DB 能連上，加 `healthcheck` 並用 `condition: service_healthy`。' },
       { b: 'override 分環境', t: '`compose.yaml` 放共同設定、`compose.override.yaml` 放本機（掛程式碼、開 debug）；CI 用另一份。' },
     ],
     checklist: [
@@ -73,7 +73,7 @@ export default {
     points: [
       { b: '反向代理 vs 正向代理', t: '正向代理替客戶端出去（公司防火牆）；反向代理替伺服器接進來（客戶端只看到 nginx）。' },
       { b: 'location 匹配順序', t: '先找**最長的前綴匹配**；若它是 `=`（精確）或 `^~`，直接採用、不再看 regex；否則依設定檔順序試 `~` / `~*` regex，第一個命中的贏；都沒中才回頭用那個最長前綴。所以 `/api/` 與 `/` 同時存在時，`/api/users` 走前者。' },
-      { b: 'proxy_set_header 轉真實資訊', t: '`Host $host`、`X-Real-IP $remote_addr`、`X-Forwarded-For`、`X-Forwarded-Proto $scheme`——後端才知道原始網域、IP 與是否 HTTPS。' },
+      { b: 'proxy_set_header 轉真實資訊', t: '`Host $host`、`X-Real-IP $remote_addr`、`X-Forwarded-For`、`X-Forwarded-Proto $scheme`，後端才知道原始網域、IP 與是否 HTTPS。' },
       { b: 'upstream 與負載平衡', t: '`upstream api { server app1:8000; server app2:8000; }` 預設 round-robin；掛掉的暫時剔除；`least_conn` 給長連線。' },
       { b: '限流與緩衝', t: '`limit_req_zone` 依 IP 限速；nginx 幫慢客戶端緩衝 request / response，讓後端 worker 不被拖住。' },
     ],
@@ -109,8 +109,8 @@ export default {
   },
   'config-12factor': {
     points: [
-      { b: '設定從環境讀，且要驗證', t: '`class Settings(BaseSettings): database_url: PostgresDsn; debug: bool = False`——啟動時缺值就失敗，不要等第一個請求才炸。' },
-      { b: '一份 build、多個環境', t: 'image 不含環境資訊；部署時注入。這樣 staging 測過的東西才真的等於上線的東西。' },
+      { b: '設定從環境讀，且要驗證', t: '`class Settings(BaseSettings): database_url: PostgresDsn; debug: bool = False`。啟動時缺值就失敗，不會等到第一個請求才出錯。' },
+      { b: '一份 build、多個環境', t: 'image 不含環境資訊；部署時注入。這樣 staging 測過的東西才等於上線的東西。' },
       { b: 'dev / prod 差異最小化', t: '本機也用 PostgreSQL（不用 SQLite）、也跑在容器裡；差異只在設定值。' },
       { b: 'log 寫 stdout、背景工作是獨立程序', t: '容器平台負責收 log；排程與 worker 是獨立的 process type，不塞在 web 程序裡。' },
       { b: '設定要能列出來', t: '啟動時把（遮罩過的）設定印一次，出問題先確認「它到底讀到什麼」。' },
@@ -129,7 +129,7 @@ export default {
       { b: '連線池上限要算', t: 'worker 數 × 每個 pool 大小 ≤ 資料庫 max_connections；否則流量一上來就 too many connections。' },
       { b: 'graceful shutdown', t: '收到 SIGTERM 停止接新請求、把進行中的做完、關連線、再退出。部署與擴縮時才不會噴 502。' },
       { b: 'liveness vs readiness', t: 'liveness 說「我還活著」（掛了就重啟）；readiness 說「我可以接流量」（DB 連上、暖機完）。負載平衡器看 readiness。' },
-      { b: '超時要層層設', t: 'nginx proxy_read_timeout、應用層請求超時、資料庫 statement_timeout、外部呼叫 timeout——沒有超時的呼叫會把 worker 耗光。' },
+      { b: '超時要層層設', t: 'nginx proxy_read_timeout、應用層請求超時、資料庫 statement_timeout、外部呼叫 timeout。沒有超時的呼叫會把 worker 耗光。' },
     ],
     checklist: [
       '能為一台 4 核機器決定 worker 數與資料庫連線池大小',
@@ -163,10 +163,10 @@ export default {
   'cloud-basics': {
     points: [
       { b: '三種跑法', t: 'VM 最自由最累；容器平台（Cloud Run、Fly.io、ECS、App Service）給 image 就跑、自動擴縮；serverless 函式按次計費、冷啟動與執行時間限制。' },
-      { b: '資料庫交給受管服務', t: '備份、升級、高可用、監控——自己在 VM 上裝 PostgreSQL 省的錢遠不夠賠一次資料遺失。' },
+      { b: '資料庫交給受管服務', t: '備份、升級、高可用、監控都由服務商負責。自己在 VM 上裝 PostgreSQL 省的錢遠不夠賠一次資料遺失。' },
       { b: '檔案放物件儲存', t: '使用者上傳、報表、備份放 S3 / GCS / R2，用 presigned URL 讓前端直傳。不放在應用伺服器磁碟。' },
       { b: '網路邊界', t: 'DB 與 Redis 在私有網路、只有 API 能連；對外只開 443；DNS + CDN 在最前面。' },
-      { b: 'Kubernetes 不是起點', t: '它解決的是「很多服務、很多團隊」的問題。一個 API + 一個 DB 用容器平台或 compose on VM 就好。' },
+      { b: '小系統先不用 Kubernetes', t: '它解決的是「很多服務、很多團隊」的問題。一個 API + 一個 DB 用容器平台或 compose on VM 就好。' },
     ],
     checklist: [
       '能為「單一 API + DB + 前端」的小產品畫出部署架構圖並估算主要成本項',

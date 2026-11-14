@@ -189,7 +189,7 @@ export default function LegacyReplacementScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="同一套舊系統，三種換法：差異在上線前還是上線後被發現"
-         blurb="選做法、調模組數與沒有文件的比例，按「開始遷移」逐月播放；看替換進度、停機、行為差異何時被發現、能不能回退，以及雙軌維護要多少人力。">
+         blurb="逐月的替換進度、停機、行為差異何時被發現、能不能回退，以及雙軌維護要多少人力。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         <Slider label="功能模組數" min={8} max={40} step={2} value={n} onChange={setN} format={(v) => `${v} 塊`} />
@@ -252,7 +252,7 @@ export default function LegacyReplacementScenarioLab() {
         <div className="lab-stack">
           <LabExplain title={ex.title}>{ex.body.map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
           <LabExplain title={`第 ${shown} 個月`}><p>{noteAt(mode, sim, r, n, rate, hidden)}</p></LabExplain>
-          <Callout title="什麼時候會真的踩到">舊系統用了十幾年，規則一部分在預存程序和排程批次裡，寫的人已經離開；規格書是訪談出來的，不是從程式還原的；某個身分別免掛號費、某個診間週三下午不開放預約，這類規則只有櫃台資深人員記得。三種做法都會遇到這些差異，差別在於它出現時有多少流量在新系統上，以及當下能不能切回去。</Callout>
+          <Callout title="什麼時候會踩到">舊系統用了十幾年，規則一部分在預存程序和排程批次裡，寫的人已經離開；規格書是訪談出來的，不是從程式還原的；某個身分別免掛號費、某個診間週三下午不開放預約，這類規則只有櫃台資深人員記得。三種做法都會遇到這些差異，差別在於它出現時有多少流量在新系統上，以及當下能不能切回去。</Callout>
         </div>
       </LabGrid>
       <style>{`

@@ -12,7 +12,7 @@ check: No 'Access-Control-Allow-Origin' header is present on the requested resou
 
 修好 CORS 之後，下一個問題接著來：使用者登入後，前端呼叫 API 一直回 401，因為登入時種下的 session cookie 沒有被帶上。
 
-這兩個問題都來自瀏覽器的同一套規則：**同源政策**決定一個網頁能不能讀取另一個來源的回應，**CORS** 是伺服器放寬這個限制的方式，**cookie 的屬性**決定瀏覽器什麼時候自動帶上 cookie。三者都只存在於瀏覽器裡，所以 curl 完全不受影響。
+這兩個問題都來自瀏覽器的同一套規則：同源政策決定一個網頁能不能讀取另一個來源的回應，CORS 是伺服器放寬這個限制的方式，cookie 的屬性決定瀏覽器什麼時候自動帶上 cookie。三者都只存在於瀏覽器裡，所以 curl 完全不受影響。
 
 ## 同源政策
 
@@ -26,9 +26,9 @@ check: No 'Access-Control-Allow-Origin' header is present on the requested resou
 | `https://api.shop.example` | 否 | 主機不同，即使是同一個網域的子網域 |
 | `http://localhost:5173` 對 `http://localhost:8000` | 否 | port 不同：本機開發最常遇到 |
 
-瀏覽器預設允許網頁**送出**跨來源的請求（表單、圖片、script 本來就可以），但不讓 JavaScript **讀取**跨來源的回應。否則，任何網站都能在背景用你的登入狀態呼叫你的網銀 API，讀出餘額。
+瀏覽器預設允許網頁送出跨來源的請求（表單、圖片、script 本來就可以），但不讓 JavaScript 讀取跨來源的回應。否則，任何網站都能在背景用你的登入狀態呼叫你的網銀 API，讀出餘額。
 
-這裡有一個很重要的推論：**CORS 擋的是讀取，不一定擋得住送出**。一個「簡單請求」（下面會定義）會真的送到伺服器、真的被執行，瀏覽器只是不把回應交給 JavaScript。所以 CORS 不是防止跨站請求偽造（CSRF）的機制，伺服器的授權檢查、cookie 的 `SameSite`、CSRF token 才是。
+由此推得：**CORS 擋的是讀取，不一定擋得住送出**。一個「簡單請求」（下面會定義）會送到伺服器並被執行，瀏覽器只是不把回應交給 JavaScript。所以 CORS 不是防止跨站請求偽造（CSRF）的機制；防 CSRF 靠的是伺服器的授權檢查、cookie 的 `SameSite`、CSRF token。
 
 ## CORS 怎麼運作
 
@@ -76,7 +76,7 @@ Access-Control-Max-Age: 600
 Vary: Origin
 ```
 
-通過之後瀏覽器才送出真正的 `POST`，而真正的回應**也要再帶一次** `Access-Control-Allow-Origin`。
+通過之後瀏覽器才送出真正的 `POST`，而真正的回應也要再帶一次 `Access-Control-Allow-Origin`。
 
 ```
 瀏覽器                                      api.shop.example
@@ -143,7 +143,7 @@ app.add_middleware(
 
 middleware 會處理 `OPTIONS` 預檢、比對 origin、加上 `Vary: Origin`。如果 CORS 是在 nginx 或 API 閘道設定，就不要在應用程式再設一次：兩層都加 `Access-Control-Allow-Origin`，回應會出現兩個值，瀏覽器一樣會拒絕。
 
-另一種做法是**不要跨來源**：讓前端與 API 走同一個 origin（例如 `https://shop.example/` 給前端、`https://shop.example/api/` 由反向代理轉到後端）。同源就沒有 CORS，也沒有預檢的額外來回。本機開發時，Vite 等開發伺服器的 proxy 功能就是這個做法。
+另一種做法是**不要跨來源**：讓前端與 API 走同一個 origin（例如 `https://shop.example/` 給前端、`https://shop.example/api/` 由反向代理轉到後端）。同源就沒有 CORS，也沒有預檢的額外來回。本機開發時，Vite 等開發伺服器的 proxy 功能用的是這個做法。
 
 ## Cookie 的屬性
 

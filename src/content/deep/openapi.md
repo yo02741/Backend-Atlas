@@ -170,7 +170,7 @@ def get_order(order_id: int) -> Order:
     raise HTTPException(status_code=404, detail="order not found")
 ```
 
-啟動後 `/openapi.json` 是規格、`/docs` 是 Swagger UI、`/redoc` 是 Redoc。請求 body 不符合 `OrderCreate` 時，FastAPI 自動回 422；`response_model` 會過濾回應，只留下 `Order` 有的欄位。要注意的是，`responses={404: ...}` 只是**文件**，框架不會檢查程式真的只回這些狀態碼。
+啟動後 `/openapi.json` 是規格、`/docs` 是 Swagger UI、`/redoc` 是 Redoc。請求 body 不符合 `OrderCreate` 時，FastAPI 自動回 422；`response_model` 會過濾回應，只留下 `Order` 有的欄位。`responses={404: ...}` 只是**文件**，框架不會檢查程式是否只回這些狀態碼。
 
 兩種做法都要把規格當成**合約**：規格要進版本控制、改規格要經過評審，code-first 也要在 CI 裡把產出的 `openapi.json` 存下來比對。
 
@@ -192,7 +192,7 @@ def get_order(order_id: int) -> Order:
 | 放寬限制 | 可能破壞（客戶端的欄位放不下） | 相容 |
 | 改 `operationId` | 不影響線上行為 | 產生的 client 函式名稱改變，前端編譯失敗 |
 
-規律是：**伺服器送出去的東西（回應）只能變多、變嚴格；伺服器接受的東西（請求）只能變少要求、變寬鬆**。反過來就是破壞性變更，要開新版本或走淘汰流程（見 [分頁、篩選、版本與冪等鍵](#/skill/api-patterns)）。
+規則是：伺服器送出去的東西（回應）只能變多、變嚴格；伺服器接受的東西（請求）只能變少要求、變寬鬆。反過來就是破壞性變更，要開新版本或走淘汰流程（見 [分頁、篩選、版本與冪等鍵](#/skill/api-patterns)）。
 
 改語意（`amount` 從含稅改成未稅）不改 schema，任何工具都抓不到，只能靠評審與 `description` 寫清楚。
 
@@ -206,7 +206,7 @@ git show origin/main:openapi.yaml > /tmp/base.yaml
 oasdiff breaking /tmp/base.yaml openapi.yaml --fail-on ERR
 ```
 
-`oasdiff` 是比對兩份 OpenAPI 文件的開源工具，類似的工具還有幾種；重點是把「比對規格」放進每個 PR 的檢查，破壞性變更必須明確標記、經過同意才能合併。
+`oasdiff` 是比對兩份 OpenAPI 文件的開源工具，類似的工具還有幾種。做法是把「比對規格」放進每個 PR 的檢查，破壞性變更必須明確標記、經過同意才能合併。
 
 ## 實際程式：一個簡化的相容性檢查
 
@@ -271,7 +271,7 @@ for (const i of diffSchema(createV1, createV2, 'request')) console.log('  ✗ ' 
 
 ## 契約測試：規格和實作有沒有一致
 
-design-first 的規格不會自動跟著程式走；code-first 的規格雖然來自程式，但「實際回了規格沒寫的狀態碼」「回應欄位實際是 null」這類事情仍然可能發生。契約測試就是檢查兩者是否一致：
+design-first 的規格不會自動跟著程式走；code-first 的規格雖然來自程式，但「實際回了規格沒寫的狀態碼」「回應欄位實際是 null」這類事情仍然可能發生。契約測試檢查兩者是否一致：
 
 | 做法 | 怎麼做 | 抓得到什麼 |
 |---|---|---|

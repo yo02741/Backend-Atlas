@@ -40,7 +40,7 @@ WHERE created_at = (SELECT max(created_at) FROM orders o2 WHERE o2.user_id = o.u
 | `IN` / `EXISTS` / `ANY` | `WHERE id IN (SELECT user_id FROM orders)` | 一欄、任意列（EXISTS 不在乎欄位） |
 | `FROM`（衍生資料表） | `FROM (SELECT user_id, sum(amount) … GROUP BY user_id) t` | 任意形狀，像一張暫時的表 |
 
-**非相關子查詢**不引用外層的欄位，邏輯上只算一次，結果代入外層。**相關子查詢**引用外層的欄位（上面的 `o.user_id`），邏輯上對外層每一列都要重算。規劃器常常能把 `EXISTS` / `IN` 改寫成 semi-join、anti-join，不見得真的逐列執行；但 SELECT 清單裡的相關純量子查詢通常就是一個 `SubPlan`，外層每一列跑一次。
+**非相關子查詢**不引用外層的欄位，邏輯上只算一次，結果代入外層。**相關子查詢**引用外層的欄位（上面的 `o.user_id`），邏輯上對外層每一列都要重算。規劃器常常能把 `EXISTS` / `IN` 改寫成 semi-join、anti-join，實際上不見得逐列執行；但 SELECT 清單裡的相關純量子查詢通常就是一個 `SubPlan`，外層每一列跑一次。
 
 ```sql run
 -- 非相關：全站平均只算一次，再拿來比較每筆訂單
@@ -104,7 +104,7 @@ CTE 會不會被當成「先算完存起來」，跟版本有關：
 - PostgreSQL 12 以前，CTE 一律先算完再給後面用（稱為 optimization fence），外層的條件推不進去，有時反而變慢。
 - PostgreSQL 12 起，沒有副作用、不是遞迴、而且**只被引用一次**的 CTE 會被展開到外層查詢裡一起最佳化；被引用兩次以上的仍會先算完。可以用 `WITH x AS MATERIALIZED (…)` 或 `AS NOT MATERIALIZED (…)` 明確指定。
 
-所以在目前的 PostgreSQL 裡，為了可讀性拆 CTE 通常不需要擔心效能；真的懷疑時用 `EXPLAIN` 看 CTE 有沒有出現成獨立的 `CTE Scan` 節點。
+所以在目前的 PostgreSQL 裡，為了可讀性拆 CTE 通常不需要擔心效能；有疑慮時用 `EXPLAIN` 看 CTE 有沒有出現成獨立的 `CTE Scan` 節點。
 
 ## 遞迴 CTE：走樹狀資料
 

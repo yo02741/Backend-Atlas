@@ -18,7 +18,7 @@ def get_invoice(invoice_id: int, user = Depends(require_permission("invoice:read
 
 `require_permission("invoice:read")` 確認了「這位使用者的角色有讀發票的權限」。然後有人把 `1043` 改成 `1044`，拿到了**另一家公司**的發票：客戶名稱、金額、統編都在上面。再寫一個迴圈從 1 跑到 50000，整個平台的發票都出來了。
 
-這叫 **IDOR**（Insecure Direct Object Reference，不安全的直接物件參照），在 OWASP API Security Top 10 裡對應的是 BOLA（Broken Object Level Authorization，物件層級授權失效）。角色檢查沒有錯，錯在它只回答了「這種人能不能讀發票」，沒有回答「這個人能不能讀**這一張**發票」。授權要同時看三樣東西：**誰**（subject）、**做什麼**（action）、**對哪個資源**（resource）。只看前兩樣就是這個漏洞。
+這叫 **IDOR**（Insecure Direct Object Reference，不安全的直接物件參照），在 OWASP API Security Top 10 裡對應的是 BOLA（Broken Object Level Authorization，物件層級授權失效）。角色檢查沒有錯，錯在它只回答了「這種人能不能讀發票」，沒有回答「這個人能不能讀這一張發票」。授權要同時看三樣東西：誰（subject）、做什麼（action）、對哪個資源（resource）。只看前兩樣就是這個漏洞。
 
 ## 運作原理：三種授權模型
 
@@ -79,7 +79,7 @@ Google 在 2019 年發表的 Zanzibar 論文描述了這種系統的大規模實
 
 ### 實務上的組合
 
-多數系統不是三選一，而是分層：
+多數系統會分層搭配，很少只選一種：
 
 | 層 | 用什麼 | 例子 |
 |---|---|---|
@@ -128,7 +128,7 @@ def get_invoice(invoice_id: int, user = Depends(require_permission("invoice:read
     return inv
 ```
 
-另外兩個補強：對外的 id 改用不可猜的值（UUID）可以讓列舉變難，但**不能取代**授權檢查——id 會出現在分享連結、log、Email 裡；列表 API（`GET /api/invoices`）一樣要帶租戶條件，IDOR 不只出現在單筆查詢。
+另外兩個補強：對外的 id 改用不可猜的值（UUID）可以讓列舉變難，但**不能取代**授權檢查，因為 id 會出現在分享連結、log、Email 裡；列表 API（`GET /api/invoices`）一樣要帶租戶條件，IDOR 不只出現在單筆查詢。
 
 ## 實際程式：一個小型政策引擎
 

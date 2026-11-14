@@ -121,7 +121,7 @@ export default function IdentityGatewayScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="四種用戶端、三種做法：token 從哪來、放哪裡、撤了誰會斷"
-         blurb="選一種用戶端看它該走哪個流程、token 壽命與範圍、存放位置與撤銷影響；按「新增一個服務」逐步看三種做法的整合工作量。">
+         blurb="每種用戶端該走哪個流程、token 壽命與範圍、存放位置與撤銷影響，以及新增一個服務時三種做法的整合工作量。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         <Seg label="用戶端" value={client} onChange={setClient} options={CLIENTS} />
@@ -202,10 +202,10 @@ export default function IdentityGatewayScenarioLab() {
           <Code lang={rx.lang} title={rx.title} highlight={mode === 'gateway' ? [5] : [3]}>{rx.src}</Code>
           <LabExplain title="四種用戶端各配哪個流程">
             <p>有瀏覽器的桌機 CLI 用授權碼 + PKCE；沒有瀏覽器的跳板機、容器用 Device Code，登入在另一台裝置完成；沒有使用者的背景服務用 Client Credentials；agent 代表某人時也走 Device Code，但它是獨立的用戶端，scope 比本人小。</p>
-            <p>「撤銷這個用戶端」看只撤一個登入時會不會波及別的；「alice 離職」看 IdP 停用之後哪些還活著。紅色是不該發生的結果：該斷的沒斷，或不該斷的被拖下水。</p>
+            <p>紅色是不該發生的結果：該斷的沒斷，或不該斷的被拖下水。</p>
             <p>切到「集中式身分閘道」再切換用戶端，看流程、存放與撤銷影響怎麼跟著變；其他兩種做法下，四種用戶端多半落到同一個答案：個人 key。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">有人在跳板機上需要跑 CLI、有排程要呼叫第三個內部 API、有人想讓 agent 代為操作，或資安問「某位離職同事還有哪些 key 有效」而沒人答得出來。內部服務超過三、四個，而且呼叫者不只是瀏覽器時，各自整合的成本就開始超過一個閘道。</Callout>
+          <Callout title="什麼時候會踩到">有人在跳板機上需要跑 CLI、有排程要呼叫第三個內部 API、有人想讓 agent 代為操作，或資安問「某位離職同事還有哪些 key 有效」而沒人答得出來。內部服務超過三、四個，而且呼叫者不只是瀏覽器時，各自整合的成本就開始超過一個閘道。</Callout>
         </div>
       </LabGrid>
       <style>{`

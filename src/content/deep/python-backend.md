@@ -18,7 +18,7 @@ items = add_to_cart(product_id)
 1. **預設值只在 `def` 執行時建立一次**。`cart=[]` 的那個 list 是函式物件的一部分（存在 `add_to_cart.__defaults__`），之後每次沒傳 `cart` 的呼叫都拿到**同一個** list。
 2. **後端行程活很久**。腳本跑完就結束，那個 list 跟著消失；但 uvicorn 的 worker 會連續處理成千上萬個請求，那個 list 就一直長大，而且被所有請求共用。重新部署時行程重啟，list 歸零，所以問題「暫時消失」。
 
-修法是預設 `None`、在函式裡建新 list。但更值得記住的是背後的心智模型：**後端的 Python 是長時間執行的行程，模組層級的東西會被所有請求共用**。這篇從這個模型出發，再談型別、資料模型與例外處理。
+修法是預設 `None`、在函式裡建新 list。背後的心智模型是：**後端的 Python 是長時間執行的行程，模組層級的東西會被所有請求共用**。這篇從這個模型出發，再談型別、資料模型與例外處理。
 
 ## Python 後端的行程模型
 
@@ -63,7 +63,7 @@ items = add_to_cart(product_id)
 
 ## 型別提示、dataclass、pydantic：三個層次
 
-三者常被混為一談，其實分工很清楚：
+三者常被混為一談，分工如下：
 
 | 工具 | 執行時會檢查嗎 | 做什麼 | 用在哪 |
 |---|---|---|---|
@@ -286,7 +286,7 @@ traceback 從**最後一行**讀起：最後一行是例外型別與訊息；往
 還有一類不會丟錯，但一樣是事故：
 
 - **狀態「偶爾」不對**：像開頭的購物車，多半是模組層級或預設參數的可變物件被跨請求共用；只有某些 worker 有問題時更是如此。
-- **traceback 有兩段，中間寫 `During handling of the above exception, another exception occurred:`**：在 `except` 區塊裡又出錯了，真正的根源在**第一段**。
+- **traceback 有兩段，中間寫 `During handling of the above exception, another exception occurred:`**：在 `except` 區塊裡又出錯了，根源在第一段。
 
 ## 動手
 

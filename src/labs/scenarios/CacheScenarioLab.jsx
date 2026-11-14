@@ -82,7 +82,7 @@ export default function CacheScenarioLab() {
 
   return (
     <Lab accent="blue" kicker="SCENARIO LAB" title="同一批請求，換一層快取，DB 收到的數量差一百倍"
-         blurb="選資料種類與做法，送 1,000 個請求看每層擋掉多少；再按「商品被更新」看每層要多久才看到新值。全部示意。">
+         blurb="1,000 個請求每層擋掉多少，商品更新後每層要多久才看到新值。全部示意。">
       <LabControls>
         <Seg label="資料種類" tinted value={kind} onChange={switchKind}
              options={[{ value: 'public', label: '公開商品頁' }, { value: 'private', label: '個人購物車' }]} />
@@ -120,8 +120,8 @@ export default function CacheScenarioLab() {
           <LabExplain title={TITLES[preset] || '自訂組合'}>
             {explainFor({ isPublic, browser, cdn: useCdn, redis, purge, ttl, res, ran })}
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
-            商品改價後客服接到「我看到的還是舊價」——查下去是瀏覽器那份 max-age 還沒到，伺服器端怎麼清都沒用。反過來，購物車回應少了 <b>private</b>，CDN 把某人的購物車存起來回給別人，是資安事故。標頭決定的是「誰可以存」，TTL 決定「存多久」，主動失效只管得到自己控制的那幾層。
+          <Callout title="什麼時候會踩到">
+            商品改價後客服接到「我看到的還是舊價」，查下去是瀏覽器那份 max-age 還沒到，伺服器端怎麼清都沒用。反過來，購物車回應少了 <b>private</b>，CDN 把某人的購物車存起來回給別人，是資安事故。標頭決定的是「誰可以存」，TTL 決定「存多久」，主動失效只管得到自己控制的那幾層。
           </Callout>
         </div>
       </LabGrid>
@@ -260,7 +260,7 @@ function explainFor({ isPublic, browser, cdn, redis, purge, ttl, res, ran }) {
   const layers = [browser && '瀏覽器', cdn && 'CDN', redis && 'Redis'].filter(Boolean)
   const p = []
   if (!layers.length) {
-    p.push(<p key="a">沒有任何一層擋在前面：1,000 個請求全部到 DB，每個都付完整的網路加查詢延遲。好處只有一個——永遠是最新值。商品頁每秒 2,000 次直接超過 DB 的能力，付款狀態這種不能舊的端點則正好該這樣做。</p>)
+    p.push(<p key="a">沒有任何一層擋在前面：1,000 個請求全部到 DB，每個都付完整的網路加查詢延遲。好處只有一個：永遠是最新值。商品頁每秒 2,000 次直接超過 DB 的能力，付款狀態這種不能舊的端點則正好該這樣做。</p>)
   } else {
     p.push(<p key="a">現在開著：{layers.join('、')}。同一位使用者 TTL 內的重複請求由瀏覽器擋下（不出門）；CDN 一個節點一份，各地區只回源一次；Redis 是 API 後面的共用快取，{isPublic ? '一個 key 一段 TTL 只打 DB 一次' : '每位使用者一個 key，第一次讀還是要到 DB'}。</p>)
     if (!isPublic && cdn === false) p.push(<p key="b">購物車是個人資料，回應標 <code>Cache-Control: private</code>，CDN 不能存；瀏覽器可以存自己的那份，但改完購物車就會看到舊車，所以實務上是 <code>no-store</code> 加 Redis。</p>)

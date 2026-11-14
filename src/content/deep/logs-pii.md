@@ -23,7 +23,7 @@
 | SQL 與參數 | ORM 的 echo 模式印出參數；資料庫錯誤的 DETAIL 帶出值（上面第三行） | `echo=True`、`log_statement = 'all'`、慢查詢日誌的 `parameters: $1 = '…'` |
 | 錯誤追蹤與 APM | 例外發生時自動附上 request 資料與區域變數 | Sentry 這類服務的預設設定 |
 
-規律是：**多數外洩不是有人刻意記錄個資**，而是「整包記下來」的設定、錯誤訊息裡的原始輸入、或第三方工具的預設行為。所以防線要建在「記錄」這個動作本身，而不是期待每個寫 `logger.info` 的人都記得。
+多數外洩來自「整包記下來」的設定、錯誤訊息裡的原始輸入、或第三方工具的預設行為，很少是有人刻意記錄個資。所以防線要建在「記錄」這個動作本身，不能期待每個寫 `logger.info` 的人都記得。
 
 ### 三層防線
 
@@ -228,6 +228,6 @@ ORDER BY occurred_at, id;
 
 1. 執行 Filter 那段，加一行 `logger.info("token=%s", "abc123")`，確認 `token=` 規則有作用；再試 `logger.info("tok %s", "abc123")`，看 pattern 漏掉的情況，想想白名單為什麼是主要防線。
 2. 把 `handler.addFilter(PiiFilter())` 改成 `logger.addFilter(PiiFilter())`，再用 `logging.getLogger("demo.pii.child")` 送一筆紀錄，觀察子 logger 的紀錄有沒有被遮罩。
-3. 結構化日誌那段，把 `PSEUDONYM_KEY` 換一個值，確認同一個 email 的假名改變了，這就是換金鑰後新舊紀錄無法關聯的原因。
+3. 結構化日誌那段，把 `PSEUDONYM_KEY` 換一個值，確認同一個 email 的假名改變了，所以換金鑰後新舊紀錄無法關聯。
 4. 把稽核紀錄那段開到 Playground，在最後加一句 `DELETE FROM audit_events;` 再執行，看 trigger 的錯誤訊息。
 5. 程式題「結構化日誌的敏感欄位處理」：實作白名單、標頭遮罩與 query string 遮罩。

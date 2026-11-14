@@ -37,7 +37,7 @@ WARNING: This is a development server. Do not use it in a production deployment.
 Django 的 `runserver` 文件也明確寫著不要用在正式環境。開發伺服器（以及 `--reload` 模式）是為了「改了程式立刻生效、出錯時看得到細節」設計的：
 
 - 監看檔案變動、自動重啟：正式環境不需要，還多吃資源。
-- 互動式除錯頁：Werkzeug 的除錯器可以在瀏覽器裡**執行任意 Python 程式碼**，雖然有 PIN 保護，一旦對外開放就是重大風險。
+- 互動式除錯頁：Werkzeug 的除錯器可以在瀏覽器裡**執行任意 Python 程式碼**，雖然有 PIN 保護，對外開放後仍是一個能遠端執行程式碼的入口。
 - 沒有 worker 管理：不會在行程崩潰時重啟它、不會砍掉卡住的請求、不會依設定開多個行程。
 - 效能與穩定性沒有針對大量並行連線調校。
 
@@ -122,7 +122,7 @@ plan(cpus=2, mem_limit_mb=2048, worker_rss_mb=180, replicas=3, pool_size=3, max_
      db_max_connections=100, db_reserved=10, async_worker=False, rps=200, avg_latency_s=0.12)
 ```
 
-第一組的結果是每個副本只能開 3 個 worker，總共 9 個，遠低於需要的 24 個以上——瓶頸在資料庫連線，不在 CPU。同步 worker 一次只用一條連線，縮小連線池之後（第二組）上限換成 CPU，總共 15 個，仍然不夠。接下來的選項是加副本或 CPU、在資料庫前面加連線池代理（例如 PgBouncer）讓更多 worker 共用較少的資料庫連線，或改用 async worker 讓少數 worker 處理更多並行請求。
+第一組的結果是每個副本只能開 3 個 worker，總共 9 個，遠低於需要的 24 個以上。瓶頸在資料庫連線，不在 CPU。同步 worker 一次只用一條連線，縮小連線池之後（第二組）上限換成 CPU，總共 15 個，仍然不夠。接下來的選項是加副本或 CPU、在資料庫前面加連線池代理（例如 PgBouncer）讓更多 worker 共用較少的資料庫連線，或改用 async worker 讓少數 worker 處理更多並行請求。
 
 ## 優雅關機
 
@@ -133,7 +133,7 @@ plan(cpus=2, mem_limit_mb=2048, worker_rss_mb=180, replicas=3, pool_size=3, max_
 3. **清理**：關閉資料庫連線池、把緩衝的 log 與指標送出、結束背景工作。
 4. **以退出碼 0 結束**。
 
-gunicorn 與 uvicorn 都內建這個流程，前提是**它們收得到 SIGTERM**——Dockerfile 要用 exec form，讓伺服器本身是 PID 1（見 [幫 Python 專案寫好 Dockerfile](#/skill/dockerfile-python)）。
+gunicorn 與 uvicorn 都內建這個流程，前提是**它們收得到 SIGTERM**：Dockerfile 要用 exec form，讓伺服器本身是 PID 1（見 [幫 Python 專案寫好 Dockerfile](#/skill/dockerfile-python)）。
 
 寬限期要**由內而外遞增**，否則外層會在內層做完之前動手：
 

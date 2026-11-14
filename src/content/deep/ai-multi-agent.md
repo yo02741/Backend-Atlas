@@ -7,7 +7,7 @@
 - 有一個 subagent 方向錯了，想直接跟它說「不是這樣」，只能請上層的 agent 轉達，轉達的過程又多一層誤解。
 - 兩個 subagent 都改了 `api/routes.py`，它們在同一個工作目錄裡，後寫的蓋掉了先寫的，誰也沒發現。
 
-這裡有兩個不同的問題。一個是**資訊**：所有人的脈絡混在一起，人看不清楚、也進不去任何一個。另一個是**工作區**：大家改的是同一份檔案，彼此覆蓋。
+這裡有兩個不同的問題。一個是資訊：所有人的脈絡混在一起，人看不清楚、也進不去任何一個。另一個是工作區：大家改的是同一份檔案，彼此覆蓋。
 
 ## 運作原理：一個 agent 一條分支、一個 worktree
 
@@ -85,7 +85,7 @@ git worktree prune
 
 [Noopher-AI/oat-agents](https://github.com/Noopher-AI/oat-agents) 是這種結構的一個實作：一個 meta-agent 只帶一層成員 agent，每個成員都是原生的 Claude Code 或 Codex session，各自有自己的分支、git worktree 與 tmux session；成員做完寄報告、卡住時提問，人可以選一個成員直接進到它的 session 裡打字。它的文件也明白寫出：worktree 只把每個 agent 的工作分開，**不會限制 agent 能碰到什麼**，所以只該在放心交給 agent 的機器上、用放心交給它的憑證來跑。
 
-這一點值得單獨強調：worktree 是**工作區隔離**，不是**安全隔離**。agent 仍然以同一個使用者執行，讀得到家目錄、環境變數裡的憑證。執行環境與憑證的隔離是另一層問題，見[模型擋不住工具層的洞](#/skill/agent-credential-isolation)。
+worktree 是工作區隔離，不是**安全隔離**。agent 仍然以同一個使用者執行，讀得到家目錄、環境變數裡的憑證。執行環境與憑證的隔離是另一層問題，見[模型擋不住工具層的洞](#/skill/agent-credential-isolation)。
 
 ## 避免合併衝突：在分派時就處理
 
@@ -153,7 +153,7 @@ for a, b, overlap in conflicts:
 
 ### 4. 合併順序與 rebase
 
-依阻擋關係的順序合併。每合進一條分支，其他還在進行的分支就 `git rebase origin/main`（或 merge main）並重跑測試，衝突越早發現越小。每條分支都要在**合併前的最新 main 上**通過 CI，才算真的綠燈。
+依阻擋關係的順序合併。每合進一條分支，其他還在進行的分支就 `git rebase origin/main`（或 merge main）並重跑測試，衝突越早發現越小。每條分支都要在**合併前的最新 main 上**通過 CI，才算綠燈。
 
 ## 常見錯誤與錯誤訊息
 

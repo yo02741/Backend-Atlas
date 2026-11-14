@@ -87,7 +87,7 @@ export default function NginxLab() {
 
   return (
     <Lab className="ngx" accent="yellow" kicker="DEPLOY LAB" title="nginx 反向代理：一個請求怎麼被分派"
-         blurb="選一個路徑、按「送出請求」，看 nginx 用哪個 location 接住它、送去哪裡。/api/ 會在三台 app 之間輪流；把 app2 關掉看它怎麼被跳過；打開 TLS 終結看加密在哪裡結束。">
+         blurb="nginx 用哪個 location 接住請求、送去哪裡：/api/ 在三台 app 之間輪流，關掉的 app 會被跳過，TLS 終結決定加密在哪裡結束。">
       <LabControls>
         <Seg label="請求路徑" tinted mono value={path} onChange={setPath}
              options={Object.entries(PATHS).map(([v, o]) => ({ value: v, label: o.label }))} />
@@ -104,18 +104,18 @@ export default function NginxLab() {
         <div className="lab-stack" ref={box}>
           <LabStage label="nginx 分派圖"
                     caption={tls ? 'TLS 在 nginx 終結：瀏覽器到 nginx 是 https，nginx 到 app 是內網 http 明文；憑證與私鑰只放在 nginx 這一台。'
-                                 : hit ? `第 ${hit.id} 個請求 ${p.label} → ${DEST[hit.target]}` : '按「送出請求」看箭頭往哪裡走；app 節點右側是各台收到的請求數。'}>
+                                 : hit ? `第 ${hit.id} 個請求 ${p.label} → ${DEST[hit.target]}` : 'app 節點右側是各台收到的請求數'}>
             <Diagram path={path} hit={hit} counts={counts} app2Down={app2Down} tls={tls} narrow={narrow} />
           </LabStage>
           <LabExplain title={explain.title}>
             {explain.text.map((t, i) => <p key={i} dangerouslySetInnerHTML={{ __html: md(t) }} />)}
           </LabExplain>
           <LabExplain title="為什麼前面要放一台 nginx">
-            <p>TLS 終結（憑證只管一處）、靜態檔直出、負載平衡與故障轉移、gzip 與快取標頭、限流（<code>limit_req</code>）、緩衝慢客戶端——慢速連線由 nginx 慢慢收發，後端 worker 秒回就能去服務下一個請求。</p>
+            <p>TLS 終結（憑證只管一處）、靜態檔直出、負載平衡與故障轉移、gzip 與快取標頭、限流（<code>limit_req</code>）、緩衝慢客戶端（慢速連線由 nginx 慢慢收發，後端 worker 秒回就能去服務下一個請求）。</p>
           </LabExplain>
           <Callout title="工作上什麼時候用">
             後端 log 裡的來源 IP 全都是同一個？先查 nginx 有沒有 <code>proxy_set_header X-Forwarded-For</code>，再查後端有沒有信任 proxy header（uvicorn 的 <code>--proxy-headers --forwarded-allow-ips</code>）。
-            SPA 部署後重新整理深層路徑就 404？就是少了 <code>try_files $uri /index.html</code>。
+            SPA 部署後重新整理深層路徑就 404？通常是少了 <code>try_files $uri /index.html</code>。
           </Callout>
         </div>
       </LabGrid>
@@ -157,23 +157,23 @@ function explainFor(path, hit) {
   const rule = 'nginx 選 location 的順序：`=` 精確命中 → `^~` 前綴 → `~` / `~*` regex（依出現順序）→ 否則**最長的前綴**。'
   return {
     spa: { title: 'location /：接住其他所有路徑，交給 SPA', text: [
-      '`/` 是最短的前綴，所有沒被其他 location 接走的請求都落到這裡。`try_files $uri /index.html` 先看 `/var/www/spa` 底下有沒有這個檔案，沒有就回 `index.html`——前端 router 接手 `/dashboard/42` 這種深層連結，重新整理不會 404。',
+      '`/` 是最短的前綴，所有沒被其他 location 接走的請求都落到這裡。`try_files $uri /index.html` 先看 `/var/www/spa` 底下有沒有這個檔案，沒有就回 `index.html`，由前端 router 接手 `/dashboard/42` 這種深層連結，重新整理不會 404。',
       '為什麼 `/api/users` 不會落到這裡？' + rule + '`/api/` 比 `/` 長，所以贏。'] },
     api: { title: 'location /api/：反向代理到 upstream，輪流分派', text: [
       '最長前綴 `/api/` 命中 → `proxy_pass http://api`：`api` 不是網址，是上面 `upstream api` 區塊的名字。預設 round-robin，每個請求輪到下一台。',
       hit ? (hit.attempt
-        ? `這次輪到 **${hit.attempt}**，但連線失敗 → nginx 把它標成暫時不可用（預設 max_fails=1、fail_timeout=10s），同一個請求改送 **${hit.target}**。這是**被動健康檢查**：靠真實請求發現壞掉，不會主動 ping（主動探測要 nginx Plus 或第三方模組）。`
+        ? `這次輪到 ${hit.attempt}，但連線失敗 → nginx 把它標成暫時不可用（預設 max_fails=1、fail_timeout=10s），同一個請求改送 ${hit.target}。這是**被動健康檢查**：靠真實請求發現壞掉，不會主動 ping（主動探測要 nginx Plus 或第三方模組）。`
         : hit.skipped
-          ? `輪到 **${hit.skipped}**，但它還在 fail_timeout（10 秒）內，nginx 直接跳過不嘗試，送 **${hit.target}**（第 ${hit.seq} 個）。時間到會再試一次，成功就回到輪替。`
+          ? `輪到 ${hit.skipped}，但它還在 fail_timeout（10 秒）內，nginx 直接跳過不嘗試，送 ${hit.target}（第 ${hit.seq} 個）。時間到會再試一次，成功就回到輪替。`
           : `這次分派到 **${hit.target}**（它收到的第 ${hit.seq} 個）。再按一次會輪到下一台。`)
-        : '按「送出請求」看它落到哪一台；連按幾次看 round-robin 怎麼輪。',
-      '`proxy_set_header Host $host` 讓後端看到原本的網域（否則 Host 會變成 `api`）；`X-Forwarded-For` 帶上真實來源 IP——不加的話後端看到的 client IP 永遠是 nginx 自己。'] },
+        : '還沒有請求，按「送出請求」。',
+      '`proxy_set_header Host $host` 讓後端看到原本的網域（否則 Host 會變成 `api`）；`X-Forwarded-For` 帶上真實來源 IP；不加的話，後端看到的 client IP 永遠是 nginx 自己。'] },
     static: { title: 'location /static/：nginx 直接吐檔案，後端不用醒來', text: [
       '`/static/` 比 `/` 長，贏了。`root /var/www` 會把**整個 URI** 接在後面：`/var/www/static/logo.png`（想去掉 `/static/` 前綴要改用 `alias`）。',
       '檔案由 nginx 直接送出，順便 gzip、加 Cache-Control。讓應用程式伺服器（uvicorn、node）吐靜態檔既慢又浪費 worker。'] },
     health: { title: 'location = /health：精確匹配，nginx 自己回 200', text: [
       '`=` 精確匹配優先權最高，一命中就停止比對。`return 200 "ok"` 直接回應，不經過任何後端。',
-      '給 load balancer 或 k8s 探針打的：只想知道「nginx 活著」用這個就好；要確認後端也活著，得另外開一個真的 proxy 到後端的路徑。'] },
+      '給 load balancer 或 k8s 探針打的：只想知道「nginx 活著」用這個就好；要確認後端也活著，得另外開一個會 proxy 到後端的路徑。'] },
   }[path]
 }
 

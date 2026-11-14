@@ -33,7 +33,7 @@ const FAULTS = {
     label: '正常', stop: 7, kind: 'ok', marks: { 1: ['ok', IP], 7: ['ok', '200 OK'] }, browser: '頁面正常顯示',
     dig: DIG_OK, nc: NC_OK, curl: `${TLS_OK}\n< HTTP/1.1 200 OK\n< Content-Type: text/html; charset=utf-8`,
     title: '一路通到應用程式',
-    text: ['DNS 給出 IP、TCP 連得上 443、TLS 憑證驗證通過、LB 把請求轉給 :8000 的程式，回 200。', '排查時就是照這個順序一層層確認：先 dig，再 nc，最後 curl -v。哪一個指令第一個失敗，壞的就在那一層附近。'],
+    text: ['DNS 給出 IP、TCP 連得上 443、TLS 憑證驗證通過、LB 把請求轉給 :8000 的程式，回 200。', '排查時照這個順序一層層確認：先 dig，再 nc，最後 curl -v。哪一個指令第一個失敗，壞的就在那一層附近。'],
   },
   nx: {
     label: 'DNS 查不到', stop: 1, kind: 'dns', marks: { 1: ['bad', 'NXDOMAIN'] }, browser: 'DNS_PROBE_FINISHED_NXDOMAIN',
@@ -69,7 +69,7 @@ const FAULTS = {
     dig: DIG_OK, nc: NC_OK,
     curl: `${CONN}\n* TLSv1.3 (OUT), TLS handshake, Client hello (1):\n* TLSv1.3 (IN), TLS handshake, Certificate (11):\n* SSL certificate problem: certificate has expired\ncurl: (60) SSL certificate problem: certificate has expired`,
     title: '憑證過期：TCP 通了，卡在 TLS',
-    text: ['nc 成功代表 TCP 層完全正常；curl 已經 Connected，是在 TLS 握手驗證憑證時放棄。錯誤訊息裡有 SSL / certificate 字樣，就是 TLS 這層。', '別用 curl -k 繞過了事——那等於關掉身分驗證。修法是換新憑證，並設定自動續期與到期告警。'],
+    text: ['nc 成功代表 TCP 層完全正常；curl 已經 Connected，是在 TLS 握手驗證憑證時放棄。錯誤訊息裡有 SSL / certificate 字樣，就是 TLS 這層。', '別用 curl -k 繞過了事，那等於關掉身分驗證。修法是換新憑證，並設定自動續期與到期告警。'],
   },
   name: {
     label: '憑證網域不符', stop: 6, kind: 'tls', marks: { 1: ['ok', IP], 6: ['bad', '名稱不符'] }, browser: 'NET::ERR_CERT_COMMON_NAME_INVALID',
@@ -82,7 +82,7 @@ const FAULTS = {
     label: '後端掛了 502', stop: 7, kind: 'http', marks: { 1: ['ok', IP], 5: ['warn', '回 502'], 7: ['bad', '沒有回應'] }, browser: '502 Bad Gateway 錯誤頁',
     dig: DIG_OK, nc: NC_OK, curl: `${TLS_OK}\n< HTTP/1.1 502 Bad Gateway\n< Content-Type: text/html`,
     title: '502：LB 活著，後面的程式沒回應',
-    text: ['有拿到 HTTP 狀態碼，代表 DNS、TCP、TLS 全部正常——回 502 的是負載平衡，不是你的程式。它想轉給 :8000，但連不上或收到無效回應。', '查 LB 的 target 健康檢查與應用程式的日誌：程式是否當掉、重啟中、聽錯 port。'],
+    text: ['有拿到 HTTP 狀態碼，代表 DNS、TCP、TLS 全部正常。回 502 的是負載平衡，不是你的程式。它想轉給 :8000，但連不上或收到無效回應。', '查 LB 的 target 健康檢查與應用程式的日誌：程式是否當掉、重啟中、聽錯 port。'],
   },
   slow504: {
     label: '後端太慢 504', stop: 7, kind: 'http', marks: { 1: ['ok', IP], 5: ['warn', '回 504'], 7: ['bad', '處理太久'] }, browser: '504 Gateway Timeout 錯誤頁',
@@ -109,7 +109,7 @@ export default function NetPathLab() {
 
   return (
     <Lab accent="aqua" className="np" kicker="NETWORK LAB" title="網路通不通，壞在哪一層"
-         blurb="選一種故障，看請求一跳一跳往前走、停在哪一層，以及 dig、nc、curl 在這個情況下真正會印出什麼。">
+         blurb="請求一跳一跳往前走、停在故障的那一層，以及 dig、nc、curl 在這個情況下會印出什麼。">
       <LabControls>
         <Seg label="故障" tinted value={fault} onChange={choose} options={KEYS.map((k) => ({ value: k, label: FAULTS[k].label }))} />
         <span className="spacer" />
@@ -147,7 +147,7 @@ export default function NetPathLab() {
           </div>
           <div className="dtable-wrap">
             <table className="dtable np-tbl">
-              <caption>從錯誤訊息判斷層級（點一列切換）</caption>
+              <caption>從錯誤訊息判斷層級</caption>
               <thead><tr><th>故障</th><th>關鍵字</th><th>看哪一層</th></tr></thead>
               <tbody>
                 {KEYS.filter((k) => k !== 'ok').map((k) => (
@@ -161,7 +161,7 @@ export default function NetPathLab() {
             </table>
           </div>
           <Callout title="實際用在哪裡">
-            新服務上線後「連不到」、換了機器或 DNS 後部分使用者打不開、要請網管開防火牆之前——先自己跑一輪 <b>dig → nc → curl -v</b>，把「卡在哪一層、看到哪一句錯誤」貼給對方，比「網站壞了」有用得多。
+            新服務上線後「連不到」、換了機器或 DNS 後部分使用者打不開、要請網管開防火牆之前，先自己跑一輪 <b>dig → nc → curl -v</b>，把「卡在哪一層、看到哪一句錯誤」貼給對方，比「網站壞了」有用得多。
           </Callout>
         </div>
       </LabGrid>

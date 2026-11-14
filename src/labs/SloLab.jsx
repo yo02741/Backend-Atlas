@@ -79,8 +79,8 @@ export default function SloLab() {
 
   const EX = {
     none: ['沒有事故：預算全留著', [
-      '預算沒用到不是「賺到」，而是可以花的額度：可以更積極地部署、做有風險的遷移或實驗。',
-      '但 SLO 達標的前提是 SLI 量對了——主機活著、CPU 正常，不代表使用者的請求成功。',
+      '沒用到的預算是可以花的額度：可以更積極地部署、做有風險的遷移或實驗。',
+      '但 SLO 達標的前提是 SLI 量對了：主機活著、CPU 正常，不代表使用者的請求成功。',
     ]],
     outage: ['一次全面中斷：瞬間燒掉一大塊', [
       `30 分鐘全面中斷，燒率 ${num(m.burn)}×：照這個速度 ${dur(WINDOW_MIN / m.burn)}就能燒完整份預算。` +
@@ -92,7 +92,7 @@ export default function SloLab() {
     steady: ['持續小錯誤：慢慢燒，但一直在燒', [
       `1% 錯誤率對 ${sloLabel(slo)} 的燒率是 ${num(m.burn)}×。` +
         (m.burn > 1 + 1e-9 ? `大於 1：會在${exhaustTxt}燒完，比窗長 30 天早。`
-          : m.burn > 1 - 1e-9 ? '剛好等於 1：第 30 天剛好燒完——這就是「燒率 1」的意思。'
+          : m.burn > 1 - 1e-9 ? '剛好等於 1：第 30 天剛好燒完，這是「燒率 1」的意思。'
           : '小於 1：窗內燒不完。'),
       '這種錯誤不會讓主機掛掉，只看 CPU 或存活檢查完全看不到；要靠「成功請求比例」這類 SLI 才抓得到。',
     ]],
@@ -113,7 +113,7 @@ export default function SloLab() {
 
   return (
     <Lab accent="orange" kicker="SRE LAB" title="SLO 與錯誤預算：允許多少失敗、多快會燒完"
-         blurb="選 SLO 目標與事件，看 30 天的錯誤預算換算成多少失敗請求、多少分鐘的全面中斷，剩餘預算怎麼隨天數下降；燒率大於 1 就會在窗內燒完。">
+         blurb="30 天的錯誤預算換算成多少失敗請求、多少分鐘的全面中斷，剩餘預算隨天數下降；燒率大於 1 就會在窗內燒完。">
       <LabControls>
         <Seg label="SLO" tinted value={slo} onChange={setSlo} options={SLOS.map((s) => ({ value: s, label: sloLabel(s) }))} />
         <span className="slo-win">統計窗 30 天（{fmtN(WINDOW_MIN)} 分鐘）</span>
@@ -126,7 +126,7 @@ export default function SloLab() {
 
       <LabGrid variant="wide">
         <div className="lab-stack">
-          <LabStage label="剩餘錯誤預算" caption="滑過圖表可看任一天；虛線 = 燒率剛好 1（第 30 天剛好燒完）">
+          <LabStage label="剩餘錯誤預算" caption="虛線 = 燒率剛好 1（第 30 天剛好燒完）">
             <div ref={box}>
             <LineChart width={cw} height={Math.round(cw * (cw < 420 ? 0.6 : 0.42))} title={`剩餘錯誤預算（%）· 第 ${day} 天剩 ${Math.round(m.remain[day])}%`} xMax={DAYS} yMax={100} upto={day}
                        xTicks={[0, 5, 10, 15, 20, 25, 30]} fmtX={(d) => `${d}`} fmtY={(v) => `${Math.round(v)}%`}

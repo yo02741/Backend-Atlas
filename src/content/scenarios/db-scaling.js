@@ -1,4 +1,4 @@
-// 設計情境：資料庫撐不住了——連線池、讀寫分離、分片
+// 設計情境：資料庫撐不住了：連線池、讀寫分離、分片
 export default {
   id: 'db-scaling',
   order: 16,
@@ -56,7 +56,7 @@ export default {
     { id: 'conn', situation: '連線常滿、拿不到連線就 500，但 DB 的 CPU 只有 30%。', options: ['pool', 'replica', 'shard'], answer: 'pool',
       explain: '瓶頸是連線數不是算力：100 個 backend 大多在閒置等 API。pgbouncer 把 160 條客戶端連線收斂成 20 條伺服器連線，一天就能上線。副本與分片是為 CPU 或寫入做的，這裡用不到。' },
     { id: 'read', situation: '讀多寫少（90 / 10），CPU 長期 85%，慢查詢已優化過、索引都對。', options: ['pool', 'replica', 'partition'], answer: 'replica',
-      explain: '算力真的不夠，而且是讀吃掉的：讀寫分離讓讀的容量隨副本線性增加。分割表不會減少 CPU，連線池不解算力。要另外處理 read-your-writes。' },
+      explain: '算力不夠，而且是讀吃掉的：讀寫分離讓讀的容量隨副本線性增加。分割表不會減少 CPU，連線池不解算力。要另外處理 read-your-writes。' },
     { id: 'bigtable', situation: '單表 20 億列、查詢都帶 `user_id`、CPU 40%；但 VACUUM 跑不完、加索引要好幾小時、砍舊資料的 DELETE 鎖太久。', options: ['replica', 'partition', 'shard'], answer: 'partition',
       explain: '問題是單表太大帶來的維運痛，不是容量。依月份或 `user_id` 分區後，VACUUM 與索引都變成分區大小，砍舊資料變成 DROP PARTITION。CPU 還夠，分片是殺雞用牛刀。' },
     { id: 'write', situation: '寫入量每季翻倍，已經一主三讀、單表分區，主庫的寫入 IOPS 與 CPU 都快到頂，垂直升級也到最大機型了。', options: ['pool', 'replica', 'shard'], answer: 'shard',

@@ -57,7 +57,7 @@ export default {
     { id: 'community', situation: '社群留言平台。使用者刪帳號後，他在別人貼文下的留言要留著（不然討論串會斷），但名字與頭像要消失，也不需要復原。', options: ['hard', 'soft', 'anonymize', 'archive'], answer: 'anonymize',
       explain: '留言必須留、作者必須消失、不用復原：三個條件剛好都指向匿名化。hard 會把留言連鎖刪掉或變成無主留言；soft 的個資還在，30 天後還是要多做一次匿名化，不如一開始就做。' },
     { id: 'ecommerce', situation: '電商。訂單與發票依稅法要留 5 年，客服每週都有「誤刪請復原」，法規要求 30 天內清個資。', options: ['hard', 'soft', 'anonymize', 'archive'], answer: 'soft',
-      explain: '30 天內要能復原，只有 soft 與 archive 做得到；訂單與發票在 soft 下完全不動，archive 則要處理 FK 變 NULL。所以 soft 配 partial unique index，再加一個排程：deleted_at 超過 30 天的列改成匿名化——兩段式，前 30 天可復原、之後合規。' },
+      explain: '30 天內要能復原，只有 soft 與 archive 做得到；訂單與發票在 soft 下完全不動，archive 則要處理 FK 變 NULL。所以 soft 配 partial unique index，再加一個排程：deleted_at 超過 30 天的列改成匿名化。兩段式：前 30 天可復原、之後合規。' },
     { id: 'employee', situation: '內部員工帳號。離職後帳號要立刻失效；稽核要能查「兩年前這筆操作是誰做的」；離職員工不會用同一個 email 重新註冊；權限查詢每個請求都 JOIN 員工表。', options: ['hard', 'soft', 'anonymize', 'archive'], answer: 'archive',
       explain: '權限查詢是熱路徑，主表留一堆已離職的列並且每條查詢都要過濾，是 soft 的成本所在；搬到 archive 表主表只剩在職員工。稽核 JOIN archive 表即可，operations 表的 FK 改成 SET NULL 並保留 actor_id 快照欄位。沒有重新註冊需求，也沒有強個資法規，archive 的兩個缺點都不成問題。' },
     { id: 'gdpr', situation: '歐洲客戶依 GDPR 提出刪除權請求。該帳號沒有任何訂單或發票（只註冊沒買過），公司對這類帳號沒有任何法定保留義務。', options: ['hard', 'soft', 'anonymize', 'archive'], answer: 'hard',

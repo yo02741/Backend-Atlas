@@ -21,7 +21,7 @@ registry.example.com/shop/api@sha256:51b7…0d2e
 
 同一個名字，兩個不同的 image。原因是 `docker run` 預設只在**本機沒有這個 image 時**才去 registry 拉。web-1 是新開的機器，第一次就拉到新版；web-2 上早就有一份舊的 `latest`，`docker run` 直接拿來用，根本沒有連到 registry。
 
-這不是 Docker 的 bug，而是 tag 的本質：tag 是一個**可以被移動的名字**，`latest` 也只是其中一個名字，不代表「最新」。這一課從 image 與 container 的關係講起，接著是層與快取、registry 與 tag、容器的隔離、資料放哪、PID 1 與訊號，最後整理 `docker run` 的常用參數與錯誤訊息。
+這是 tag 的設計，不是 Docker 的 bug：tag 是一個**可以被移動的名字**，`latest` 也只是其中一個名字，不代表「最新」。這一課從 image 與 container 的關係講起，接著是層與快取、registry 與 tag、容器的隔離、資料放哪、PID 1 與訊號，最後整理 `docker run` 的常用參數與錯誤訊息。
 
 ## image 與 container
 
@@ -34,7 +34,7 @@ registry.example.com/shop/api@sha256:51b7…0d2e
 
 container 有生命週期：`created` → `running` → `exited`。**container 停止不等於刪除**，停止的 container 和它的可寫層還在，`docker start` 可以讓它再跑起來；`docker rm` 才會刪掉。所以 `docker ps -a` 常常會看到一長串 `Exited` 的舊容器，用 `docker run --rm` 讓容器結束時自動刪除。
 
-container 裡面跑的是**一個主行程**以及它衍生的子行程。主行程結束，container 就結束——這解釋了一個常見的困惑：「`docker run -d myimage` 之後，`docker ps` 看不到它」。多半是主行程啟動後馬上出錯退出了，或者它本來就是一個執行完就結束的指令。`docker ps -a` 會看到 `Exited (1) 3 seconds ago`，`docker logs <容器>` 看它印了什麼。
+container 裡面跑的是**一個主行程**以及它衍生的子行程。主行程結束，container 就結束。這解釋了一個常見的困惑：「`docker run -d myimage` 之後，`docker ps` 看不到它」。多半是主行程啟動後馬上出錯退出了，或者它本來就是一個執行完就結束的指令。`docker ps -a` 會看到 `Exited (1) 3 seconds ago`，`docker logs <容器>` 看它印了什麼。
 
 ## 層：image 是一疊唯讀的檔案系統
 
@@ -67,7 +67,7 @@ IMAGE          CREATED        CREATED BY                                      SI
 |---|---|---|
 | `FROM` | 基底映像的內容（digest） | 基底更新了，全部重建 |
 | `COPY` / `ADD` | 指令本身 + **被複製檔案的內容** | 檔案內容一變就失效（修改時間不算） |
-| `RUN` | 指令的**文字** + 前一層 | 文字沒變就用快取，**不管外面的世界變了沒** |
+| `RUN` | 指令的文字 + 前一層 | 文字沒變就用快取，**不管外面的世界變了沒** |
 
 `RUN` 那一列是個陷阱：`RUN apt-get update` 第一次執行後就被快取，三個月後重建 image，套件清單還是三個月前的。官方建議把 `apt-get update` 和 `apt-get install` 寫在同一個 `RUN` 裡，讓它們一起失效；要強制全部重來用 `docker build --no-cache`。
 
@@ -118,8 +118,8 @@ registry.example.com/shop/api:1.4.2@sha256:9c1e…a41f
 
 - **registry**：存 image 的伺服器。省略時是 Docker Hub（`docker.io`），只寫 `python:3.12-slim` 等於 `docker.io/library/python:3.12-slim`。
 - **repository**：同一個 image 的各個版本放在一起。
-- **tag**：人取的名字，**可以被重新指向另一個 image**。不寫 tag 時預設是 `latest`。
-- **digest**：image 內容的 SHA-256，**內容不變它就不變，內容一變它一定變**。用 digest 拉，保證每一台拿到的位元組完全相同。
+- **tag**：人取的名字，可以被重新指向另一個 image。不寫 tag 時預設是 `latest`。
+- **digest**：image 內容的 SHA-256，內容不變它就不變，內容一變它一定變。用 digest 拉，保證每一台拿到的位元組完全相同。
 
 `latest` 的問題整理如下：
 
@@ -160,7 +160,7 @@ exec /usr/local/bin/python3: exec format error
 | UTS | 主機名稱 | `hostname` 是容器 ID 或指定的名字 |
 | IPC、user、cgroup | 共享記憶體、使用者對應、cgroup 階層 | user namespace 預設**沒有**開啟重新對應 |
 
-- **cgroup**：決定行程「能用多少」——CPU、記憶體、行程數、I/O。`docker run --memory 512m --cpus 1.5` 就是設 cgroup 的上限。記憶體超過上限時，核心的 OOM killer 會殺掉容器裡的行程，`docker inspect` 看得到：
+- **cgroup**：決定行程「能用多少」：CPU、記憶體、行程數、I/O。`docker run --memory 512m --cpus 1.5` 就是設 cgroup 的上限。記憶體超過上限時，核心的 OOM killer 會殺掉容器裡的行程，`docker inspect` 看得到：
 
 ```bash
 $ docker inspect --format '{{.State.Status}} {{.State.ExitCode}} OOMKilled={{.State.OOMKilled}}' api
@@ -264,7 +264,7 @@ docker image prune                # 刪掉沒有 tag 的 image；加 -a 連沒�
 | `Bind for 0.0.0.0:8000 failed: port is already allocated` | 主機上的 8000 已經被別的容器或程式占用 | `docker ps` 看是不是舊容器；不是的話 `sudo ss -ltnp` 找行程；或換一個主機埠 `-p 8001:8000` |
 | `Conflict. The container name "/api" is already in use by container "…"` | 同名容器還在（可能是已停止的） | `docker rm -f api` 再起，或換名字 |
 | `pull access denied for shop/api, repository does not exist or may require 'docker login'` | 名字打錯、registry 沒寫（被當成 Docker Hub）、或沒登入私有 registry | 檢查完整名字；`docker login registry.example.com` |
-| `manifest unknown` 或 `not found` | 這個 tag 在 registry 上不存在 | 確認 CI 真的推了這個 tag |
+| `manifest unknown` 或 `not found` | 這個 tag 在 registry 上不存在 | 確認 CI 確實推了這個 tag |
 | `exec format error` | image 的 CPU 架構與主機不同；或腳本第一行沒有正確的 shebang | `docker image inspect --format '{{.Architecture}}'` 看架構；用 `--platform` 重建 |
 | 容器立刻 `Exited (0)` 或 `Exited (1)` | 主行程結束了 | `docker logs`；確認 CMD 是常駐程式而不是跑完就結束的指令 |
 | `Exited (137)`、`OOMKilled=true` | 超過記憶體上限 | 調整 `--memory` 或降低程式的用量（worker 數、快取大小） |

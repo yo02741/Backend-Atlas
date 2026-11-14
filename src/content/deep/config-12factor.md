@@ -122,11 +122,11 @@ logging.basicConfig(level="INFO", handlers=[handler])
 ## X、XII：環境一致，一次性工作用同一份程式
 
 - **dev / prod 一致**：本機也用 PostgreSQL（不用 SQLite 代替）、也跑在容器裡，差異只在設定值。「本機測過」才有意義。compose 讓這件事很容易，見 [docker-compose 開發環境](#/skill/compose)。
-- **一次性工作**：資料庫 migration、修資料的腳本，用**同一個 image、同一份設定**執行（`docker compose run --rm api alembic upgrade head`、Kubernetes 的 Job），不要另外在某人的筆電上連正式資料庫跑。
+- **一次性工作**：資料庫 migration、修資料的腳本，用同一個 image、同一份設定執行（`docker compose run --rm api alembic upgrade head`、Kubernetes 的 Job），不要另外在某人的筆電上連正式資料庫跑。
 
 ## 設定在啟動時驗證，失敗就不要啟動
 
-回到開頭的兩個問題。解法是把所有設定集中在一個地方，在**行程啟動時**一次讀完、轉成正確的型別、檢查範圍與彼此的關係。任何一項有問題，就印出**全部**的錯誤並以非零退出碼結束。
+回到開頭的兩個問題。解法是把所有設定集中在一個地方，在**行程啟動時**一次讀完、轉成正確的型別、檢查範圍與彼此的關係。任何一項有問題，就印出全部的錯誤並以非零退出碼結束。
 
 這樣做的效果：
 

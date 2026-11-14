@@ -69,7 +69,7 @@ OrderViewError: cannot render order 1042
 
 1. **每一段的最後一行**是例外型別與訊息。
 2. **一個 frame 是一組**：`File "路徑", line 行號, in 函式名`，接著是那一行原始碼。最早被呼叫的在最上面，出錯的地方在最下面。
-3. **由下往上，找第一個路徑在自己專案裡的 frame**。最底下的 frame 常常在標準函式庫或 `site-packages` 裡：這裡是 `json/__init__.py`，它只是照規則拒絕了傳進去的 `None`。往上一格的 `order_view.py` 第 14 行才是自己的程式。
+3. **由下往上，找第一個路徑在自己專案裡的 frame**。最底下的 frame 常常在標準函式庫或 `site-packages` 裡：這裡是 `json/__init__.py`，它只是照規則拒絕了傳進去的 `None`。往上一格的 `order_view.py` 第 14 行是自己的程式。
 4. **看那一行用到的值**：`item["options"]` 是 `None`。再往上一個自己的 frame，查這個值從哪裡來。
 
 ### 兩種串接
@@ -234,7 +234,7 @@ import math
 
 # 40 個 commit，由舊到新。c01 是上一版（已知正常），c40 是現在（已知會壞）
 COMMITS = [f"c{i:02d}" for i in range(1, 41)]
-FIRST_BAD = "c27"                      # 實際上是誰弄壞的——bisect 開始時並不知道
+FIRST_BAD = "c27"                      # 實際上是誰弄壞的；bisect 開始時並不知道
 
 
 def run_repro(commit):
@@ -297,7 +297,7 @@ def render_item(item):
 
 ## 時間花在哪：profiler
 
-**cProfile** 在標準函式庫裡，記錄每一次函式呼叫的次數與時間。它本身會拖慢程式，所以看的是各函式之間的**比例**，不是絕對秒數。不改程式就能用：`python -m cProfile -s cumulative script.py`。
+**cProfile** 在標準函式庫裡，記錄每一次函式呼叫的次數與時間。它本身會拖慢程式，所以看的是各函式之間的比例，不是絕對秒數。不改程式就能用：`python -m cProfile -s cumulative script.py`。
 
 | 欄位 | 意思 |
 |---|---|
@@ -370,9 +370,9 @@ after = profile("修改後", find_user_indexed, BY_ID)
 print("兩次的輸出相同：", before == after)
 ```
 
-修改前 `find_user` 被呼叫 4,000 次、`tottime` 最高：每筆訂單都把使用者清單從頭掃一遍。換成 dict 之後它從前幾名消失，下一個熱點變成日期解析。秒數每次執行都不同，排名與呼叫次數才是穩定的資訊（見 [Big-O 與後端常見複雜度](#/skill/big-o)）。
+修改前 `find_user` 被呼叫 4,000 次、`tottime` 最高：每筆訂單都把使用者清單從頭掃一遍。換成 dict 之後它從前幾名消失，下一個熱點變成日期解析。秒數每次執行都不同，排名與呼叫次數比較穩定（見 [Big-O 與後端常見複雜度](#/skill/big-o)）。
 
-**py-spy** 是第三方的取樣式 profiler：對**已經在執行的行程**定期取樣呼叫堆疊，不用改程式、不用重啟。適合「正式環境某個 worker 的 CPU 一直是滿的」或「行程卡住了，想知道停在哪一行」這類情況；需要相應的系統權限，指令以它的官方文件為準。
+**py-spy** 是第三方的取樣式 profiler：對已經在執行的行程定期取樣呼叫堆疊，不用改程式、不用重啟。適合「正式環境某個 worker 的 CPU 一直是滿的」或「行程卡住了，想知道停在哪一行」這類情況；需要相應的系統權限，指令以它的官方文件為準。
 
 時間花在等資料庫或外部 API 時，要看的是慢查詢與 trace（見 [可觀測性](#/skill/observability)）；整個服務在多少流量下開始變慢，見 [效能量測與壓測](#/skill/load-testing)。
 

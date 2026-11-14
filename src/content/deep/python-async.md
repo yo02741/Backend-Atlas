@@ -69,7 +69,7 @@ event loop 是一個不斷重複的迴圈，手上有兩份名單：「現在可
 關鍵字的實際意義：
 
 - `async def f()` 定義一個**協程函式**；呼叫 `f()` 不會執行任何內容，只會產生一個協程物件。
-- `await x` 的意思是「我要等 x 的結果；等的期間，loop 可以去跑別人」。只有 await 的對象真的需要等待時才會讓出（`await asyncio.sleep(0)` 是刻意讓出一次）。
+- `await x` 的意思是「我要等 x 的結果；等的期間，loop 可以去跑別人」。只有 await 的對象需要等待時才會讓出（`await asyncio.sleep(0)` 是刻意讓出一次）。
 - `asyncio.create_task(coro)` 把協程交給 loop 排程，**現在就開始跑**（在下一次讓出時），回傳一個 Task。
 - `asyncio.gather(a, b, c)` 同時排程多個協程，等全部完成，依傳入順序回傳結果。
 
@@ -154,7 +154,7 @@ await run(good_handler)
 await run(bad_handler)
 ```
 
-`bad_handler` 那一行的心跳會出現一個約 400 ms 以上的間隔：在真的服務裡，這 400 ms 內同一個 worker 上所有請求、健康檢查都停住。
+`bad_handler` 那一行的心跳會出現一個約 400 ms 以上的間隔：在實際的服務裡，這 400 ms 內同一個 worker 上所有請求、健康檢查都停住。
 
 ### CPU 密集工作：async 沒有幫助
 

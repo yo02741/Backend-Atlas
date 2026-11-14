@@ -59,8 +59,8 @@ const fmt = (s) => s < 60 ? `${Math.round(s)} 秒` : `${Math.floor(s / 60)} 分 
 const MODES = [{ value: 'sync', label: '同步等待' }, { value: 'poll', label: '202 + 輪詢' }, { value: 'push', label: '202 + 推播' }]
 
 const TEXT = {
-  sync: { title: '同步：worker 被占滿，60 秒一到閘道就砍', body: ['每個請求握住一個 API worker 直到 CSV 產完。工作超過 60 秒時，nginx / 負載平衡器在第 60 秒回給使用者 504——但 worker 不知道客戶端已經走了，橘色條後面的紅色段是「白做」：算完的檔案沒有人收。', '第 5 個人開始連 worker 都拿不到，先在 API 的 backlog 排隊，一樣在 60 秒後被砍。網站其他所有端點在這段時間都排在同一個隊伍裡。把「工作長度」拉到 10 秒以下，同步才成立。'] },
-  poll: { title: '202 + 輪詢：API 只花幾毫秒，工作由背景 worker 排隊做', body: ['API worker 池那條幾乎是空的：收單 0.4 秒回 202，之後每 5 秒一次 0.2 秒的 GET /jobs/{id}。匯出本身在背景 worker 排隊，4 個 worker 同時最多做 4 份，後面的 queued。', '「202 不會讓工作變快」——最後一個人拿到檔案的時間仍取決於背景 worker 數與工作長度；它解決的是逾時與 API 被占滿，並且讓 jobs 表記得每份工作的狀態與進度，關掉分頁回來還查得到。'] },
+  sync: { title: '同步：worker 被占滿，60 秒一到閘道就砍', body: ['每個請求握住一個 API worker 直到 CSV 產完。工作超過 60 秒時，nginx / 負載平衡器在第 60 秒回給使用者 504，但 worker 不知道客戶端已經走了，橘色條後面的紅色段是「白做」：算完的檔案沒有人收。', '第 5 個人開始連 worker 都拿不到，先在 API 的 backlog 排隊，一樣在 60 秒後被砍。網站其他所有端點在這段時間都排在同一個隊伍裡。工作長度在 10 秒以下，同步才成立。'] },
+  poll: { title: '202 + 輪詢：API 只花幾毫秒，工作由背景 worker 排隊做', body: ['API worker 池那條幾乎是空的：收單 0.4 秒回 202，之後每 5 秒一次 0.2 秒的 GET /jobs/{id}。匯出本身在背景 worker 排隊，4 個 worker 同時最多做 4 份，後面的 queued。', '202 不會讓工作變快：最後一個人拿到檔案的時間仍取決於背景 worker 數與工作長度；它解決的是逾時與 API 被占滿，並且讓 jobs 表記得每份工作的狀態與進度，關掉分頁回來還查得到。'] },
   push: { title: '202 + 推播：完成才通知，沒有無效請求', body: ['前半段與輪詢完全相同（202、佇列、背景 worker、jobs 表），差別在客戶端那條線：沒有青色的輪詢點，直到工作完成的那一刻才收到一次通知（webhook / WebSocket / email）。', '代價是通知管道本身：WebSocket 要維護長連線；webhook 要簽章、重試、處理對方掛掉；email 有延遲。通知可能漏，所以 GET /jobs/{id} 仍要保留當備援，只是不用一直打。'] },
 }
 
@@ -101,7 +101,7 @@ export default function LongTaskScenarioLab() {
 
   return (
     <Lab accent="aqua" kicker="SCENARIO LAB" title="三分鐘的匯出：同一批人同時按，三條泳道各自發生什麼"
-         blurb="調人數、API worker 數與工作長度，按「開始」看時間軸怎麼跑。閘道逾時固定 60 秒、背景 worker 固定 4 個、輪詢每 5 秒一次，全部示意。">
+         blurb="人數、API worker 數與工作長度決定的時間軸。閘道逾時固定 60 秒、背景 worker 固定 4 個、輪詢每 5 秒一次，全部示意。">
       <LabControls>
         <Seg tinted label="做法" value={mode} onChange={setMode} options={MODES} />
         <Slider label="同時按的人數" min={1} max={20} value={users} onChange={setUsers} format={(v) => `${v} 人`} />
@@ -129,9 +129,9 @@ export default function LongTaskScenarioLab() {
         </div>
         <div className="lab-stack">
           <LabExplain title={text.title}>{text.body.map((p, i) => <p key={i}>{p}</p>)}</LabExplain>
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             任何一個請求可能超過閘道逾時（常見 30–60 秒）的工作：匯出、報表、批次寄信、影片轉檔、大檔匯入、呼叫很慢的第三方。行動網路更早：連線 30 秒沒回應 App 就自己斷了。
-            判準只有一個——<b>這個請求在最壞情況下要跑多久</b>；超過逾時的一半就該改 202。
+            判準只有一個：<b>這個請求在最壞情況下要跑多久</b>；超過逾時的一半就該改 202。
           </Callout>
         </div>
       </LabGrid>

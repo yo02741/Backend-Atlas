@@ -111,7 +111,7 @@ export default function K8sLab() {
   const EX = {
     steady: ['穩定狀態：Deployment → ReplicaSet → Pod', [`Deployment 宣告「要 ${replicas} 個 v${sim.target}」，底下的 ReplicaSet 負責維持 Pod 數量；拉副本數，少了就建、多了就砍。`, 'Service 用 label selector 找到這組 Pod，但只把 Ready 的 Pod 放進 endpoints；Ingress 依網域與路徑把外部 HTTP 導到 Service。']],
     rolling: [`滾動更新中：v${oldVer} → v${sim.target}`, [`規則只有兩條：Pod 總數不超過 ${replicas} + maxSurge ${surge} = ${replicas + surge}；可用（Ready）數不低於 ${replicas} − maxUnavailable ${unavail} = ${Math.max(0, replicas - unavail)}。`, '新 Pod 要等 readiness probe 通過才算可用，controller 才會再關掉一個舊的。所以更新過程中 Service 一直有 Ready 的 Pod 在接流量。']],
-    stuck: [`更新卡住：v${sim.target} 的 readiness 一直失敗`, [`v${sim.target} 永遠不 Ready，不算可用，舊 Pod 就不會再被關（maxUnavailable 允許的除外）；Service 只送流量給 Ready 的舊 Pod，使用者沒感覺。`, '卡住不會自己好：超過 progressDeadlineSeconds（預設 600 秒）後 Deployment 被標成 ProgressDeadlineExceeded，但不會自動回滾。按「回滾」等同 kubectl rollout undo；或把「新版 readiness 失敗」關掉，模擬修好後繼續。']],
+    stuck: [`更新卡住：v${sim.target} 的 readiness 一直失敗`, [`v${sim.target} 永遠不 Ready，不算可用，舊 Pod 就不會再被關（maxUnavailable 允許的除外）；Service 只送流量給 Ready 的舊 Pod，使用者沒感覺。`, '卡住不會自己好：超過 progressDeadlineSeconds（預設 600 秒）後 Deployment 被標成 ProgressDeadlineExceeded，但不會自動回滾。「回滾」等同 kubectl rollout undo；關掉「新版 readiness 失敗」等於修好後繼續。']],
     outage: ['沒有任何 Ready 的 Pod：503', ['Service 的 endpoints 是空的，請求全部失敗。常見原因：只有 1 個副本又設 maxUnavailable ≥ 1、新版 readiness 失敗又沒留舊 Pod，或節點全掛。', '副本數至少 2、maxUnavailable 設 0 搭配 maxSurge ≥ 1，更新時才一定有 Pod 在接流量。']],
     down: ['node-3 停機：Pod 被重新排到其他節點', ['節點失聯後，上面的 Pod 被移除；ReplicaSet 發現數量不夠就建新的，scheduler 排到還有空間的節點，等 readiness 通過才接流量。', '真實叢集裡，節點失聯到驅逐 Pod 預設約 5 分鐘（Pod 的 not-ready / unreachable toleration 300 秒），這裡縮短成立即。節點恢復後，已經跑著的 Pod 不會自動搬回去。']],
     pending: [`${pending.length} 個 Pod Pending：剩下的節點放不下`, ['這裡假設每台節點最多 4 個 Pod。關掉一台後，剩下的容量不夠，多出來的 Pod 停在 Pending，直到節點恢復或加節點。', '容量規劃要算「少一台還放得下」；滾動更新時 maxSurge 也會多佔空間。']],
@@ -140,7 +140,7 @@ spec:
 
   return (
     <Lab accent="blue" kicker="K8S LAB" title="Deployment、Service 與滾動更新：流量只送給 Ready 的 Pod"
-         blurb="按「部署新版本」看 v2 怎麼依 maxSurge / maxUnavailable 一個個換掉 v1；打開「新版 readiness 失敗」看更新卡住、舊 Pod 照樣服務；關掉一台節點，看 Pod 被重新排到別台。">
+         blurb="v2 依 maxSurge / maxUnavailable 一個個換掉 v1；新版 readiness 失敗時更新卡住、舊 Pod 照樣服務；節點關掉後 Pod 被重新排到別台。">
       <LabControls>
         <Slider label="副本數 replicas" min={1} max={8} value={replicas} onChange={setReplicas} format={(v) => `${v} 個`} />
         <Seg label="maxSurge" value={surge} onChange={setSurge} options={[0, 1, 2].map((v) => ({ value: v, label: String(v) }))} />

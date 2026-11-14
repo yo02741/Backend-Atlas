@@ -32,7 +32,7 @@ def notify_shipped(order_id: int) -> None:
 
 ### formatter：結束排版爭論
 
-formatter 會把程式碼解析之後重新輸出，所以結果只取決於程式碼本身，不取決於誰寫的。`ruff format --check` 只檢查不修改，有檔案需要重排時以非零狀態結束，可以直接當 CI 的關卡。換行寬度等少數選項可以設定，但重點是「團隊選一套、全部交給工具」。
+formatter 會把程式碼解析之後重新輸出，所以結果只取決於程式碼本身，不取決於誰寫的。`ruff format --check` 只檢查不修改，有檔案需要重排時以非零狀態結束，可以直接當 CI 的關卡。換行寬度等少數選項可以設定，原則是「團隊選一套、全部交給工具」。
 
 ### linter：每條規則背後都有一種 bug
 
@@ -59,7 +59,7 @@ Python 的型別提示是選用的，型別檢查器只能檢查有標註的地�
 - **pyright 有 `basic`、`standard`、`strict` 等模式**（`typeCheckingMode`），也可以只對特定檔案或資料夾開 strict。
 - 常見的導入路徑：全專案先用寬鬆模式讓 CI 綠，新寫的模組開嚴格模式，再逐步擴大。
 
-型別檢查器的錯誤多半是真的 bug，例如：
+型別檢查器的錯誤多半是實際的 bug，例如：
 
 - `X | None` 沒處理 None：查無資料、環境變數沒設、dict 的 `.get()`。
 - 回傳型別不一致：某個分支忘了 `return`，回傳了 `None`。
@@ -234,7 +234,7 @@ print(ast.dump(compare))
 ```python run
 import sys
 
-# E722：裸 except 連 SystemExit 都吞掉——程式想結束卻結束不了
+# E722：裸 except 連 SystemExit 都吞掉，程式想結束卻結束不了
 def shutdown_then_continue():
     try:
         sys.exit(1)                 # 例如收到停止訊號後要結束
@@ -305,7 +305,7 @@ app/billing.py:30:12 - error: Type "float | Literal[0]" is not assignable to ret
 
 括號裡是規則名稱，可以在設定裡個別調整嚴格度。第二條是因為 `sum(list[float])` 的結果是 float（空 list 時是 0），宣告回傳 `int` 不符。
 
-**壓掉錯誤的正確方式**：真的確定是誤報時，壓掉**特定代碼**並寫原因：`# noqa: E722  第三方 SDK 會丟出 BaseException 子類別` 或 `# type: ignore[import-untyped]`。不要寫沒有代碼的 `# type: ignore` 或 `# noqa`，它們會連以後新出現的錯誤一起壓掉。
+**壓掉錯誤的正確方式**：確定是誤報時，壓掉特定代碼並寫原因：`# noqa: E722  第三方 SDK 會丟出 BaseException 子類別` 或 `# type: ignore[import-untyped]`。不要寫沒有代碼的 `# type: ignore` 或 `# noqa`，它們會連以後新出現的錯誤一起壓掉。
 
 **pre-commit 改了檔案導致 commit 失敗**：`ruff-format` 或 `ruff-check --fix` 修改了檔案時，hook 會回報失敗，這是正常的，代表檔案被改過、需要重新 `git add` 再 commit 一次。
 

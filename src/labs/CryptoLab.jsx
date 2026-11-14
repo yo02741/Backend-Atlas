@@ -55,7 +55,7 @@ const TOOLS = {
       '解密失敗時 WebCrypto 只拋出 `OperationError`：密文或 tag 被改、金鑰不對、nonce 不對，都是同一個錯誤，GCM 不會告訴你是哪一個。'] },
   sig: { label: '簽章', algo: 'ECDSA P-256', out: '簽章', key: '私鑰簽、公鑰驗', props: [0, 1, 1, 1], pass: '簽章驗證通過', fail: '簽章驗證失敗',
     title: '簽章：私鑰簽，任何人用公鑰驗',
-    text: ['簽發者用私鑰簽，任何人用公鑰驗。公鑰外洩沒有影響，只拿到公鑰的人也簽不出合法的簽章——這是它比 HMAC 多出來的性質。JWT RS256／ES256、TLS 憑證鏈都是這個用法。',
+    text: ['簽發者用私鑰簽，任何人用公鑰驗。公鑰外洩沒有影響，只拿到公鑰的人也簽不出合法的簽章。這是它比 HMAC 多出來的性質。JWT RS256／ES256、TLS 憑證鏈都是這個用法。',
       '簽章不提供機密性，訊息本身是明文。「用私鑰加密」不是正確的說法，程式裡分清楚呼叫的是 `sign`／`verify` 還是 `encrypt`／`decrypt`。'] },
 }
 const ORDER = ['hash', 'hmac', 'aes', 'sig']
@@ -138,7 +138,7 @@ export default function CryptoLab() {
 
   return (
     <Lab className="cr" accent="red" kicker="SECURITY LAB" title="密碼學工具箱：四種工具各解決什麼"
-         blurb="雜湊、HMAC、對稱加密、簽章各自只回答一種問題。改一改訊息，看瀏覽器用 crypto.subtle 真的算出來的結果；再竄改訊息、竄改輸出、換一把金鑰，看接收方的驗證怎麼變。">
+         blurb="雜湊、HMAC、對稱加密、簽章各自只回答一種問題。結果由瀏覽器的 crypto.subtle 計算；訊息或輸出被竄改、金鑰換掉時，接收方的驗證結果跟著變。">
       <LabControls>
         <Seg label="工具" tinted value={tool} onChange={setTool} options={ORDER.map((k) => ({ value: k, label: TOOLS[k].label, title: TOOLS[k].algo }))} />
         <label className="cr-msg">
@@ -216,7 +216,7 @@ export default function CryptoLab() {
           <LabExplain title={T.title}>
             {T.text.map((s, i) => <p key={i}><Md>{s}</Md></p>)}
             {why.length > 0 && <p><strong>這次驗證失敗：</strong>{why.join('、')}。{tool === 'aes' ? '只要有一項不對，tag 驗證就失敗。' : '任何一項不對，驗證都不會通過。'}</p>}
-            {forged && <p><strong>摘要對得上，可是訊息已經被改了：</strong>攻擊者改完訊息，自己重算了一份摘要。雜湊回答不了「是誰算的」——這就是它沒有來源驗證的意思。</p>}
+            {forged && <p><strong>摘要對得上，可是訊息已經被改了：</strong>攻擊者改完訊息，自己重算了一份摘要。雜湊回答不了「是誰算的」，也就是沒有來源驗證。</p>}
           </LabExplain>
           {tool === 'aes' && t.reuse && (
             <Callout tone="warn" title="同一把金鑰下，nonce 絕不能重複">

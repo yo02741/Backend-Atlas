@@ -1,4 +1,4 @@
-// 題庫：P9 新課（l4 批）——semantic-layer / finops / aiops / event-driven
+// 題庫：P9 新課（l4 批）：semantic-layer / finops / aiops / event-driven
 export default [
   {
     skill: 'semantic-layer',

@@ -120,7 +120,7 @@ export default function CacheLab() {
 
   return (
     <Lab accent="violet" kicker="DATABASE LAB" title="Cache-aside：Redis 擋在資料庫前面"
-         blurb="按 GET 看第一次 miss 怎麼多跑一趟資料庫、之後 hit 怎麼 1 ms 回頭；key 有真實倒數的 TTL。按 UPDATE 改資料，再切換「寫入時使快取失效」，看沒失效的快取怎麼交出舊資料。">
+         blurb="第一次 miss 多跑一趟資料庫，之後 hit 1 ms 回頭；key 的 TTL 照真實時間倒數。寫入時沒有使快取失效，UPDATE 之後讀到的是舊資料。">
       <LabControls>
         <Slider label="TTL" min={3} max={15} value={ttl} onChange={setTtl} format={(v) => `${v} 秒`} />
         <Toggle label="寫入時使快取失效（invalidate）" checked={invalidate} onChange={setInvalidate} />
@@ -135,7 +135,7 @@ export default function CacheLab() {
           <LabStage label="API、Redis、PostgreSQL 三節點與請求流向" caption="TTL 滑桿只影響之後回寫的 key。倒數條走完 key 就從 Redis 消失，下一次 GET 又是 miss。">
             <Diagram phase={phase} cache={cache} db={db} now={now} stale={stale} />
             <p className={`cache-phase${phase ? ' on' : ''}`}>
-              {phase ? phase.text : total === 0 ? '還沒有任何請求。按「GET /users/1」發出第一個。' : '閒置中。再按一次 GET，或改資料看快取怎麼反應。'}
+              {phase ? phase.text : total === 0 ? '還沒有請求，按「GET /users/1」發出第一個。' : '閒置中。'}
             </p>
           </LabStage>
           <div className="cache-stats">
@@ -162,7 +162,7 @@ export default function CacheLab() {
             {explain.text.map((p, i) => <p key={i} dangerouslySetInnerHTML={{ __html: md(p) }} />)}
           </LabExplain>
           <Callout title="工作上什麼時候用">
-            <b>讀多寫少、可以容忍幾秒舊資料、流量集中在少數熱點</b>——首頁、商品頁、使用者 profile、系統設定——cache-aside 幾乎穩賺。
+            <b>讀多寫少、可以容忍幾秒舊資料、流量集中在少數熱點</b>的資料（首頁、商品頁、使用者 profile、系統設定），cache-aside 幾乎穩賺。
             不適合：每次查詢都不一樣（命中率低，白繳記憶體）、需要強一致的東西（餘額、庫存扣減），那些要回到 DB 的交易去做。
           </Callout>
         </div>
@@ -222,21 +222,21 @@ function pickExplain({ flow, lastKind, stale, invalidate, cache, total, rate }) 
   if (!kind) return {
     title: 'Cache-aside：快取擋在前面，但由 API 自己管',
     text: [
-      '讀：先問 Redis，沒有（miss）才去 PostgreSQL，拿到後**回寫** Redis 並設 TTL。寫：直接改 DB，然後把快取的 key **刪掉**。Redis 完全不知道 DB 的存在，所有「什麼時候查、什麼時候寫回、什麼時候刪」都是應用程式的責任——這就是 aside（旁路）的意思。',
+      '讀：先問 Redis，沒有（miss）才去 PostgreSQL，拿到後回寫 Redis 並設 TTL。寫：直接改 DB，然後把快取的 key **刪掉**。Redis 完全不知道 DB 的存在，「什麼時候查、什麼時候寫回、什麼時候刪」都是應用程式的責任，aside（旁路）指的是這件事。',
       '對照右邊的 pseudo code：`get_user` 是讀路徑，`update_user` 是寫路徑。按 GET 開始。',
     ],
   }
   if (kind === 'miss') return {
     title: 'Miss：多跑一趟 DB，順手把答案留下',
     text: [
-      `Redis 裡沒有 ${KEY}，API 只好去 PostgreSQL 查（示意 ${DB_MS} ms），拿到後用 SETEX 回寫、附上 TTL。這次請求共 ${CACHE_MS + DB_MS} ms，比沒有快取還多了 1 ms——第一個人替後面所有人付了這筆錢。`,
+      `Redis 裡沒有 ${KEY}，API 只好去 PostgreSQL 查（示意 ${DB_MS} ms），拿到後用 SETEX 回寫、附上 TTL。這次請求共 ${CACHE_MS + DB_MS} ms，比沒有快取還多了 1 ms，第一個人替後面所有人付了這筆錢。`,
       '回寫之後 key 開始倒數。TTL 越長命中率越高，但資料被改掉時，舊值也活得越久。',
     ],
   }
   if (kind === 'hit') return stale ? {
-    title: 'Hit，但是舊的：這就是 stale read',
+    title: 'Hit，但是舊的：stale read',
     text: [
-      `Redis 有 ${KEY}，API 1 ms 就回了，完全沒碰 DB——所以它也不知道 DB 的 name 已經改掉。使用者看到的是舊名字，會持續到 TTL 到期為止。`,
+      `Redis 有 ${KEY}，API 1 ms 就回了，完全沒碰 DB，所以它也不知道 DB 的 name 已經改掉。使用者看到的是舊名字，會持續到 TTL 到期為止。`,
       '這不是 bug，是 cache-aside 沒有搭配失效時的預期行為。開啟「寫入時使快取失效」再試一次 UPDATE。',
     ],
   } : {
@@ -256,8 +256,8 @@ function pickExplain({ flow, lastKind, stale, invalidate, cache, total, rate }) 
     title: '沒有失效：快取不知道 DB 改了',
     text: [
       cache
-        ? `DB 的 name 已經改了，但 ${KEY} 還在 Redis 裡、還在倒數。下一次 GET 會是 hit，拿到的卻是舊值——直到 TTL 到期。`
-        : `DB 的 name 改了。此刻 Redis 剛好沒有 ${KEY}，所以下一次 GET 會 miss 並載入新值——但這只是運氣，換個時機就會拿到舊資料。`,
+        ? `DB 的 name 已經改了，但 ${KEY} 還在 Redis 裡、還在倒數。下一次 GET 會是 hit，拿到的卻是舊值，直到 TTL 到期。`
+        : `DB 的 name 改了。此刻 Redis 剛好沒有 ${KEY}，所以下一次 GET 會 miss 並載入新值。這只是運氣，換個時機就會拿到舊資料。`,
       '這是 cache-aside 最常見的線上事故來源：改了資料，畫面卻沒變。',
     ],
   }

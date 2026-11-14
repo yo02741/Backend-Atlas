@@ -1,4 +1,4 @@
-// 程式題：P10 新課（m4 批）——data-pipelines、dimensional-modeling
+// 程式題：P10 新課（m4 批）：data-pipelines、dimensional-modeling
 // SQL 題的資料表都由 setup 建立（虛構的掛號與醫師資料，沒有真實個資）
 
 // 掛號明細 → 每日各科彙總；5/4 的批次（run 42）跑到一半失敗，留下不完整的列

@@ -1,4 +1,4 @@
-// 題庫：P10 新課（m3 批）——legacy-migration / legacy-data-sync
+// 題庫：P10 新課（m3 批）：legacy-migration / legacy-data-sync
 export default [
   {
     skill: 'legacy-migration',

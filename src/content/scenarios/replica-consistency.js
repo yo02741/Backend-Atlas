@@ -61,7 +61,7 @@ export default {
     { id: 'checkout', situation: '付款完成後的訂單頁與付款結果頁。404 或顯示「未付款」會導致重複付款與客訴；這兩頁的讀流量只佔全站 2%。', options: ['primary-read', 'lsn', 'eventual', 'all-primary'], answer: 'all-primary',
       explain: '錯一次的代價是真金白銀，而流量只有 2%，主庫扛得起。直接把這幾個 endpoint 綁死主庫，不依賴 cookie 也不依賴客戶端帶版本，是最不會出錯的做法。' },
     { id: 'app', situation: '行動 App 呼叫同一組 API，沒有 cookie；使用者寫完在 App 內立刻讀，但也常在另一台裝置上看。主庫讀流量已接近上限。', options: ['primary-read', 'lsn', 'eventual', 'all-primary'], answer: 'lsn',
-      explain: '沒有 cookie，primary-read 掛不上；主庫接近上限，all-primary 沒空間。寫入回應帶 LSN，App 在後續請求的 header 帶回來，伺服器只在副本沒追上時才讀主庫——平常 50 ms 延遲時幾乎全走副本。跨裝置的情況副本通常早已追上。' },
+      explain: '沒有 cookie，primary-read 掛不上；主庫接近上限，all-primary 沒空間。寫入回應帶 LSN，App 在後續請求的 header 帶回來，伺服器只在副本沒追上時才讀主庫。平常 50 ms 延遲時幾乎全走副本。跨裝置的情況副本通常早已追上。' },
   ],
   implementation: [
     { title: '寫後讀主庫：cookie 記 last_write_at（FastAPI）', lang: 'python', code: `STICKY_SECONDS = 5  # 要 > 尖峰時的副本延遲

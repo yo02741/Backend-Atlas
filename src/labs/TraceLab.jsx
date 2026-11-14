@@ -77,10 +77,10 @@ const depthOf = (s, all) => { let d = 0, p = s.p; while (p) { d++; p = all.find(
 function explain(sc, hot, tr, at) {
   if (sc === 'normal') return ['正常：7 個 span，一個 trace id 串到底', [
     '「建立掛號」從 api-gateway 進來，掛號服務查號源、寫入掛號，再呼叫通知服務送簡訊。每個 span 是一段有開始與結束時間的工作，子 span 縮排在父 span 底下。',
-    '這個請求的每一行 log 都帶著同一個 `trace_id`。按「用這個 trace id 過濾 log」就只剩這個請求的日誌；別的請求、以及沒有 trace id 的背景排程那一行都會掉出來。',
+    '這個請求的每一行 log 都帶著同一個 `trace_id`。用這個 trace id 過濾 log，就只剩這個請求的日誌；別的請求、以及沒有 trace id 的背景排程那一行都會掉出來。',
   ]]
   if (!hot) return ['metrics：p95 在 10:18 前後出現尖峰', [
-    `告警從 metrics 來：p95 延遲從 150 ms 上下跳到 ${fmtMs(tr.spans[0].d)}。` + (sc === 'retry' ? '錯誤率也跟著升高。' : '錯誤率沒有動——請求變慢了，但還是成功。'),
+    `告警從 metrics 來：p95 延遲從 150 ms 上下跳到 ${fmtMs(tr.spans[0].d)}。` + (sc === 'retry' ? '錯誤率也跟著升高。' : '錯誤率沒有動：請求變慢了，但還是成功。'),
     `metrics 是事先聚合的數字，說得出「多慢、從什麼時候開始」，說不出慢在哪一段。點圖上的尖峰，打開那個時間的 trace。目前顯示的是 10:${pad(at)} 的一條正常 trace。`,
   ]]
   return {
@@ -94,7 +94,7 @@ function explain(sc, hot, tr, at) {
     ]],
     broken: ['鏈斷掉：呼叫通知服務時沒有帶 traceparent', [
       '瀑布圖只到「呼叫 notify-svc」為止：1,440 ms 花在那裡，裡面發生什麼看不到。通知服務沒收到 `traceparent` 標頭，只好自己開一條新的 trace，變成兩個不相干的 trace。',
-      '用 trace id 過濾 log，通知服務的三行都掉出來——它們帶的是另一個 trace id。跨服務時 trace 的上下文靠 `traceparent` 標頭傳遞：呼叫下游的那一段要把它帶上，經過訊息佇列時要放進訊息的 metadata。',
+      '用 trace id 過濾 log，通知服務的三行都掉出來，因為它們帶的是另一個 trace id。跨服務時 trace 的上下文靠 `traceparent` 標頭傳遞：呼叫下游的那一段要把它帶上，經過訊息佇列時要放進訊息的 metadata。',
     ]],
   }[sc]
 }
@@ -146,7 +146,7 @@ export default function TraceLab() {
 
   return (
     <Lab accent="magenta" className="trc-lab" kicker="OBSERVABILITY LAB" title="可觀測性：用 trace id 把 metrics、trace、log 串起來"
-         blurb="一個「建立掛號」請求經過 API、掛號服務、資料庫與通知服務。從 metrics 的尖峰找到一條慢的 trace，看出慢在哪個 span，再用 trace id 撈出同一個請求的 log；切到「沒傳遞 trace context」看鏈怎麼斷掉。">
+         blurb="一個「建立掛號」請求經過 API、掛號服務、資料庫與通知服務：從 metrics 的尖峰找到慢的 trace 與慢的 span，再用 trace id 撈出同一個請求的 log；沒傳遞 trace context 時這條鏈會斷掉。">
       <LabControls>
         <Seg label="情境" tinted value={sc} onChange={(v) => { setSc(v); jump(6) }} options={SCENES.map(([value, label]) => ({ value, label }))} />
       </LabControls>
@@ -159,7 +159,7 @@ export default function TraceLab() {
 
       <LabGrid variant="wide">
         <div className="lab-stack">
-          <LabStage label="trace 瀑布圖" caption="每個 span 一條橫條，長度是耗時，子 span 縮排在父 span 底下；點一條看它的屬性">
+          <LabStage label="trace 瀑布圖" caption="每個 span 一條橫條，長度是耗時，子 span 縮排在父 span 底下">
             <div className="trc-head">
               <span>trace <code>{tr.id}</code> · 10:{pad(at)} · {hot ? '尖峰期間的請求' : '正常的請求'}</span>
               <span className="trc-legend">{Object.entries(SVC).map(([k, s]) => <i key={k} style={{ '--c': s.color }}>{s.name}</i>)}</span>
@@ -175,7 +175,7 @@ export default function TraceLab() {
           </Stats>
           <div className="trc-charts" title="點圖表選時間">
             <div onClick={onChart}>
-              <LineChart title="p95 延遲（點圖表選時間）" xMax={MIN} yMax={2400} mark={at} xTicks={[0, 9, 18, 27]} fmtX={(i) => `10:${pad(i)}`} fmtY={(v) => (v ? fmtMs(v) : '0')} width={CW} left={CL}
+              <LineChart title="p95 延遲" xMax={MIN} yMax={2400} mark={at} xTicks={[0, 9, 18, 27]} fmtX={(i) => `10:${pad(i)}`} fmtY={(v) => (v ? fmtMs(v) : '0')} width={CW} left={CL}
                          series={[{ key: 'p95', label: 'p95', color: 'var(--lab-accent)', values: p95 }]} ariaLabel={`p95 延遲隨時間變化，${peak ? '10:18 前後有尖峰' : '沒有異常'}`} />
             </div>
             <div onClick={onChart}>
@@ -206,7 +206,7 @@ export default function TraceLab() {
             <p><strong>metrics</strong>：有多少、多快、現在正常嗎？告警從這裡來。<strong>trace</strong>：一個請求經過哪些服務、每一段花多久？定位用它。<strong>log</strong>：那一次發生了什麼、錯誤細節是什麼？</p>
             <p>三者共用同一個 trace id，才能從一個跳到另一個。看尾端要看 p95、p99：平均值會把少數很慢的請求稀釋掉。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             服務從一個拆成兩三個之後，第一次有人回報「掛號要轉很久」，而每個服務各自的 log 都看不出異常；新加的服務、背景 worker 或訊息佇列沒有接上 trace context，trace 在那裡斷成兩截；平均延遲沒變、p95 卻有尖峰的那個早上。
           </Callout>
         </div>

@@ -12,18 +12,18 @@ const REPL = [{ id: 0, name: '副本 A', ratio: 1 }, { id: 1, name: '副本 B', 
 
 const MODES = {
   'primary-read': { label: '寫後讀主庫', hl: [4, 5, 6], need: 'cookie 記 last_write_at + middleware', title: '剛寫過的人，5 秒內都讀主庫',
-    text: ['寫入成功時 cookie 記 last_write_at；之後 5 秒內該使用者的 GET 全部導到主庫，其他人照走副本。只要「寫後多久讀」小於 5 秒就一定拿到新值。', '代價看計數：每一次寫後讀都算在主庫頭上。視窗 5 秒是猜的——把「寫後多久讀」拉超過 5 秒就回到副本，這時延遲若還沒追上就破功；App 沒有 cookie 也掛不上。'] },
+    text: ['寫入成功時 cookie 記 last_write_at；之後 5 秒內該使用者的 GET 全部導到主庫，其他人照走副本。只要「寫後多久讀」小於 5 秒就一定拿到新值。', '代價是每一次寫後讀都算在主庫頭上（見計數）。視窗 5 秒是猜的：「寫後多久讀」超過 5 秒就回到副本，這時延遲若還沒追上就破功；App 沒有 cookie 也掛不上。'] },
   lsn: { label: '帶 LSN 讀', hl: [7, 8, 9], need: '寫入回傳 LSN、客戶端帶回、讀前查副本 LSN', title: '副本追上就讀副本，沒追上才回主庫',
-    text: ['寫入回應帶主庫的 WAL 位置（LSN）。讀取時先看副本重播到哪：追上了就直接讀副本；還差一個版本就改讀主庫。不用猜秒數，主庫只在副本真的落後時才被打。', '把延遲拉到「寫後多久讀」以上再跑幾次：副本 A 落後、副本 B 常常追得上，主庫讀比例會落在中間。代價是每次讀多查一次副本的 LSN，以及客戶端要把版本帶回來。'] },
+    text: ['寫入回應帶主庫的 WAL 位置（LSN）。讀取時先看副本重播到哪：追上了就直接讀副本；還差一個版本就改讀主庫。不用猜秒數，主庫只在副本確實落後時才被打。', '延遲大於「寫後多久讀」時，副本 A 落後、副本 B 常常追得上，主庫讀比例會落在中間。代價是每次讀多查一次副本的 LSN，以及客戶端要把版本帶回來。'] },
   eventual: { label: '最終一致', hl: [10], need: '前端樂觀更新（只擋 SPA 內）', title: 'F5 一來，樂觀更新就沒了',
     text: ['讀全走副本。SPA 內用 PATCH 的回應直接渲染，畫面看起來是對的；但整頁重新整理是重新 GET，副本還沒追上就回舊值。延遲 50 ms 時幾乎沒事，尖峰 2 秒時每次都中。', '第二實驗更糟：POST /orders 後跳轉 GET /orders/5001，副本沒這列就是 404。使用者以為沒下單成功，再按一次。'] },
   'all-primary': { label: '關鍵讀全走主庫', hl: [2, 3], need: '無，但要劃清哪些 endpoint 算關鍵', title: '這幾個 endpoint 永遠讀主庫',
-    text: ['個人資料、訂單這類「自己的資料」綁死主庫，副本只給列表、搜尋、報表。沒有 cookie、沒有版本號、沒有路由判斷，不會錯。', '代價是主庫讀比例 100%——這個實驗只跑關鍵讀所以看不出痛，實際上這些頁面常常就是最熱的。哪些算關鍵要劃清楚，否則會越劃越多。'] },
+    text: ['個人資料、訂單這類「自己的資料」綁死主庫，副本只給列表、搜尋、報表。沒有 cookie、沒有版本號、沒有路由判斷，不會錯。', '代價是主庫讀比例 100%。這個實驗只跑關鍵讀，所以看不出負擔；實際上這些頁面常常就是最熱的。哪些算關鍵要劃清楚，否則會越劃越多。'] },
 }
 
 const EXP = {
   profile: '實驗 ①：PATCH /me 改名字，之後整頁重新整理。讀到舊值不會報錯，使用者只會以為沒改成功、再改一次，所以很難從錯誤日誌發現。',
-  order: '實驗 ②：POST /orders 回 201 後前端跳轉 GET /orders/5001。副本沒這一列就是 404——比舊值更糟：使用者以為沒下單而重複下單，錯誤日誌裡則是一堆看似正常的 404。',
+  order: '實驗 ②：POST /orders 回 201 後前端跳轉 GET /orders/5001。副本沒這一列就是 404，比舊值更糟：使用者以為沒下單而重複下單，錯誤日誌裡則是一堆看似正常的 404。',
 }
 
 const CODE = `def read_profile(request, user):
@@ -106,7 +106,7 @@ export default function ReplicaConsistencyScenarioLab() {
   const t = flow?.t
   const step = flow?.step ?? -1
   const isOrder = exp === 'order'
-  const phaseText = !flow ? (stats.reads ? '閒置。再跑一次，或改延遲 / 做法後比較。' : `按「${isOrder ? '下單然後跳轉' : '寫入然後立刻重整'}」開始。`)
+  const phaseText = !flow ? (stats.reads ? '閒置。' : `按「${isOrder ? '下單然後跳轉' : '寫入然後立刻重整'}」開始。`)
     : step === 0 ? (isOrder ? `POST /orders → 主庫 INSERT orders id=5001（LSN ${lsn}）` : `PATCH /me → 主庫 UPDATE name = 'Alicia'（LSN ${lsn}）`)
     : step === 1 ? `主庫 → 副本：WAL 串流中（副本 A 落後 ${effLag} ms、副本 B 落後 ${Math.round(effLag / 2)} ms）`
     : step === 2 ? `${gap} ms 後${isOrder ? '跳轉 GET /orders/5001' : '使用者按 F5：GET /me'} → ${t.why}`
@@ -117,7 +117,7 @@ export default function ReplicaConsistencyScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="寫完立刻讀：讀到哪一台、拿到哪個版本"
-         blurb="切做法、調副本延遲與「寫後多久讀」，按一次看時序動畫，或連跑 20 次看統計。讀取隨機落在副本 A 或 B；A 的落後等於滑桿值、B 是一半。毫秒數皆為示意。">
+         blurb="寫入後讀取隨機落在副本 A 或 B，A 的落後等於滑桿值、B 是一半；單次的時序與連跑 20 次的統計。毫秒數皆為示意。">
       <LabControls>
         <Seg tinted value={mode} onChange={setMode} options={Object.entries(MODES).map(([k, v]) => ({ value: k, label: v.label }))} />
       </LabControls>
@@ -236,7 +236,7 @@ export default function ReplicaConsistencyScenarioLab() {
             {m.text.map((p, i) => <p key={i}>{p}</p>)}
             <p>{EXP[exp]}</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             本機與測試環境沒有副本，延遲是 0，所有做法看起來都對。上線後第一個尖峰：大量寫入 + 副本在跑 VACUUM，延遲從 50 ms 跳到 2 秒，客服開始收到「我改了名字怎麼沒變」「下單後頁面 404 所以我又下了一次」。
           </Callout>
         </div>

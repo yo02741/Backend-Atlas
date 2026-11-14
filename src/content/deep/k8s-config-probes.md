@@ -126,7 +126,7 @@ base64 是編碼，不是加密，目的只是讓值可以放二進位內容。�
 
 從出問題到探針判定失敗，大約是 `periodSeconds × failureThreshold`：上面的 readiness 約 15 秒，liveness 約 30 秒。調這兩個數字是在「反應快」與「誤判」之間取捨。
 
-啟動慢的服務不要靠加大 liveness 的 `initialDelaySeconds` 來撐：那個值設得夠大，等於每次真的卡死都要多等那麼久才發現。用 `startupProbe` 給啟動階段一個獨立的寬限，啟動完成後 liveness 就能維持短的間隔。
+啟動慢的服務不要靠加大 liveness 的 `initialDelaySeconds` 來撐：那個值設得夠大，等於每次卡死都要多等那麼久才發現。用 `startupProbe` 給啟動階段一個獨立的寬限，啟動完成後 liveness 就能維持短的間隔。
 
 兩個端點要分開：
 
@@ -195,7 +195,7 @@ A 是 readiness 的正常用途：一個 Pod 出問題，它被移出、恢復�
 
 排程器只看 requests、不看實際用量；數字該怎麼估、CPU 要不要設 limits 的取捨，見 [硬體資源與容量規劃](#/skill/capacity-planning)。這裡補充寫法上的細節：
 
-- **單位**：CPU 的 `250m` 是千分之 250 核，`1` 是一核。記憶體用 `Mi`、`Gi`（二進位，1 Mi = 1,048,576 位元組）。`memory: 512m` 是合法的寫法，但意思是 0.512 位元組——小寫 `m` 是「千分之一」。
+- **單位**：CPU 的 `250m` 是千分之 250 核，`1` 是一核。記憶體用 `Mi`、`Gi`（二進位，1 Mi = 1,048,576 位元組）。`memory: 512m` 是合法的寫法，但意思是 0.512 位元組，小寫 `m` 是「千分之一」。
 - **requests 不能大於 limits**，否則套用時被拒絕。只寫 limits 沒寫 requests 時，requests 會被設成和 limits 相同。
 - **QoS 類別**由這些數字決定，共三種：`Guaranteed`（每個容器的 CPU 與記憶體都有 requests，而且等於 limits）、`Burstable`（有設定但不符合 Guaranteed）、`BestEffort`（完全沒設定）。節點記憶體不足時的驅逐順序見容量規劃那一課。
 - namespace 設了 ResourceQuota 限制 CPU 或記憶體時，沒寫對應 requests、limits 的 Pod 會被拒絕建立；管理者可以用 LimitRange 給預設值。

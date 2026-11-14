@@ -1,4 +1,4 @@
-// 題庫：P10 新課（m2 批）——k8s-manifests / k8s-config-probes / k8s-troubleshooting / k8s-helm-gitops
+// 題庫：P10 新課（m2 批）：k8s-manifests / k8s-config-probes / k8s-troubleshooting / k8s-helm-gitops
 export default [
   {
     skill: 'k8s-manifests',
@@ -145,7 +145,7 @@ export default [
           '部署一定會變快，因為控制器在每次 git push 的瞬間就完成同步',
         ],
         answer: 2,
-        explain: 'pull 式的重點是：憑證留在叢集內、CI 只寫 Git，以及控制器持續比對期望狀態與實際狀態（drift 會被修正或標示）。CI 仍然要 build、測試、推映像；Secret 仍然不能以原文進 Git，要另外用 Sealed Secrets、External Secrets 這類做法；同步靠定期拉取或通知觸發，不保證比 push 式快，而且多了一套元件要維運。',
+        explain: 'pull 式的特點是：憑證留在叢集內、CI 只寫 Git，以及控制器持續比對期望狀態與實際狀態（drift 會被修正或標示）。CI 仍然要 build、測試、推映像；Secret 仍然不能以原文進 Git，要另外用 Sealed Secrets、External Secrets 這類做法；同步靠定期拉取或通知觸發，不保證比 push 式快，而且多了一套元件要維運。',
       },
       {
         q: '採用 GitOps 後，資料庫密碼也需要有「期望狀態」。下列哪一種做法可以接受？',

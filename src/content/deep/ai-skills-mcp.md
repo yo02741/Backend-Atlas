@@ -5,7 +5,7 @@
 1. **它不知道我們怎麼做事**。寫資料庫 migration 時，團隊規定檔名要有日期、每個 migration 都要能回滾、要附一個驗證資料的測試。agent 每次都照網路上常見的寫法來，於是每個人都在對話開頭貼一大段說明，貼的版本還各不相同。
 2. **它碰不到我們的系統**。修 bug 要先看工單系統裡的重現步驟，agent 連不上工單系統，只能由人把內容複製貼上。有人為了省事寫了一個腳本，把工單系統的 API token 直接寫在提示詞裡讓 agent 用 curl 呼叫。
 
-第一種缺的是**知識**：怎麼做。第二種缺的是**能力**：能做什麼。前者對應 **Skill**，後者對應 **MCP**。
+第一種缺的是知識：怎麼做。第二種缺的是能力：能做什麼。前者對應 Skill，後者對應 MCP。
 
 ## Skill：模型依需要載入的工作說明書
 
@@ -105,7 +105,7 @@ Skill 不只是文字。它可以附帶腳本，agent 會以自己的權限執�
 ### 兩種傳輸方式
 
 - **stdio**：client 在本機把 server 當子程序啟動，透過標準輸入輸出交換訊息。設定裡寫的是「要執行的指令」。適合存取本機檔案、本機工具；只有啟動它的使用者能用。
-- **HTTP**：server 是一個網路服務，client 透過 HTTP 連線（目前規格稱為 Streamable HTTP；較早的版本用 HTTP 加 SSE）。設定裡寫的是 URL。適合多人共用、集中維運，但必須處理授權——誰可以呼叫、拿什麼 token，見 [MCP 的授權](#/skill/mcp-authorization)。
+- **HTTP**：server 是一個網路服務，client 透過 HTTP 連線（目前規格稱為 Streamable HTTP；較早的版本用 HTTP 加 SSE）。設定裡寫的是 URL。適合多人共用、集中維運，但必須處理授權：誰可以呼叫、拿什麼 token，見 [MCP 的授權](#/skill/mcp-authorization)。
 
 協定仍在演進，傳輸與授權的細節在不同版本間有變動；實作時對照 server 與 client 支援的規格版本。
 
@@ -202,7 +202,7 @@ Skill 和 MCP server 好用之後，很快會有人想分享：做一個內部 S
 - **憑證放哪裡**：stdio server 的 token 常被寫在設定檔或環境變數裡（見 [CLI 與 Agent 的 token 存哪裡](#/skill/cli-token-storage)）；遠端 server 要有授權機制。
 - **誰在用、怎麼撤下**：發現某一版有問題時，能不能列出受影響的人並一次撤下。
 
-兩者的風險不在同一個量級。Skill 是說明書加上腳本，問題通常出在腳本與誘導性的說明；MCP server 握著下游系統的憑證、會真的執行動作，上架等於把這些能力交給每一個 agent。
+兩者的風險不在同一個量級。Skill 是說明書加上腳本，問題通常出在腳本與誘導性的說明；MCP server 握著下游系統的憑證、會實際執行動作，上架等於把這些能力交給每一個 agent。
 
 本領域後面幾課會逐一展開：[MCP 的授權](#/skill/mcp-authorization)、集中管理憑證與上架的 [MCP Gateway](#/skill/mcp-gateway)、工具描述被動手腳的 [Tool Poisoning 與 rug pull](#/skill/tool-poisoning)、把 Skill 與 MCP 當成依賴管理的[行為層的供應鏈管理](#/skill/agent-supply-chain)，以及整體的風險清單 [OWASP MCP Top 10](#/skill/owasp-mcp-top10)。
 

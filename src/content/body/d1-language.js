@@ -5,9 +5,9 @@ const base = {
   'python-backend': {
     points: [
       { b: '型別提示是文件也是防線', t: '`def get_user(user_id: int) -> User | None` 一眼看出輸入輸出；搭配 pyright / mypy 在存檔時就抓到錯，和 TypeScript 的型別直覺一致。' },
-      { b: '資料用 dataclass / pydantic 裝', t: '不要用 dict 到處傳。pydantic `BaseModel` 會驗證、轉型、產生 JSON schema——FastAPI 的請求/回應模型就是它。' },
+      { b: '資料用 dataclass / pydantic 裝', t: '不要用 dict 到處傳。pydantic `BaseModel` 會驗證、轉型、產生 JSON schema。FastAPI 的請求/回應模型就是 pydantic model。' },
       { b: '例外是控制流的一部分', t: '自訂例外類別（`class NotFound(Exception)`），在最外層統一轉成 HTTP 狀態碼；不要在每個函式裡 try/except 吞掉。' },
-      { b: '標準庫比你想的強', t: '`pathlib`、`datetime`（永遠帶時區 `timezone.utc`）、`logging`、`json`、`functools.lru_cache`、`itertools`——先查標準庫再裝套件。' },
+      { b: '先查標準庫', t: '`pathlib`、`datetime`（永遠帶時區 `timezone.utc`）、`logging`、`json`、`functools.lru_cache`、`itertools` 都內建，標準庫沒有再裝套件。' },
       { b: '可變預設參數與 late binding', t: '`def f(items=[])` 是經典地雷；用 `None` 再在函式內建新 list。這類「Python 特有陷阱」值得花一小時掃一遍。' },
     ],
     checklist: [
@@ -123,10 +123,10 @@ const base = {
   },
   'python-async': {
     points: [
-      { b: '`await` 是「讓出控制權」', t: '碰到 I/O 就把執行權還給 event loop 去跑別人，I/O 完成再回來。單執行緒也能同時處理很多請求——但 CPU 密集運算會霸住 loop。' },
+      { b: '`await` 是「讓出控制權」', t: '碰到 I/O 就把執行權還給 event loop 去跑別人，I/O 完成再回來。單執行緒也能同時處理很多請求，但 CPU 密集運算會霸住 loop。' },
       { b: 'GIL 的實際意義', t: '預設的 CPython 同一時間只有一個執行緒在跑 Python bytecode；等 I/O 時會釋放 GIL，所以多執行緒對 I/O 密集有效、對 CPU 密集無效（要用多程序）。3.13 起有實驗性的 free-threaded build，但生態系還在跟上。' },
       { b: '別在 async 函式裡用同步 driver', t: '`psycopg2`、`requests` 會阻塞整個 loop。要用 `asyncpg`、`httpx.AsyncClient`、`motor`，或把同步呼叫丟到 threadpool。' },
-      { b: 'FastAPI 的 def 與 async def 差別', t: '`def` handler 會自動在 threadpool 執行（不會卡 loop）；`async def` 才真的跑在 loop 上，裡面就不能有阻塞呼叫。' },
+      { b: 'FastAPI 的 def 與 async def 差別', t: '`def` handler 會自動在 threadpool 執行（不會卡 loop）；`async def` 才跑在 loop 上，裡面就不能有阻塞呼叫。' },
     ],
     checklist: [
       '能畫出 6 個 I/O 請求在同步 / 多執行緒 / async 三種模式下的時間軸',
@@ -141,7 +141,7 @@ const base = {
   'web-framework': {
     points: [
       { b: '一個請求的路徑', t: 'ASGI server（uvicorn）→ middleware（CORS、log、trace id）→ 路由比對 → 依賴注入（DB session、目前使用者）→ 參數驗證（pydantic）→ handler → 回應序列化 → middleware 收尾。' },
-      { b: '依賴注入不是魔法', t: '`Depends(get_db)` 就是「執行這個函式、把結果塞給我」。把「取得目前使用者」「開 DB session」寫成依賴，handler 只剩商業邏輯。' },
+      { b: 'Depends 做的事', t: '`Depends(get_db)` 就是「執行這個函式、把結果塞給我」。把「取得目前使用者」「開 DB session」寫成依賴，handler 只剩商業邏輯。' },
       { b: '分層：router / service / repository', t: 'router 管 HTTP、service 管商業規則、repository 管資料庫。小專案可以合併，但界線要在腦中存在。' },
       { b: '設定與生命週期', t: '啟動時建立連線池、關閉時釋放（lifespan）；設定從環境變數讀（pydantic-settings）。' },
     ],
@@ -157,8 +157,8 @@ const base = {
   'testing': {
     points: [
       { b: 'fixture 是依賴注入', t: '`def test_x(client, db)`：pytest 依名字找 fixture 提供。DB session、測試用 client、假資料都這樣給，測試本身很乾淨。' },
-      { b: '整合測試用真的資料庫', t: '用 docker-compose 起一個測試用 PostgreSQL，每個測試在 transaction 裡跑、結束 rollback。SQLite 假裝 Postgres 會漏掉真正的 bug。' },
-      { b: 'mock 外部服務，不 mock 自己的資料庫', t: '第三方 API、寄信、付款用 mock 或 fake；自己的資料層要真的測。' },
+      { b: '整合測試用真的資料庫', t: '用 docker-compose 起一個測試用 PostgreSQL，每個測試在 transaction 裡跑、結束 rollback。拿 SQLite 代替 Postgres，會漏掉只在 Postgres 上出現的 bug。' },
+      { b: 'mock 外部服務，不 mock 自己的資料庫', t: '第三方 API、寄信、付款用 mock 或 fake；自己的資料層接真的資料庫測。' },
       { b: 'API 測試用 TestClient', t: 'FastAPI 的 `TestClient` 直接打 handler 不用起 server，一個測試幾毫秒。' },
     ],
     checklist: [

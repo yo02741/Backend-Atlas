@@ -141,7 +141,7 @@ export default function ChunkingLab() {
 
   return (
     <Lab accent="var(--c-teal)" kicker="RAG LAB" title="切段與檢索：答案被切到哪裡去了"
-         blurb="把一份門診掛號規範切成段落，用字元 bigram 的詞頻向量算每段和問題的 cosine 相似度，取前 k 段交給 LLM。拉段落大小與重疊，看「回答需要的句子」是被完整取回、被切成兩半，還是輸給了不相干的段落。">
+         blurb="一份門診掛號規範切成段落，用字元 bigram 的詞頻向量算每段和問題的 cosine 相似度，取前 k 段交給 LLM。段落大小與重疊決定「回答需要的句子」是被完整取回、被切成兩半，還是輸給不相干的段落。">
       <LabControls>
         <Slider label="段落大小" min={60} max={400} step={10} value={size} onChange={setSize} format={(v) => `${v} 字`} />
         <Slider label="重疊" min={0} max={50} step={5} value={overlap} onChange={setOverlap} format={(v) => `${v}%`} />
@@ -168,7 +168,7 @@ export default function ChunkingLab() {
           </Stats>
           <div className="dtable-wrap">
             <table className="dtable ck-rank">
-              <caption>相似度排名（滑過或點一列，在上方亮出那一段）</caption>
+              <caption>相似度排名</caption>
               <thead><tr><th>#</th><th>段落</th><th>cosine</th><th>開頭</th><th>答案句</th></tr></thead>
               <tbody>
                 {shown.map((c) => {
@@ -212,7 +212,7 @@ export default function ChunkingLab() {
             <p><strong>LLM Wiki</strong> 這類做法換個方向：先讓 LLM 把原始文件整理成一頁頁主題頁面（例如一頁「取消與退費」把兩條規則寫在一起），查詢時讀整理好的頁面，試圖從源頭避開切碎的問題；代價是整理要花成本，整理錯了也要有人回頭對照原文。</p>
           </LabExplain>
           <Callout title="實際用在哪裡">
-            內規與 FAQ 問答、客服知識庫、內部文件搜尋——只要是「先檢索、再讓 LLM 回答」都要先切段。段落大小與重疊<b>沒有通用最佳值</b>：準備一組真實問題與「應該取回哪幾段」的答案，量 recall@k 再調。這裡以字元計，實際系統多半以 token 計。
+            內規與 FAQ 問答、客服知識庫、內部文件搜尋，只要是「先檢索、再讓 LLM 回答」都要先切段。段落大小與重疊<b>沒有通用最佳值</b>：準備一組真實問題與「應該取回哪幾段」的答案，量 recall@k 再調。這裡以字元計，實際系統多半以 token 計。
           </Callout>
         </div>
       </LabGrid>
@@ -319,7 +319,7 @@ function pickExplain(r, size, overlap, k, sentAlign) {
   if (r.status === 'all' && size >= 260) return {
     title: '取回了，但答案被稀釋在長段落裡',
     text: [
-      `每段 ${size} 字，整份文件只切成 ${r.chunks.length} 段，答案句當然在裡面——可是取回的 ${r.ctx} 字裡，真正有用的只佔 ${share}%。`,
+      `每段 ${size} 字，整份文件只切成 ${r.chunks.length} 段，答案句當然在裡面，可是取回的 ${r.ctx} 字裡，有用的只佔 ${share}%。`,
       '段落越長，向量裡混進越多不相干的詞，相似度分數會被拉平：各段分數越來越接近，排名越容易被「剛好字面重疊比較多」的段落搶走。LLM 也得在一大堆無關內容裡找答案。',
     ],
   }
@@ -336,24 +336,24 @@ function pickExplain(r, size, overlap, k, sentAlign) {
     title: cut ? '答案被切開了' : '另一半輸給了別的段落',
     text: [
       cut
-        ? `每段 ${size} 字${sentAlign ? '（對齊句子）' : ''}，沒有任何一段完整包含「${lost[0]?.text.slice(0, 12)}…」——它被切在兩段的邊界上，兩半各自和問題的重疊都變少。`
+        ? `每段 ${size} 字${sentAlign ? '（對齊句子）' : ''}，沒有任何一段完整包含「${lost[0]?.text.slice(0, 12)}…」：它被切在兩段的邊界上，兩半各自和問題的重疊都變少。`
         : `需要的句子都有段落完整包含，但含「${lost[0]?.text.slice(0, 12)}…」的段落最高只排第 ${lost[0]?.best} 名，top-${k} 拿不到。`,
       r.need.length > 1
         ? '這題的答案跨兩句：「前一日 17:00 前取消」是規則，「逾時不退」是後果。只拿到其中一句，LLM 要嘛回答不完整，要嘛照常識亂補。'
         : '只拿到半句，LLM 看到的是斷掉的條文，很可能答錯或拒答。',
-      overlap === 0 ? '試試加一點重疊、或把 top-k 調大；也可以打開「切在句子邊界」。' : '試試把段落調大一點，讓相關的句子落在同一段。',
+      overlap === 0 ? '加一點重疊、調大 top-k，或切在句子邊界，都能補救。' : '把段落調大一點，讓相關的句子落在同一段。',
     ],
   }
   return {
     title: '取回的是錯的段落',
     text: [
-      `前 ${k} 段裡完全沒有答案句。排第一的是段落 #${r.ranked[0].i + 1}，它和問題共有的詞是 ${r.ranked[0].hits.slice(0, 4).map(([t]) => `「${t}」`).join('') || '（無）'}——字面像，但講的是別的事。`,
+      `前 ${k} 段裡完全沒有答案句。排第一的是段落 #${r.ranked[0].i + 1}，它和問題共有的詞是 ${r.ranked[0].hits.slice(0, 4).map(([t]) => `「${t}」`).join('') || '（無）'}：字面像，但講的是別的事。`,
       size >= 260
         ? '段落太長時，答案所在的那段混進了太多無關內容，分數反而輸給另一段。'
         : r.need.some((s) => s.splitAll)
           ? '段落太短時，答案句被切碎，每一小段和問題的重疊都很少；其他段落只要多出現幾次「掛號」「退費」就能贏。'
-          : `答案句其實完整地待在某一段裡，但那段最高只排第 ${Math.min(...r.need.map((s) => s.best))} 名，top-${k} 拿不到——別的段落字面上和問題更像。`,
-      '詞頻相似度看的是字面重疊，不懂「當天」和「前一日 17:00 前」之間的關係——這也是真實系統改用 embedding 的原因之一。',
+          : `答案句完整地待在某一段裡，但那段最高只排第 ${Math.min(...r.need.map((s) => s.best))} 名，top-${k} 拿不到，因為別的段落字面上和問題更像。`,
+      '詞頻相似度看的是字面重疊，不懂「當天」和「前一日 17:00 前」之間的關係。這也是實際系統改用 embedding 的原因之一。',
     ],
   }
 }

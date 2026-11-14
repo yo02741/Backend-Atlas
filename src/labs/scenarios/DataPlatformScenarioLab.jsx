@@ -86,7 +86,7 @@ export default function DataPlatformScenarioLab() {
 
   return (
     <Lab accent="violet" kicker="SCENARIO LAB" title="數據中台的前 12 個月：同一批髒資料，三種起手式"
-         blurb="調三種品質問題的比例，切換做法，按「跑一輪報表」一個月一個月往前，看資料怎麼流、報表錯幾筆、重工幾次、第一個可用成果在哪個月、治理覆蓋率多少。">
+         blurb="報表一個月一個月往前跑：資料怎麼流、報表錯幾筆、重工幾次、第一個可用成果在哪個月、治理覆蓋率多少。">
       <LabControls>
         <Seg label="做法" tinted value={mode} onChange={setMode} options={MODES} />
         <Slider label="重複病人" min={0} max={8} value={dup} onChange={setDup} format={(v) => `${v}%`} />
@@ -125,9 +125,9 @@ export default function DataPlatformScenarioLab() {
           <LabExplain title={`第 ${shown} 月：${r.phase}`}><p>{monthNote(mode, r, sim.first)}</p></LabExplain>
           <LabExplain title="三種問題各自怎麼修">
             <p>重複病人：先正規化病歷號（去空白、轉大寫）再比對，合併回到 HIS 由病歷管理單位確認。代碼對不到：大小寫在 staging 正規化；缺項要 steward 決定補對應表還是改來源。缺值：只能回到來源補登，所以處理比例最低。</p>
-            <p>拉高任一個比例，三種做法的差距一起放大；全部拉到 0 時，「直接建中台」也能交出可信報表——那正是治理已經到位的情況。</p>
+            <p>任一個比例越高，三種做法的差距越大；全部為 0 時，「直接建中台」也能交出可信報表，對應的是治理已經到位的情況。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">中台上線第一週，儀表板的病人數比掛號系統多幾個百分點；某一科的門診量是 0；平均住院天數出現負數。這些問題在來源系統裡早就存在，中台只是第一次把它們放在一起。</Callout>
+          <Callout title="什麼時候會踩到">中台上線第一週，儀表板的病人數比掛號系統多幾個百分點；某一科的門診量是 0；平均住院天數出現負數。這些問題在來源系統裡早就存在，中台只是第一次把它們放在一起。</Callout>
         </div>
       </LabGrid>
       <style>{`
@@ -146,11 +146,11 @@ export default function DataPlatformScenarioLab() {
 
 /* 跟著月份變的一句說明：這個月做了什麼、指標為什麼這樣動 */
 function monthNote(mode, r, first) {
-  if (r.m === 0) return '還沒開始。按「跑一輪報表」或播放，一個月一個月往前看。'
+  if (r.m === 0) return '還沒開始，按「跑一輪報表」。'
   if (mode === 'direct') {
     if (!r.reports) return '三套系統的資料表原樣抽進 raw 層，病歷號、科別代碼、缺值都沒處理；這兩個月看起來進度最快。'
     if (r.reworkNow >= 3) return '每季一次全量重抽，上一季在 mart 裡就地修的資料被覆蓋，錯誤筆數跳回去，重工一次加三。修正沒回到來源系統，就會一直重複。'
-    return r.trusted ? '品質問題比例低，報表已經可信——治理的前提本來就存在時，直接建也行得通。' : '報表上線但數字被質疑：同一個病人算成兩個、某科門診量是 0。資料組回頭在中台裡補規則，每個月都在追同樣的問題。'
+    return r.trusted ? '品質問題比例低，報表已經可信：治理的前提本來就存在時，直接建也行得通。' : '報表上線但數字被質疑：同一個病人算成兩個、某科門診量是 0。資料組回頭在中台裡補規則，每個月都在追同樣的問題。'
   }
   if (mode === 'govern') {
     if (r.m <= 6) return `治理覆蓋率 ${r.coverage}%，但還沒有任何報表。四個來源一起盤點，每個業務單位都要撥人開會確認欄位定義與負責人。`
@@ -236,7 +236,7 @@ function Compare({ all, mode, onPick }) {
   return (
     <div className="dtable-wrap">
       <table className="dtable dp-table">
-        <caption>同一批資料，12 個月後三種做法並排（示意；點一列切換做法）</caption>
+        <caption>同一批資料，12 個月後三種做法並排（示意）</caption>
         <thead><tr><th>做法</th><th>第一個可用成果</th><th>第 12 月錯誤</th><th>累計重工</th><th>覆蓋率</th></tr></thead>
         <tbody>
           {all.map((o) => {

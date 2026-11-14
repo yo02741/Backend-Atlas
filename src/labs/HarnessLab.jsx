@@ -135,14 +135,14 @@ export default function HarnessLab() {
   const EX = {
     first: ['直接用第一次：把抽樣當成答案', [
       '模型每次輸出都是從一個機率分布抽樣，溫度越高分布越平、抽到不同答案的機會越大。只跑一次就上線，等於拿一次抽樣當整體品質。',
-      `現在 ${CASES.length} 題各跑 ${n} 次，有 ${sim.unstable} 題「有時過有時不過」${n === 1 ? '——取樣 1 次根本看不出哪題不穩，把取樣次數調到 5 或 20 再看' : '。這些題在單次 demo 裡可能剛好過，正式上線後卻斷斷續續失敗'}。`,
+      `現在 ${CASES.length} 題各跑 ${n} 次，有 ${sim.unstable} 題「有時過有時不過」${n === 1 ? '。取樣 1 次看不出哪題不穩，取樣次數要 5 或 20 才看得出來' : '。這些題在單次 demo 裡可能剛好過，正式上線後卻斷斷續續失敗'}。`,
     ]],
     vote: ['多數決：用 3 次呼叫換穩定', [
       '同一題抽 3 次、取多數。對「大多時候對、偶爾抽歪」的題目很有效：單次 80% 的題，三取二後約 90%。',
-      '但對「大多時候錯」的題目，多數決只會更穩定地錯——通過率 40% 的題三取二後只剩約 35%。成本固定變三倍，而且把錯誤抹得更像「確定的答案」。',
+      '但對「大多時候錯」的題目，多數決只會更穩定地錯：通過率 40% 的題三取二後只剩約 35%。成本固定變三倍，而且把錯誤抹得更像「確定的答案」。',
     ]],
     retry: ['失敗重試：只救看得出來的失敗', [
-      `重試需要「知道失敗了」。這裡假設 ${Math.round(DETECTABLE * 100)}% 的失敗在 schema 層看得出（缺欄位、JSON 壞掉），其餘是欄位都在、值卻錯的「看起來對」——這種不會觸發重試，照樣放行。`,
+      `重試需要「知道失敗了」。這裡假設 ${Math.round(DETECTABLE * 100)}% 的失敗在 schema 層看得出（缺欄位、JSON 壞掉），其餘是欄位都在、值卻錯的「看起來對」，這種不會觸發重試，照樣放行。`,
       `平均每次任務呼叫 ${sim.avgCalls.toFixed(2)} 次：容易的題幾乎不重試，難的題才多花錢。這是「只在需要時付費」的策略，但上限是最多救回看得出來的那部分。`,
     ]],
     checker: ['檢查器：寧可攔下，不要放錯', [
@@ -152,8 +152,8 @@ export default function HarnessLab() {
   }[strategy]
 
   return (
-    <Lab accent="violet" kicker="AI LAB" title="Harness Engineering：同一個 prompt 為什麼差這麼多"
-         blurb="8 題「把自然語言轉成結構化欄位」的示意題，同一個 prompt 跑 N 次。拉溫度看結果怎麼變得不穩，切 harness 策略看多數決、重試、檢查器各自救回什麼、花掉什麼。">
+    <Lab accent="violet" kicker="AI LAB" title="Harness Engineering：同一個 prompt 跑 N 次"
+         blurb="8 題「把自然語言轉成結構化欄位」的示意題，同一個 prompt 跑 N 次：溫度讓結果多不穩，多數決、重試、檢查器各自救回什麼、花掉什麼。">
       <LabControls>
         <Slider label="溫度 temperature" min={0} max={1} step={0.1} value={temp} onChange={setTemp} format={(v) => v.toFixed(1)} />
         <Seg label="取樣次數" value={n} onChange={setN} options={[1, 5, 20].map((v) => ({ value: v, label: `${v} 次` }))} />
@@ -213,10 +213,10 @@ export default function HarnessLab() {
           <LabExplain title={EX[0]}>{EX[1].map((t, i) => <p key={i}>{t}</p>)}</LabExplain>
           <LabExplain title="評測要跑很多次、要固定種子">
             <p>「跑一次 demo 成功」和「通過率 95%」是兩件事。評測集要固定、每題跑多次、把「不穩定的題數」當成一個指標；開了固定種子之後，同樣設定每次都得到同樣結果，改 prompt 或改策略才比得出差異，而不是在比運氣。</p>
-            <p>關掉固定種子、連按幾次「跑評測」，看通過率在同一組設定下跳多少——那個跳動就是只跑一次會被騙到的範圍。</p>
+            <p>關掉固定種子後，同一組設定每次評測的通過率都會跳動，跳動的範圍就是只跑一次會被騙到的範圍。</p>
           </LabExplain>
-          <Callout title="什麼時候會真的踩到">
-            prompt 在開發機上「每次都對」、上線一週後客服收到零星的欄位錯誤；換了模型版本後同一個 prompt 通過率掉一截卻沒人發現；多數決讓成本變三倍但難題照樣錯。這些都不是 prompt 寫得好不好的問題，而是模型外面那層 harness（抽樣、重試、驗證、評測）有沒有搭好。
+          <Callout title="什麼時候會踩到">
+            prompt 在開發機上「每次都對」、上線一週後客服收到零星的欄位錯誤；換了模型版本後同一個 prompt 通過率掉一截卻沒人發現；多數決讓成本變三倍但難題照樣錯。問題出在模型外面那層 harness（抽樣、重試、驗證、評測）有沒有搭好，不在 prompt 寫得好不好。
           </Callout>
         </div>
       </LabGrid>

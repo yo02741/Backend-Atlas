@@ -13,10 +13,10 @@ DETAIL:  Key (email)=(a@example.com) already exists.
 前端為了顯示「這個 Email 已經註冊過」，寫了 `if (body.includes("users_email_key"))`。接著：
 
 - 資料庫的約束名稱、資料表結構、使用的驅動，全都公開給任何會打開開發者工具的人。
-- 監控把它算成 500，半夜告警響了，但其實是使用者正常的操作。
+- 監控把它算成 500，半夜告警響了，但那是使用者正常的操作。
 - 某天 DBA 把約束改名成 `uq_users_email`，前端的判斷失效，所有人都只看到「發生錯誤」。
 
-錯誤也是 API 的一部分，需要和成功回應一樣設計：**分清楚是哪一種錯誤**、**用穩定的格式與代碼回應**、**只說使用者該知道的事**、**讓維運能從回應追到 log**。
+錯誤也是 API 的一部分，需要和成功回應一樣設計：分清楚是哪一種錯誤、用穩定的格式與代碼回應、只說使用者該知道的事、讓維運能從回應追到 log。
 
 ## 兩種錯誤：預期內的，與程式錯誤
 
@@ -49,7 +49,7 @@ AppError                      500  internal_error
 └── ValidationFailed          422  validation_failed
 ```
 
-- 每個類別帶三樣東西：**HTTP 狀態**、**穩定的錯誤代碼**、**一句給人看的標題**。邊界的轉換程式只要讀這三個屬性，新增錯誤種類不必改轉換程式。
+- 每個類別帶三樣東西：HTTP 狀態、穩定的錯誤代碼、一句給人看的標題。邊界的轉換程式只要讀這三個屬性，新增錯誤種類不必改轉換程式。
 - 細分的類別繼承大類，所以 `except NotFound` 也接得到 `OrderNotFound`；前端如果不認得 `order_not_found`，至少能依 404 處理。
 - **基礎設施的例外在 repository 邊界翻譯**。資料庫丟出的唯一鍵衝突，在 repository 裡接住、改丟 `EmailTaken`，並用 `raise EmailTaken(...) from e` 保留原本的例外（`__cause__`），log 裡還看得到根本原因。service 與 handler 都不需要知道 `psycopg.errors.UniqueViolation` 這個名字。
 - 業務邏輯裡丟的是領域例外，不是 `HTTPException`。這樣同一個 service 被批次工作或 CLI 呼叫時，錯誤依然有意義（見 [專案分層與依賴注入](#/skill/project-layering)）。

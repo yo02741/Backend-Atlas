@@ -50,7 +50,7 @@ export default {
     { id: 'internal-tool', situation: '院內教育訓練報名系統要換資料表結構。週末沒人用，資料只有幾千筆，備份還原 2 分鐘，沒有外部介面。', options: ['bigbang', 'phased', 'window'], answer: 'bigbang',
       explain: '週末沒有使用者，停機沒有影響；資料小、還原快而且容易驗證，一次上線最省事。分批上線的相容程式與預演環境在這裡都不划算。變更單與核准紀錄仍然要留。' },
     { id: 'irreversible', situation: '病歷號編碼規則全面改版：所有表的主鍵與外鍵都要轉換，新舊編碼不能同時運作，衡安檢驗平台也要同一時間切換。', options: ['bigbang', 'phased', 'window'], answer: 'window',
-      explain: '新舊編碼不能並存，expand–contract 拆不開，這種一次性轉換只能停機做。關鍵是先在正式資料量的複本預演、量出 migration 與回滾各要多久，並設一個有截止時間的 go/no-go：過了時間還沒驗證完就照演練過的步驟回滾，週一用舊版開診。' },
+      explain: '新舊編碼不能並存，expand–contract 拆不開，這種一次性轉換只能停機做。做法是先在正式資料量的複本預演、量出 migration 與回滾各要多久，並設一個有截止時間的 go/no-go：過了時間還沒驗證完就照演練過的步驟回滾，週一用舊版開診。' },
     { id: 'vendor-date', situation: '新的檢驗醫令格式要配合衡安檢驗平台改版，但對方正式環境的上線日期還沒確定，可能比我們晚一兩週。', options: ['bigbang', 'phased', 'window'], answer: 'phased',
       explain: '新版先部署、旗標關著，新舊格式並存；等對方正式上線、在一個科別試過再全開。兩邊的上線日期不必綁在同一個週末，也不用為了等對方反覆排停機窗口。' },
     { id: 'add-column', situation: '只是在醫令表加一個可為空的備註欄位，舊版程式完全不知道它也能正常運作。', options: ['bigbang', 'phased', 'window'], answer: 'phased',

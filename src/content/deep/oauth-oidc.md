@@ -4,7 +4,7 @@
 
 上線幾週後發現兩個問題：
 
-1. 有人把**別的 App** 拿到的 access token（同一個身分提供者發的、屬於受害者的）送到這個網站的登入端點，網站照樣呼叫 `/me`、照樣拿到受害者的 email，讓他以受害者身分登入。access token 只說明「持有者可以呼叫這個 API」，不說明「這張 token 是發給**我這個網站**、為了**這一次登入**」。
+1. 有人把**別的 App** 拿到的 access token（同一個身分提供者發的、屬於受害者的）送到這個網站的登入端點，網站照樣呼叫 `/me`、照樣拿到受害者的 email，讓他以受害者身分登入。access token 只說明「持有者可以呼叫這個 API」，不說明「這張 token 是發給我這個網站、為了這一次登入」。
 2. 某個身分提供者允許使用者自己填 email 而且不驗證，有人註冊一個帳號填了別人的 email，用它「登入」後拿到了對方在本站的帳號。
 
 這兩個問題的根源是同一個：**OAuth 2.0 是授權協定，不是驗證協定**。它回答的是「使用者是否同意讓這個 client 存取某些資源」，沒有回答「現在這位使用者是誰、這個答案是給誰的」。OpenID Connect（OIDC）在 OAuth 上加了一層，專門回答後者：ID token 裡有 `aud`（是發給哪個 client 的）、`nonce`（是哪一次登入請求）、`iss` + `sub`（穩定的使用者識別碼）。
@@ -319,7 +319,7 @@ Cache-Control: no-store
 ## 動手
 
 1. 開 [OAuth 授權碼流程](#/lab/OAuthLab) 實驗室，切換 PKCE 開關，看第 ① 步與第 ⑤ 步的請求多了哪些參數。
-2. 在上面的 Python 範例裡，把 `callback` 裡檢查 state 的兩行註解掉，再跑第 3 個案例，看它改在哪一關被擋下（PKCE）；再把 `token` 裡 PKCE 那一關也拿掉，會發現 `nonce` 還擋著。三道都拿掉，受害者才會被登入成 `mallory`——這三個值各自都能獨立擋下這種攻擊。
+2. 在上面的 Python 範例裡，把 `callback` 裡檢查 state 的兩行註解掉，再跑第 3 個案例，看它改在哪一關被擋下（PKCE）；再把 `token` 裡 PKCE 那一關也拿掉，會發現 `nonce` 還擋著。三道都拿掉，受害者才會被登入成 `mallory`。這三個值各自都能獨立擋下這種攻擊。
 3. 把 `codes[code]` 的 `expires` 改成 `NOW - 1`，看過期的 code 回什麼錯誤。
 4. 讀任一個身分提供者的 `/.well-known/openid-configuration`（例如自己公司 SSO 的），找出 `issuer`、`authorization_endpoint`、`token_endpoint`、`jwks_uri`、`code_challenge_methods_supported`。
 5. 接著讀 [Device Code 與 PKCE](#/skill/oauth-device-pkce)：沒有後端、沒有瀏覽器的 client 怎麼走同樣的授權；以及 [MCP 的授權](#/skill/mcp-authorization)，看 resource server 端怎麼驗 access token 的 `aud`。

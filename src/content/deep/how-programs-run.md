@@ -8,7 +8,7 @@ OSError: [Errno 24] Too many open files
 
 重啟之後又正常了，幾個小時後再壞一次。程式碼裡根本沒有「開檔案」，問題卻叫 open files。
 
-原因是：作業系統把**檔案、socket、pipe**都當成「打開的檔案」管理，每個行程能同時持有的數量有上限。程式每次呼叫外部 API 都新建一個 HTTP client、用完沒關，每個 TCP 連線就留下一個沒釋放的**檔案描述子**（file descriptor，fd），累積到上限（常見預設 1024）時，連接受新連線都做不到。
+原因是：作業系統把檔案、socket、pipe 都當成「打開的檔案」管理，每個行程能同時持有的數量有上限。程式每次呼叫外部 API 都新建一個 HTTP client、用完沒關，每個 TCP 連線就留下一個沒釋放的**檔案描述子**（file descriptor，fd），累積到上限（常見預設 1024）時，連接受新連線都做不到。
 
 要看懂這類問題，得知道程式在作業系統裡是什麼樣子：行程、執行緒、記憶體、fd，以及「等 I/O」的時候 CPU 到底在做什麼。
 
@@ -20,7 +20,7 @@ OSError: [Errno 24] Too many open files
 - 一個 **PID**，以及父行程的 PPID
 - 一張 **fd 表**、環境變數、目前工作目錄、權限（以哪個使用者身分跑）
 
-**執行緒**（thread）是 CPU 排程的單位，活在行程裡面。同一個行程的所有執行緒**共用**記憶體與 fd 表，但每個執行緒有自己的 **stack** 與暫存器狀態。CPython 的 `threading.Thread` 是真正的作業系統執行緒。
+**執行緒**（thread）是 CPU 排程的單位，活在行程裡面。同一個行程的所有執行緒共用記憶體與 fd 表，但每個執行緒有自己的 stack 與暫存器狀態。CPython 的 `threading.Thread` 是真正的作業系統執行緒。
 
 | | 行程 | 執行緒 |
 |---|---|---|
@@ -100,7 +100,7 @@ except RecursionError as e:
 
 對一個 Web 服務來說：監聽的 port 是一個 fd，每條進來的連線是一個 fd，每條連到資料庫、Redis、外部 API 的連線也各是一個 fd。同時服務 2,000 條連線，就至少要 2,000 多個 fd。
 
-上限有兩層：**soft limit**（實際生效、行程自己可以往上調到 hard limit）與 **hard limit**（只有特權能提高）。Shell 裡 `ulimit -n` 看 soft、`ulimit -Hn` 看 hard。服務用 systemd 或容器啟動時，上限由它們的設定決定（例如 systemd 的 `LimitNOFILE`），不一定和你登入的 shell 一樣，所以要看**那個行程**的實際值：`/proc/<pid>/limits`。
+上限有兩層：soft limit（實際生效、行程自己可以往上調到 hard limit）與 hard limit（只有特權能提高）。Shell 裡 `ulimit -n` 看 soft、`ulimit -Hn` 看 hard。服務用 systemd 或容器啟動時，上限由它們的設定決定（例如 systemd 的 `LimitNOFILE`），不一定和你登入的 shell 一樣，所以要看**那個行程**的實際值：`/proc/<pid>/limits`。
 
 ```python run
 import os
@@ -138,7 +138,7 @@ HTTP client 也一樣：`httpx.Client`、`requests.Session` 背後有連線池�
 
 讀檔、寫 socket、開連線、配置大塊記憶體、建立行程，這些事程式自己做不到，要請核心代勞，這個請求就是**系統呼叫**（system call）：`openat`、`read`、`write`、`socket`、`connect`、`accept`、`epoll_wait`、`mmap`、`clone`。
 
-Python 的 `f.read()`、`sock.recv()` 最後都會落到某個系統呼叫。進出核心有成本，所以標準函式庫會做緩衝：`print` 不是每次都直接 `write`，而是先累積在緩衝區。這也是為什麼程式被強制砍掉時，最後幾行輸出可能不見。
+Python 的 `f.read()`、`sock.recv()` 最後都會落到某個系統呼叫。進出核心有成本，所以標準函式庫會做緩衝：`print` 會先累積在緩衝區，不是每次都直接 `write`。所以程式被強制砍掉時，最後幾行輸出可能不見。
 
 ### 阻塞 I/O 時，CPU 在做什麼
 
@@ -149,11 +149,11 @@ Python 的 `f.read()`、`sock.recv()` 最後都會落到某個系統呼叫。進
 3. 網卡收到封包，核心處理完、放進那個 socket 的緩衝區，把等它的執行緒叫醒
 4. 執行緒回到可執行佇列，輪到它時 `recv()` 回傳
 
-所以阻塞 I/O **不會燒 CPU**，它燒的是**執行緒**：一個執行緒在等的時候什麼都不能做，但它的 stack 和核心資料結構還佔著。用「一條連線一個執行緒」的模型同時服務 5,000 條慢連線，就要 5,000 個執行緒。
+所以阻塞 I/O 不會燒 CPU，它燒的是**執行緒**：一個執行緒在等的時候什麼都不能做，但它的 stack 和核心資料結構還佔著。用「一條連線一個執行緒」的模型同時服務 5,000 條慢連線，就要 5,000 個執行緒。
 
-另一種做法是 **I/O 多工**：把 socket 設成非阻塞，用 `epoll`（Linux；macOS 是 `kqueue`）一次監看大量 fd，「哪個好了就處理哪個」。一個執行緒就能服務大量連線，代價是程式要寫成可以中途讓出、之後接著做的形式。asyncio 的 event loop 就是這樣：`await` 的地方把控制權交回 loop，loop 去 `epoll_wait` 看誰好了。
+另一種做法是 **I/O 多工**：把 socket 設成非阻塞，用 `epoll`（Linux；macOS 是 `kqueue`）一次監看大量 fd，「哪個好了就處理哪個」。一個執行緒就能服務大量連線，代價是程式要寫成可以中途讓出、之後接著做的形式。asyncio 的 event loop 用的是這種做法：`await` 的地方把控制權交回 loop，loop 去 `epoll_wait` 看誰好了。
 
-這也表示：在 event loop 上做**純計算**，或呼叫**同步阻塞**的函式，loop 就完全卡住。下面這段可以看到差別：
+這也表示：在 event loop 上做純計算，或呼叫同步阻塞的函式，loop 就完全卡住。下面這段可以看到差別：
 
 ```python run
 import asyncio
@@ -195,7 +195,7 @@ await main()
 
 預設的 CPython 有一把 **GIL**（Global Interpreter Lock）：同一個行程裡，同一時間只有一個執行緒在執行 Python bytecode。
 
-- 執行緒在做阻塞 I/O（讀 socket、讀檔、`time.sleep`）時會**釋放** GIL，別的執行緒可以接著跑。所以多執行緒對 **I/O 密集**的工作有效。
+- 執行緒在做阻塞 I/O（讀 socket、讀檔、`time.sleep`）時會釋放 GIL，別的執行緒可以接著跑。所以多執行緒對 **I/O 密集**的工作有效。
 - 純 Python 的 **CPU 密集**運算，開再多執行緒也只是輪流跑，不會變快。
 - 部分 C 擴充（例如 `hashlib` 處理大資料、NumPy 的許多運算）在計算時會釋放 GIL，這類工作多執行緒可能有效，要看該函式庫的說明。
 

@@ -93,13 +93,13 @@ export default function AgentLoopLab() {
       '迴圈的終止條件就藏在這裡：模型判斷「資料齊了」就輸出最終答案（→ done）；判斷還缺資料就再呼叫工具（→ tool_call）。harness 不信任這個判斷會一定收斂，所以外面要有步數上限與預算。',
     ]],
     tool_call: ['tool_call：模型輸出的是「請求」，不是結果', [
-      '模型回傳一段結構化的呼叫（工具名 + 參數），harness 解析後真的去打 API 或查資料庫。模型自己不會執行任何東西；它只是產生一段 JSON。',
+      '模型回傳一段結構化的呼叫（工具名 + 參數），harness 解析後才去打 API 或查資料庫。模型自己不會執行任何東西；它只是產生一段 JSON。',
       '這裡要做的檢查：工具名在白名單內、參數符合 schema、這個使用者有權限呼叫。參數是模型生成的，要和使用者輸入一樣當成不可信。',
     ]],
     tool_result: [now.bad ? 'tool_result：壞掉的回傳也會進 context' : 'tool_result：把結果塞回 context', [
       now.bad
         ? `這次工具沒有給出可用的資料（${now.t}）。注意 token 還是照算：一整頁錯誤 HTML 進了 context，比正常結果還貴。harness 應該在這裡先驗 schema，不符合就截短或換成明確的錯誤訊息再交給模型。`
-        : '工具的回傳被包成一則訊息加進 context，模型下一輪才看得到。回傳越長、之後每一輪的 context 就越大——這是 agent 成本隨步數「加速」上升的原因。',
+        : '工具的回傳被包成一則訊息加進 context，模型下一輪才看得到。回傳越長、之後每一輪的 context 就越大，所以 agent 成本隨步數「加速」上升。',
       '工具回傳的內容也是不可信輸入：裡面若夾帶指令，模型可能照做。',
     ]],
     done: ['done：模型給出最終答案，迴圈結束', [
@@ -121,7 +121,7 @@ export default function AgentLoopLab() {
 
   return (
     <Lab accent="aqua" kicker="AGENT LAB" title="Agent 的執行迴圈：工具呼叫、狀態機、預算與中斷"
-         blurb="一個腳本化的假模型執行「查某診次剩餘名額並回報」。逐步或自動播放，看狀態機怎麼在 thinking、tool_call、tool_result 之間繞圈；調步數上限與 token 預算、讓工具逾時或回傳壞格式，看迴圈在哪裡被保險絲擋下。">
+         blurb="一個腳本化的假模型執行「查某診次剩餘名額並回報」，狀態機在 thinking、tool_call、tool_result 之間繞圈；工具逾時或回傳壞格式時，迴圈由步數上限或 token 預算擋下。">
       <LabControls>
         <Stepper step={cur} total={trace.length} onStep={(s) => setStep(s)} playing={playing} onPlay={toggle} labels={trace.map((x) => x.t)} />
         <span className="spacer" />

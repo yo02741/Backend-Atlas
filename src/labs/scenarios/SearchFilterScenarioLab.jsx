@@ -122,7 +122,7 @@ export default function SearchFilterScenarioLab() {
 
   return (
     <Lab accent="aqua" kicker="SCENARIO LAB" title="同一個關鍵字，三種搜尋做法命中誰、怎麼排、要多久"
-         blurb="30 件商品的小資料集。打關鍵字、切做法、加篩選與排序；拉「資料量」看示意延遲怎麼長；開「剛改了一件商品」看引擎模式的同步延遲。">
+         blurb="30 件商品的小資料集：各做法的關鍵字搜尋、篩選與排序，資料量變大後的示意延遲，以及引擎模式在商品剛改過時的同步延遲。">
       <LabControls>
         <Seg tinted label="做法" value={mode} onChange={setMode} options={MODES} />
         <label className="sf-field"><span>關鍵字</span><input className="sf-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="例如：藍牙 鍵盤" aria-label="關鍵字" /></label>
@@ -180,23 +180,23 @@ export default function SearchFilterScenarioLab() {
         <div className="lab-stack">
           {mode === 'like' && (
             <LabExplain title="ILIKE：找得到，但排不了、也快不了">
-              <p>子字串比對對中文很友善：「鍵盤藍牙接收器」「數字鍵盤（藍牙）」不用斷詞就命中。但命中的每一筆地位相同——一個配件排在真正的藍牙鍵盤前面，只因為它上架比較新。</p>
+              <p>子字串比對對中文很友善：「鍵盤藍牙接收器」「數字鍵盤（藍牙）」不用斷詞就命中。但命中的每一筆地位相同：一個配件排在真正的藍牙鍵盤前面，只因為它上架比較新。</p>
               <p>前置的 <code>%</code> 讓 B-tree 索引失效，每次搜尋都掃整張表：延遲曲線是一條直線，10 萬件幾十毫秒還能接受，100 萬件就破秒。<code>pg_trgm</code> 的 GIN 索引能把掃描壓下來，但排名問題依舊。</p>
             </LabExplain>
           )}
           {mode === 'fts' && (
             <LabExplain title="全文檢索：走索引、有排名，但中文要先斷詞">
               <p>資料寫入時先斷詞成 <code>tsvector</code>（這裡的「|」就是斷詞邊界），查詞也斷成 <code>tsquery</code>，用 GIN 索引找交集，<code>ts_rank</code> 依詞出現的欄位權重（名稱 A、描述 B）與文件長度排序。#18 只有描述提到藍牙，所以排在後面。</p>
-              <p>PostgreSQL 內建的 parser 不會為中文斷詞：<code>to_tsvector('simple', '藍牙鍵盤')</code> 只有一個詞位，搜「鍵盤」找不到。要裝 zhparser / pg_jieba，或在應用層用 jieba 斷好、以空格接起來再寫入——這是額外的工作，不是勾個選項。錯字（#21 的「藍芽」）與拼音也不會處理。</p>
+              <p>PostgreSQL 內建的 parser 不會為中文斷詞：<code>to_tsvector('simple', '藍牙鍵盤')</code> 只有一個詞位，搜「鍵盤」找不到。要裝 zhparser / pg_jieba，或在應用層用 jieba 斷好、以空格接起來再寫入。這是額外的工作，不是勾個選項。錯字（#21 的「藍芽」）與拼音也不會處理。</p>
             </LabExplain>
           )}
           {mode === 'engine' && (
             <LabExplain title="搜尋引擎：什麼都有，代價是第二份資料">
               <p>斷詞、同義詞（藍芽 → 藍牙，所以 #21 出現了）、錯字容忍、拼音、分面統計、業務加權（有貨的加分）都是設定。注意錯字容忍預設對兩個字的詞不啟用（誤配太多），中文常見錯字多靠同義詞字典。</p>
-              <p>資料要從 PostgreSQL 同步過去（outbox、CDC 或排程）。開右上的「剛改了一件商品」：#7 在 ILIKE 與 FTS 模式立刻搜得到新名稱，引擎模式要等索引同步——真實環境是秒到分鐘級，而且庫存、價格這些每分鐘變的欄位都會有同樣的落差。</p>
+              <p>資料要從 PostgreSQL 同步過去（outbox、CDC 或排程）。「剛改了一件商品」之後，#7 在 ILIKE 與 FTS 模式立刻搜得到新名稱，引擎模式要等索引同步，實際環境是秒到分鐘級，而且庫存、價格這些每分鐘變的欄位都會有同樣的落差。</p>
             </LabExplain>
           )}
-          <Callout title="什麼時候會真的踩到">
+          <Callout title="什麼時候會踩到">
             ILIKE 在資料十萬件、搜尋每秒幾十次時開始拖垮整個資料庫的 CPU；FTS 在產品要求「打錯也找得到」「拼音」「每個分類幾件」時開始一項一項補；引擎在使用者說「我剛改了庫存怎麼還搜得到」時開始解釋同步延遲。<b>先量現在的資料量與查詢頻率</b>，再決定要付哪一種代價。
           </Callout>
         </div>

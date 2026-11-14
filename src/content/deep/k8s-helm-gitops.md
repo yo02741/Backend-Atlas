@@ -343,7 +343,7 @@ GitOps 的四個原則：
 | 部署成敗的回饋 | pipeline 直接看到 | CI 做完 commit 就結束；成敗要看控制器的狀態或另外接通知 |
 | 多出來的維運 | 沒有 | 控制器本身、設定 repo、它們的權限 |
 
-一兩個叢集、團隊不大時，在 [GitLab CI/CD 實戰](#/skill/gitlab-cicd) 的部署 job 裡跑 `kubectl apply -k` 加上 `kubectl rollout status`，簡單而且夠用；重點是憑證要設成 protected、masked，並只給部署需要的權限。叢集與團隊變多、或需要回答「production 現在的狀態是誰在什麼時候核准的」這類稽核問題時（見 [受監管環境的變更管理](#/skill/change-management)），GitOps 的好處才會大於它多出來的維運成本。
+一兩個叢集、團隊不大時，在 [GitLab CI/CD 實戰](#/skill/gitlab-cicd) 的部署 job 裡跑 `kubectl apply -k` 加上 `kubectl rollout status`，簡單而且夠用，但憑證要設成 protected、masked，並只給部署需要的權限。叢集與團隊變多、或需要回答「production 現在的狀態是誰在什麼時候核准的」這類稽核問題時（見 [受監管環境的變更管理](#/skill/change-management)），GitOps 的好處才會大於它多出來的維運成本。
 
 採用 GitOps 時常見的安排：
 
@@ -410,6 +410,6 @@ GitOps 要求所有期望狀態都在 Git，但 Secret 的 YAML 只是 base64，
 
 1. 執行合併的模擬。在 production 的 overlay 加一個新的容器（例如 `{"name": "metrics", "image": "registry.example.org/tools/exporter:1.2.0"}`），確認它是被加進清單、而不是取代 `api`。再替 base 與 overlay 的 `api` 容器各加一個元素是字串的清單（例如 `"args": ["--workers", "4"]`），觀察這種沒有 `name` 的清單是整個取代。
 2. 做本課的程式題：把一份「複製 base 再手改」的 `kustomization.yaml` 改成參照 base 的 overlay。
-3. 有 kubectl 的話，照本課的目錄結構建立 base 與兩個 overlay，用 `kubectl kustomize overlays/staging` 與 `kubectl kustomize overlays/production` 輸出後 `diff` 兩份結果——這份 diff 應該只包含刻意的差異。
+3. 有 kubectl 的話，照本課的目錄結構建立 base 與兩個 overlay，用 `kubectl kustomize overlays/staging` 與 `kubectl kustomize overlays/production` 輸出後 `diff` 兩份結果，這份 diff 應該只包含刻意的差異。
 4. 檢視目前的部署流程：叢集的憑證放在哪裡、誰可以直接 `kubectl apply` 到 production、有沒有辦法知道叢集的實際狀態和 Git 是否一致。這三個問題的答案決定要不要往 GitOps 走。
 5. 回頭看整條線：[導入 Kubernetes 前要準備什麼](#/skill/k8s-readiness) → [manifest](#/skill/k8s-manifests) → [設定、探針與資源](#/skill/k8s-config-probes) → [排錯](#/skill/k8s-troubleshooting) → 本課。

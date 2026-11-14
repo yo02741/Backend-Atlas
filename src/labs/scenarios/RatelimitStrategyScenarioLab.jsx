@@ -97,7 +97,7 @@ export default function RatelimitStrategyScenarioLab() {
 
   return (
     <Lab accent="orange" kicker="SCENARIO LAB" title="同一分鐘的流量，換 key 換位置，誤傷與漏網對調"
-         blurb="三種來源同時打同一個端點。切做法、選端點、調上限，跑 60 秒看辦公室被擋幾次（誤傷）、攻擊者過了幾次（漏網）、多少請求進到應用層。示意數字。">
+         blurb="三種來源同時打同一個端點，60 秒內辦公室被擋幾次（誤傷）、攻擊者過了幾次（漏網）、多少請求進到應用層。示意數字。">
       <LabControls>
         <Seg label="做法" tinted value={approach} onChange={setApproach} options={[
           { value: 'ip-nginx', label: 'nginx 每 IP' }, { value: 'user-app', label: '應用層每帳號' }, { value: 'tiered', label: '依方案分級' }, { value: 'layered', label: '兩層' },
@@ -150,8 +150,8 @@ export default function RatelimitStrategyScenarioLab() {
         </div>
         <div className="lab-stack">
           <LabExplain title={TITLES[approach]}>{explainFor(approach, ep, final, ipLimit, userLimit, allow)}</LabExplain>
-          <Callout title="什麼時候會真的踩到">
-            上線第一週企業客戶反映「下午三點整間公司都被 429」——他們 200 人從同一個 NAT 出來，每 IP 上限是照「一個人」設的。反過來，登入端點只做每 IP 限速，撞庫的人換 50 個 IP 就等於沒有限流。先問這個端點的請求「能用什麼當 key」，再決定放哪一層。
+          <Callout title="什麼時候會踩到">
+            上線第一週企業客戶反映「下午三點整間公司都被 429」，因為他們 200 人從同一個 NAT 出來，每 IP 上限是照「一個人」設的。反過來，登入端點只做每 IP 限速，撞庫的人換 50 個 IP 就等於沒有限流。先問這個端點的請求「能用什麼當 key」，再決定放哪一層。
           </Callout>
         </div>
       </LabGrid>

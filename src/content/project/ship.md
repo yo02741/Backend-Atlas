@@ -184,4 +184,4 @@ PermissionError: [Errno 13] Permission denied: '/app/uploads'
 
 **.gitlab-ci.yml**：`stages` 依序是 lint、test、build、deploy 且每個都有 job；lint 跑 linter、test 跑 pytest；test 有固定版本的 postgres service、`POSTGRES_PASSWORD` 與主機為 `postgres` 的 `DATABASE_URL`；build 有固定版本的 dind、用 CI 提供的憑證登入、push 到 `$CI_REGISTRY_IMAGE:<commit SHA>`；deploy 只在 main 執行；所有 `image:` 都固定版本。
 
-規則檢查有它的極限：寫法合格不代表映像真的建得起來、管線真的會通過。這兩個檔案放進實際專案後，第一次執行的結果才是最後的驗收。
+規則檢查有它的極限：寫法合格不代表映像建得起來、管線會通過。這兩個檔案放進實際專案後，第一次執行的結果才是最後的驗收。

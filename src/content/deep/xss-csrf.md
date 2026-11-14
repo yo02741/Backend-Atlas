@@ -45,7 +45,7 @@ DOM 型的惡意內容可能完全不經過伺服器（例如 URL 的 `#` 後面
 | JavaScript 程式碼裡 | `<script>var u = "{{ name }}"</script>` | 引號、反斜線、`</script>` | 盡量不要這樣做；把資料放進 `data-*` 屬性或 `<script type="application/json">`，並跳脫 `<` |
 | CSS | `style="color: {{ c }}"` | 幾乎全部 | 不要放使用者資料；只允許白名單值 |
 
-**HTML 跳脫對 URL 情境無效**：`javascript:alert(1)` 沒有任何需要跳脫的 HTML 字元，跳脫之後原封不動，點下去照樣執行。這就是為什麼要依情境處理。
+**HTML 跳脫對 URL 情境無效**：`javascript:alert(1)` 沒有任何需要跳脫的 HTML 字元，跳脫之後原封不動，點下去照樣執行。所以要依情境處理。
 
 使用者確實需要輸入格式化內容（例如富文字編輯器）時，跳脫不適用，改用 HTML sanitizer 以白名單保留允許的標籤與屬性，其他全部移除。不要自己用正規表示式過濾 `<script>`，HTML 的解析規則有太多繞過方式。
 
@@ -97,7 +97,7 @@ cookie 的 `SameSite` 屬性決定跨站請求時要不要附上它：
 |---|---|---|
 | `Strict` | 一律不帶 | 從外部連結點進來時也不帶，使用者會看起來像沒登入 |
 | `Lax` | 只有「頂層導覽的 GET」（點連結）會帶；跨站的 POST 表單、fetch、iframe 不帶 | 擋掉大多數 CSRF；Chromium 系瀏覽器對沒寫 SameSite 的 cookie 預設當作 Lax，其他瀏覽器行為不一，所以要明確設定 |
-| `None` | 一律帶，必須同時有 `Secure` | 只有真的需要跨站使用時才設 |
+| `None` | 一律帶，必須同時有 `Secure` | 只有需要跨站使用時才設 |
 
 SameSite 的兩個盲點：
 

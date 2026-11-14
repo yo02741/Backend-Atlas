@@ -12,9 +12,9 @@
 
 同一份程式碼、同一個 commit，build 了兩次就是兩個不同的東西。staging 的三天驗證，驗的是一個從來沒有上過 production 的 image。
 
-同一個 workflow 裡還有另一個問題：production 資料庫密碼存在 repo 層級的 secret，任何分支的任何 job 都讀得到——包括某位同事為了除錯，在自己分支的 workflow 裡加的 `env | sort`。
+同一個 workflow 裡還有另一個問題：production 資料庫密碼存在 repo 層級的 secret，任何分支的任何 job 都讀得到，包括某位同事為了除錯，在自己分支的 workflow 裡加的 `env | sort`。
 
-這一課的兩個主題：**同一個 artifact 走過所有環境**，以及**設定與秘密由平台在需要的地方注入**。
+這一課的兩個主題：同一個 artifact 走過所有環境，以及設定與秘密由平台在需要的地方注入。
 
 ## 環境與晉升
 
@@ -43,7 +43,7 @@ commit 8d1e7f4
 
 ### tag 會變、digest 不會
 
-`shop-api:8d1e7f4` 這種 tag 是一個**可以移動的名字**：任何有寫入權限的人都可以把它指到另一個 image。image 的 **digest**（`sha256:…`）是內容的雜湊，內容不同 digest 就不同。
+`shop-api:8d1e7f4` 這種 tag 是一個可以移動的名字：任何有寫入權限的人都可以把它指到另一個 image。image 的 **digest**（`sha256:…`）是內容的雜湊，內容不同 digest 就不同。
 
 - build 時用 commit SHA 當 tag，方便人看。
 - 部署時用 digest（`image@sha256:…`）指定，確保 staging 和 production 跑的是位元組完全相同的東西。
@@ -183,7 +183,7 @@ print("目前程序有沒有 DATABASE_URL：", "DATABASE_URL" in os.environ)
 - **只注入需要的 job、需要的 step**：上面的範例把 `DATABASE_URL` 寫在 step 的 `env`，而不是整個 workflow 的 `env`。
 - **遮蔽不是防線**：平台會把已知的 secret 值在 log 裡換成 `***`，但經過編碼（base64）或切片後的值不會被遮蔽。GitHub 文件也建議不要把 JSON 這類結構化資料存成單一 secret，因為遮蔽可能失效。
 - **fork 來的 PR 拿不到 secret**：GitHub 對 fork 觸發的 `pull_request` 不提供 secrets（`GITHUB_TOKEN` 也是唯讀）。為了繞過這點改用 `pull_request_target` 並 checkout PR 的程式碼，等於讓陌生人的程式碼在有秘密的環境裡執行，是已知的高風險寫法。
-- **protected 是真正的防線**：GitLab 的 protected 變數、GitHub 的 environment secrets 加上分支限制，確保只有審查過、合進受保護分支的程式碼拿得到 production 的秘密。
+- **protected 才擋得住**：GitLab 的 protected 變數、GitHub 的 environment secrets 加上分支限制，確保只有審查過、合進受保護分支的程式碼拿得到 production 的秘密。
 - 秘密的輪替、撤銷與存放方式見 [秘密管理](#/skill/secrets)。
 
 ## OIDC：不存長期金鑰

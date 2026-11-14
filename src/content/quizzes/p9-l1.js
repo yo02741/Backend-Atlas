@@ -29,7 +29,7 @@ export default [
           '測試名稱沒有寫出期望的行為，改名成 test_negative_raises 就能解決',
         ],
         answer: 2,
-        explain: 'try 區塊裡的呼叫若正常回傳，不會進 except，函式結束，測試照樣通過——拿掉 raise 的突變體會存活。要用 with pytest.raises(ValueError): 或 assertRaises，沒拋例外時才會失敗。改捕捉 Exception 只會讓它更寬鬆；改名稱不改變它什麼都沒驗的事實。',
+        explain: 'try 區塊裡的呼叫若正常回傳，不會進 except，函式結束，測試照樣通過，拿掉 raise 的突變體會存活。要用 with pytest.raises(ValueError): 或 assertRaises，沒拋例外時才會失敗。改捕捉 Exception 只會讓它更寬鬆；改名稱不改變它什麼都沒驗的事實。',
       },
       {
         q: '團隊對訂單金額模組跑突變測試，報告列出「第 42 行 `>=` 改成 `>` 的突變體存活」。接下來最合理的做法是？',
@@ -85,7 +85,7 @@ forbid:
           '先判為通過並發出警告，等下一次 pipeline 再確認',
         ],
         answer: 0,
-        explain: '「做完了」需要證據，找不到測試等於沒有證據——測試可能被刪、改名或根本沒寫。檢查器要 fail closed：缺少的、被 skip 的、不認識的條目一律判為沒通過。用 failures=0 判通過正是 agent 刪掉或跳過測試後還能全綠的漏洞；略過或延後都會讓沒完成的工作合併進去。',
+        explain: '「做完了」需要證據，找不到測試等於沒有證據：測試可能被刪、改名或根本沒寫。檢查器要 fail closed：缺少的、被 skip 的、不認識的條目一律判為沒通過。用 failures=0 判通過正是 agent 刪掉或跳過測試後還能全綠的漏洞；略過或延後都會讓沒完成的工作合併進去。',
       },
     ],
   },

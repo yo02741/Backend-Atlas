@@ -40,7 +40,7 @@ OAuth 為這三種情況各有一個標準流程：
       │◀──────────────────────────────│                                  │
 ```
 
-關鍵是兩個碼的分工：`device_code` 只有 CLI 知道，用來輪詢；`user_code` 短、好唸、給人輸入，用來把「瀏覽器上的這次登入」和「那台 CLI 的請求」接起來。
+兩個碼的分工：`device_code` 只有 CLI 知道，用來輪詢；`user_code` 短、好唸、給人輸入，用來把「瀏覽器上的這次登入」和「那台 CLI 的請求」接起來。
 
 ### ① ② 申請 device code
 
@@ -151,7 +151,7 @@ Device Code 流程有一個結構上的弱點：**發起流程的裝置和完成
 
 - **驗證頁要講清楚是誰在要權限**：顯示 client 名稱、要求的 scope，並提醒「如果這不是你剛剛自己在裝置上發起的，請不要繼續」。
 - **`expires_in` 不要太長**：攻擊者要在碼過期前騙到人，時間越短越難。
-- **限制誰能用這個流程**：只有真正需要的 client（CLI、電視 App）才開 device grant；有些 IdP 可以用條件式政策限制哪些使用者或應用能用 device code 流程。
+- **限制誰能用這個流程**：只有需要的 client（CLI、電視 App）才開 device grant；有些 IdP 可以用條件式政策限制哪些使用者或應用能用 device code 流程。
 - **事後可查**：token 發出時記錄是哪個 client、哪個 device 流程；異常地點的 refresh 要能撤銷。
 
 ## 授權碼 + PKCE：沒有 secret 的公開客戶端
@@ -160,7 +160,7 @@ Device Code 流程有一個結構上的弱點：**發起流程的裝置和完成
 
 授權碼流程中，授權碼會經過一段不受 client 控制的路：瀏覽器網址列、作業系統把自訂 URL scheme 交給 App、本機 loopback port。手機上別的 App 可以註冊同一個 URL scheme 攔到 `code`；瀏覽器擴充套件、log、Referer 也可能看到它。
 
-沒有 client secret 的公開客戶端，換 token 時只需要 `code`、`client_id`、`redirect_uri`，這三個攔截者都拿得到。**PKCE 讓「換 token 的人」必須證明自己就是「發起授權的人」**：
+沒有 client secret 的公開客戶端，換 token 時只需要 `code`、`client_id`、`redirect_uri`，這三個攔截者都拿得到。PKCE 讓「換 token 的人」必須證明自己就是「發起授權的人」：
 
 1. 發起前，client 產生一個隨機的 `code_verifier`（43–128 個字元，只能用英數與 `-._~`），只留在自己的記憶體。
 2. 算出 `code_challenge = BASE64URL(SHA-256(code_verifier))`，放進授權請求。授權伺服器把它和這次授權綁在一起。
@@ -208,7 +208,7 @@ grant_type=authorization_code
 
 ### CLI 也能用授權碼 + PKCE
 
-有瀏覽器的桌機 CLI 不一定要用 Device Code。常見做法是 CLI 在本機開一個臨時的 HTTP 伺服器（`http://127.0.0.1:<隨機 port>/callback`），打開系統瀏覽器去授權頁，`redirect_uri` 指回這個 loopback 位址，收到 `code` 後關掉伺服器。這種原生應用的做法寫在 [RFC 8252](https://www.rfc-editor.org/rfc/rfc8252)。它的好處是使用者不用切換裝置、不用輸入碼；Device Code 留給 SSH、容器、電視這類真的沒有瀏覽器的環境。
+有瀏覽器的桌機 CLI 不一定要用 Device Code。常見做法是 CLI 在本機開一個臨時的 HTTP 伺服器（`http://127.0.0.1:<隨機 port>/callback`），打開系統瀏覽器去授權頁，`redirect_uri` 指回這個 loopback 位址，收到 `code` 後關掉伺服器。這種原生應用的做法寫在 [RFC 8252](https://www.rfc-editor.org/rfc/rfc8252)。它的好處是使用者不用切換裝置、不用輸入碼；Device Code 留給 SSH、容器、電視這類沒有瀏覽器的環境。
 
 ## Client Credentials：沒有使用者的服務
 

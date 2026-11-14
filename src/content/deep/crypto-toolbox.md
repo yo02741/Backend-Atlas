@@ -21,7 +21,7 @@ ciphertext = aes_encrypt(key=FIXED_KEY, iv=b"\x00" * 12, data=national_id)
 2. `SHA-256(secret + body)` 對 SHA-256 這類 Merkle–Damgård 結構的雜湊有 **length extension** 問題：知道一組合法的 `(body, signature)`，不知道 secret 也能算出「body 後面再接一段資料」的合法簽章。
 3. 用 AES-GCM 時，同一把金鑰重複使用同一個 nonce，會讓兩筆密文互相洩露內容，甚至讓攻擊者偽造通過驗證的密文。
 
-問題不是「沒用加密」，而是**工具和問題不對應**。密碼學工具各自只解一種問題，選錯了就等於沒有保護。
+三段都用了密碼學函式，問題出在**工具和問題不對應**。密碼學工具各自只解一種問題，選錯了就等於沒有保護。
 
 ## 運作原理：五種工具各解一種問題
 

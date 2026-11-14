@@ -129,7 +129,7 @@ console.log(can({ id: 1, roles: ['editor'] }, 'write', { ownerId: 2 }))
       { name: 'admin 什麼都能刪', code: `assertEqual(can({ id: 9, roles: ['admin'] }, 'delete', { ownerId: 2 }), true)\nassertEqual(can({ id: 9, roles: ['admin'] }, 'manage_users', { ownerId: 2 }), true)` },
       { name: '多角色取聯集；未知動作預設拒絕', code: `assertEqual(can({ id: 3, roles: ['viewer', 'editor'] }, 'write', { ownerId: 0 }), true)\nassertEqual(can({ id: 3, roles: ['editor'] }, 'deploy', { ownerId: 3 }), false)\nassertEqual(can({ id: 3, roles: [] }, 'read', { ownerId: 3 }), false)` },
     ],
-    hints: ['先用 roles.some(...) 判斷「有沒有任一角色允許這個動作」。', 'delete 是「角色允許」且「是擁有者或 admin」——兩個條件都要成立。'],
+    hints: ['先用 roles.some(...) 判斷「有沒有任一角色允許這個動作」。', 'delete 是「角色允許」且「是擁有者或 admin」，兩個條件都要成立。'],
   },
   {
     id: 'authn-basics-1', skill: 'authn-basics', kind: 'python', level: 1,
@@ -363,7 +363,7 @@ print(refund("Bearer tok-alice", 100))
   {
     id: 'account-lifecycle-1', skill: 'account-lifecycle', kind: 'python', level: 2,
     title: '登入節流：擋住攻擊者，但鎖不住本人',
-    prompt: '實作 `LoginThrottle`，在 `WINDOW` 秒的滑動視窗內計算登入失敗：\n\n- `record_failure(account, ip, now)`：記錄一次失敗\n- `record_success(account, ip, now)`：清掉這個「帳號 + IP」組合的失敗紀錄（其他紀錄不動）\n- `check(account, ip, now)` 回傳：\n  - `"block"`：這個「帳號 + IP」在視窗內失敗 ≥ `PAIR_LIMIT` 次，或這個 IP 在視窗內（對任何帳號）失敗 ≥ `IP_LIMIT` 次\n  - `"challenge"`：不是 block，但這個帳號在視窗內（所有 IP 加總）失敗 ≥ `ACCOUNT_LIMIT` 次——要求 CAPTCHA 之類的額外驗證，而不是鎖死\n  - 其他情況 `"ok"`\n- 帳號比對不分大小寫、忽略前後空白；視窗內指的是 `now - 失敗時間 < WINDOW`',
+    prompt: '實作 `LoginThrottle`，在 `WINDOW` 秒的滑動視窗內計算登入失敗：\n\n- `record_failure(account, ip, now)`：記錄一次失敗\n- `record_success(account, ip, now)`：清掉這個「帳號 + IP」組合的失敗紀錄（其他紀錄不動）\n- `check(account, ip, now)` 回傳：\n  - `"block"`：這個「帳號 + IP」在視窗內失敗 ≥ `PAIR_LIMIT` 次，或這個 IP 在視窗內（對任何帳號）失敗 ≥ `IP_LIMIT` 次\n  - `"challenge"`：不是 block，但這個帳號在視窗內（所有 IP 加總）失敗 ≥ `ACCOUNT_LIMIT` 次，這時要求 CAPTCHA 之類的額外驗證，不直接鎖死\n  - 其他情況 `"ok"`\n- 帳號比對不分大小寫、忽略前後空白；視窗內指的是 `now - 失敗時間 < WINDOW`',
     starter: `class LoginThrottle:
     WINDOW = 15 * 60
     PAIR_LIMIT = 5
@@ -507,6 +507,6 @@ print(hotp(KEY, 0), totp(KEY, 59, digits=8))
       { name: '驗證允許前後一個時間步', code: `_code = totp(KEY, 1000)\nassert verify_totp(KEY, _code, 1000)\nassert verify_totp(KEY, _code, 1000 + 30)\nassert verify_totp(KEY, _code, 1000 - 30)\nassert not verify_totp(KEY, _code, 1000 + 90), "差三個時間步不該通過"` },
       { name: '錯的或長度不對的 code 拒絕', code: `_code = totp(KEY, 1000)\n_bad = str((int(_code) + 1) % 1000000).zfill(6)\nassert not verify_totp(KEY, _bad, 1000)\nassert not verify_totp(KEY, _code[:5], 1000)\nassert not verify_totp(KEY, "", 1000)` },
     ],
-    hints: ['`struct.pack(">Q", n)` 是 8 bytes 大端序；`struct.unpack(">I", b4)[0]` 把 4 bytes 轉回整數。', '補 0 用 `str(n).zfill(digits)`——RFC 6238 的第二組向量開頭就是 0。', '驗證時走過 `counter - window` 到 `counter + window`，每個都算一次 hotp 比對。'],
+    hints: ['`struct.pack(">Q", n)` 是 8 bytes 大端序；`struct.unpack(">I", b4)[0]` 把 4 bytes 轉回整數。', '補 0 用 `str(n).zfill(digits)`；RFC 6238 的第二組向量開頭就是 0。', '驗證時走過 `counter - window` 到 `counter + window`，每個都算一次 hotp 比對。'],
   },
 ]

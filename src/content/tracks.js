@@ -16,7 +16,7 @@ export const TRACKS = [
     tagline: '瀏覽器怎麼畫出畫面、HTML 與 CSS 版面、Vue 元件、呼叫後端與畫面狀態。',
     lede: '畫面怎麼來、元件叫什麼、狀態怎麼切：寫需求和驗收 AI 產出的元件時用得到的詞彙與檢查。',
     curriculum: 'docs/CURRICULUM-frontend.md',
-    featuredLabs: [],
+    featuredLabs: ['RenderPipelineLab', 'FlexboxLab', 'ApiStatesLab'],
   },
   {
     id: 'backend', title: '後端', en: 'BACKEND', color: 'blue', mapRequired: false,

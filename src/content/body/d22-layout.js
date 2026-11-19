@@ -1,2 +1,146 @@
 // 前端路線：HTML 與 CSS 版面 的技能內文（以技能 id 為 key）
-export default {}
+export default {
+  'semantic-html': {
+    map: {
+      names: [
+        { n: '地標元素（landmark）', t: '`header`、`nav`、`main`、`aside`、`footer` 標出頁面的區塊，螢幕閱讀器可以列出區塊並直接跳過去。一頁只有一個 `main`。' },
+        { n: '標題層級 `h1`–`h6`', t: '描述內容的大綱，不拿來調字級；層級依序往下（`h2` 底下接 `h3`，不直接跳到 `h4`），字的大小交給 CSS。' },
+        { n: '`button` 與 `a`', t: '`button` 做動作（送出、開 Dialog、切換），`a href` 換頁。兩者都能用 Tab 聚焦、Enter 觸發（`button` 還能用 Space）；`div` 加 `@click` 做的按鈕這些都沒有。' },
+        { n: '`button` 的 `type`', t: '`form` 裡沒寫 `type` 的 `button` 預設是 `submit`，按下去就送出表單。只做動作的按鈕要寫 `type="button"`。' },
+        { n: '`label`', t: '用 `for` 對到欄位的 `id`（或把欄位包在 `label` 裡）：點文字會聚焦欄位，螢幕閱讀器也念得出欄位名稱。`placeholder` 一輸入就消失，不能取代 `label`。' },
+        { n: '`fieldset` 與 `legend`', t: '把一組相關的欄位（例如「看診時段」的三個 radio）包起來，`legend` 是這一組的標題，螢幕閱讀器進入這組時會念出來。' },
+        { n: '`type` 與 `inputmode`', t: '`type="email"`、`tel`、`url`、`date` 會換手機鍵盤或選擇器，`email` 還有內建格式檢查。病歷號、驗證碼這類「是數字但不是數量」的欄位用 `type="text"` 加 `inputmode="numeric"`。' },
+        { n: '`autocomplete`', t: '告訴瀏覽器欄位裝的是什麼（`name`、`tel`、`email`、`one-time-code`），手機上可以一鍵自動填入。' },
+      ],
+      ask: [
+        '頁面分成哪幾個區塊、各用哪個地標元素，以及標題層級（哪個是 `h1`）。',
+        '每個可點的東西是換頁（`a href`）還是動作（`button type="button"`），表單裡哪一顆是送出鈕。',
+        '每個欄位的 `label` 文字、`type`、`inputmode`、`autocomplete`，以及必填與格式限制。',
+        '成組的選項（radio、checkbox）用 `fieldset` 與 `legend` 包起來，組的標題是什麼。',
+        '只用 Tab、Shift+Tab、Enter、Space 能不能走完整個流程，以及焦點的順序。',
+      ],
+      prompt: '掛號表單 `AppointmentForm` 放在 `main` 裡，標題是 `h1`「預約掛號」。欄位：姓名（`autocomplete="name"`）、手機（`type="tel"`、`autocomplete="tel"`）、病歷號（`type="text"`、`inputmode="numeric"`），每個欄位都有用 `for` 對到的 `label`，不用 `placeholder` 代替。看診時段是三個 radio，包在 `fieldset` 裡，`legend` 是「看診時段」。「清除」是 `type="button"`，只有「送出掛號」是 `type="submit"`；不用 `div` 或 `span` 做按鈕。',
+      verify: [
+        { c: '只用鍵盤', t: '從網址列開始按 Tab 走完整個表單：每個欄位與按鈕都停得到、有看得見的焦點框，在欄位裡按 Enter 能送出；被跳過的按鈕多半是 `div` 或 `span` 加了點擊事件。' },
+        { c: '欄位名稱', t: 'Elements 選取欄位，右側 Accessibility 分頁的 `Name` 要是欄位的文字；空白代表 `label` 沒對上。Issues 分頁出現 `Incorrect use of <label for=FORM_ELEMENT>` 代表 `for` 對不到任何 `id`。' },
+        { c: '按鈕不會誤送出', t: '按「清除」後看 Network 分頁與網址：多出一筆送出表單的請求或頁面重新整理，代表這顆按鈕沒寫 `type="button"`，用了預設的 `submit`。' },
+        { c: '手機鍵盤', t: '用實體手機打開頁面，點手機欄位應該出現撥號鍵盤；桌機上病歷號欄位右邊出現上下調整的箭頭，代表用了 `type="number"`。' },
+        { c: 'Lighthouse 無障礙', t: 'Lighthouse 只勾 Accessibility 跑一次：`Form elements do not have associated labels`、`Buttons do not have an accessible name`、`Heading elements are not in a sequentially-descending order` 都不該出現。' },
+      ],
+    },
+    points: [
+      { b: '元素自帶的行為', t: '`button` 可以 Tab 聚焦、Enter 與 Space 觸發，螢幕閱讀器念出「按鈕」；`div` 加 `@click` 這些都沒有，要補 `tabindex="0"`、`role="button"` 與按鍵處理才勉強接近。直接用 `button`。' },
+      { b: '地標與標題是頁面的目錄', t: '`header`、`nav`、`main`、`footer` 讓輔助工具列出區塊並直接跳過去；`h1`–`h6` 依內容層級排，字的大小交給 CSS。一頁一個 `main`。' },
+      { b: '表單裡的 button 預設是 submit', t: '沒寫 `type` 的 `button` 在 `form` 裡按下去就送出表單：觸發 `submit` 事件，沒有攔截時整頁重新載入。只做動作的按鈕寫 `type="button"`。' },
+      { b: '每個欄位都要有 label', t: '`label for` 對到欄位的 `id`，點文字會聚焦欄位，也是螢幕閱讀器念的名稱。`placeholder` 一輸入就消失、對比通常不夠，不能當 label；成組的 radio 用 `fieldset` 加 `legend`。' },
+      { b: 'type、inputmode、autocomplete', t: '`type="email"`、`tel`、`url` 會換手機鍵盤，`email` 還會檢查格式；「是數字但不是數量」的欄位（病歷號、驗證碼）用 `inputmode="numeric"`，`type="number"` 會出現調整箭頭，值轉成數字後前導的 0 會不見。`autocomplete` 讓瀏覽器自動填入。' },
+    ],
+    checklist: [
+      '能把一個頁面切成地標區塊，並排出標題層級',
+      '能為表單的每個欄位選對 `label`、`type`、`inputmode`、`autocomplete`，並說出 `button` 在 `form` 裡的預設 `type`',
+      '能只用鍵盤走完一個表單，並用 Accessibility 分頁與 Lighthouse 找出沒有名稱的欄位與按鈕',
+    ],
+    refs: [
+      { label: 'MDN：<button>', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button' },
+      { label: 'MDN：<label>', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/label' },
+      { label: 'MDN：inputmode', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/inputmode' },
+      { label: 'MDN：autocomplete 屬性', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/autocomplete' },
+      { label: 'WAI-ARIA APG：Landmark Regions', url: 'https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/' },
+    ],
+  },
+  'flexbox': {
+    map: {
+      names: [
+        { n: '主軸與交叉軸', t: '`flex-direction` 決定主軸：`row` 是水平（依書寫方向，中文與英文是由左到右）、`column` 是垂直，交叉軸和主軸垂直。`justify-content` 管主軸、`align-items` 管交叉軸。' },
+        { n: '`justify-content`', t: '子項在主軸上怎麼擺放剩餘空間：`flex-start`、`center`、`flex-end`、`space-between`（頭尾貼邊、中間平分）、`space-evenly`（每段間距相等）。' },
+        { n: '`align-items`', t: '子項在交叉軸上怎麼對齊。預設 `stretch` 把子項拉滿這一行的高度（橫排時），所以一排卡片會等高；`center` 常用在圖示與文字垂直置中。' },
+        { n: '`flex-wrap`', t: '預設 `nowrap`，子項再多都擠在一行一起縮小；`wrap` 放不下時換到下一行。' },
+        { n: '`gap`', t: '子項之間的間距，只加在中間、不加在頭尾；取代在每個子項加 `margin` 再處理最後一個。' },
+        { n: '`flex` 縮寫', t: '`flex-grow`、`flex-shrink`、`flex-basis` 三個值。預設 `0 1 auto`：不放大、可縮小、從 `width` 或內容寬度起算；`flex: 1` 是 `1 1 0`，從 0 起算再平分；`flex: none` 是 `0 0 auto`，維持原本大小。' },
+        { n: '`flex-basis`', t: '分配剩餘空間之前的起始大小；`auto` 時看 `width`，沒有 `width` 就看內容。' },
+        { n: '`min-width: 0`', t: 'flex 子項預設 `min-width: auto`，不會縮到比內容的最小寬度還窄，長網址或長英文字因此撐破容器；給會縮的子項 `min-width: 0` 才縮得下去。' },
+      ],
+      ask: [
+        '主軸方向：橫排（`row`）還是直排（`column`），手機寬度時要不要換方向。',
+        '主軸上的擺放：靠左、置中或頭尾貼齊（`space-between`），以及子項之間的 `gap`。',
+        '交叉軸上的對齊：卡片要等高（`stretch`）還是依內容高度、頂端或置中對齊。',
+        '放不下時換行（`flex-wrap: wrap`）還是縮小，以及每個子項最窄到多少。',
+        '哪個子項吃掉剩下的空間（`flex: 1`），哪些維持內容寬度（`flex: none`）。',
+      ],
+      prompt: '門診看板的頂端列 `BoardHeader` 用 flex 橫排：左邊是院區名稱，中間的搜尋框 `flex: 1` 吃掉剩下的空間並設 `min-width: 0`，右邊的「重新整理」按鈕 `flex: none` 維持內容寬度，三者 `align-items: center`、`gap: 12px`。下方的診間卡片列用 `flex-wrap: wrap`、`gap: 16px`，每張卡片 `flex: 1 1 240px`，放不下就換行，同一行的卡片等高（`align-items: stretch`）。',
+      verify: [
+        { c: 'flex 標記與疊加線', t: 'Elements 面板裡 `display: flex` 的元素旁有 `flex` 標記，點一下會在頁面上畫出容器、子項與間距；沒有標記代表 `display: flex` 沒套上，或寫在錯的元素上。' },
+        { c: '沒作用的屬性', t: 'Styles 分頁裡屬性旁出現提示圖示，訊息像 `The display: block property on the parent element prevents flex-grow from having an effect`：`flex-grow` 寫在子項上，但父元素不是 flex 容器。' },
+        { c: '撐破容器', t: '裝置模式切到 390px，長的診間名稱或網址讓子項超出容器、頁面左右滑得動：會縮的子項少了 `min-width: 0`，或容器需要 `flex-wrap: wrap`。' },
+        { c: '剩餘空間給誰', t: 'Elements 選取各子項看盒模型的寬度：搜尋框最寬、按鈕維持內容寬度；三者一樣寬代表每個子項都寫了 `flex: 1`。' },
+        { c: '換行後的最後一行', t: '把視窗縮到一行只放得下兩張卡片：最後一行單獨一張被拉得比上面寬，是 `flex-grow` 分到整行的空間；要每張一樣寬，改用 Grid 或給卡片 `max-width`。' },
+      ],
+    },
+    points: [
+      { b: '先決定主軸', t: '`flex-direction: row` 時主軸水平、交叉軸垂直；換成 `column` 兩者對調。`justify-content` 永遠管主軸、`align-items` 永遠管交叉軸，所以改了方向，同一行 CSS 的效果跟著轉 90 度。' },
+      { b: '剩餘空間怎麼分', t: '容器先依每個子項的 `flex-basis` 排好，多出來的空間按 `flex-grow` 的比例分；空間不夠時按 `flex-shrink` 乘上 basis 的比例縮。`flex-grow` 全是 0 時，多出來的空間交給 `justify-content` 擺放。' },
+      { b: '`flex: 1` 和預設值不同', t: '預設是 `flex: 0 1 auto`：不放大、從內容寬度起算。`flex: 1` 是 `1 1 0`：從 0 起算再平分，內容長短不同的子項會一樣寬；要依內容寬度再分剩下的空間，用 `flex: auto`（`1 1 auto`）。' },
+      { b: '換行與間距', t: '預設 `nowrap`，子項再多都擠在一行。卡片列用 `flex-wrap: wrap` 搭配 `flex: 1 1 240px`，放不下就換行；間距用 `gap`，不必每張卡片加 `margin` 再特別處理最後一張。' },
+      { b: '`min-width: auto` 造成的溢出', t: 'flex 子項不會縮到比內容的最小寬度還窄，長網址、長英文字或表格會撐破容器。在會縮的子項加 `min-width: 0`（直排時是 `min-height: 0`），文字再配 `overflow-wrap: anywhere` 或省略號。' },
+    ],
+    checklist: [
+      '能說出 `flex-direction` 改成 `column` 之後，`justify-content` 與 `align-items` 各管哪個方向',
+      '能說明 `flex: 1`、`flex: auto`、`flex: none` 的差別，並用其中一個讓搜尋框吃掉剩餘空間',
+      '能找出 flex 子項撐破容器的原因，並用 `min-width: 0` 或 `flex-wrap` 修好',
+    ],
+    refs: [
+      { label: 'MDN：flex', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex' },
+      { label: 'MDN：justify-content', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/justify-content' },
+      { label: 'MDN：align-items', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/align-items' },
+      { label: 'W3C：CSS Flexible Box Layout Module Level 1', url: 'https://www.w3.org/TR/css-flexbox-1/' },
+      { label: 'Chrome DevTools：Inspect and debug CSS flexbox', url: 'https://developer.chrome.com/docs/devtools/css/flexbox' },
+    ],
+  },
+  'rwd': {
+    map: {
+      names: [
+        { n: 'viewport meta', t: '`<meta name="viewport" content="width=device-width, initial-scale=1">`。少了它，手機瀏覽器會用約 980px 的虛擬寬度排版再整頁縮小，media query 也判斷錯寬度。' },
+        { n: 'mobile-first', t: '先寫最窄螢幕的樣式，再用 `@media (min-width: …)` 往大螢幕加欄數與側欄；比從桌機版用 `max-width` 一路往下覆寫單純。' },
+        { n: 'media query', t: '依視窗（viewport）寬度套用不同樣式，例如 `@media (min-width: 768px)`；範圍寫法 `@media (width >= 768px)` 是 Baseline 2023。' },
+        { n: '斷點（breakpoint）', t: '版面改變的寬度。依內容放不下的地方定，再對齊團隊的斷點表；本站驗收用 390、768、1280 三個寬度。' },
+        { n: 'container query', t: '依父容器的寬度套樣式：容器設 `container-type: inline-size`，裡面用 `@container (min-width: 400px)`。同一張卡片放在側欄或主欄會自己換版面；size query 是 Baseline 2023，2025 年起 Widely available。' },
+        { n: '流動寬度', t: '用 `%`、`fr`、`max-width`、`min()`、`clamp()` 讓寬度跟著視窗變，不寫死 `width: 1200px`；`clamp(1rem, 2.5vw, 1.5rem)` 讓字級在上下限之間縮放。' },
+        { n: '響應式圖片', t: '`img { max-width: 100%; height: auto; }` 防止圖片撐破版面；寫上 `width`、`height` 屬性讓瀏覽器先保留比例，載入時版面不跳；`srcset` 與 `sizes` 讓瀏覽器挑大小合適的檔案。' },
+        { n: '`dvh`', t: '動態視窗高度，手機網址列收合或展開時跟著變。`100vh` 在手機上常比看得到的區域高，底部按鈕被網址列蓋住；`dvh` 是 Baseline 2022，2025 年起 Widely available。' },
+      ],
+      ask: [
+        '要支援的寬度與斷點（例如 390、768、1280），每個寬度的版面：欄數、側欄收不收、表格怎麼變。',
+        '寫法：mobile-first 用 `min-width` 往上加，斷點數值集中定義成變數或 token。',
+        '依視窗寬度（media query）還是依容器寬度（container query）切換，例如同一張卡片會放在側欄與主欄。',
+        '哪些東西在小螢幕隱藏、收進選單或改成直排，以及觸控目標的最小尺寸。',
+        '圖片與影片的比例與最大寬度，以及任何寬度都不能出現橫向捲軸。',
+      ],
+      prompt: '「今日門診」頁採 mobile-first：390px 時診間卡片一欄，篩選條件收進「篩選」按鈕打開的 Drawer；`@media (min-width: 768px)` 起卡片兩欄、篩選列固定在上方；`@media (min-width: 1280px)` 起左側常駐篩選側欄、卡片三欄。卡片元件用 container query（`container-type: inline-size`）：容器寬 400px 以上時醫師照片放左側，以下放上方。`<head>` 有 `width=device-width, initial-scale=1` 的 viewport meta，不加 `user-scalable=no`；全螢幕的掛號流程頁用 `min-height: 100dvh`，不用 `100vh`；三個寬度都不能出現橫向捲軸。',
+      verify: [
+        { c: '三個寬度', t: '裝置模式（`Toggle device toolbar`）選 `Responsive`，寬度輸入 390、768、1280 各看一次；每個寬度的欄數、側欄與選單要和規格一致。' },
+        { c: '橫向捲軸', t: '390px 時頁面左右滑得動，代表有元素比視窗寬：在 Elements 找寫死的 `width`、`min-width`，或沒有 `max-width: 100%` 的圖片與表格。' },
+        { c: '斷點有生效', t: '裝置模式工具列的選單打開 `Show media queries`，點色條直接切到斷點兩側；Styles 裡 `@media (min-width: 768px)` 的規則在 767px 時不該出現。' },
+        { c: 'viewport meta', t: '實機打開時字很小、整頁像縮小的桌機版，代表 `<head>` 少了 viewport meta；Lighthouse 的 Accessibility 出現 `[user-scalable="no"]` 那一項，代表禁止了縮放。' },
+        { c: '版面跳動', t: 'Rendering 面板勾 `Layout shift regions` 後重新整理：位移的區域會閃藍色，圖片載入時周圍在閃，代表 `img` 沒寫 `width`、`height` 或 `aspect-ratio`。' },
+      ],
+    },
+    points: [
+      { b: '先放 viewport meta', t: '`width=device-width, initial-scale=1` 讓 CSS 的寬度等於裝置寬度；少了它，手機用約 980px 的虛擬寬度排版再縮小，media query 全部判斷錯。不要加 `user-scalable=no` 或小於 5 的 `maximum-scale`，那會擋掉使用者放大。' },
+      { b: 'mobile-first', t: '基本樣式寫給最窄的螢幕，再用 `@media (min-width: 768px)`、`(min-width: 1280px)` 往上加欄數與側欄。從桌機版用 `max-width` 往下覆寫，規則會互相蓋來蓋去。' },
+      { b: '斷點看內容', t: '在內容放不下、文字一行太長的地方加斷點，再對齊團隊的斷點表（本站用 390、768、1280 驗收）。斷點數字集中定義，不在每個元件各寫一套。' },
+      { b: 'media query 與 container query', t: 'media query 看視窗寬度，適合整頁的版面；container query 看父容器寬度，適合會被放進不同欄寬的元件（卡片、表單）。container size query 是 Baseline 2023，2025 年起 Widely available。' },
+      { b: '流動寬度與圖片', t: '寬度用 `%`、`fr`、`max-width`、`clamp()`，不寫死大數字；`img` 加 `max-width: 100%`、`height: auto`，並寫 `width`、`height` 屬性預留比例，避免載入時版面位移（CLS）。全螢幕高度用 `100dvh`。' },
+    ],
+    checklist: [
+      '能寫出正確的 viewport meta，並說明少了它手機上會發生什麼',
+      '能用 mobile-first 的 `min-width` media query 寫出 390、768、1280 三種版面',
+      '能判斷一個元件該用 media query 還是 container query，並在裝置模式找出橫向捲軸的來源',
+    ],
+    refs: [
+      { label: 'MDN：viewport meta', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/viewport' },
+      { label: 'MDN：Using media queries', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Using' },
+      { label: 'MDN：@container', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@container' },
+      { label: 'web.dev：Learn Responsive Design', url: 'https://web.dev/learn/design' },
+    ],
+  },
+}

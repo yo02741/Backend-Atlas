@@ -34,7 +34,7 @@ export const LEVELS = { 1: '入門', 2: '進階', 3: '深入' }
 
 /* 技術關鍵字（正規化顯示名）→ 對應到技能的 keywords 欄位；每條路線一組 */
 export const KEYWORDS = {
-  frontend: [],
+  frontend: ['HTML', 'CSS', 'JavaScript', 'Vue', 'RWD', 'Chrome DevTools', '無障礙'],
   backend: [
     'Python', 'uv', 'MongoDB', 'PostgreSQL', 'nginx', 'Docker', 'docker-compose', 'SQL',
     'GitLab CI', 'GitHub Actions', 'Token', 'JWT', 'RBAC', 'ABAC', 'OAuth', 'OWASP',
@@ -44,7 +44,24 @@ export const KEYWORDS = {
 
 /* 建議學習路線：每條路線一組。label 是地圖上的短站名（8 字以內），note 只用在 README 的路線表。 */
 export const PATHS = {
-  frontend: [],
+  frontend: [
+    { skill: 'how-browsers-render', label: '網頁怎麼畫出來', note: 'DOM、CSSOM、render tree 到 layout、paint、composite，改哪個屬性重跑哪一段。' },
+    { skill: 'devtools', label: '開發者工具', note: 'Console、Network、Elements、Application、Lighthouse 的固定驗收順序。' },
+    { skill: 'semantic-html', label: '語意化 HTML', note: '地標元素、button 與 label、input 的 type 與 inputmode。' },
+    { skill: 'flexbox', label: 'Flexbox', note: '主軸與交叉軸、剩餘空間怎麼分，以及 min-width 造成的溢出。' },
+    { skill: 'rwd', label: 'RWD 與斷點', note: 'viewport meta、mobile-first 的 media query 與 container query。' },
+    { skill: 'async-js', label: '非同步 JS', note: '依序與平行、Promise.all 與 allSettled、finally 關掉 loading。' },
+    { skill: 'components-sfc', label: '元件化', note: '把畫面拆成元件樹，SFC 的 template、<script setup>、<style scoped>。' },
+    { skill: 'reactivity', label: '響應式', note: 'ref、reactive、computed，以及解構之後失去響應式。' },
+    { skill: 'template-syntax', label: '模板語法', note: 'v-bind、v-on、v-if 與 v-show、v-for 的 key。' },
+    { skill: 'lifecycle', label: '生命週期', note: 'onMounted 拿 DOM、onUnmounted 清掉計時器、監聽與請求。' },
+    { skill: 'ui-states', label: '互動狀態', note: 'hover、focus-visible、disabled、loading 的狀態表與驗收。' },
+    { skill: 'feedback', label: '回饋與空狀態', note: 'Toast、Alert、Skeleton、Empty state 各用在哪裡。' },
+    { skill: 'fetch-basics', label: 'fetch 與 HTTP', note: 'res.ok、JSON body、Problem Details 與逾時。' },
+    { skill: 'api-states', label: 'API 四種狀態', note: 'loading、success、empty、error，哪些錯誤給重試。' },
+    { skill: 'describe-ui', label: '把畫面寫成文字', note: '版面、元件、狀態、資料、互動五段，加上斷點與文案。' },
+    { skill: 'ai-common-mistakes', label: 'AI 常見的錯', note: 'Vue 2 寫法、混用 API、多餘的 watch、錯的 key，用工具抓。' },
+  ],
   backend: [
     { skill: 'http-basics', label: 'HTTP 請求的一生', note: '看清一個請求從瀏覽器到伺服器的每一步。' },
     { skill: 'rest-design', label: 'REST API 設計', note: '資源、方法、狀態碼的設計。' },

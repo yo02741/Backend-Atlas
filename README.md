@@ -18,22 +18,23 @@
 
 - 導覽列一直顯示三個路線分頁，目前的路線會標出來；技能盤點、課綱、實驗室、設計情境、練習題的連結帶上目前的路線（`?track=`），列表頁上方可以切換「全部、前端、後端、AI」。
 - 課頁的麵包屑是「首頁 / 路線 / 領域」；在路線圖上的課標「學習路線 第 N / M 站」。
-- 還沒有課的路線（目前是前端）首頁卡片標「撰寫中」，路線首頁列出規劃中的領域。
+- 還沒有課的路線，首頁卡片標「撰寫中」，路線首頁列出規劃中的領域。
 - 站的標誌是打勾加問號（`public/favicon.svg`，元件 `src/components/BrandMark.jsx`），另有 `favicon-32.png`、`apple-touch-icon.png`（180）、`icon-512.png`。
 
 <!-- sync:stats -->
 | 內容 | 數量 |
 |---|---|
-| 路線 | 2（後端 115 課；AI 35 課） |
+| 路線 | 3（前端 16 課；後端 115 課；AI 35 課） |
+| 前端的領域 | 7（瀏覽器與網頁怎麼運作；HTML 與 CSS 版面；JavaScript 與 TypeScript；元件與框架；UI 元件詞彙；呼叫後端；用 AI 寫前端） |
 | 後端的領域 | 9（語言與工程實踐；網路、HTTP 與 API 設計；資料儲存；驗證與授權；資安；容器與部署；CI/CD 與交付；演算法與系統設計；DevOps 與基礎建設） |
 | AI的領域 | 2（AI 時代的開發與 Agent 安全；知識系統） |
-| 技能（課） | 150，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
-| 互動實驗室 | 42，依領域列在下方 |
+| 技能（課） | 166，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
+| 互動實驗室 | 45，依領域列在下方 |
 | 程式題 | 204（Python 127 / SQL 38 / config 27 / JS 12），含實作路線的 20 道驗收題；解答全部經真實執行環境驗證 |
-| 選擇題 | 450（每課 3 題，含程式碼判讀與情境題） |
+| 選擇題 | 498（每課 3 題，含程式碼判讀與情境題） |
 | 設計情境 | 31（API 設計 8；資料與身分 4；高流量 7；維運與基礎建設 7；AI 與 Agent 安全 5） |
 | 實作路線 | 從零做完一個門診掛號後端：10 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |
-| 課綱 | `docs/CURRICULUM.md`（後端與 AI）：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、10 週的 Docker 到 Kubernetes 專題、驗收設計 |
+| 課綱 | `docs/CURRICULUM.md`（後端與 AI）：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、10 週的 Docker 到 Kubernetes 專題、驗收設計；`docs/CURRICULUM-frontend.md`（前端） |
 <!-- /sync:stats -->
 
 ## 內容總覽
@@ -41,9 +42,30 @@
 後端以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照；AI 路線的範例也用 Python；前端以 Vue 3 為主，React 作對照。
 
 <!-- sync:route -->
-### 建議學習路線（2 條、共 35 站）
+### 建議學習路線（3 條、共 51 站）
 
 各路線首頁路線圖的站點，每站約一週。★ 表示附互動實驗室。站點定義在 `src/content/roadmap.js` 的 `PATHS`（`label` 是地圖上的短站名，`note` 是下表的「內容」）。
+
+#### 前端（16 站）
+
+| 站 | 課 | 領域 | 內容 |
+|---|---|---|---|
+| 1 | 瀏覽器怎麼把網頁畫出來★ | 瀏覽器與網頁怎麼運作 | DOM、CSSOM、render tree 到 layout、paint、composite，改哪個屬性重跑哪一段。 |
+| 2 | 開發者工具：驗收前端的固定路線 | 瀏覽器與網頁怎麼運作 | Console、Network、Elements、Application、Lighthouse 的固定驗收順序。 |
+| 3 | 語意化 HTML 與表單元素 | HTML 與 CSS 版面 | 地標元素、button 與 label、input 的 type 與 inputmode。 |
+| 4 | Flexbox：一維排列★ | HTML 與 CSS 版面 | 主軸與交叉軸、剩餘空間怎麼分，以及 min-width 造成的溢出。 |
+| 5 | RWD 與斷點 | HTML 與 CSS 版面 | viewport meta、mobile-first 的 media query 與 container query。 |
+| 6 | 非同步：Promise 與 async/await | JavaScript 與 TypeScript | 依序與平行、Promise.all 與 allSettled、finally 關掉 loading。 |
+| 7 | 元件化與單檔元件 | 元件與框架 | 把畫面拆成元件樹，SFC 的 template、<script setup>、<style scoped>。 |
+| 8 | 響應式：ref、reactive、computed | 元件與框架 | ref、reactive、computed，以及解構之後失去響應式。 |
+| 9 | 模板語法、條件與列表渲染 | 元件與框架 | v-bind、v-on、v-if 與 v-show、v-for 的 key。 |
+| 10 | Vue 的生命週期 | 元件與框架 | onMounted 拿 DOM、onUnmounted 清掉計時器、監聽與請求。 |
+| 11 | 互動狀態 | UI 元件詞彙 | hover、focus-visible、disabled、loading 的狀態表與驗收。 |
+| 12 | 回饋：Toast、Alert、Skeleton、Empty state | UI 元件詞彙 | Toast、Alert、Skeleton、Empty state 各用在哪裡。 |
+| 13 | fetch 與 HTTP | 呼叫後端 | res.ok、JSON body、Problem Details 與逾時。 |
+| 14 | API 的四種狀態：loading、success、empty、error★ | 呼叫後端 | loading、success、empty、error，哪些錯誤給重試。 |
+| 15 | 把畫面描述成文字 | 用 AI 寫前端 | 版面、元件、狀態、資料、互動五段，加上斷點與文案。 |
+| 16 | AI 寫前端的常見錯誤 | 用 AI 寫前端 | Vue 2 寫法、混用 API、多餘的 watch、錯的 key，用工具抓。 |
 
 #### 後端（23 站）
 
@@ -92,10 +114,22 @@
 <!-- /sync:route -->
 
 <!-- sync:lessons -->
-### 技能課程（11 領域、150 課）
+### 技能課程（18 領域、166 課）
 
 每課有重點卡（摘要、範例技術、重點、自我檢核清單、官方文件連結）與深入內容。★ 表示附互動實驗室。
 
+
+#### 前端（7 領域、16 課）
+
+| 領域 | 課程 |
+|---|---|
+| 01. 瀏覽器與網頁怎麼運作 | 瀏覽器怎麼把網頁畫出來★；開發者工具（驗收前端的固定路線） |
+| 02. HTML 與 CSS 版面 | 語意化 HTML 與表單元素；Flexbox（一維排列）★；RWD 與斷點 |
+| 03. JavaScript 與 TypeScript | 非同步（Promise 與 async/await） |
+| 04. 元件與框架 | 元件化與單檔元件；響應式（ref、reactive、computed）；模板語法、條件與列表渲染；Vue 的生命週期 |
+| 05. UI 元件詞彙 | 互動狀態；回饋（Toast、Alert、Skeleton、Empty state） |
+| 06. 呼叫後端 | fetch 與 HTTP；API 的四種狀態（loading、success、empty、error）★ |
+| 07. 用 AI 寫前端 | 把畫面描述成文字；AI 寫前端的常見錯誤 |
 
 #### 後端（9 領域、115 課）
 
@@ -120,10 +154,13 @@
 <!-- /sync:lessons -->
 
 <!-- sync:labs -->
-### 互動實驗室（42 個）
+### 互動實驗室（45 個）
 
 依路線與領域列出：
 
+- **前端｜瀏覽器與網頁怎麼運作**：渲染管線的七段
+- **前端｜HTML 與 CSS 版面**：Flexbox 的主軸與剩餘空間
+- **前端｜呼叫後端**：API 的四種狀態
 - **後端｜語言與工程實踐**：同步 vs 執行緒 vs async；uv 從零到能跑；覆蓋率 100% 的測試抓不抓得到錯
 - **後端｜網路、HTTP 與 API 設計**：HTTP 請求的一生；REST 資源設計
 - **後端｜資料儲存**：JOIN 七兄弟；索引為什麼快；表格 vs 文件；Cache-aside；兩個交易搶最後一件
@@ -161,7 +198,7 @@
 ### 練習題
 
 - **程式題 204 道**（Python 127、SQL 38、config 27、JavaScript 12）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證。
-- **選擇題 450 道**：每課 3 題，含程式碼判讀與情境題。
+- **選擇題 498 道**：每課 3 題，含程式碼判讀與情境題。
 - **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。
 <!-- /sync:practice -->
 
@@ -222,7 +259,7 @@
 src/
   content/         內容（純資料，改這裡不用碰元件）
     tracks.js        路線定義（前端、後端、AI）：名稱、說明、課綱檔、精選實驗室；站名與 repo 網址（SITE）
-    roadmap.js       領域索引、每條路線的學習路線 PATHS（35 站）與關鍵字 KEYWORDS、查詢 helper（domainsOf、stationsOf、displayNo…）
+    roadmap.js       領域索引、每條路線的學習路線 PATHS（51 站）與關鍵字 KEYWORDS、查詢 helper（domainsOf、stationsOf、displayNo…）
     dN-<id>.js       每個領域一檔的「索引」，track 決定所屬路線；檔名用全站唯一的 no（後端 1–9、AI 10–11、前端 21–29），畫面上顯示路線內的順序。skills[] 各有 id / title / en / level / summary / example / keywords / lab / related（跟著主 chunk）
     body/dN-<id>.js  每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs / map（技能頁才懶載入，每領域一個 chunk）
     deep/<skill-id>.md   每課的深入內容（markdown，技能頁逐課懶載入；格式見 docs/CONTRIBUTING-lessons.md）
@@ -281,7 +318,7 @@ npm run e2e:runtime              # Playground 的 Python / SQL / JS 能執行
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
 npm run e2e:deep                 # 深入內容的每個 run 區塊都能執行（ONLY=transactions 只驗指定的課）
 npm run e2e:ui                   # 首頁路線圖（2／3／4／6 欄：站序、文字不重疊、線不穿過字）；練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停
-npm run e2e:labs                 # 73 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
+npm run e2e:labs                 # 76 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
 npm run e2e:mobile               # 390px 逐頁（每一課、情境、實驗室、題目、實作路線）：頁面不能橫向捲動、內容不能被裁切、不留需要左右滑的區塊
 npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Emulator 與 preview；需要 Java 11+）

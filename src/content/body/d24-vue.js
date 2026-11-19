@@ -1,2 +1,186 @@
 // 前端路線：元件與框架 的技能內文（以技能 id 為 key）
-export default {}
+export default {
+  'components-sfc': {
+    map: {
+      names: [
+        { n: '元件樹', t: '畫面拆成一層層的元件：頁面元件底下有清單元件，清單底下有列元件；資料從上往下用 props 傳，事件從下往上用 emit 通知。' },
+        { n: '單檔元件（SFC，`.vue`）', t: '一個元件一個檔，`<template>`、`<script setup>`、`<style>` 三段寫在一起，由 Vite 的 `@vitejs/plugin-vue` 編譯成 JavaScript 與 CSS。' },
+        { n: '`<script setup>`', t: 'Composition API 的簡寫：頂層宣告的變數、函式與 import 的元件，模板裡直接用，不用 `return`、也不用註冊元件。' },
+        { n: '`defineProps`、`defineEmits`', t: '宣告這個元件收哪些 props、會發出哪些事件；是編譯器巨集，不用 import，也只能寫在 `<script setup>` 的頂層。' },
+        { n: '`<style scoped>`', t: '樣式只套到這個元件：編譯時替元素加上 `data-v-xxxxxxxx` 屬性、選擇器改寫成 `.row[data-v-xxxxxxxx]`；要改子元件內部用 `:deep()`。' },
+        { n: '屬性透傳（fallthrough attributes）', t: '父元件傳了但子元件沒宣告成 props 的 `class`、`id`、`@click`，會自動加到子元件的根元素上；根元素有好幾個時不會自動加，要自己寫 `v-bind="$attrs"`。' },
+        { n: 'PascalCase 元件名', t: '`AppointmentRow.vue` 在模板裡寫 `<AppointmentRow />`，和原生 HTML 標籤一眼分得出來；名稱由兩個以上的英文單字組成，避免和現有或未來的 HTML 元素撞名。' },
+      ],
+      ask: [
+        '畫面要拆成哪幾個元件、每個元件的檔名與它在元件樹裡的位置',
+        '每個元件收哪些 props（名稱、型別、是否必填、預設值）與發出哪些事件（名稱與帶的資料）',
+        '資料由哪一層抓、哪一層持有，子元件只負責顯示與發事件',
+        '樣式寫在哪裡：元件內的 `<style scoped>`、全站的 CSS 變數，還是元件庫的 token',
+        '一律用 `<script setup>` 與 Composition API，不產生 Options API 或 Vue 2 的寫法',
+      ],
+      prompt: '門診預約頁拆成三個單檔元件：`AppointmentPage.vue` 呼叫 `GET /api/appointments?date=…` 並持有清單；`AppointmentList.vue` 用 `defineProps<{ items: Appointment[] }>()` 收清單；`AppointmentRow.vue` 顯示一筆預約，按「取消」時 `emit(\'cancel\', id)`，不自己呼叫 API。三個檔都用 `<script setup lang="ts">` 與 `<style scoped>`，顏色用 `var(--color-*)` 變數，不寫死色碼。',
+      verify: [
+        { c: '元件樹與 props', t: 'Vue DevTools 的元件樹要看得到 `AppointmentPage > AppointmentList > AppointmentRow`，點 `AppointmentRow` 的 props 只有一筆預約；在列元件裡看到 `fetch` 代表責任放錯層。' },
+        { c: '沒有未解析的元件', t: 'Console 出現 `[Vue warn]: Failed to resolve component: AppointmentRow`，代表用了元件卻沒 import（`<script setup>` 裡 import 就能用，不需要 `components: {}`）。' },
+        { c: 'scoped 有生效', t: 'Elements 分頁點列元素，應該帶 `data-v-` 開頭的屬性，Styles 裡的選擇器是 `.row[data-v-…]`；沒有這個屬性代表少寫了 `scoped`，樣式會漏到別的元件。' },
+        { c: '屬性透傳', t: 'Console 出現 `Extraneous non-props attributes (class) were passed to component but could not be automatically inherited`，代表子元件有多個根元素，要決定 `$attrs` 綁在哪個元素上。' },
+        { c: '事件有宣告', t: 'Console 出現 `Component emitted event "cancel" but it is neither declared in the emits option nor as an "onCancel" prop`，代表少了 `defineEmits([\'cancel\'])`。' },
+      ],
+    },
+    points: [
+      { b: '一個元件一件事', t: '頁面元件抓資料、清單元件排版、列元件顯示一筆與發事件。列元件裡出現 `fetch`，同一份資料就會被抓很多次、很難測。' },
+      { b: '`<script setup>` 是預設寫法', t: '頂層的變數、函式、import 的元件直接給模板用。Vue 官方文件與 `npm create vue@latest` 產生的專案都以它為主；Options API 留給舊專案。' },
+      { b: 'props 往下、事件往上', t: '子元件不改 props，要改就 `emit` 給持有資料的父元件。`defineProps`、`defineEmits` 是編譯器巨集，不用 import。' },
+      { b: 'scoped 樣式靠屬性選擇器', t: '編譯後每個元素帶 `data-v-xxxxxxxx`，選擇器加上同一個屬性。子元件的根元素同時吃得到父、子兩邊的 scoped 樣式，內部元素要用 `:deep()`。' },
+      { b: '多個根元素要自己處理 `$attrs`', t: 'Vue 3 允許一個模板有好幾個根元素，但 `class`、`id` 等透傳屬性不知道要給誰，會出 `[Vue warn]`，要用 `v-bind="$attrs"` 指定。' },
+    ],
+    checklist: [
+      '能把一個門診頁拆成元件樹，標出每個元件的 props 與事件',
+      '能讀懂一個 `.vue` 檔的三段，說出 `<script setup>` 頂層的哪些東西模板用得到',
+      '能用 Elements 分頁確認 scoped 樣式有沒有套上、有沒有漏到別的元件',
+    ],
+    refs: [
+      { label: 'Vue：Single-File Components', url: 'https://vuejs.org/guide/scaling-up/sfc.html' },
+      { label: 'Vue：Components Basics', url: 'https://vuejs.org/guide/essentials/component-basics.html' },
+      { label: 'Vue：<script setup>', url: 'https://vuejs.org/api/sfc-script-setup.html' },
+      { label: 'Vue：SFC CSS Features（scoped、:deep()）', url: 'https://vuejs.org/api/sfc-css-features.html' },
+    ],
+  },
+  'reactivity': {
+    map: {
+      names: [
+        { n: '`ref()`', t: '包住一個值（數字、字串、陣列、物件都可以），在 script 裡讀寫要 `.value`，在模板裡 Vue 自動拆開不用寫；官方建議當成主要的宣告方式。' },
+        { n: '`reactive()`', t: '把物件變成 Proxy，直接讀寫屬性不用 `.value`；不能包數字、字串這類原始值，解構或整個換掉都會失去響應式。' },
+        { n: '`computed()`', t: '從其他響應式資料算出來的值，依賴沒變就用快取；不寫入、不呼叫 API，那些是 watch 或事件處理的工作。' },
+        { n: '依賴追蹤', t: '渲染或 computed 執行時讀過哪些響應式資料，Vue 就記下來；之後只有這些資料改變才重新渲染或重算。' },
+        { n: '失去響應式', t: '把 `reactive` 物件解構成區域變數、把 ref 的 `.value` 存到另一個變數，拿到的是當下的值，之後改了畫面不會跟著變。' },
+        { n: '`toRefs()`、`toRef()`', t: '把 `reactive` 物件的屬性轉成 ref，解構後仍然連著原本的物件；composable 回傳多個值時常用。' },
+        { n: 'props 解構（Vue 3.5）', t: '3.5 起 `const { date } = defineProps(…)` 解構出來的 prop 保持響應式；傳給 `watch` 要寫成 getter `() => date`。' },
+      ],
+      ask: [
+        '哪些資料是狀態（使用者會改、API 會回來的），哪些是可以從狀態算出來的（用 `computed`）',
+        '狀態用 `ref` 還是 `reactive` 宣告，整個專案統一一種',
+        '畫面上顯示的數字或清單由哪個狀態推導、篩選與排序的條件放在哪裡',
+        '大量資料或第三方物件（圖表、地圖實例）要不要用 `shallowRef` 或 `markRaw`，避免整包被轉成 Proxy',
+      ],
+      prompt: '門診預約清單的狀態用 `ref` 宣告：`appointments`（API 回來的陣列）與 `keyword`（搜尋框）。「符合搜尋的預約」與「已報到人數」用 `computed` 從這兩個 ref 算出來，不另外存一份、不用 `watch` 同步。篩選結果在模板裡直接用，不在 script 裡解構 `reactive` 物件；排序規則寫在同一個 `computed` 裡。',
+      verify: [
+        { c: '畫面跟著資料變', t: '在 Vue DevTools 改 `keyword` 的值，清單應該立刻更新；不更新多半是解構了 `reactive` 物件，或把 `.value` 存進普通變數。' },
+        { c: '`.value` 寫對地方', t: '模板裡出現 `count.value`、script 裡出現 `count++`（`count` 是 ref）都是錯；eslint-plugin-vue 的 `vue/no-ref-as-operand` 會抓到後者。' },
+        { c: 'reactive 不包原始值', t: 'Console 出現 `[Vue warn]: value cannot be made reactive: 0`，代表把數字傳給了 `reactive()`，改用 `ref()`。' },
+        { c: '沒有用 watch 抄資料', t: '看到 `watch(a, () => { b.value = f(a.value) })`，改成 `const b = computed(() => f(a.value))`；少一份要同步的狀態，也少一次多餘的渲染。' },
+        { c: 'computed 沒有副作用', t: 'computed 裡出現 `fetch`、`push`、改別的 ref，lint 規則 `vue/no-side-effects-in-computed-properties`、`vue/no-async-in-computed-properties` 會報錯。' },
+      ],
+    },
+    points: [
+      { b: '`ref` 為主', t: '任何型別都能放，`.value` 讓「這是響應式的值」看得出來。`reactive` 不能放原始值、解構會斷，官方文件也建議以 `ref` 為主。' },
+      { b: '模板自動拆 `.value`', t: '頂層的 ref 在模板裡不用 `.value`；放在普通物件裡的 ref 不會被拆，`{{ obj.n + 1 }}` 會印出 `[object Object]1`。' },
+      { b: '解構會失去響應式', t: '`const { name } = reactive(patient)` 拿到的是字串。要解構就先 `toRefs()`；Vue 3.5 起 `defineProps` 的解構是例外，編譯器會改寫成 `props.name`。' },
+      { b: '算得出來的用 `computed`', t: '篩選、排序、加總、格式化都用 computed：依賴沒變就用快取，也不會有兩份資料不同步。方法每次渲染都重算。' },
+      { b: '陣列直接改就會更新', t: 'Vue 3 用 Proxy，`items.value.push(x)`、`items.value[0] = x` 都會觸發更新；`Vue.set`、`this.$set` 是 Vue 2 的寫法，在 Vue 3 已移除。' },
+    ],
+    checklist: [
+      '能判斷一個值該用 `ref`、`reactive` 還是 `computed`',
+      '能指出一段程式在哪一行失去響應式，並改成 `toRefs` 或 getter',
+      '能把「用 watch 同步另一份資料」改寫成 computed',
+    ],
+    refs: [
+      { label: 'Vue：Reactivity Fundamentals', url: 'https://vuejs.org/guide/essentials/reactivity-fundamentals.html' },
+      { label: 'Vue：Computed Properties', url: 'https://vuejs.org/guide/essentials/computed.html' },
+      { label: 'Vue：Reactivity in Depth', url: 'https://vuejs.org/guide/extras/reactivity-in-depth.html' },
+    ],
+  },
+  'template-syntax': {
+    map: {
+      names: [
+        { n: '插值 `{{ }}`', t: '把 JavaScript 運算式的結果當成文字放進畫面，HTML 會被跳脫；只能寫單一運算式，不能寫 `if` 或宣告變數。' },
+        { n: '`v-bind`（`:`）', t: '把資料綁到屬性：`:href`、`:disabled`、`:class="{ active: isActive }"`；屬性裡寫 `{{ }}` 不會被求值。Vue 3.4 起同名可以簡寫成 `:id`。' },
+        { n: '`v-on`（`@`）與修飾符', t: '綁事件：`@click="cancel(item.id)"`；`.prevent` 取消預設行為、`.stop` 停止冒泡、`@keyup.enter` 只在按 Enter 時觸發。' },
+        { n: '`v-if`／`v-else-if`／`v-else`', t: '條件不成立時元素不存在於 DOM，子元件會被卸載、狀態歸零；切換時重建。' },
+        { n: '`v-show`', t: '元素一直在，只切換 `display: none`；適合頻繁開關的區塊。不能用在 `<template>` 上，也沒有 `v-else`。' },
+        { n: '`v-for` 與 `key`', t: '`v-for="item in items" :key="item.id"`；`key` 讓 Vue 知道哪個元素對應哪筆資料，要穩定且唯一，用資料的 id，不用陣列 index。' },
+        { n: '`v-html`', t: '把字串當 HTML 插進去，不跳脫；內容來自使用者或 API 時會造成 XSS。' },
+      ],
+      ask: [
+        '每個區塊的顯示條件，以及切換時要保留狀態（`v-show`）還是重建（`v-if`）',
+        '列表的資料來源與 `key` 用哪個欄位',
+        '篩選條件寫在 `computed` 裡，不在同一個元素上同時寫 `v-for` 與 `v-if`',
+        '每個按鈕與輸入框的事件、修飾符，以及事件處理函式收到什麼參數',
+        '有沒有任何地方要顯示 HTML 字串；有的話來源是誰、怎麼過濾',
+      ],
+      prompt: '預約清單用 `<li v-for="a in visibleAppointments" :key="a.id">` 渲染，`visibleAppointments` 是 `computed`，篩掉已取消的預約；不要在 `<li>` 上同時寫 `v-if`。每列顯示 `{{ a.time }}`、`{{ a.patientName }}` 與狀態標籤 `:class="[\'badge\', a.status]"`，「取消」按鈕寫 `@click="emit(\'cancel\', a.id)"`，送出中時 `:disabled="cancellingId === a.id"`。篩選面板用 `v-show` 切換，保留已選的條件；病患備註當純文字顯示，不用 `v-html`。',
+      verify: [
+        { c: '`key` 穩定', t: '刪掉清單第一筆後，看第二筆原本展開的備註、輸入框的內容有沒有跑到別列；跑掉代表 `key` 用了 index。lint 規則 `vue/require-v-for-key` 抓沒有 `key` 的情況。' },
+        { c: '`v-if` 和 `v-for` 分開', t: 'Console 出現 `Property "a" was accessed during render but is not defined on instance`，接著 `TypeError: Cannot read properties of undefined (reading \'active\')`，代表同一個元素寫了 `v-for` 與 `v-if`：Vue 3 先算 `v-if`，這時還沒有 `a`。' },
+        { c: '屬性有綁上', t: 'Elements 分頁看到 `id="{{ id }}"` 這種字面值，代表屬性裡用了插值，要改成 `:id="id"`。' },
+        { c: '沒有 `v-html` 吃使用者內容', t: '在備註欄輸入 `<img src=x onerror=alert(1)>`，畫面應該顯示這串文字而不是跳出對話框；全專案搜尋 `v-html` 逐一確認來源，lint 規則 `vue/no-v-html` 會列出每一處。' },
+        { c: 'v-if 與 v-show 選對', t: '切換篩選面板後，Elements 分頁裡面板還在但 `style="display: none;"` 是 `v-show`；整個節點消失是 `v-if`，面板裡的輸入值會被清掉。' },
+      ],
+    },
+    points: [
+      { b: '插值會跳脫 HTML', t: '`{{ note }}` 裡的 `<b>` 會顯示成文字。只有 `v-html` 不跳脫，內容不是自己寫死的就不要用。' },
+      { b: '屬性用 `:`，事件用 `@`', t: '屬性裡的 `{{ }}` 不會被求值，畫面上會出現字面的大括號。事件處理寫函式名或一個呼叫，複雜邏輯搬到 script。' },
+      { b: '`v-if` 重建、`v-show` 隱藏', t: '`v-if` 不成立時元素與子元件都被移除，再出現時重新建立、狀態歸零；`v-show` 只切 `display`，初始成本較高、切換較便宜。' },
+      { b: '`key` 用資料的 id', t: 'Vue 依 `key` 決定重用哪個元素。用 index 時刪掉一筆，後面每一列都被當成「改了內容」，元件狀態和輸入值會對錯列。' },
+      { b: '`v-if` 和 `v-for` 不放同一個元素', t: 'Vue 3 裡 `v-if` 先執行，讀不到 `v-for` 的變數（Vue 2 相反）。篩選用 computed，或把 `v-for` 放外層的 `<template>`。' },
+    ],
+    checklist: [
+      '能讀一段模板說出每個指令做什麼，指出哪一段在 Vue 3 會出錯',
+      '能為一個會頻繁開關的區塊與一個很少出現的區塊各選 `v-show` 或 `v-if`，說出理由',
+      '能說明 `key` 用 index 時刪除一筆會發生什麼，並在畫面上重現',
+    ],
+    refs: [
+      { label: 'Vue：Template Syntax', url: 'https://vuejs.org/guide/essentials/template-syntax.html' },
+      { label: 'Vue：Conditional Rendering', url: 'https://vuejs.org/guide/essentials/conditional.html' },
+      { label: 'Vue：List Rendering', url: 'https://vuejs.org/guide/essentials/list.html' },
+      { label: 'Vue：Event Handling', url: 'https://vuejs.org/guide/essentials/event-handling.html' },
+      { label: 'Vue 3 Migration Guide：v-if 與 v-for 的優先順序', url: 'https://v3-migration.vuejs.org/breaking-changes/v-if-v-for.html' },
+    ],
+  },
+  'lifecycle': {
+    map: {
+      names: [
+        { n: '`setup`（`<script setup>`）', t: '元件建立時最先執行一次，宣告狀態、computed 與事件處理函式；這時元件還沒插進 DOM，抓不到畫面上的元素。' },
+        { n: '`onMounted`', t: '元件第一次渲染完、插進 DOM 之後執行；量元素尺寸、初始化圖表或地圖套件、把焦點放進輸入框都放這裡。' },
+        { n: '`onUpdated`', t: '響應式資料改變、畫面重新渲染完之後執行；只在需要讀更新後的 DOM 時用，在裡面改狀態會再觸發一次渲染。' },
+        { n: '`onUnmounted`', t: '元件從畫面移除後執行；清掉 `setInterval`、`window` 上的事件監聽與連線，否則換頁後它們還在跑。' },
+        { n: 'template ref（`useTemplateRef`）', t: '取得模板裡某個 DOM 元素或子元件的參考，`onMounted` 之後才有值；`useTemplateRef` 是 Vue 3.5 加入的寫法。' },
+        { n: '`nextTick`', t: '等 Vue 把這一輪的狀態變更套用到 DOM 之後再執行；改完資料馬上要讀新的 DOM 時用。' },
+        { n: '`<KeepAlive>`、`onActivated`、`onDeactivated`', t: '`<KeepAlive>` 讓切走的元件留在記憶體、不卸載，這時 `onUnmounted` 不會執行；清理改放 `onDeactivated`，`onActivated` 在第一次掛載與每次切回來都會執行。' },
+      ],
+      ask: [
+        '資料在哪個時間點載入：元件一出現就抓，還是等使用者操作',
+        '元件離開畫面時要停掉哪些東西：計時器、輪詢、`window` 或 `document` 上的監聽、WebSocket',
+        '要操作哪個 DOM 元素、在什麼時機，例如開啟 Dialog 後聚焦第一個輸入框',
+        '請求還沒回來元件就被卸載時的處理方式：取消請求，或忽略回應',
+        '切換分頁或路由時元件要保留狀態（`<KeepAlive>`）還是每次重建',
+      ],
+      prompt: '門診看板元件 `ClinicBoard` 用 `<script setup>`：`onMounted` 時呼叫 `GET /api/clinics/today` 取得今天的診間清單，之後每 30 秒輪詢一次，請求進行中顯示 Skeleton。`onUnmounted` 時清掉計時器，並用 `AbortController` 取消還沒回來的請求。掛載後用 `useTemplateRef` 把焦點放進搜尋框，不在 `setup` 頂層操作 DOM，不混用 Options API。',
+      verify: [
+        { c: '卸載後輪詢停了', t: '切到別的路由後看 Network 分頁：`/api/clinics/today` 還每 30 秒出現一次，代表 `onUnmounted` 沒清掉 `setInterval`。' },
+        { c: '事件監聽沒有越積越多', t: '元件來回切換五次後，在 Chrome 的 Console 執行 `getEventListeners(window).resize`，長度不該隨切換次數增加；每切一次多一個，代表卸載時沒 `removeEventListener`。' },
+        { c: '操作 DOM 的時機', t: '在 `setup` 頂層讀 template ref 會是 `null`；Console 出現 `Cannot read properties of null (reading \'focus\')` 代表在元素存在之前就呼叫了 `focus()`。' },
+        { c: '卸載中的請求', t: 'Network 分頁的節流選 `3G`（舊版 Chrome 叫 `Slow 3G`），請求送出後立刻切走：請求應該顯示 `(canceled)`；沒有取消時，回應回來後仍會執行後續程式，例如跳出 Toast。' },
+        { c: '沒有混用兩套寫法', t: '同一個元件同時出現 `mounted()`、`data()` 與 `<script setup>`，代表產出混用了 Options API 與 Composition API，要求改成 `onMounted`。' },
+      ],
+    },
+    points: [
+      { b: '子元件先掛載', t: '父元件的 `onMounted` 執行時，同步的子元件都已經掛載完成；非同步元件與 `<Suspense>` 裡的元件不在此列。' },
+      { b: '鉤子在 setup 期間同步註冊', t: '把 `onMounted` 放進 `setTimeout` 或某個稍後才執行的函式，Vue 找不到目前的元件，Console 會出現 `onMounted is called when there is no active component instance`。' },
+      { b: '有開就要有關', t: '`setInterval`、`addEventListener`、`new WebSocket`、第三方套件的實例，在 `onUnmounted` 一一對應地關掉。在 setup 裡同步建立的 `watch` 會自動停止，非同步建立的要自己呼叫回傳的停止函式。' },
+      { b: '`onUpdated` 裡不改狀態', t: '改了狀態會再渲染、再觸發 `onUpdated`，Vue 偵測到後會警告 `Maximum recursive updates exceeded`。要對資料變化做事用 `watch`。' },
+      { b: '`<KeepAlive>` 換一組鉤子', t: '被快取的元件切走時不卸載，`onUnmounted` 不會執行；暫停輪詢放 `onDeactivated`，恢復放 `onActivated`（第一次掛載也會執行）。' },
+    ],
+    checklist: [
+      '能說出元件從建立到移除依序經過哪些鉤子，以及 DOM 在哪個鉤子之後才拿得到',
+      '能列出一個元件在 `onUnmounted` 要清掉的東西，並用 Network 與 Console 驗證有清掉',
+      '能判斷一段放在 setup 頂層的 DOM 操作該搬到 `onMounted` 還是 `nextTick`',
+    ],
+    refs: [
+      { label: 'Vue：Lifecycle Hooks', url: 'https://vuejs.org/guide/essentials/lifecycle.html' },
+      { label: 'Vue API：Composition API Lifecycle Hooks', url: 'https://vuejs.org/api/composition-api-lifecycle.html' },
+      { label: 'Vue：Template Refs', url: 'https://vuejs.org/guide/essentials/template-refs.html' },
+      { label: 'Vue：KeepAlive', url: 'https://vuejs.org/guide/built-ins/keep-alive.html' },
+    ],
+  },
+}

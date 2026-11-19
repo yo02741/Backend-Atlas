@@ -182,7 +182,8 @@ for (const [re, rep] of inline) {
 // 每條路線的課要排進自己路線的課綱檔（tracks.js 的 curriculum）某一週的「對應技能」
 const weeksIn = (src) => {
   const out = {}
-  for (const m of src.matchAll(/^### 第 (\d+) 週[^\n]*\n([\s\S]*?)(?=^### |^## |^---$)/gm)) {
+  // 結尾補一條分隔線：最後一週後面沒有下一個標題時也解析得到
+  for (const m of (src + '\n---\n').matchAll(/^### 第 (\d+) 週[^\n]*\n([\s\S]*?)(?=^### |^## |^---$)/gm)) {
     const line = (m[2].match(/^- \*\*對應技能\*\*：.*$/m) || [''])[0]
     for (const id of line.matchAll(/`([a-z0-9-]+)`/g)) if (!(id[1] in out)) out[id[1]] = Number(m[1])
   }

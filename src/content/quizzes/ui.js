@@ -358,4 +358,95 @@ export default [
       },
     ],
   },
+  {
+    skill: 'layout-patterns',
+    questions: [
+      {
+        q: '側欄與漢堡按鈕的樣式如下。視窗寬 900px 時，畫面上的導覽是什麼樣子？',
+        code: `.nav-toggle { display: none; }
+@media (max-width: 767px) {
+  .nav-toggle { display: block; }   /* 漢堡按鈕 */
+}
+@media (max-width: 1023px) {
+  .sidebar { display: none; }       /* 側欄 */
+}`,
+        lang: 'css',
+        options: [
+          '側欄與漢堡按鈕都看得到，兩者同時存在',
+          '側欄隱藏、漢堡按鈕也沒出現，畫面上沒有任何導覽',
+          '側欄顯示、漢堡按鈕隱藏，和 1280px 時一樣',
+          '只有漢堡按鈕，側欄收進 Drawer',
+        ],
+        answer: 1,
+        explain: '900px 符合 `max-width: 1023px`，側欄被隱藏；但不符合 `max-width: 767px`，漢堡按鈕維持 `display: none`。兩個元件各自決定斷點，中間留下 768 到 1023 的空隙。斷點表上「側欄」一列每一格都填（390 Drawer、768 icon rail…），並在 767、768、1023、1024 各驗收一次，就不會漏。',
+      },
+      {
+        q: '斷點表的四欄寫著 390、768、1024、1280。照 mobile-first 的寫法，「768」那一欄代表什麼？',
+        options: [
+          '只有視窗剛好 768px 時的樣子，其他寬度由瀏覽器自動縮放',
+          '768px 平板的實體解析度，CSS 要用裝置像素來判斷',
+          '從 768px 起、到下一個斷點 1024px 之前的樣子；390 是不包在 media query 裡的基礎樣式',
+          '用 `max-width: 768px` 寫成的一組樣式，比 768 窄的畫面都套用',
+        ],
+        answer: 2,
+        explain: 'mobile-first 時 390 那一欄是基礎樣式，768、1024、1280 用 `min-width` 往上加，每一欄管「從這個寬度起，到下一個斷點之前」。只用 `min-width`（或範圍語法），邊界就不會重疊；`max-width: 768px` 與 `min-width: 768px` 混用時，剛好 768px 兩條都成立。斷點用的是 CSS 像素，不是裝置的實體像素。',
+      },
+      {
+        q: '只用鍵盤操作長表單，Tab 移到中段的欄位時，焦點框被 `position: sticky` 的頁首蓋住。最直接的修法是什麼？',
+        options: [
+          '把頁首改成 `position: static`，捲動時不再固定',
+          '把每個欄位的 `z-index` 設得比頁首高',
+          '每次 `focus` 時用 JavaScript 呼叫 `window.scrollTo(0, 0)`',
+          '在 `html` 設 `scroll-padding-top`，數值至少是頁首的高度',
+        ],
+        answer: 3,
+        explain: '`scroll-padding-top` 讓瀏覽器把元素捲進畫面時（Tab 移動焦點、錨點跳轉）預留頂端的空間，焦點不會落在頁首底下，對應 WCAG 2.2 的 2.4.11 Focus Not Obscured。改成 static 是拿掉需求；欄位的 `z-index` 蓋過頁首會讓欄位浮在頁首上面；捲回頂端會讓使用者看不到正在填的欄位。',
+      },
+    ],
+  },
+  {
+    skill: 'screen-spec',
+    questions: [
+      {
+        q: '畫面規格裡的狀態表（區域 × 狀態），最主要的用途是什麼？',
+        options: [
+          '列出每個區域在 loading、empty、error 等狀態下出現什麼；空格一眼看出還沒決定的事，驗收時逐格造出來比對',
+          '讓設計師不用畫 loading 與 error 的設計稿，由前端自己決定',
+          '取代 API 規格，由前端定義每個錯誤的格式',
+          '記錄每個元件的 CSS 選擇器，方便寫樣式',
+        ],
+        answer: 0,
+        explain: '狀態表把「每個區域在每個狀態長什麼樣」排成格子，沒想過的狀態就是空格，在動工前就看得出來；驗收時用 Network 的 `Offline`、mock 回空陣列等方式逐格造出來比對。它不取代設計稿或 API 規格，也不是樣式表。',
+      },
+      {
+        q: '取消超過期限時，API 回了下面的 Problem Details。畫面規格的文案表該怎麼寫這一列？',
+        code: `{
+  "type": "/problems/cancel-deadline-passed",
+  "title": "Cancel deadline passed",
+  "status": 409,
+  "detail": "..."
+}`,
+        lang: 'json',
+        options: [
+          '直接顯示 `title`，後端已經寫好說明',
+          '顯示「發生錯誤，請稍後再試」，所有錯誤共用一句',
+          '依 `type` 對應一句文案，例如「已超過取消期限，請致電櫃台」，不直接顯示英文的 `title`',
+          '顯示 HTTP 狀態碼 409，讓使用者自己查原因',
+        ],
+        answer: 2,
+        explain: 'Problem Details 的 `type` 是穩定的識別碼，文案表用它對應畫面上的文字與下一步；`title` 是給開發者看的英文摘要。所有錯誤共用一句話，使用者分不出是期限過了還是系統壞了，也不知道要打給櫃台；狀態碼對使用者沒有意義。',
+      },
+      {
+        q: '「我的掛號」規格的驗收條件，下面哪一條可以直接拿來驗收？',
+        options: [
+          '手機上的畫面要好看、符合設計稿的風格',
+          '390px 寬時 `document.documentElement.scrollWidth > innerWidth` 為 `false`，取消確認改成從底部滑出的 Sheet',
+          '操作要流暢，使用者不會覺得卡',
+          '錯誤處理要完善，各種情況都要考慮到',
+        ],
+        answer: 1,
+        explain: '可以驗收的條件寫出情況、操作、結果與檢查方法：寬度、指令、看到什麼算通過。「好看」「流暢」「完善」沒有工具能判定通過與否，驗收時只能憑感覺；要改寫成具體的寬度、按鍵、文字或請求數。',
+      },
+    ],
+  },
 ]

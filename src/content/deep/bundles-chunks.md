@@ -112,7 +112,8 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       output: {
-        codeSplitting: { groups: [{ name: 'vendor', test: /node_modules/ }] },
+        // 只收框架：整個 node_modules 都收進來的話，只有報表頁用到的圖表套件也會進 vendor，首頁跟著下載
+        codeSplitting: { groups: [{ name: 'vendor', test: /[\\/]node_modules[\\/](vue|vue-router|pinia|@vue)[\\/]/ }] },
       },
     },
   },
@@ -127,7 +128,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules')) return 'vendor'
+          if (/[\\/]node_modules[\\/](vue|vue-router|pinia|@vue)[\\/]/.test(id)) return 'vendor'
         },
       },
     },

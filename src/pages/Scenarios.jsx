@@ -70,9 +70,13 @@ export function ScenarioPage({ id }) {
   const g = groupOf(s)
   const color = `var(--c-${g.color})`
   const status = progress.scenarioStatus(s.id)
-  const i = SCENARIOS.indexOf(s)
-  const prev = i > 0 ? SCENARIOS[i - 1] : null
-  const next = i < SCENARIOS.length - 1 ? SCENARIOS[i + 1] : null
+  // 上一個、下一個只在同一條路線裡走
+  const sameTrack = SCENARIOS.filter((x) => groupOf(x).track === g.track)
+  const i = sameTrack.indexOf(s)
+  const prev = i > 0 ? sameTrack[i - 1] : null
+  const next = i < sameTrack.length - 1 ? sameTrack[i + 1] : null
+  // 其他路線的相關情境：自己寫的 related，加上把自己寫進 related 的情境
+  const related = SCENARIOS.filter((x) => x !== s && ((s.related || []).includes(x.id) || (x.related || []).includes(s.id)))
   const exercise = s.exercise ? findExercise(s.exercise) : null
   const optName = (oid) => s.options.find((o) => o.id === oid)?.name || oid
 
@@ -168,6 +172,14 @@ export function ScenarioPage({ id }) {
       )}
 
       <div className="reading">
+        {related.length > 0 && (
+          <section className="scen-related" id="related">
+            <h2>其他路線的相關情境</h2>
+            <ul className="refs">
+              {related.map((x) => <li key={x.id}><a href={`#/scenario/${x.id}`}>{TRACK_TITLE[groupOf(x).track]}｜{x.title} →</a></li>)}
+            </ul>
+          </section>
+        )}
         <nav className="lesson-nav">
           {prev ? <a href={`#/scenario/${prev.id}`}><small>上一個情境</small>← {prev.title}</a> : <span />}
           {next ? <a className="next" href={`#/scenario/${next.id}`}><small>下一個情境</small>{next.title} →</a> : <span />}

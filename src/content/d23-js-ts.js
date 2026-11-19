@@ -6,7 +6,7 @@ export default {
   title: 'JavaScript 與 TypeScript',
   en: 'JAVASCRIPT & TYPESCRIPT',
   color: 'yellow',
-  tagline: '語法、參考與不可變更新、模組、非同步與事件迴圈、型別，以及讀懂錯誤訊息。',
+  tagline: '語法、參考與不可變更新、模組、非同步與事件迴圈、型別與執行時驗證、讀懂錯誤訊息，以及套件管理。',
   skills: [
     {
       id: 'js-essentials',
@@ -80,6 +80,18 @@ export default {
       related: ['code-quality'],
     },
     {
+      id: 'ts-runtime-boundary',
+      title: '型別只存在於編譯時',
+      en: 'Types vs runtime validation',
+      level: 2,
+      summary: 'res.json()、JSON.parse、localStorage、網址參數、postMessage 拿到的資料，TypeScript 只能相信你寫的型別。在資料進來的地方用 zod 這類 schema 在執行時檢查，型別從 schema 推出來；unknown 逼你先檢查再用，strict 之外的 noUncheckedIndexedAccess 與 .d.ts 決定編譯器還看得到多少。',
+      example: { primary: 'zod 4 的 schema + z.infer（TypeScript 6）', alts: ['Valibot 1', 'openapi-typescript 產生的型別（只有型別、不驗證）', '手寫型別守衛（type guard）'] },
+      keywords: ['TypeScript', 'Vite', 'Vue Router'],
+      lab: null,
+      reviewed: '2026-11',
+      related: ['input-validation', 'openapi'],
+    },
+    {
       id: 'js-debugging',
       title: '錯誤與除錯',
       en: 'Errors & debugging',
@@ -90,6 +102,18 @@ export default {
       lab: null,
       reviewed: '2026-11',
       related: ['debugging'],
+    },
+    {
+      id: 'npm-packages',
+      title: '套件管理與供應鏈',
+      en: 'Package managers & supply chain',
+      level: 2,
+      summary: 'package.json 寫可以接受的版本範圍，lock 檔記實際裝了哪一版，npm ci 照 lock 檔重裝。^、~ 決定自動升到哪裡，dependencies 與 devDependencies 不決定什麼進 bundle；npm 12 預設不執行依賴的安裝腳本，新增套件前先確認名字、維護者與發布時間。',
+      example: { primary: 'npm 12 + package-lock.json + npm ci', alts: ['pnpm 12（pnpm-lock.yaml、嚴格的 node_modules）', 'Yarn', 'Dependabot、Renovate 自動更新'] },
+      keywords: ['JavaScript', 'Vite'],
+      lab: null,
+      reviewed: '2026-11',
+      related: ['supply-chain', 'uv-packaging', 'ci-pipeline'],
     },
   ],
 }

@@ -347,4 +347,140 @@ if (res.status === 429) {
       },
     ],
   },
+  {
+    skill: 'data-caching',
+    questions: [
+      {
+        q: '頁首與清單兩個元件同時掛載，各自用 TanStack Query 讀今天的預約（`queryFn` 相同）。Network 分頁會看到幾筆請求？',
+        code: `// HeaderCount.vue
+useQuery({ queryKey: ['appointments', { date, clinic: 101 }], queryFn })
+
+// AppointmentList.vue
+useQuery({ queryKey: ['appointments', { date, clinic: '101' }], queryFn })`,
+        lang: 'js',
+        options: [
+          '1 筆：網址相同，請求自動合併',
+          '0 筆：要呼叫 `refetch()` 才會送出',
+          '2 筆：`101` 與 `\'101\'` 是不同的 key，各自一份快取、各送一次',
+          '1 筆：第二個元件等第一個卸載後才拿到資料',
+        ],
+        answer: 2,
+        explain: '查詢快取依 key 合併請求與存放資料，不看網址。數字 `101` 與字串 `\'101\'` 是兩個不同的 key，所以有兩份快取、兩個請求。把 key 集中在一個函式裡產生，就不會出現寫法不一致；`useQuery` 掛載時就會送出第一次請求，不需要手動 `refetch()`。',
+      },
+      {
+        q: '已經有資料的預約清單在背景重抓時，整個清單閃回 Skeleton，捲動位置也跑掉。最可能的原因是什麼？',
+        options: [
+          'Skeleton 綁在 `isFetching` 上；應該用 `isPending`，只在還沒有資料時顯示 Skeleton',
+          '`staleTime` 設得太長，資料過期太慢',
+          '`gcTime` 太短，快取被清掉了',
+          '沒有設定 `retry`，失敗時沒有重試',
+        ],
+        answer: 0,
+        explain: '`isFetching` 只要有請求在路上就是 `true`，包括背景重抓；`isPending` 是這個 key 還沒有任何資料。Skeleton 用 `isPending`，背景重抓時保留舊清單、只在標題旁顯示小 spinner。`staleTime` 太長只會讓重抓變少；`gcTime` 與重試和閃爍無關。',
+      },
+      {
+        q: '在清單上取消一筆預約成功後，清單少了一列，頁首的「今天 32 筆」和側欄的小計卻沒變。用 TanStack Query 時該怎麼做？',
+        options: [
+          '把筆數另外存進 Pinia，取消成功時手動減 1',
+          '把所有查詢的 `staleTime` 改成 0',
+          '取消成功後重新整理整個頁面',
+          '在 `useMutation` 的 `onSuccess` 呼叫 `invalidateQueries({ queryKey: [\'appointments\'] })`，讓開頭相同的 key 一起重抓',
+        ],
+        answer: 3,
+        explain: '失效用前綴比對，清單、筆數、小計的 key 都以 `\'appointments\'` 開頭，會一起標成過期並重抓畫面上正在用的那幾份。另存 Pinia 會多一份要自己同步的資料；`staleTime: 0` 只讓「下一次用到時」重抓，不會立刻更新；重新整理整頁丟掉所有狀態。',
+      },
+    ],
+  },
+  {
+    skill: 'file-upload-frontend',
+    questions: [
+      {
+        q: '這段上傳程式送到 FastAPI 後端，每次都回 400，訊息是 `Missing boundary in multipart.`。原因是什麼？',
+        code: `const fd = new FormData()
+fd.append('file', input.files[0])
+await fetch('/api/uploads', {
+  method: 'POST',
+  headers: { 'Content-Type': 'multipart/form-data' },
+  body: fd,
+})`,
+        lang: 'js',
+        options: [
+          '檔案超過後端的大小上限',
+          '手動設定的 `Content-Type` 蓋掉了瀏覽器產生的 boundary；拿掉這個標頭，讓瀏覽器自己設',
+          'FormData 不能和 fetch 一起用，要改用 XMLHttpRequest',
+          'body 要先 `JSON.stringify(fd)` 才能送出',
+        ],
+        answer: 1,
+        explain: 'body 是 FormData 時，瀏覽器會產生分隔各欄位的 boundary，寫成 `multipart/form-data; boundary=…`。手動設成 `multipart/form-data` 就沒有 boundary，後端切不開 body。fetch 可以直接送 FormData；`JSON.stringify` 一個 FormData 或 File 只會得到 `{}`；大小超過上限是 413，不是這個訊息。',
+      },
+      {
+        q: '上傳轉診單時要顯示「已上傳 45%」的進度條，用哪個 API？',
+        options: [
+          'fetch 回傳的 `res.body` 串流，邊讀邊算比例',
+          '`AbortController` 的 `signal`，它會回報傳了多少',
+          '`XMLHttpRequest` 的 `xhr.upload.onprogress`，`e.lengthComputable` 為 `true` 時用 `e.loaded / e.total`',
+          '`URL.createObjectURL()` 回傳的網址，會隨上傳進度更新',
+        ],
+        answer: 2,
+        explain: 'fetch 沒有上傳進度事件，`res.body` 是回應（下載）的串流；fetch 的串流上傳依 2026-11 的 web-features 資料還不是 Baseline。`XMLHttpRequest` 的 `upload` 物件有 `progress` 事件，監聽要在 `send()` 之前註冊。`signal` 只用來取消；`createObjectURL` 是給預覽用的本機網址。',
+      },
+      {
+        q: '前端已經檢查 `file.type === \'application/pdf\'` 而且小於 10 MB 才允許上傳。後端還需要做什麼？',
+        options: [
+          '仍要自己檢查大小上限與檔案內容（例如 magic bytes），`file.type` 是依副檔名判斷的，改名就能騙過',
+          '不需要，前端已經擋下不合格的檔案',
+          '在 `<input>` 加上 `accept=".pdf"` 就夠了，後端不用再檢查',
+          '後端只要看請求的 `Content-Type` 標頭是不是 PDF',
+        ],
+        answer: 0,
+        explain: '前端檢查只是給使用者的提早回饋，請求可以不經過你的畫面直接送出；`file.type` 由副檔名決定，`accept` 只影響選擇視窗預設列出的檔案。`Content-Type` 也是客戶端填的。伺服器要自己限制大小，並依檔案內容判斷類型。',
+      },
+    ],
+  },
+  {
+    skill: 'openapi-types',
+    questions: [
+      {
+        q: '`api` 是用 openapi-fetch 建立的 client。後端回 500 時，這段程式讓畫面顯示什麼？',
+        code: `try {
+  const { data } = await api.GET('/appointments', { params: { query: { limit: 20 } } })
+  items.value = data?.items ?? []
+  status.value = 'success'
+} catch {
+  status.value = 'error'
+}`,
+        lang: 'ts',
+        options: [
+          '進入 `catch`，顯示錯誤畫面',
+          '型別檢查會先失敗，程式無法建置',
+          'openapi-fetch 自動重試三次後才丟出錯誤',
+          'openapi-fetch 遇到 4xx、5xx 不丟例外，`data` 是 `undefined`，畫面顯示成空清單',
+        ],
+        answer: 3,
+        explain: 'openapi-fetch 回傳 `{ data, error, response }`：2xx 有 `data`，4xx 與 5xx 有 `error`，只有網路錯誤才丟例外。這段沒有檢查 `error`，`data?.items ?? []` 把失敗變成「沒有資料」。要先 `if (error)` 進入錯誤狀態，再用 `try/catch` 接網路錯誤；openapi-fetch 沒有內建重試。',
+      },
+      {
+        q: '前端的型別都從 OpenAPI 規格用 openapi-typescript 產生。下面哪一件事，產生的型別仍然保證不了？',
+        options: [
+          '元件用到規格裡沒有的欄位',
+          '呼叫時少傳了必填的 path 參數',
+          'query 參數的名稱拼錯',
+          '伺服器實際回傳的 JSON 和規格一致',
+        ],
+        answer: 3,
+        explain: '型別只在編譯時存在，描述的是規格寫了什麼：用錯欄位、少參數、參數名拼錯都會在型別檢查時失敗。規格和實作不一致（例如 clinic-api 的 422 實際是 Problem Details，規格寫的是 `HTTPValidationError`），或執行時收到別的東西，型別都不知道；要靠契約測試或執行時驗證。',
+      },
+      {
+        q: '產生的型別裡 `AppointmentOut.status` 是 `string`，前端要把 `booked`、`checked_in`、`cancelled` 顯示成中文。比較好的做法是什麼？',
+        options: [
+          '直接打開 `schema.d.ts`，把 `status` 改成三個值的 union',
+          '請後端把 `status` 宣告成列舉（例如 pydantic 的 `Literal`）再重新產生；在那之前前端列出已知的值，並處理未知的值',
+          '在每個用到的地方寫 `status as \'booked\'`，讓型別變精確',
+          '不用處理，後端不會回其他值',
+        ],
+        answer: 1,
+        explain: '型別照規格產生，規格是 `string` 型別就只能是 `string`；修規格才是根本解。`schema.d.ts` 是產生的檔，手改下次產生就消失；`as` 斷言讓編譯器閉嘴，執行時收到新的狀態值照樣出錯。過渡期列出已知值、未知值顯示「未知狀態」並記錄，畫面不會壞。',
+      },
+    ],
+  },
 ]

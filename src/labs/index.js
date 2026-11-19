@@ -55,6 +55,9 @@ export const LAB_META = {
   EventLoopLab:      { title: '事件迴圈逐步執行', blurb: '同步程式、setTimeout、Promise.then、await、queueMicrotask 逐行執行：call stack、microtask queue、task queue 與 Console 的順序，以及長迴圈與 Vue 的 nextTick 讓畫面在什麼時候才更新。', skill: 'event-loop' },
   UiStatesLab:       { title: 'UI 元件的狀態', blurb: '按鈕、輸入框、下拉選單與 Dialog 的各個狀態：畫面、CSS 選擇器或屬性、輔助科技讀到的狀態與驗收條件，以及 Dialog 開關時焦點去哪。', skill: 'ui-states' },
   ReactivityLab:     { title: '改一個值，誰跟著動', blurb: '門診掛號表單元件的 ref、reactive、computed、watch 與畫面：改一個值時哪些 computed 重算、哪些 watch 觸發、哪個元件重新渲染，以及解構 reactive 與直接改 props 兩種錯誤。', skill: 'reactivity' },
+  VitalsLab:         { title: 'Core Web Vitals：門診看板頁', blurb: '主圖的大小與載入方式、字型、晚到的公告橫幅與按鈕的長任務，各自讓 LCP、CLS、INP 變成多少、落在哪個評等，以及對應的修法。', skill: 'web-vitals' },
+  BundleLab:         { title: '建置產物裡的 chunk 與 hash', blurb: '門診前端用 Vite 8 實際建置的檔名與大小：懶載入、vendor 切法、套件在哪裡 import 與 tree-shaking 決定首頁下載什麼，以及改一行程式後哪些檔名換了。', skill: 'bundles-chunks' },
+  OverlayLab:        { title: '浮層疊在一起時誰在上面', blurb: 'Dialog、Drawer、Popover、Tooltip、Toast 同時開著：原生 top layer 與 div 加 z-index 的疊放、stacking context、焦點在哪、Esc 關掉哪一個、背景能不能操作。', skill: 'overlays' },
 }
 
 export const LAB_NAMES = Object.keys(LAB_META)

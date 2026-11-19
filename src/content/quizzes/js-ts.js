@@ -344,4 +344,93 @@ function statusText(s: Status): string {
       },
     ],
   },
+  {
+    skill: 'ts-runtime-boundary',
+    questions: [
+      {
+        q: '後端把 `roomNo` 改成 `\'3A\'` 這樣的字串。`vue-tsc --noEmit` 與執行時各會怎樣？',
+        code: `interface Appointment { id: number; roomNo: number }
+
+const res = await fetch('/api/appointments')
+const list: Appointment[] = await res.json()
+list.sort((a, b) => a.roomNo - b.roomNo)`,
+        lang: 'ts',
+        options: [
+          '型別檢查通過；執行時也沒有錯誤，只是排序結果錯亂',
+          '型別檢查失敗：`res.json()` 的型別和 `Appointment[]` 不符',
+          '型別檢查通過；執行時丟出 `TypeError`，指出 `roomNo` 不是數字',
+          '型別檢查通過；TypeScript 在執行時把 `\'3A\'` 轉成數字',
+        ],
+        answer: 0,
+        explain: '`res.json()` 回傳 `Promise<any>`，`any` 指定給 `Appointment[]` 不會有型別錯誤。型別在執行時已經不存在，`\'3A\' - 5` 得到 `NaN`，`sort` 拿到 `NaN` 不會丟錯，只是順序沒有意義。要在拿到資料的地方用 schema 檢查，錯誤才會在 API 層出現。',
+      },
+      {
+        q: 'zod 4 的 `z.object({ id: z.number() })` 收到 `{ id: 1, extra: true }`，`safeParse` 的結果是？',
+        options: [
+          '`success` 是 `false`，錯誤是 `Unrecognized key: "extra"`',
+          '丟出 `ZodError`，因為多了沒宣告的欄位',
+          '`success` 是 `true`，`data` 是 `{ id: 1 }`，沒宣告的欄位被拿掉',
+          '`success` 是 `true`，`data` 原樣保留 `extra`',
+        ],
+        answer: 2,
+        explain: '`z.object()` 預設會移除沒宣告的欄位，結果通過、`data` 只有 `id`。要把多餘欄位當成錯誤用 `z.strictObject()`（錯誤訊息是 `Unrecognized key: "extra"`），要保留用 `z.looseObject()`。`safeParse` 不會丟錯，失敗時回傳 `{ success: false, error }`。',
+      },
+      {
+        q: 'Vite 8 的專案裡，`import.meta.env.VITE_API_BAES` 拼錯了，`vue-tsc` 卻沒有報錯。怎麼讓它報錯？',
+        options: [
+          '在 `tsconfig` 打開 `strict`',
+          '在 `.env` 加一行 `VITE_API_BAES=`',
+          '在 `tsconfig` 打開 `noUncheckedIndexedAccess`',
+          '在 `env.d.ts` 宣告 `ImportMetaEnv` 的欄位，並在 `ViteTypeOptions` 加上 `strictImportMetaEnv`',
+        ],
+        answer: 3,
+        explain: 'Vite 8 的 `vite/client` 讓沒宣告的 `import.meta.env.XXX` 是 `any`，`strict` 與 `noUncheckedIndexedAccess` 都不會改變這一點。宣告 `ImportMetaEnv` 的欄位並開 `strictImportMetaEnv` 之後，拼錯的名稱會報 `TS2551 … Did you mean \'VITE_API_BASE\'?`。在 `.env` 補一個拼錯的變數，只是讓錯誤更難發現。',
+      },
+    ],
+  },
+  {
+    skill: 'npm-packages',
+    questions: [
+      {
+        q: 'registry 上有 0.4.9、0.5.0、1.0.0 三個版本。重新解析時，最多會裝到哪一版？',
+        code: `"dependencies": {
+  "date-tw": "^0.4.2"
+}`,
+        lang: 'json',
+        options: [
+          '0.4.9',
+          '0.5.0',
+          '1.0.0',
+          '0.4.2，`^` 在 `0.x` 不允許任何更新',
+        ],
+        answer: 0,
+        explain: '`^` 允許「不改最左邊那個非 0 的數字」的更新。`0.x` 的最左邊非 0 數字是 minor，所以 `^0.4.2` 是 `>=0.4.2 <0.5.0-0`，最多到 0.4.9。0.5.0 與 1.0.0 都超出範圍；patch 更新仍然允許，所以不會停在 0.4.2。',
+      },
+      {
+        q: 'Dockerfile 在 `npm ci` 之前寫了 `ENV NODE_ENV=production`，接著 `npm run build` 失敗，訊息是 `vite: not found`。原因與修法是？',
+        options: [
+          '`npm ci` 不會建立 `node_modules/.bin`，要改用 `npm install`',
+          '`NODE_ENV=production` 時 npm 預設不裝 devDependencies，建置階段不要設它，或用 `npm ci --include=dev`',
+          '把 `vite` 移到 `dependencies`，否則 Vite 不會被打包進 bundle',
+          'Alpine 的映像沒有 shell，要改用完整的 `node:24` 映像',
+        ],
+        answer: 1,
+        explain: '`NODE_ENV=production` 時，npm 的 `omit` 設定預設是 `dev`，Vite、vue-tsc 這些 devDependencies 都沒裝。`npm ci` 照樣會建立 `.bin`；Vite 是建置工具，本來就不會進 bundle，bundle 的內容只看程式 import 了什麼；Alpine 映像有 shell。正式環境的設定放在建置之後的階段。',
+      },
+      {
+        q: '升級到 npm 12 之後，`npm install` 結束時出現下面的警告，套件的功能也壞了。該怎麼處理？',
+        code: `npm warn install-scripts 1 package had install scripts blocked because they are not covered by allowScripts:
+npm warn install-scripts   @clinic/thumbs@2.1.0 (install: node-gyp rebuild)`,
+        lang: 'bash',
+        options: [
+          '在 CI 加上 `--dangerously-allow-all-scripts`，恢復 npm 11 的行為',
+          '把 npm 降回 11 版，避免安裝腳本被擋',
+          '加上 `--ignore-scripts`，警告會消失，功能不受影響',
+          '先看這個腳本做什麼，確定需要後執行 `npm approve-scripts @clinic/thumbs`，把允許清單寫進 `package.json` 的 `allowScripts`',
+        ],
+        answer: 3,
+        explain: 'npm 12 預設不執行依賴的安裝腳本，只有 `allowScripts` 允許的才會跑；`npm approve-scripts` 會寫入這個欄位，預設釘住目前的版本，升版時要重新審查。`--dangerously-allow-all-scripts` 與降版都讓所有套件的腳本照樣執行，等於放棄這道防線；`--ignore-scripts` 讓這個需要編譯原生模組的套件一樣壞掉。',
+      },
+    ],
+  },
 ]

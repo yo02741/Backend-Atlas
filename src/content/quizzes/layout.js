@@ -346,4 +346,148 @@ export default [
       },
     ],
   },
+  {
+    skill: 'units-typography',
+    questions: [
+      {
+        q: '根元素的字級是 16px。`h3` 的行高會是多少？',
+        code: `.card    { font-size: 1rem; line-height: 1.5em; }
+.card h3 { font-size: 2rem; }`,
+        lang: 'css',
+        options: [
+          '24px，`h3` 換行時兩行會疊在一起',
+          '48px，行高跟著 `h3` 的字級重新計算',
+          '`1.5`，`em` 在繼承時會變回倍數',
+          '32px，行高等於字級',
+        ],
+        answer: 0,
+        explain: '帶單位的 `line-height: 1.5em` 在 `.card` 上先算成 24px，子元素繼承的是這個固定值，所以 32px 的 `h3` 只有 24px 的行高。寫成不帶單位的 `line-height: 1.5`，繼承的是倍數，`h3` 會用自己的字級算出 48px。',
+      },
+      {
+        q: '使用者在瀏覽器的設定把預設字型調大（沒有用縮放）。下面哪一段文字的大小不會變？',
+        options: [
+          '`font-size: 0.875rem` 的輔助文字',
+          '`font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem)` 的標題',
+          '`font-size: 14px` 的表格內容',
+          '父元素用 `rem`、自己寫 `font-size: 90%` 的說明文字',
+        ],
+        answer: 2,
+        explain: '字型大小設定改的是預設字級，也就是 `rem`、`em`、`%` 的基準；寫死 `px` 的文字不會變。`clamp()` 的上下限與偏好值裡的 `rem` 會跟著變。瀏覽器縮放（Ctrl 加 `+`）則會連 `px` 一起放大，兩種放大方式都要測。',
+      },
+      {
+        q: '叫號看板在 `<head>` 預先下載數字字型。Network 分頁看到同一個 `woff2` 下載了兩次，Console 出現 `A preload for \'…/board-digits.woff2\' is found, but is not used because the request credentials mode does not match.`。該怎麼改？',
+        code: `<link rel="preload" href="/fonts/board-digits.woff2" as="font" type="font/woff2">`,
+        lang: 'html',
+        options: [
+          '把 `@font-face` 的 `font-display` 改成 `optional`',
+          '在 `<link rel="preload">` 加上 `crossorigin`',
+          '把 `as="font"` 改成 `as="style"`',
+          '移除 `@font-face` 的 `unicode-range`，讓瀏覽器一次下載整個檔案',
+        ],
+        answer: 1,
+        explain: '字型一律用 CORS 模式下載，`preload` 少了 `crossorigin` 時，兩邊請求的 credentials 模式不同，預先下載的那一份用不上，瀏覽器只好再下載一次。`font-display` 只決定字型還沒到時怎麼顯示；`as="style"` 會讓預先下載的類型錯掉；`unicode-range` 和這個問題無關。',
+      },
+    ],
+  },
+  {
+    skill: 'css-architecture',
+    questions: [
+      {
+        q: '標題沒有變粗，Console 也沒有任何錯誤。原因是？',
+        code: `<template>
+  <h3 :class="$style.cardTitle">{{ name }}</h3>
+</template>
+
+<style module>
+.card-title { font-weight: 700; }
+</style>`,
+        lang: 'vue',
+        options: [
+          '`$style.cardTitle` 是 `undefined`：CSS Modules 的鍵照 CSS 原樣，是 `card-title`',
+          '`<style module>` 只能寫在 `.module.css` 檔，SFC 裡要用 `<style scoped>`',
+          '`:class` 不能綁物件的屬性，要寫成字串 `"card-title"`',
+          'CSS Modules 會移除 `font-weight` 這類文字屬性，要放到全域 CSS',
+        ],
+        answer: 0,
+        explain: 'CSS Modules 的鍵就是 CSS 裡寫的 class 名稱，`.card-title` 要用 `$style[\'card-title\']` 取，`$style.cardTitle` 拿到 `undefined`，元素沒有 class，也沒有錯誤訊息。Vite 的 `css.modules.localsConvention: \'camelCase\'` 會另外產生 `cardTitle` 這個鍵。SFC 支援 `<style module>`；直接寫字串 `"card-title"` 對不到改寫過的名稱。',
+      },
+      {
+        q: 'Tailwind CSS 4 的專案，建置後這個徽章沒有背景色，也沒有任何錯誤。最合適的修法是？',
+        code: `<script setup>
+const props = defineProps({ level: String })   // 'warn' 或 'danger'
+</script>
+
+<template>
+  <span :class="\`bg-\${props.level === 'danger' ? 'red' : 'amber'}-100\`">狀態</span>
+</template>`,
+        lang: 'vue',
+        options: [
+          '在 `tailwind.config.js` 的 `content` 加上 `./src/**/*.vue`',
+          'Tailwind 不支援 `:class`，把 class 寫在靜態的 `class` 屬性',
+          '寫成完整字串的對照表，例如 `{ danger: \'bg-red-100\', warn: \'bg-amber-100\' }`',
+          '在元件的 `<style>` 用 `@apply bg-red-100`，不需要其他設定',
+        ],
+        answer: 2,
+        explain: 'Tailwind 把原始碼當純文字掃描，只產生完整出現過的 class；用字串組出來的 `bg-red-100` 從來沒出現在原始碼裡，所以不會產生。`content` 是 Tailwind 3 的設定，4 會自動掃描專案；`:class` 可以用，只要值是完整的字串；SFC 的 `<style>` 裡用 `@apply` 要先寫 `@reference` 指向主要的 CSS，否則建置失敗。',
+      },
+      {
+        q: 'Vue 專案全面使用 `<style scoped>` 與 design token，沒有安裝 Tailwind。AI 產生的新元件寫了一長串 Tailwind 的 class。該怎麼處理？',
+        options: [
+          '安裝 Tailwind，兩種做法並存，之後再慢慢統一',
+          '保留 class 名稱，在全域 CSS 補上同名的規則',
+          '改成 CSS-in-JS，避免和 scoped 樣式互相影響',
+          '要求改成 `<style scoped>` 與既有的 token，並把主要做法寫進專案規範',
+        ],
+        answer: 3,
+        explain: '一個專案選一種主要做法，新元件照做；兩種並存時每個元件都要先查它用哪一種，同一個按鈕也容易有兩種長相。在全域 CSS 補同名規則等於回到全域命名空間；換成 CSS-in-JS 是第三種做法。把規範寫進給 AI 的專案說明，下次產出就會照做。',
+      },
+    ],
+  },
+  {
+    skill: 'css-motion',
+    questions: [
+      {
+        q: 'Toast 出現時會淡入。`show` 變成 `false` 時會怎樣？',
+        code: `<Transition name="toast">
+  <div v-if="show" class="toast">已完成報到</div>
+</Transition>
+
+<style>
+.toast-enter-active { transition: opacity 200ms ease-out; }
+.toast-enter-from { opacity: 0; }
+</style>`,
+        lang: 'vue',
+        options: [
+          '淡出 200ms，Vue 會沿用進場的 transition',
+          '直接消失：`toast-leave-active` 沒有 transition，Vue 算出的時間是 0，立刻移除元素',
+          '一直留在畫面上，Vue 等不到 `transitionend`',
+          'Console 出現 `[Vue warn]`，提示缺少 leave 的 class',
+        ],
+        answer: 1,
+        explain: '離場時 Vue 套上 `toast-leave-from`、`toast-leave-active`、`toast-leave-to`，並讀 `leave-active` 那一刻計算後的 transition 與 animation 時間；這裡都是 0，離場立刻完成、元素被移除。進場的設定不會套用到離場，Vue 也不會因此警告。補上 `.toast-leave-active` 的 transition 與 `.toast-leave-to { opacity: 0 }` 就有淡出。',
+      },
+      {
+        q: '看板一邊每秒更新資料、一邊播放叫號提示的滑入動畫。動哪一組屬性，主執行緒忙的時候動畫最不容易卡？',
+        options: [
+          '`right` 從 `-320px` 到 `16px`',
+          '`width` 從 `0` 到 `320px`',
+          '`transform: translateX()` 與 `opacity`',
+          '`margin-left` 從 `100%` 到 `0`',
+        ],
+        answer: 2,
+        explain: '`transform` 與 `opacity` 在元素有自己的合成層時只需要重跑合成，可以交給合成器執行緒，主執行緒在跑 JavaScript 時動畫照樣順。`right`、`width`、`margin-left` 每一格都要在主執行緒重算版面與重繪；Lighthouse 會把它們列在 `Avoid non-composited animations`。',
+      },
+      {
+        q: '一位使用者在作業系統開了「減少動態效果」，反映候診看板一直有東西在滑動、看了會暈。前端該怎麼改？',
+        options: [
+          '在 `@media (prefers-reduced-motion: reduce)` 裡拿掉位移、縮放與清單的移動動畫，保留淡入淡出或直接切換',
+          '把所有動畫的時間縮短一半，移動得快一點就不會暈',
+          '在看板加一個「關閉動畫」的按鈕，預設維持原樣',
+          '把 CSS 動畫改成 `element.animate()`，瀏覽器會自動依設定減少動態',
+        ],
+        answer: 0,
+        explain: '作業系統的設定會讓 `prefers-reduced-motion: reduce` 成立，使用者不必再找網站的開關。縮短時間仍然是大範圍的移動；網站自己的開關可以額外提供，但預設要先尊重系統設定；`element.animate()` 不會自動減少動態，JavaScript 要用 `matchMedia(\'(prefers-reduced-motion: reduce)\')` 自己判斷。',
+      },
+    ],
+  },
 ]

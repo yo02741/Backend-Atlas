@@ -195,5 +195,6 @@ AI 產生的 Dialog 最常見的是 `div` 加 `v-if` 加 `z-index`：沒有焦�
 1. 打開 [互動狀態實驗室](#/lab/UiStatesLab)，選「Dialog」：點舞台上的「取消預約」或用 Tab 移過去按 Enter，看焦點紀錄；在 Dialog 裡連按 Tab，看焦點怎麼繞回第一個；按 Esc，確認焦點回到「取消預約」；再試「確定取消」，看觸發按鈕不在時焦點去哪。
 2. 在自己的專案找一個 Dialog，Console 建立 live expression `document.activeElement`，開啟、Tab 三次、Esc，記下每一步的值。
 3. Elements 分頁打開一個用 `showModal()` 開的 Dialog，找到 `#top-layer`；再找一個用 `z-index` 做的浮層，比較兩者在 DOM 樹裡的位置。
-4. 把一個用 `title` 寫的說明改成 Tooltip，照 1.4.13 的三個要求逐一驗收。
-5. Dialog 裡的表單送出與錯誤怎麼顯示，接著讀 [回饋：Toast、Alert、Skeleton、Empty state](#/skill/feedback)。
+4. 打開 [浮層疊放實驗室](#/lab/OverlayLab)：先開 Dialog 再推播 Toast，看 Toast 為什麼點不到；切到「div + z-index」並打開「main 有 transform」，看 `z-index: 9999` 為什麼蓋不過頁首；按 Esc，看關掉的是哪一層。
+5. 把一個用 `title` 寫的說明改成 Tooltip，照 1.4.13 的三個要求逐一驗收。
+6. Dialog 裡的表單送出與錯誤怎麼顯示，接著讀 [回饋：Toast、Alert、Skeleton、Empty state](#/skill/feedback)。

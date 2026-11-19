@@ -6,7 +6,7 @@ export default {
   title: '瀏覽器與網頁怎麼運作',
   en: 'HOW BROWSERS WORK',
   color: 'blue',
-  tagline: '從網址到畫面：載入順序、渲染、DOM 事件、瀏覽器的儲存、同源與網址，加上開發者工具。',
+  tagline: '從網址到畫面：載入順序、渲染、DOM 事件、瀏覽器的儲存、同源與網址、前端的資安，加上開發者工具。',
   skills: [
     {
       id: 'how-browsers-render',
@@ -90,6 +90,18 @@ export default {
       lab: null,
       reviewed: '2026-11',
       related: ['spa-containers', 'api-patterns'],
+    },
+    {
+      id: 'frontend-security',
+      title: '前端的資安',
+      en: 'Frontend security',
+      level: 2,
+      summary: 'Vue 的 {{ }} 會跳脫 HTML，v-html、innerHTML 與綁進 :href 的 javascript: 網址不會。注入的 script 讀得到畫面、localStorage 與使用者的登入狀態；CSP 擋下 inline script 與 eval，第三方 script 和自己的程式權限相同，bundle 裡的字串全部公開。',
+      example: { primary: 'Vue 3.5 的模板跳脫 + CSP（script-src \'self\'）', alts: ['DOMPurify（一定要顯示 HTML 時）', 'Subresource Integrity（第三方 script）', 'Trusted Types（Baseline 2026）'] },
+      keywords: ['JavaScript', 'Vue', 'Chrome DevTools'],
+      lab: null,
+      reviewed: '2026-11',
+      related: ['xss-csrf', 'secrets', 'authn-basics'],
     },
   ],
 }

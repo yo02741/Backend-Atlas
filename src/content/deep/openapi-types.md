@@ -1,0 +1,252 @@
+## 從一個具體問題開始：手寫的 interface，和後端各走各的
+
+「我的掛號」的前端有一個手寫的型別：
+
+```ts
+// src/types.ts（手寫）
+export interface Appointment {
+  id: number
+  patientName: string
+  queueNo: number
+  status: 'booked' | 'checked_in' | 'cancelled'
+}
+```
+
+後端是 companion 的 clinic-api。它實際回傳的 `AppointmentOut` 欄位是 `id`、`session_id`、`patient_id`、`number`、`status`、`created_at`：沒有 `patientName`，序號叫 `number`。`vue-tsc` 從頭到尾沒有報錯，因為 `fetch` 回來的 `res.json()` 型別是 `any`，指定成 `Appointment` 之後編譯器就相信了。畫面上姓名與序號兩欄是空白，要到有人打開 Network 分頁比對才發現。
+
+另一個問題藏得更深：前端照 FastAPI 的慣例讀 422 的錯誤 `body.detail[0].msg`，clinic-api 實際回的是 Problem Details，欄位錯誤放在 `errors`。這次連後端產生的 OpenAPI 規格都是錯的。
+
+## 運作原理
+
+### 從規格到型別
+
+```text
+後端的 pydantic 模型（AppointmentOut …）
+   │  FastAPI 自動產生
+   ▼
+GET /openapi.json   （clinic-api 產生的是 OpenAPI 3.1.0）
+   │  npx openapi-typescript … -o src/api/schema.d.ts
+   ▼
+schema.d.ts：只有型別（paths、components、operations），沒有任何執行時程式
+   │  createClient<paths>()
+   ▼
+openapi-fetch：路徑、參數、body、回應都照型別檢查
+   │
+   ▼
+npx vue-tsc --noEmit：用錯欄位、少參數、傳錯型別，在這一步失敗
+```
+
+### 產生的檔案長什麼樣
+
+用 openapi-typescript 7.13.0 對 clinic-api 的規格產生，節錄：
+
+```ts
+export interface paths {
+  "/appointments": {
+    /** List Appointments */
+    get: operations["list_appointments_appointments_get"];
+    // …其他方法是 never
+  };
+  "/appointments/{id}/cancel": {
+    post: operations["cancel_appointments__id__cancel_post"];
+  };
+}
+export interface components {
+  schemas: {
+    AppointmentOut: {
+      id: number;
+      session_id: number;
+      patient_id: number;
+      number: number;
+      status: string;
+      /** Format: date-time */
+      created_at: string;
+    };
+    AppointmentPage: {
+      items: components["schemas"]["AppointmentOut"][];
+      next_cursor: number | null;
+    };
+    HTTPValidationError: {
+      detail?: components["schemas"]["ValidationError"][];
+    };
+  };
+}
+```
+
+從這裡取型別：
+
+```ts
+import type { paths, components } from './schema'
+
+type Appointment = components['schemas']['AppointmentOut']
+type ListResponse =
+  paths['/appointments']['get']['responses'][200]['content']['application/json']   // 就是 AppointmentPage
+type ListQuery = NonNullable<paths['/appointments']['get']['parameters']['query']>  // { patient_id?, cursor?, limit? }
+```
+
+openapi-typescript 的 README 範例在 `['application/json']` 後面還多了 `['schema']`；7.13.0 實際產生的型別沒有這一層，以產生出來的檔案為準。
+
+### openapi-fetch 檢查了什麼
+
+```ts
+import createClient from 'openapi-fetch'
+const api = createClient<paths>({ baseUrl: '/api' })
+
+const { data, error, response } = await api.GET('/appointments', {
+  params: { query: { cursor: 0, limit: 20 } },
+})
+```
+
+用 TypeScript 5.9 實際檢查下面四種寫錯的情況，錯誤訊息如下：
+
+| 寫法 | 錯誤 |
+|---|---|
+| `data.items[0].patientName` | `TS2339: Property 'patientName' does not exist on type '{ id: number; session_id: number; … }'.` |
+| `api.GET('/appointments/{id}')`（少了 path 參數） | `TS2554: Expected 2 arguments, but got 1.` |
+| `params: { path: { id: '12' } }` | `TS2322: Type 'string' is not assignable to type 'number'.` |
+| `params: { query: { page: 2 } }` | `TS2353: Object literal may only specify known properties, and 'page' does not exist in type '{ patient_id?: … cursor?: … limit?: … }'.` |
+
+執行時的行為（看 openapi-fetch 0.17.0 的原始碼）：
+
+- 2xx：回傳 `{ data, response }`。204 或 `Content-Length: 0` 時 `data` 是 `undefined`，不會去解析空的 body。
+- 4xx、5xx：回傳 `{ error, response }`，`error` 是 body 解析成的 JSON，解析不了時是原始文字。**不會丟例外**。
+- 網路錯誤：`fetch` 本身 reject，例外照樣往外丟。
+
+所以呼叫端要處理兩種失敗：檢查 `error`，以及用 `try/catch` 接網路錯誤（見 [fetch 與 HTTP](#/skill/fetch-basics)）。
+
+### 型別保證不了的事
+
+型別描述的是規格寫了什麼。規格本身不完整、不正確，或執行時收到的資料不符合規格，型別都不知道：
+
+| 情況 | clinic-api 的實際例子 | 後果 |
+|---|---|---|
+| 規格沒寫的錯誤回應 | `POST /appointments/{id}/cancel` 會回 409、401、403、404，規格只寫了 200 與 422 | `error` 的型別只有 `HTTPValidationError`，409 的 Problem Details 沒有型別 |
+| 規格寫錯的格式 | 規格的 422 是 FastAPI 預設的 `HTTPValidationError`（`detail` 陣列），實際回的是 `application/problem+json`、欄位錯誤在 `errors` | 照型別寫 `error.detail?.[0]?.msg`，編譯通過，執行時永遠是 `undefined` |
+| 列舉寫成 `string` | `AppointmentOut.status` 在 pydantic 宣告成 `str` | 型別是 `string`，`'booked'` 打成 `'boked'` 也通過 |
+| 日期時間 | `created_at` 的 `format: date-time` | 型別是 `string`，不會變成 `Date`；要自己 `new Date()` |
+| 執行時的資料 | 反向代理回了 HTML 錯誤頁、後端部署了新版但規格沒更新 | 型別在建置後就不存在，不檢查實際的 JSON |
+
+解法分兩邊：
+
+- **後端把規格寫對、寫齊**：`status` 改成 `Literal['booked', 'checked_in', 'cancelled']`，產生的型別就是 union；FastAPI 的路由用 `responses=` 寫出 409、401 等錯誤與 Problem Details 的 schema；用契約測試確認實作和規格一致（見 [OpenAPI 與 API 契約](#/skill/openapi)）。
+- **前端在邊界驗證**：真的要在執行時確定資料形狀的地方，用 zod 這類函式庫檢查，檢查失敗就進入錯誤狀態，不讓錯的資料流進畫面。
+
+## 實際程式
+
+### 產生型別的指令與 CI
+
+```json
+{
+  "scripts": {
+    "api:types": "openapi-typescript http://localhost:8000/openapi.json -o src/api/schema.d.ts",
+    "typecheck": "vue-tsc --noEmit"
+  }
+}
+```
+
+```bash
+# CI：用 repo 裡的規格檔重新產生，產生檔有差異就失敗
+npx openapi-typescript openapi.json -o src/api/schema.d.ts
+git diff --exit-code src/api/schema.d.ts
+npx vue-tsc --noEmit
+```
+
+`schema.d.ts` 進版控：審查時看得到 API 改了什麼，CI 也能比對。產生檔的開頭寫著「This file was auto-generated by openapi-typescript. Do not make direct changes to the file.」，手改的內容下次產生就會消失。
+
+### client 與型別別名
+
+```ts
+// src/api/client.ts
+import createClient from 'openapi-fetch'
+import type { paths, components } from './schema'
+
+export type Appointment = components['schemas']['AppointmentOut']
+export type AppointmentPage = components['schemas']['AppointmentPage']
+
+export const api = createClient<paths>({ baseUrl: '/api' })
+
+api.use({
+  onRequest({ request }) {                       // 每個請求都帶上 token
+    const token = sessionStorage.getItem('token')
+    if (token) request.headers.set('Authorization', `Bearer ${token}`)
+    return request
+  },
+})
+```
+
+```ts
+// src/api/appointments.ts
+import { api, type AppointmentPage } from './client'
+
+export async function loadPage(cursor = 0): Promise<AppointmentPage> {
+  const { data, error, response } = await api.GET('/appointments', {
+    params: { query: { cursor, limit: 20 } },
+  })
+  if (error) throw new Error(`HTTP ${response.status}`)   // 4xx、5xx：openapi-fetch 不會自己丟
+  return data                                            // 檢查過 error 之後，data 的型別就是 AppointmentPage
+}
+```
+
+### 規格是 `string` 的列舉
+
+```ts
+// src/api/status.ts
+import type { Appointment } from './client'
+
+const LABELS = { booked: '候診', checked_in: '已報到', cancelled: '已取消' } as const
+type KnownStatus = keyof typeof LABELS
+
+export function statusLabel(status: Appointment['status']): string {
+  if (status in LABELS) return LABELS[status as KnownStatus]
+  console.warn('未知的掛號狀態', status)               // 後端加了新狀態：畫面不壞，並留下紀錄
+  return '未知狀態'
+}
+```
+
+後端把 `status` 改成 `Literal` 之後，`Appointment['status']` 會變成 `'booked' | 'checked_in' | 'cancelled'`，這段可以改成不需要 `as` 的寫法。
+
+### 在邊界做執行時驗證
+
+```ts
+import { z } from 'zod'
+
+const AppointmentSchema = z.object({
+  id: z.number().int(),
+  session_id: z.number().int(),
+  patient_id: z.number().int(),
+  number: z.number().int(),
+  status: z.enum(['booked', 'checked_in', 'cancelled']),
+  created_at: z.string(),
+})
+const AppointmentPageSchema = z.object({
+  items: z.array(AppointmentSchema),
+  next_cursor: z.number().int().nullable(),
+})
+
+export function parsePage(json: unknown) {
+  const r = AppointmentPageSchema.safeParse(json)
+  if (!r.success) {
+    console.error(r.error.issues)                     // 哪個欄位、期待什麼
+    throw new Error('掛號清單的格式和預期不同')
+  }
+  return r.data
+}
+```
+
+zod 4 收到 `status: 'no_show'` 時，`issues` 是 `[{ code: 'invalid_value', path: ['status'], message: 'Invalid option: expected one of "booked"|"checked_in"|"cancelled"' }]`。執行時驗證有成本（每次回應都要跑一遍、schema 要和規格保持一致），通常只放在最重要或最常變動的幾個邊界；也有工具能從 OpenAPI 直接產生 zod schema（例如 @hey-api/openapi-ts 的外掛），讓兩邊都從規格來。
+
+## 常見錯誤
+
+- **`as Appointment` 或 `res.json()` 直接指定型別**：編譯器相信你，沒有任何檢查；欄位對不上要到畫面上才看得到。改用產生的型別加上 openapi-fetch，或至少讓型別從 `components` 來。
+- **用了產生的型別，卻在出錯時寫 `as any`**：AI 遇到型別錯誤時常這樣做。`TS2339` 代表「規格裡沒有這個欄位」，該做的是確認規格，不是把錯誤蓋掉。
+- **以為 openapi-fetch 會丟錯誤**：`try { const { data } = await api.GET(…) } catch { 顯示錯誤 }` 接不到 500，`data` 是 `undefined`，畫面顯示成空清單。
+- **照規格讀錯誤，規格卻是錯的**：`error.detail` 永遠是 `undefined`。在 Network 分頁看一次實際的錯誤回應，對照產生的錯誤型別；對不上就回報後端修規格。
+- **後端改版、前端沒重新產生**：型別檢查照樣通過（因為型別是舊的），執行時欄位不見。CI 加上重新產生與 `git diff --exit-code`。
+- **把 `date-time` 欄位當成 `Date`**：`appt.created_at.getTime()` 型別檢查就會失敗（`Property 'getTime' does not exist on type 'string'`）；顯示前自己轉換並決定時區。
+
+## 動手
+
+1. 打開一個 FastAPI 服務的 `/openapi.json`（companion 的 clinic-api 用 `docker compose up` 起來後在 `http://localhost:8000/openapi.json`），用 `npx openapi-typescript` 產生型別，找到 `AppointmentOut` 與 `HTTPValidationError`。
+2. 對同一個 API 送一筆缺欄位的請求，比對實際的錯誤 body 與產生的 `HTTPValidationError`，寫下兩者的差異。
+3. 在專案裡故意用一個不存在的欄位，確認 `npx vue-tsc --noEmit` 會報 TS2339；不會報錯的話，找出是哪裡變成了 `any`。
+4. 把規格的缺口（沒寫的錯誤回應、寫成 `string` 的列舉）整理成給後端的清單，接著讀 [讓 AI 接 API 不猜欄位](#/skill/ai-api-contract)，把型別檔與範例回應一起交給 AI。

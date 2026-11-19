@@ -194,12 +194,15 @@ const KW = {
   bash: /\b(docker|compose|uv|pip|git|curl|npm|run|build|up|down|exec|ps|logs|add|sync|init|push|pull|FROM|RUN|COPY|WORKDIR|CMD|ENV|EXPOSE|ENTRYPOINT|ARG)\b/g,
   nginx: /\b(server|location|listen|server_name|proxy_pass|upstream|root|index|proxy_set_header|return|ssl_certificate|ssl_certificate_key|add_header|limit_req|limit_req_zone|try_files|http|events|worker_processes)\b/g,
   js: /\b(const|let|var|function|return|if|else|for|while|import|export|from|async|await|new|class|this|null|undefined|true|false|throw|try|catch)\b/g,
+  ts: /\b(const|let|var|function|return|if|else|for|while|import|export|from|async|await|new|class|this|null|undefined|true|false|throw|try|catch|type|interface|extends|implements|readonly|keyof|enum|satisfies|as)\b/g,
+  vue: /(?<![-.:@])\b(const|let|var|function|return|if|else|for|while|import|export|from|async|await|new|class|this|null|undefined|true|false|throw|try|catch|type|interface)\b(?![-=])/g,
+  css: /^(\s*[\w-]+)(?=\s*:[^:])/gm,
   http: /^(GET|POST|PUT|PATCH|DELETE|HTTP\/[\d.]+)\b|^[A-Za-z-]+(?=:)/gm,
   json: /"[^"]*"(?=\s*:)/g,
 }
 const STR = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g
 const NUM = /\b\d+(?:\.\d+)?\b/g
-const CM = { sql: /--.*$/gm, python: /#.*$/gm, yaml: /#.*$/gm, bash: /#.*$/gm, nginx: /#.*$/gm, js: /\/\/.*$/gm, http: null, json: null }
+const CM = { sql: /--.*$/gm, python: /#.*$/gm, yaml: /#.*$/gm, bash: /#.*$/gm, nginx: /#.*$/gm, js: /\/\/.*$/gm, ts: /\/\/.*$/gm, vue: /\/\/.*$/gm, css: /\/\*.*$/gm, http: null, json: null }
 
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
 
@@ -235,7 +238,7 @@ function plain(s, kw, lang) {
   if (!s) return ''
   let out = esc(s)
   if (kw) {
-    const cls = lang === 'yaml' || lang === 'json' || (lang === 'http' && !/^(GET|POST|PUT|PATCH|DELETE|HTTP)/.test(s)) ? 'tk-key' : 'tk-kw'
+    const cls = lang === 'yaml' || lang === 'json' || lang === 'css' || (lang === 'http' && !/^(GET|POST|PUT|PATCH|DELETE|HTTP)/.test(s)) ? 'tk-key' : 'tk-kw'
     out = out.replace(kw, (m) => `<span class="${cls}">${m}</span>`)
   }
   out = out.replace(NUM, (m) => `<span class="tk-num">${m}</span>`)

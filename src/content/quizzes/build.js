@@ -179,4 +179,143 @@ export default defineConfig({
       },
     ],
   },
+  {
+    skill: 'rendering-modes',
+    questions: [
+      {
+        q: '醫院對外的「科別介紹」頁：內容每季更新一次、要被搜尋引擎收錄，主機只能放靜態檔。最合適的渲染方式是？',
+        options: [
+          'CSR：沿用門診系統的 SPA，進頁面後再呼叫 API 取得內容',
+          'SSR：每個請求由 Node.js 伺服器渲染成 HTML',
+          'SSG：建置時把每一頁渲染成 HTML，內容更新時重新建置',
+          'CSR 加上 Skeleton，讓搜尋引擎看到版面的輪廓',
+        ],
+        answer: 2,
+        explain: '內容在建置時就能確定，SSG 讓 HTML 裡直接有內容，搜尋引擎看得到，部署出去仍然是靜態檔。SSR 也能讓內容出現在 HTML 裡，但需要一台跑 Node.js 的伺服器，和「只能放靜態檔」衝突。CSR 的 HTML 裡沒有內容，爬蟲不會等非同步請求回來；Skeleton 只是版面輪廓，沒有文字可以收錄。',
+      },
+      {
+        q: '這個元件在 SSR 的頁面上，開發版的 Console 出現 `[Vue warn]: Hydration text content mismatch on <p>`，`rendered on server: 09:00`、`expected on client: 09:01`。比較好的修法是？',
+        code: `<script setup>
+const now = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+</script>
+
+<template>
+  <p>現在時間 {{ now }}</p>
+</template>`,
+        lang: 'vue',
+        options: [
+          '`now` 先設成 `null`、畫面顯示 `--:--`，在 `onMounted` 裡才算出時間並開始更新',
+          '把 `createSSRApp` 改成 `createApp`，讓瀏覽器整個重新渲染一次',
+          '把 `toLocaleTimeString` 換成 `toLocaleString`，兩邊就會一致',
+          '在 `<p>` 加上 `v-once`，讓它只渲染一次',
+        ],
+        answer: 0,
+        explain: '伺服器與瀏覽器各渲染一次，「現在時間」在兩個時間點算，結果一定不同。`onMounted` 只在瀏覽器執行，而且在 hydration 之後，兩邊第一次渲染都是 `--:--`，不會不一致。改用 `createApp` 會丟掉伺服器的 HTML 從頭建立 DOM，失去 SSR 的意義；換成 `toLocaleString` 一樣含時間，還多了時區差異；`v-once` 管的是之後的更新，第一次 hydration 照樣比對。',
+      },
+      {
+        q: '團隊用 Nuxt 把「我的掛號」頁設成 `routeRules: { \'/my-appointments\': { swr: 600 } }`。上線後有病患看到別人的掛號紀錄。最可能的原因是？',
+        options: [
+          'hydration mismatch，Vue 修正 DOM 時把資料搞混了',
+          '`swr` 讓伺服器或反向代理快取整份回應，含個人資料的頁面被當成每個人都一樣的內容送給下一個人',
+          '瀏覽器快取了 `index.html`，看到的是上一個登入者的頁面',
+          'SSR 不支援 cookie，伺服器不知道是誰在請求',
+        ],
+        answer: 1,
+        explain: '`swr` 會快取整個回應，在 TTL 內把同一份 HTML 送給所有請求這個網址的人，只適合每個人看到的內容都一樣的頁面。個人化的頁面要維持 CSR，或回應 `Cache-Control: private, no-store`、不套用共用快取。hydration mismatch 只會讓 DOM 改成瀏覽器渲染的結果，不會換成別人的資料；SSR 收得到請求的 cookie；`index.html` 被快取不會帶進別人的掛號。',
+      },
+    ],
+  },
+  {
+    skill: 'browser-support',
+    questions: [
+      {
+        q: '`vite.config.js` 設了 `build.target: \'chrome109\'`，程式用到 `Object.groupBy()`（Chrome 117 起才有）。在 Chrome 109 上會發生什麼事？',
+        options: [
+          'Vite 依 target 自動加上 polyfill，正常執行',
+          '`vite build` 失敗，提示 target 不支援這個函式',
+          '執行到那一行時丟出 `TypeError: Object.groupBy is not a function`',
+          'Vite 把它改寫成 `reduce`，正常執行',
+        ],
+        answer: 2,
+        explain: '`build.target` 只做語法轉換，Vite 的說明寫明它不包含 polyfill。`Object.groupBy` 是執行時才存在的函式，產物裡原樣保留，建置不會失敗，到 Chrome 109 執行那一行才發現沒有它。要支援就自己改寫，或另外載入 polyfill（例如用 `@vitejs/plugin-legacy` 或 core-js）。',
+      },
+      {
+        q: 'web-features 資料裡 Popover API 的狀態如下。對門診系統來說，這代表什麼？',
+        code: `{
+  "name": "Popover",
+  "status": {
+    "baseline": "low",
+    "baseline_low_date": "2025-01-27",
+    "support": { "chrome": "116", "firefox": "125", "safari": "17", "safari_ios": "18.3" }
+  }
+}`,
+        lang: 'json',
+        options: [
+          'Widely available：核心瀏覽器支援已滿 30 個月，不必考慮舊版直接用',
+          'Newly available：核心瀏覽器的最新版都支援，但較舊的 iOS 與 Chrome 沒有，要看使用者版本',
+          'Limited availability：還有核心瀏覽器完全不支援，目前不能在正式環境使用',
+          '已被標為不建議使用（discouraged），之後會從瀏覽器移除',
+        ],
+        answer: 1,
+        explain: '`baseline: "low"` 是 Newly available，`baseline_low_date` 是它在所有核心瀏覽器（含手機版）都支援的那一天；滿 30 個月才會變成 `"high"`（Widely available）。`support` 列出各瀏覽器的最低版本，舊版 iOS 或停在舊版 Chrome 的院內電腦都不支援。Limited availability 是 `baseline: false`；這裡也沒有任何棄用的標記。',
+      },
+      {
+        q: '專案從 Vite 6 升級到 Vite 8，沒有改任何程式。院內幾台 iPad（Safari 15）打開就白畫面，Console 出現 `SyntaxError`。最可能的原因與處理方式是？',
+        options: [
+          'Vite 8 的預設 target 提高到 Safari 16.4 起，舊語法不再被改寫；要明確設定 `build.target`',
+          'iPad 快取了升級前的 `index.html`，清除 Safari 的網站資料就會恢復',
+          'Vite 8 不再支援 iOS 上的 Safari，要改用其他建置工具',
+          '在 `main.js` 最上面 import core-js 的全部 polyfill 就能解決',
+        ],
+        answer: 0,
+        explain: 'Vite 6 預設 `modules`（Chrome 87、Safari 14 起），Vite 8 預設 `baseline-widely-available`（Chrome 111、Safari 16.4 起）。升級主版本等於提高最低支援版本，Safari 16.4 才支援的語法（例如 class 的 static 區塊）不再被改寫，舊版 Safari 解析失敗就整頁空白。快取的 `index.html` 會指向舊檔案，不會產生新的語法錯誤；polyfill 補的是 API，補不了語法。',
+      },
+    ],
+  },
+  {
+    skill: 'frontend-ci',
+    questions: [
+      {
+        q: 'CI 裡安裝套件為什麼用 `npm ci`，不用 `npm install`？',
+        options: [
+          '`npm ci` 下載比較快，因為它會略過 `devDependencies`',
+          '`npm ci` 照 lock 檔安裝、不改 lock 檔，`package.json` 和 lock 檔對不上就直接失敗，每次裝出來的版本都一樣',
+          '`npm install` 在 CI 環境無法執行',
+          '`npm ci` 會順便執行 lint 與測試',
+        ],
+        answer: 1,
+        explain: '`npm install` 會在需要時解析新版本並更新 lock 檔，同一個 commit 在不同時間可能裝到不同版本。`npm ci` 先刪掉 `node_modules`，只照 lock 檔安裝，對不上時以 `can only install packages when your package.json and package-lock.json ... are in sync` 失敗，提醒有人忘了 commit lock 檔。它預設會安裝 `devDependencies`，也不會執行任何檢查。',
+      },
+      {
+        q: '一個 PR 有型別錯誤，還有三個 ESLint 的 warning。CI 依序執行 `npm run lint` 與 `npm run typecheck`，結果全部綠燈。原因是？',
+        code: `{
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "vue-tsc --noEmit || true",
+    "build": "vite build"
+  }
+}`,
+        lang: 'json',
+        options: [
+          '`vite build` 會先做型別檢查，所以 `vue-tsc` 的錯誤在這一步被略過',
+          'ESLint 預設只檢查 `.js` 檔，`.vue` 檔裡的 warning 與錯誤都不會被抓',
+          'GitHub Actions 只把 exit code 1 當失敗，`vue-tsc` 回傳的 2 被忽略',
+          '`|| true` 讓型別檢查永遠成功，ESLint 只有 warning 時 exit code 本來就是 0',
+        ],
+        answer: 3,
+        explain: 'CI 只看每一步的 exit code。`vue-tsc` 有錯誤時回傳 2，但 `|| true` 把整行的結果改成成功；ESLint 只有 warning 時本來就回傳 0。拿掉 `|| true`、ESLint 加上 `--max-warnings 0` 才會擋。`vite build` 不做型別檢查；eslint-plugin-vue 會檢查 `.vue` 檔；Actions 對任何非 0 的 exit code 都會讓那一步失敗。',
+      },
+      {
+        q: '自動更新套件的機器人把 `typescript` 從 6.0 升到 7.0 之後，CI 的型別檢查開始失敗，訊息是 `Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath \'./lib/tsc\' is not defined by "exports"`，程式本身沒有改。該怎麼處理？',
+        options: [
+          '先把 `typecheck` 從 CI 拿掉，等 vue-tsc 更新之後再加回來',
+          '刪掉 `package-lock.json` 重新 `npm install`，讓套件重新解析版本',
+          '把 `typescript` 固定在 `~6.0`，等 vue-tsc 支援 TypeScript 7 再升級',
+          '在 workflow 設 `NODE_OPTIONS=--experimental-modules` 讓 Node 找到舊路徑',
+        ],
+        answer: 2,
+        explain: '這個錯誤來自 vue-tsc 去載入 `typescript/lib/tsc`；TypeScript 7 是原生編譯器，套件裡已經沒有這個 JavaScript 進入點（實測 vue-tsc 3.3.14 搭 TypeScript 7.0.2 失敗，搭 6.0.3 正常）。把主版本固定住並在更新設定裡排除它，是最小的修法。拿掉型別檢查會讓錯誤溜進 main；重建 lock 檔還是會裝到 7.0；Node 的參數和套件的 exports 無關。',
+      },
+    ],
+  },
 ]

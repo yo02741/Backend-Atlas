@@ -216,4 +216,139 @@ test('renders', () => {
       },
     ],
   },
+  {
+    skill: 'ai-project-rules',
+    questions: [
+      {
+        q: '下面四條要寫進前端專案的 AGENTS.md，哪一條寫法最能被遵守與檢查？',
+        options: [
+          '寫出乾淨、好維護的程式',
+          '顏色與間距只用 `src/styles/tokens.css` 的變數，不寫 hex 與任意 px',
+          '注意無障礙與使用者體驗',
+          '遵守團隊的設計規範',
+        ],
+        answer: 1,
+        explain: '規範要寫成「答案」：具體的檔案、變數、指令，看得出有沒有遵守，也能進一步交給 Stylelint 的 `color-no-hex` 這類規則。其他三條是願望，模型不知道具體要做什麼，審查時也無從判斷。',
+      },
+      {
+        q: 'ESLint 的設定有下面兩條規則。AI 交回的改動裡，哪一種違規會讓 `npx eslint .` 直接報錯？',
+        code: `rules: {
+  'vue/component-api-style': ['error', ['script-setup']],
+  'no-restricted-globals': ['error', { name: 'fetch', message: '請用 src/api/client.ts 的 api' }],
+}`,
+        lang: 'js',
+        options: [
+          '在 `package.json` 新增了一個 npm 套件',
+          '手動修改了產生的 `src/api/schema.d.ts`',
+          '新元件用 `data()` 與 `methods` 寫成 Options API',
+          '把既有測試的期望值從 3 筆改成 2 筆',
+        ],
+        answer: 2,
+        explain: '`vue/component-api-style` 設成只允許 `script-setup`，寫了 `data()` 的元件會報「Options API is not allowed in your project. Use `<script setup>` instead」；另一條擋的是元件直接呼叫 `fetch`。新增套件、手改產生的檔、改測試期望值，這兩條規則都擋不到，要靠規範檔、CI 的比對與審查。',
+      },
+      {
+        q: 'AI 每次改完都先跑 `npm test` 失敗一次，再去 `package.json` 找到 `npm run test:unit`。最好的處理方式是什麼？',
+        options: [
+          '每次對話開頭都提醒一次正確的指令',
+          '在 `package.json` 加一個 `test` 指令，內容是 `echo ok`',
+          '叫 AI 以後不要跑測試，節省時間',
+          '把規範檔「交付前」的指令改成實際的 `npm run test:unit`，並在乾淨的 clone 上照著跑一次確認',
+        ],
+        answer: 3,
+        explain: '這是規範檔過期：寫的指令和 `package.json` 對不上。改正規範檔並實際跑過一次，之後每個對話都會讀到對的指令。每次口頭提醒在新對話就失效；`echo ok` 讓「測試通過」變成假的；不跑測試等於放棄驗證。',
+      },
+    ],
+  },
+  {
+    skill: 'ai-api-contract',
+    questions: [
+      {
+        q: '讓 AI 寫「我的掛號」元件，並順便寫 MSW 的 mock。本機測試全部通過，接上真的後端後一半欄位空白。最可能的原因是什麼？',
+        options: [
+          'mock 的回應比真的後端快，測試沒有等到資料',
+          'mock 和元件出自同一個猜測，形狀彼此一致卻和 API 不同；mock 要用實際的範例回應，並用 `satisfies` 綁住產生的型別',
+          '真的後端被 CORS 擋下，回應是空的',
+          'MSW 的版本太舊，攔截不到請求',
+        ],
+        answer: 1,
+        explain: '沒有拿到契約時，模型用常見的命名補欄位，自己寫的 mock 也照同樣的猜測，所以測試全綠。mock 改用從 Network 分頁或後端測試資料複製的範例，並加上 `satisfies components[\'schemas\'][…]`，猜錯的欄位在型別檢查就會失敗。CORS 被擋時是網路錯誤，不是欄位空白。',
+      },
+      {
+        q: '`AppointmentPage` 是從 OpenAPI 產生的型別，`AppointmentOut` 裡沒有 `doctorName`。這個 MSW handler 會怎樣？',
+        code: `http.get('/api/appointments', () =>
+  HttpResponse.json({
+    items: [{ id: 501, session_id: 12, patient_id: 7, number: 3,
+              status: 'booked', created_at: '2026-11-18T09:12:00+08:00',
+              doctorName: '林醫師' }],
+    next_cursor: null,
+  } satisfies AppointmentPage),
+)`,
+        lang: 'ts',
+        options: [
+          '型別檢查報 TS2353：物件只能有已知的屬性，`doctorName` 不在型別裡',
+          '型別檢查通過，畫面上會顯示「林醫師」',
+          'MSW 在執行時丟出錯誤，拒絕回傳多餘的欄位',
+          '沒有任何影響，`satisfies` 只是給人看的註解',
+        ],
+        answer: 0,
+        explain: '`satisfies` 要求物件符合型別，物件字面值多出型別沒有的屬性時，TypeScript 報 TS2353（Object literal may only specify known properties）。這讓 mock 跟著規格走：規格沒有的欄位進不了 mock。MSW 執行時不檢查型別；`satisfies` 是編譯時的檢查，不只是註解。',
+      },
+      {
+        q: '設計稿上每筆預約要顯示醫師姓名，但 `GET /appointments` 回的 `AppointmentOut` 只有 `session_id`。交給 AI 的指示該怎麼寫這件事？',
+        options: [
+          '讓 AI 從 `session_id` 推算出醫師，畫面先完整呈現',
+          '請 AI 在 `schema.d.ts` 加上 `doctor_name`，讓型別檢查通過',
+          '要求 AI 不要自己加欄位或猜 API，把這項列在回報的「缺口」一節，交給後端決定',
+          '先寫死一個假的醫師姓名，之後再換',
+        ],
+        answer: 2,
+        explain: '規格沒有的資料要列成缺口，由後端決定加欄位或另開端點。讓模型推算或寫死假資料，畫面看起來完整，接上真的後端才出錯；手改產生的型別檔會讓型別說謊，下次產生就消失。在限制裡寫明「列出來、不要補」，模型才知道這是可以接受的答案。',
+      },
+    ],
+  },
+  {
+    skill: 'ai-review-diff',
+    questions: [
+      {
+        q: '任務是「修掉清單閃爍」，AI 交回的分支 `git diff --stat main...HEAD` 如下。照由外往內的順序，下一步是什麼？',
+        code: ` package-lock.json                      | 41 +++++
+ package.json                           |  1 +
+ src/api/schema.d.ts                    |  2 +
+ src/components/AppointmentList.spec.ts |  6 +-
+ src/components/AppointmentList.vue     |  3 +-
+ 5 files changed, 49 insertions(+), 4 deletions(-)`,
+        lang: 'bash',
+        options: [
+          '從 `package-lock.json` 開始逐行讀，每個檔案都讀完再判斷',
+          '直接跑測試，綠燈就合併',
+          '只讀 `AppointmentList.vue`，其他檔案都是工具自動產生的，不用看',
+          '先問為什麼動了 `package.json` 與產生的 `schema.d.ts`，再看測試檔的 diff，最後才讀元件的邏輯',
+        ],
+        answer: 3,
+        explain: '修閃爍不需要新套件，也不該手改產生的型別檔，這兩項不用讀內容就要先問原因；測試檔的改動是第二個要看的，可能是改期望值讓測試通過。逐行從 lock 檔讀起最耗時間又最容易漏；測試可能已經被改過，綠燈不代表正確。',
+      },
+      {
+        q: '審查分支時，`git diff main...HEAD`（三個點）和 `git diff main..HEAD`（兩個點）差在哪裡？',
+        options: [
+          '三個點比的是分支岔出去的那一點到 `HEAD`，只有這個分支的改動；兩個點直接比兩邊的最新狀態，`main` 之後合進去的改動也會混進來',
+          '兩者完全相同，只是寫法不同',
+          '三個點會包含尚未 commit 的改動，兩個點不會',
+          '兩個點只比較檔名，三個點才比較內容',
+        ],
+        answer: 0,
+        explain: '`git diff A...B` 比的是 A 與 B 的共同祖先（merge base）到 B，也就是這個分支自己的改動；`git diff A..B` 等於 `git diff A B`，直接比兩個 commit。用兩個點審查時，別人在 `main` 新合進來的改動會看起來像被這個分支刪掉。兩者都比較內容，也都不含未 commit 的改動。',
+      },
+      {
+        q: '`AppointmentPage.vue` 已經 640 行，要請 AI 把取消 Dialog 與篩選拆出去。哪一種做法最能確認拆完之後行為沒變？',
+        options: [
+          '請 AI 一次拆成五個元件，順便修掉發現的 bug',
+          '先拆完，再請 AI 補測試確認拆完的版本能動',
+          '先寫特徵測試記下現在的行為，再一次拆一塊，每一步跑測試、各自一個 commit',
+          '拆完之後在瀏覽器點一遍，看起來一樣就好',
+        ],
+        answer: 2,
+        explain: '特徵測試記錄的是拆分前的行為，拆完仍要通過，才證明行為沒變；一次拆一塊、各自 commit，壞了也知道是哪一步。拆完才補的測試描述的是拆完的版本，看不出差異；順便修 bug 會把行為改變藏在搬移裡；在瀏覽器點一遍容易漏掉請求參數與邊界狀態。',
+      },
+    ],
+  },
 ]

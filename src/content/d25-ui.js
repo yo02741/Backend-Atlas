@@ -6,7 +6,7 @@ export default {
   title: 'UI 元件詞彙',
   en: 'UI VOCABULARY',
   color: 'violet',
-  tagline: '元件與狀態的名稱：互動狀態、回饋、輸入與選擇、浮層、導覽、資料顯示與 design token。',
+  tagline: '元件與狀態的名稱：互動狀態、回饋、輸入與選擇、浮層、導覽、資料顯示、design token 與版面模式，最後寫成一頁畫面規格。',
   skills: [
     {
       id: 'ui-states',
@@ -62,7 +62,7 @@ export default {
       summary: '蓋在頁面上的元件：Dialog 擋住其他操作要使用者處理，Drawer 是從側邊滑出的 Dialog，Popover 不擋操作、點外面就關，Tooltip 只放一句說明。差別在擋不擋操作、焦點去哪、怎麼關。',
       example: { primary: '原生 dialog 的 showModal() 與 popover 屬性', alts: ['元件庫的 Dialog、Drawer、Popover', 'inert 屬性、Floating UI'] },
       keywords: ['HTML', '無障礙'],
-      lab: null,
+      lab: 'OverlayLab',
       reviewed: '2026-11',
     },
     {
@@ -99,6 +99,29 @@ export default {
       keywords: ['CSS'],
       lab: null,
       reviewed: '2026-11',
+    },
+    {
+      id: 'layout-patterns',
+      title: '版面模式與斷點表',
+      en: 'Layout patterns & breakpoints',
+      level: 2,
+      summary: '頁面層級的版面有幾種固定模式：app shell（頁首、側欄、主內容）、側欄收合、卡片網格、清單與詳細、表單版面。規格用一張斷點表寫出每個區域在 390、768、1024、1280 的樣子，驗收時逐格對照。',
+      example: { primary: 'CSS Grid 的 grid-template-areas 加 mobile-first 的 media query', alts: ['container query 處理元件自己的排法', 'Tailwind CSS v4 的 md:、lg:、xl:（48rem、64rem、80rem）'] },
+      keywords: ['CSS', 'RWD'],
+      lab: null,
+      reviewed: '2026-11',
+    },
+    {
+      id: 'screen-spec',
+      title: '一個畫面的完整規格',
+      en: 'Screen spec',
+      level: 2,
+      summary: '把一個畫面要決定的事寫成一頁：目的與入口、版面、元件清單、狀態表、文案表、斷點表、資料來源、互動與焦點、驗收條件，加上不在範圍與待決事項。每一格具體到能拿來驗收，UI 各課的詞彙在這裡串起來。',
+      example: { primary: '一頁式畫面規格（以表格為主的 Markdown，放在 repo 裡）', alts: ['設計稿加標註與規格附錄', 'Storybook 的元件文件加驗收清單'] },
+      keywords: [],
+      lab: null,
+      reviewed: '2026-11',
+      related: ['acceptance-design', 'openapi'],
     },
   ],
 }

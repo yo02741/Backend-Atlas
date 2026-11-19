@@ -312,4 +312,49 @@ const b = '/appointments?' + new URLSearchParams({ dept, page: 2 })`,
       },
     ],
   },
+  {
+    skill: 'frontend-security',
+    questions: [
+      {
+        q: '`note` 的值是 `<img src=x onerror=alert(1)>`。下面四種寫法，哪幾種會執行 `onerror`？',
+        code: `<p>{{ note }}</p>            <!-- ① -->
+<p :title="note">備註</p>     <!-- ② -->
+<div v-html="note"></div>     <!-- ③ -->
+<p v-text="note"></p>         <!-- ④ -->`,
+        lang: 'vue',
+        options: [
+          '只有 ③',
+          '① 和 ③，插值與 `v-html` 都會解析 HTML',
+          '③ 和 ④，`v-text` 等同 `innerHTML`',
+          '都不會，Vue 會跳脫所有綁定',
+        ],
+        answer: 0,
+        explain: '`{{ }}` 與 `v-text` 用 `textContent`，標籤原樣顯示成文字；`:title` 是屬性值，引號會被處理。只有 `v-html` 把字串當 HTML 解析，建出的 `<img>` 載入失敗時執行 `onerror`。Vue 不會跳脫 `v-html`，也不檢查 `:href` 這類網址屬性的 scheme。',
+      },
+      {
+        q: '醫師個人頁要把 API 給的網址顯示成連結。哪一種檢查擋得住 `javascript:` 網址？',
+        options: [
+          '先做 HTML 跳脫（把 `<`、`"` 換成實體）再綁到 `:href`',
+          '用 `new URL(raw, location.origin)` 解析，`protocol` 是 `https:` 才當成連結',
+          '檢查字串是否以 `javascript:` 開頭，是的話就不顯示',
+          '連結加上 `target="_blank" rel="noopener"`，新分頁裡就不能執行程式',
+        ],
+        answer: 1,
+        explain: '`javascript:alert(1)` 沒有任何要跳脫的字元，HTML 跳脫之後原樣不變。只比對開頭會漏掉 `  JavaScript:…` 這種前面有空白、大小寫混用的寫法；`new URL()` 會去掉空白並把 scheme 轉成小寫，再用允許清單比對。`noopener` 只切斷新分頁與原頁面的 `window.opener`，和 `javascript:` 網址無關。',
+      },
+      {
+        q: '正式環境加上 `Content-Security-Policy: script-src \'self\'` 之後，Console 出現下面的訊息。該怎麼修？',
+        code: `Executing inline event handler violates the following Content Security Policy directive 'script-src 'self''. Either the 'unsafe-inline' keyword, a hash ('sha256-...'), or a nonce ('nonce-...') is required to enable inline execution. Note that hashes do not apply to event handlers, style attributes and javascript: navigations unless the 'unsafe-hashes' keyword is present. The action has been blocked.`,
+        lang: 'http',
+        options: [
+          '在 `script-src` 加上 `\'unsafe-inline\'`，讓 inline 程式碼都能執行',
+          '改送 `Content-Security-Policy-Report-Only`，錯誤就不會再出現',
+          '在那個 `<button>` 加上 `nonce` 屬性',
+          '把 HTML 裡的 `onclick="…"` 改成 Vue 的 `@click` 或 `addEventListener`',
+        ],
+        answer: 3,
+        explain: '訊息說被擋的是 inline event handler，也就是 HTML 屬性裡的 `onclick="…"`。改成事件處理函式就符合 `script-src \'self\'`。加 `\'unsafe-inline\'` 等於讓注入的 `onerror` 也能執行；Report-Only 只是不阻擋，問題還在；`nonce` 只適用於 `<script>` 與 `<style>` 元素，對事件屬性沒有作用。',
+      },
+    ],
+  },
 ]

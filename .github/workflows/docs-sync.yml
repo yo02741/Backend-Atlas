@@ -1,0 +1,51 @@
+# README.md 與 docs/CURRICULUM.md 裡由 scripts/sync-docs.mjs 產生的段落（數量、學習路線、課程與實驗室清單、
+# 情境清單、K8s 專題路線、課綱技能樹），push 到 main 時若沒有同步，就由這裡補一個 commit。
+# 用 GITHUB_TOKEN 推送的 commit 不會再觸發其他 workflow，所以不會重複部署，也不會循環。
+# 部署（deploy.yml）在建置前也會先同步，所以網站上的內容不受這裡的 commit 時間影響。
+name: Docs sync（README 與課綱的產生段落）
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/content/**'
+      - 'src/labs/**'
+      - 'docs/CURRICULUM.md'
+      - 'README.md'
+      - 'scripts/sync-docs.mjs'
+      - '.github/workflows/docs-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 重新產生
+        run: node scripts/sync-docs.mjs
+
+      - name: 有變動就提交
+        run: |
+          if git diff --quiet -- README.md docs/CURRICULUM.md; then
+            echo "產生段落已是最新"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md docs/CURRICULUM.md
+          git commit -m "chore(docs): 同步 README 與課綱的產生段落"
+          git pull --rebase origin main
+          git push origin HEAD:main

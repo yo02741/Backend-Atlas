@@ -22,6 +22,8 @@
     "validate:scenarios": "node scripts/validate-scenarios.mjs",
     "validate:content": "node scripts/validate-content.mjs",
     "check:links": "node scripts/check-links.mjs",
+    "docs:sync": "node scripts/sync-docs.mjs",
+    "docs:check": "node scripts/sync-docs.mjs --check",
     "validate": "npm run validate:content && npm run validate:quizzes && npm run validate:scenarios",
     "test:unit": "node scripts/test-progress.mjs && node scripts/test-review.mjs",
     "e2e:deep": "node e2e/verify-deep.mjs"

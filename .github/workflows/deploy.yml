@@ -31,6 +31,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: 同步 README 與課綱的產生段落（網站上的課綱技能樹用同步後的版本）
+        run: npm run docs:sync
+
       - name: 校驗內容與題庫、進度合併單元測試
         run: npm run validate && npm run test:unit
 

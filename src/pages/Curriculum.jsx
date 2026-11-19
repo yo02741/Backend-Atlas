@@ -3,7 +3,7 @@ import Markdown, { toc } from '../components/Markdown.jsx'
 import curriculumMd from '../../docs/CURRICULUM.md?raw'
 import { SCENARIOS, groupOf } from '../content/scenarios/index.js'
 
-/* 課綱頁：渲染 docs/CURRICULUM.md（獨立盤點的技能樹、16 週主線、6 週延伸、驗收設計）。
+/* 課綱頁：渲染 docs/CURRICULUM.md（獨立盤點的技能樹、16 週主線、6 週延伸、Docker 到 Kubernetes 專題、驗收設計）。
    每週標題下掛本站對應該週的設計情境（scenario.week）；#/curriculum?week=10 會捲到第 10 週。 */
 const WEEK_RE = /^第 (\d+) 週/
 const weekOf = (b) => (b.type === 'h' ? WEEK_RE.exec(b.text)?.[1] : null)
@@ -39,7 +39,7 @@ export default function Curriculum({ week = '' }) {
   return (
     <div className="fade-swap">
       <header className="masthead">
-        <p className="kicker">CURRICULUM · 技能樹、16 週主線與 6 週延伸</p>
+        <p className="kicker">CURRICULUM · 技能樹、主線、延伸與 K8s 專題</p>
         <h1 className="display">課綱</h1>
       </header>
       <div className="curri">

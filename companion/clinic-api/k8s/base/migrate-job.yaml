@@ -1,10 +1,13 @@
-# 用同一個映像跑一次 migration。Job 的 Pod template 建立後不能改，所以名稱帶 commit SHA；
-# __SHA__ 由 CI 代換（見 .gitlab-ci.yml 的 deploy_production）。
+# 用同一個映像跑一次 migration。Job 的 Pod template 建立後不能改，所以每一版一個 Job：
+# overlay 套用時，名稱會接上映像的 tag（overlays/*/kustomization.yaml 的 replacements），
+# 例如 clinic-migrate-v1；映像和 Deployment 一樣由 overlay 的 images 設定。
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: clinic-migrate-__SHA__
+  name: clinic-migrate
   namespace: clinic
+  labels:
+    app.kubernetes.io/component: migration   # 正式環境的 deploy job 先只套用有這個 label 的物件
 spec:
   backoffLimit: 0                  # 失敗不自動重試，交給人看
   activeDeadlineSeconds: 300
@@ -17,7 +20,7 @@ spec:
         runAsUser: 10001
       containers:
         - name: migrate
-          image: registry.gitlab.example/clinic/api:__SHA__
+          image: registry.gitlab.example/clinic/api:3f9c2a1b
           command: ["alembic", "upgrade", "head"]
           env:
             - name: DATABASE_URL

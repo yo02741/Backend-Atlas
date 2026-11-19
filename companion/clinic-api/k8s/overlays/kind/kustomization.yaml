@@ -1,0 +1,47 @@
+# 本機 kind 叢集：映像是本機建置、用 kind load 載入的 clinic-api:<tag>，
+# PostgreSQL 與 Redis 跑在叢集裡（只供本機），Secret 用 secretGenerator 帶本機假值。
+# 用法見 docs/local-k8s.md；一次做完：scripts/kind-up.sh
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: clinic
+resources:
+  - ../../base
+  - namespace.yaml
+  - postgres.yaml
+  - redis.yaml
+images:
+  - name: registry.gitlab.example/clinic/api
+    newName: clinic-api
+    newTag: v1                     # scripts/kind-up.sh 讀這一行決定建置、載入哪個 tag；tag 會接在 Job 名稱後面，只用小寫英數與 -
+patches:
+  - path: patch-api.yaml
+  - path: patch-migrate.yaml
+# 本機假值，僅供 kind 叢集（和 compose.yaml 同一組）。正式環境的 Secret 由叢集管理者建立，不進 Git。
+# 產生的名稱會帶內容的雜湊（clinic-api-secret-xxxxxxxxxx），Deployment 與 Job 的參照跟著改；值一變，Pod 就換新。
+secretGenerator:
+  - name: clinic-api-secret
+    literals:
+      - DATABASE_URL=postgresql://clinic:local-dev-only@postgres:5432/clinic
+      - JWT_SECRET=local-dev-only-jwt-secret-not-for-production
+  - name: postgres-secret
+    literals:
+      - POSTGRES_PASSWORD=local-dev-only   # 要和上面 DATABASE_URL 裡的密碼相同
+# migration Job 的名稱接上映像的 tag（clinic-migrate-v1）：從 Deployment 的 image 取冒號後面那一段。
+# 和 overlays/production 的同一段相同；放在 overlay 而不是 base，是因為要在 images 換過 tag 之後才執行。
+replacements:
+  - source:
+      kind: Deployment
+      name: clinic-api
+      fieldPath: spec.template.spec.containers.[name=api].image
+      options:
+        delimiter: ":"
+        index: 1
+    targets:
+      - select:
+          kind: Job
+          name: clinic-migrate
+        fieldPaths:
+          - metadata.name
+        options:
+          delimiter: "-"
+          index: 2                 # clinic-migrate 切開只有兩段，index 2 等於接在最後面

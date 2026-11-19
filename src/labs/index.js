@@ -46,6 +46,7 @@ export const LAB_META = {
   DeployStrategyLab: { title: '三種部署策略與 migration', blurb: 'rolling、blue-green、canary 逐步換版；新版有 bug 或含 schema 變更時，各自影響多少請求、回滾多快。', skill: 'cd-strategies' },
   TraceLab:          { title: '用 trace id 串起 log、metrics、trace', blurb: '從指標的尖峰找到慢的 trace 與慢的 span，再用 trace id 找到那一段的日誌。', skill: 'observability' },
   WikiGraphLab:      { title: 'wikilink 長成知識圖譜', blurb: '幾頁 markdown 即時畫成連結圖，列出反向連結、孤兒頁、斷鏈與兩頁之間的路徑。', skill: 'knowledge-graph' },
+  NetworkPolicyLab:  { title: 'NetworkPolicy 放行或擋下', blurb: 'clinic 的 web、api、db 加上 DNS、可疑 Pod 與叢集外的 Informix：開關 default deny 與放行規則，看一條連線在哪一端被放行或擋下、由哪一條規則決定。', skill: 'k8s-networking' },
 }
 
 export const LAB_NAMES = Object.keys(LAB_META)

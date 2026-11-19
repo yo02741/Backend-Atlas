@@ -1,0 +1,16 @@
+# kind 專用的差異：映像是 kind load 進節點的，不在任何 registry；requests 調小，筆電上也排得下。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinic-api
+  namespace: clinic             # 補丁靠 kind、name、namespace 找到 base 的物件
+spec:
+  template:
+    spec:
+      containers:
+        - name: api                      # 依 name 合併到 base 的同一個容器
+          imagePullPolicy: IfNotPresent  # 節點上有就不拉；Always 會到 Docker Hub 找 clinic-api 而失敗
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi              # limits 沿用 base 的 512Mi

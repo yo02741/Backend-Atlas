@@ -184,7 +184,7 @@ L4 負載平衡器不解析 HTTP，沒辦法加標頭。這時可以用 **PROXY 
 
 - **nginx**：`upstream` 區塊就是一個 L7 負載平衡器（`stream` 模組則是 L4）。`server app1:8000 weight=3;`、`least_conn;`、`hash … consistent;`、`max_fails` 對應前面的演算法與被動健康檢查。設定方式見 [nginx 反向代理](#/skill/nginx)。
 - **Kubernetes Service**：給一組 Pod 一個穩定的虛擬 IP 與 DNS 名稱。kube-proxy（或其他實作）把連到這個 IP 的連線分給**通過 readiness probe 的 Pod**，這是 L4，分配單位是連線。
-- **Kubernetes Ingress / Gateway API**：L7 規則（依網域、路徑分派到不同 Service），實際由 Ingress 控制器執行，控制器本身常常就是 nginx、HAProxy、Envoy 之類的代理。社群維護的 ingress-nginx 控制器已宣布退場，新專案先查清楚它目前的維護狀態，並評估 Gateway API 的實作。
+- **Kubernetes Ingress / Gateway API**：L7 規則（依網域、路徑分派到不同 Service），實際由 Ingress 控制器執行，控制器本身常常就是 nginx、HAProxy、Envoy 之類的代理。社群維護的 ingress-nginx 控制器已在 2026 年 3 月停止維護，新專案改用其他仍在維護的控制器或 Gateway API 的實作。
 - **雲端負載平衡器**：通常在最前面，後面接 Ingress 控制器或直接接後端。
 
 實際的請求常常經過好幾層：雲端負載平衡器 → Ingress 控制器 → Service → Pod。每一層都可能終結 TLS、加上 `X-Forwarded-For`，信任設定要每一層都對：每一層只信任它前一層的位址。

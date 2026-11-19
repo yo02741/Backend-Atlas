@@ -8,19 +8,19 @@
 | 內容 | 數量 |
 |---|---|
 | 領域 | 11（語言與工程實踐、HTTP 與 API、資料儲存、驗證與授權、資安、容器與部署、CI/CD、演算法與系統設計、DevOps 與基礎建設、AI 時代的開發與 Agent 安全、知識系統） |
-| 技能（課） | 143，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
-| 互動實驗室 | 41（SQL JOIN、B-tree 索引、交易交錯、JWT、OAuth、Device Code、Docker 層、nginx、網路排查、憑證鏈、K8s 滾動更新、錯誤預算、Tool Poisoning、RAG 切段、wiki 連結圖、harness 評測、agent 迴圈、token 成本、突變測試、Semantic Layer…） |
-| 程式題 | 190（Python 120 / SQL 38 / config 20 / JS 12），含實作路線的 20 道驗收題；解答全部經真實執行環境驗證 |
-| 選擇題 | 429（每課 3 題，含程式碼判讀與情境題） |
-| 設計情境 | 30（API 設計 8、資料與身分 4、高流量 7、維運與基礎建設 6、AI 與 Agent 安全 5） |
+| 技能（課） | 150，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
+| 互動實驗室 | 42（SQL JOIN、B-tree 索引、交易交錯、JWT、OAuth、Device Code、Docker 層、nginx、網路排查、憑證鏈、K8s 滾動更新、錯誤預算、Tool Poisoning、RAG 切段、wiki 連結圖、harness 評測、agent 迴圈、token 成本、突變測試、Semantic Layer…） |
+| 程式題 | 204（Python 127 / SQL 38 / config 27 / JS 12），含實作路線的 20 道驗收題；解答全部經真實執行環境驗證 |
+| 選擇題 | 450（每課 3 題，含程式碼判讀與情境題） |
+| 設計情境 | 31（API 設計 8、資料與身分 4、高流量 7、維運與基礎建設 7、AI 與 Agent 安全 5） |
 | 實作路線 | 從零做完一個門診掛號後端：10 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |
-| 課綱 | `docs/CURRICULUM.md`：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、驗收設計 |
+| 課綱 | `docs/CURRICULUM.md`：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、10 週的 Docker 到 Kubernetes 專題、驗收設計 |
 
 ## 內容總覽
 
 以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照。
 
-### 建議學習路線（30 站）
+### 建議學習路線（32 站）
 
 首頁路線圖的站點，每站約一週。★ 表示附互動實驗室。
 
@@ -37,29 +37,31 @@
 | 9 | RBAC 與 ABAC 授權模型★ | 驗證與授權 | 用角色與屬性決定誰能做什麼。 |
 | 10 | 注入攻擊：SQL 與它的親戚★ | 資安 | SQL 注入的原理與參數化查詢。 |
 | 11 | Docker：image、container、layer★ | 容器與部署 | image、container、layer 與 build 快取。 |
-| 12 | CI 管線：lint、test、build★ | CI/CD 與交付 | GitHub Actions 與 GitLab CI 對照著學。 |
-| 13 | 效能量測與壓測：p95、飽和點、找瓶頸★ | 演算法與系統設計 | 量 p95、找飽和點、定位瓶頸。 |
-| 14 | 網路通不通：從 DNS 到防火牆★ | DevOps 與基礎建設 | 連不上時，從 DNS 一層一層往下查。 |
-| 15 | HTTPS 憑證：要買哪種、怎麼續★ | DevOps 與基礎建設 | 憑證鏈、憑證種類與自動續約。 |
-| 16 | 導入 Kubernetes 前要準備什麼★ | DevOps 與基礎建設 | 導入 Kubernetes 之前要先備齊的東西。 |
-| 17 | Kubernetes 實作：把服務寫成 manifest | DevOps 與基礎建設 | 把服務寫成 manifest：Deployment、Service、Ingress。 |
-| 18 | FinOps：雲端與 AI 工具的計費結構★ | DevOps 與基礎建設 | 雲端與 AI 工具的計費結構。 |
-| 19 | 舊系統整合與逐步替換 | 演算法與系統設計 | 逐步替換舊系統，每一步都能回退。 |
-| 20 | 可重跑的批次管線：增量、冪等、回補 | DevOps 與基礎建設 | 增量、冪等、回補：重跑不會重複寫入。 |
-| 21 | 測試品質：覆蓋率、假綠燈與突變測試★ | 語言與工程實踐 | 用突變測試檢查測試有沒有驗到東西。 |
-| 22 | Harness Engineering：評測集、重試與多數決★ | AI 時代的開發與 Agent 安全 | 同一個 prompt 跑 N 次：評測集、重試與檢查器。 |
-| 23 | 後端怎麼呼叫模型：串流、結構化輸出、重試與成本 | AI 時代的開發與 Agent 安全 | 逾時、重試、串流與結構化輸出的驗證。 |
-| 24 | Agent 的執行迴圈：工具呼叫、狀態機、預算與中斷★ | AI 時代的開發與 Agent 安全 | 工具呼叫、狀態機、步數與 token 預算。 |
-| 25 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
-| 26 | AI Gateway：模型路由、金鑰集中、用量與成本 | AI 時代的開發與 Agent 安全 | 模型路由、金鑰集中、配額與用量。 |
-| 27 | 地端模型：自架推論與依敏感度分流 | AI 時代的開發與 Agent 安全 | 資料不能送出去時，自架模型要自己負責的事。 |
-| 28 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述被下毒與 rug pull 的防法。 |
-| 29 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
-| 30 | Semantic Layer：讓 agent 查資料不用猜欄位★ | 知識系統：從 RAG 到 LLM Wiki | agent 用定義好的指標查資料，不猜欄位。 |
+| 12 | 容器的日常維運：日誌、資源上限、訊號與執行環境 | 容器與部署 | 日誌輪替、記憶體上限、SIGTERM 與執行環境。 |
+| 13 | CI 管線：lint、test、build★ | CI/CD 與交付 | GitHub Actions 與 GitLab CI 對照著學。 |
+| 14 | 效能量測與壓測：p95、飽和點、找瓶頸★ | 演算法與系統設計 | 量 p95、找飽和點、定位瓶頸。 |
+| 15 | 網路通不通：從 DNS 到防火牆★ | DevOps 與基礎建設 | 連不上時，從 DNS 一層一層往下查。 |
+| 16 | HTTPS 憑證：要買哪種、怎麼續★ | DevOps 與基礎建設 | 憑證鏈、憑證種類與自動續約。 |
+| 17 | 導入 Kubernetes 前要準備什麼★ | DevOps 與基礎建設 | 導入 Kubernetes 之前要先備齊的東西。 |
+| 18 | Kubernetes 實作：把服務寫成 manifest | DevOps 與基礎建設 | 把服務寫成 manifest：Deployment、Service、Ingress。 |
+| 19 | Kubernetes 網路：Service、NetworkPolicy 與連到叢集外★ | DevOps 與基礎建設 | Service、NetworkPolicy 與連到叢集外的舊系統。 |
+| 20 | FinOps：雲端與 AI 工具的計費結構★ | DevOps 與基礎建設 | 雲端與 AI 工具的計費結構。 |
+| 21 | 舊系統整合與逐步替換 | 演算法與系統設計 | 逐步替換舊系統，每一步都能回退。 |
+| 22 | 可重跑的批次管線：增量、冪等、回補 | DevOps 與基礎建設 | 增量、冪等、回補：重跑不會重複寫入。 |
+| 23 | 測試品質：覆蓋率、假綠燈與突變測試★ | 語言與工程實踐 | 用突變測試檢查測試有沒有驗到東西。 |
+| 24 | Harness Engineering：評測集、重試與多數決★ | AI 時代的開發與 Agent 安全 | 同一個 prompt 跑 N 次：評測集、重試與檢查器。 |
+| 25 | 後端怎麼呼叫模型：串流、結構化輸出、重試與成本 | AI 時代的開發與 Agent 安全 | 逾時、重試、串流與結構化輸出的驗證。 |
+| 26 | Agent 的執行迴圈：工具呼叫、狀態機、預算與中斷★ | AI 時代的開發與 Agent 安全 | 工具呼叫、狀態機、步數與 token 預算。 |
+| 27 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
+| 28 | AI Gateway：模型路由、金鑰集中、用量與成本 | AI 時代的開發與 Agent 安全 | 模型路由、金鑰集中、配額與用量。 |
+| 29 | 地端模型：自架推論與依敏感度分流 | AI 時代的開發與 Agent 安全 | 資料不能送出去時，自架模型要自己負責的事。 |
+| 30 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述被下毒與 rug pull 的防法。 |
+| 31 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
+| 32 | Semantic Layer：讓 agent 查資料不用猜欄位★ | 知識系統：從 RAG 到 LLM Wiki | agent 用定義好的指標查資料，不猜欄位。 |
 
 站點定義在 `src/content/roadmap.js` 的 `PATH`（`label` 是地圖上的短站名）。
 
-### 技能課程（11 領域、143 課）
+### 技能課程（11 領域、150 課）
 
 每課有重點卡（摘要、範例技術、重點、自我檢核清單、官方文件連結）與深入內容。★ 表示附互動實驗室。
 
@@ -70,14 +72,14 @@
 | 3. 資料儲存 | SQL 基礎、JOIN 七兄弟★、資料建模與正規化、Schema 設計實戰、索引與查詢計畫★、全文檢索、交易／ACID 與隔離等級★、鎖與死結、子查詢／CTE／視窗函數、ORM 與 migration、資料庫維運、MongoDB 文件模型★、MongoDB 查詢／聚合／索引、Redis 與快取策略★、關聯式 vs 非關聯式怎麼選、從舊資料庫同步資料（批次、CDC、雙寫與對帳） |
 | 4. 驗證與授權 | Session vs Token、JWT 解剖★、OAuth 2.0 與 OIDC★、RBAC 與 ABAC★、驗證授權落地（middleware、dependency）、帳號生命週期（註冊、驗證、重設密碼、鎖定）、API key／服務間驗證／MFA／SSO、企業身分（LDAP、AD、SAML、SCIM） |
 | 5. 資安 | OWASP Top 10、SQL 注入與相關攻擊★、密碼儲存（編碼、雜湊、加密）★、密碼學工具箱★、XSS／CSRF 與安全標頭★、輸入驗證與檔案上傳、秘密管理、日誌與稽核紀錄裡的個資、依賴與供應鏈安全★、資安維運（弱點管理、修補、邊界防護） |
-| 6. 容器與部署 | Linux 與 shell、Docker image／container／layer★、Python 專案的 Dockerfile、docker-compose 開發環境★、nginx 反向代理★、負載平衡、12-factor、應用伺服器與程序管理、物件儲存、雲端與主機基礎 |
+| 6. 容器與部署 | Linux 與 shell、Docker image／container／layer★、容器的日常維運（日誌、資源上限、訊號、執行環境與授權）、私有映像倉庫（Harbor、映像同步、離線環境）、Python 專案的 Dockerfile、docker-compose 開發環境★、nginx 反向代理★、前端與 nginx 上 K8s（靜態檔、/api 轉發、執行期設定）、負載平衡、12-factor、應用伺服器與程序管理、物件儲存、雲端與主機基礎 |
 | 7. CI/CD 與交付 | Git 工作流、CI 管線（lint、test、build）★、環境／secrets／artifact、部署策略與資料庫遷移★、可觀測性（log、metrics、trace）★、健康檢查、備份與事故處理、LLM 應用的可觀測性 |
 | 8. 演算法與系統設計 | Big-O★、後端常用資料結構、限流演算法★、LRU 與快取淘汰、並發問題（race condition、死結）、訊息佇列與背景工作、排程工作（cron、重複執行與遺漏）、擴展（無狀態、負載平衡、讀寫分離）、分散式基礎（CAP、一致性與時間）、系統設計思考框架、事件驅動系統的一致性（outbox、冪等消費）、效能量測與壓測★、舊系統整合與逐步替換 |
-| 9. DevOps 與基礎建設 | DevOps 會議詞彙對照、網路通不通（DNS 到防火牆）★、HTTPS 憑證（要買哪種、怎麼續）★、硬體資源與容量規劃★、GitLab CI/CD 實戰、導入 Kubernetes 前要準備什麼★、地端／雲端還是混合雲、數據中台之前：資料治理、可重跑的批次管線（增量、冪等、回補）、維度模型（事實表、維度表、緩慢變動維度）、SLI／SLO 與錯誤預算★、事故處理與 postmortem、受監管環境的變更管理、FinOps（雲端與 AI 工具的計費結構）★、AIOps（讓 agent 調查告警但不亂動）、Kubernetes 實作（manifest、設定與探針與資源、排錯★、Helm／Kustomize／GitOps） |
+| 9. DevOps 與基礎建設 | DevOps 會議詞彙對照、網路通不通（DNS 到防火牆）★、HTTPS 憑證（要買哪種、怎麼續）★、硬體資源與容量規劃★、GitLab CI/CD 實戰、導入 Kubernetes 前要準備什麼★、地端／雲端還是混合雲、數據中台之前：資料治理、可重跑的批次管線（增量、冪等、回補）、維度模型（事實表、維度表、緩慢變動維度）、SLI／SLO 與錯誤預算★、事故處理與 postmortem、受監管環境的變更管理、FinOps（雲端與 AI 工具的計費結構）★、AIOps（讓 agent 調查告警但不亂動）、Kubernetes 實作（manifest、設定與探針與資源、網路與 NetworkPolicy★、儲存與有狀態服務、排錯★、Helm／Kustomize／GitOps、權限與多租戶、叢集維運：發行版、升級、節點維護與備份） |
 | 10. AI 時代的開發與 Agent 安全 | ADR、垂直切片拆票、規範變成測試（AI 協作下的 TDD）、AI 改程式的品質閘門、Skill 與 MCP、專案規範檔與 context、多 agent 協作與工作區隔離、後端怎麼呼叫模型（串流、結構化輸出、重試與成本）、Device Code／PKCE／Client Credentials★、MCP 的授權、MCP Gateway、集中式身分閘道、CLI 與 Agent 的 token 存哪裡、金鑰的範圍與壽命、OWASP MCP Top 10、Tool Poisoning 與 rug pull★、credential 隔離與執行邊界、行為層的供應鏈管理、驗收設計、架構測試、Harness Engineering★、把 agent 當軟體交付、Skill 的發布與版本、Agent 的執行迴圈★、Agent 的記憶、Agent 協定地圖（MCP、A2A、ACP、WebMCP、x402）、AI Gateway、地端模型（資料不能出去時怎麼辦）、AI 應用的威脅建模（OWASP LLM Top 10、MITRE ATLAS） |
 | 11. 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作與限制★、LLM Wiki（模型維護的 markdown 知識庫）、知識圖譜（wikilink、反向連結、GraphRAG）★、RAG／LLM Wiki／知識圖譜怎麼選、原始資料下毒與間接提示注入、Semantic Layer★ |
 
-### 互動實驗室（41 個）
+### 互動實驗室（42 個）
 
 依領域列出：
 
@@ -85,17 +87,17 @@
 - **資料與 API**：JOIN 文氏圖、B-tree 索引、交易交錯與隔離等級、表格與文件模型、cache-aside、HTTP 請求、REST、token bucket 限流、Big-O
 - **驗證與資安**：JWT 簽章、OAuth 與 Device Code 流程、RBAC 與 ABAC、SQL 注入、編碼與雜湊、XSS 與 CSRF、雜湊／HMAC／加密／簽章、相依套件的防線
 - **部署與交付**：Docker 的層、compose 拓樸、nginx 分派、CI/CD 管線對照、三種部署策略與 migration 相容性、用 trace id 串起 log 與 metrics
-- **DevOps**：網路排查、憑證鏈、容量估算、K8s 滾動更新與排錯、錯誤預算、逐步加壓找飽和點
+- **DevOps**：網路排查、憑證鏈、容量估算、K8s 滾動更新與排錯、NetworkPolicy 放行與擋下、錯誤預算、逐步加壓找飽和點
 - **AI 與知識系統**：harness 評測、agent 執行迴圈、token 成本、突變測試、Tool Poisoning、RAG 切段、wiki 連結圖、Semantic Layer
 
-### 設計情境（30 個）
+### 設計情境（31 個）
 
 每個情境包含背景與限制、模擬器、取捨表、決策題與落地程式碼。
 
 - **API 設計（8）**：列表分頁、API 快取、付款的冪等與重試、限流放哪與用什麼當 key、三分鐘長任務匯出、使用者上傳檔案、商品搜尋與篩選、API 改版不弄壞客戶端
 - **資料與身分（4）**：多租戶資料隔離、刪除使用者要留下什麼（軟刪除與稽核）、讀寫分離後「剛存的怎麼不見了」、SPA 加手機 App 的登入方案
 - **高流量（7）**：從 100 到 10 萬 QPS、秒殺 1,000 人搶 100 件、削峰與背壓、資料庫撐不住（連線池、讀寫分離、分片）、快取雪崩與擊穿、一則貼文通知 10 萬個追蹤者、事件和資料庫不同步（雙寫、outbox、CDC）
-- **維運與基礎建設（6）**：地端、雲端還是混合、數據中台之前先治理什麼、含 schema 變更的週末上線、事故處理（各自救火、事故指揮、自動化優先）、讓 agent 調查夜間告警、舊系統怎麼換（一次切換、逐步替換、並行比對）
+- **維運與基礎建設（7）**：地端、雲端還是混合、數據中台之前先治理什麼、含 schema 變更的週末上線、事故處理（各自救火、事故指揮、自動化優先）、讓 agent 調查夜間告警、舊系統怎麼換（一次切換、逐步替換、並行比對）、第一個上 K8s 的服務選哪個
 - **AI 與 Agent 安全（5）**：Agent 怎麼接上內部工具（MCP Gateway）、CLI／Agent／服務的身分怎麼統一、從一個容器到正式資料庫（依 Zeabur 2026 年 8 月事件報告改寫的縱深防禦）、給 LLM 應用放哪幾道防線（提示注入）、模型放雲端、地端還是分流
 
 ### 實作路線：從零做完一個門診掛號後端
@@ -104,15 +106,15 @@
 
 ### 參考專案 `companion/clinic-api/`
 
-實作路線的題目做成一個可以 clone 下來跑的服務：FastAPI、SQLAlchemy + Alembic、PostgreSQL 16、Redis，對應階段 1–8 與第 10 階段（第 9 階段的 MCP server 不在裡面）。`docker compose up -d --build --wait` 之後跑 migration 與 seed 就能用 curl 走完掛號流程；74 個測試含並發搶號，需要真的 PostgreSQL 與 Redis。另附 Dockerfile、`.gitlab-ci.yml` 與 `k8s/` 的 manifest。步驟、階段與檔案的對照、和網站內容的差異都寫在 [`companion/clinic-api/README.md`](companion/clinic-api/README.md)。這個目錄和網站的建置無關，`Companion` workflow 只在它變動時跑。
+實作路線的題目做成一個可以 clone 下來跑的服務：FastAPI、SQLAlchemy + Alembic、PostgreSQL 16、Redis，對應階段 1–8 與第 10 階段（第 9 階段的 MCP server 不在裡面）。`docker compose up -d --build --wait` 之後跑 migration 與 seed 就能用 curl 走完掛號流程；74 個測試含並發搶號，需要真的 PostgreSQL 與 Redis。另附 Dockerfile、`.gitlab-ci.yml` 與 `k8s/` 的 manifest（Kustomize 的 base 加 `kind`、`production` 兩個 overlay）。[本機 Kubernetes 實作指南](companion/clinic-api/docs/local-k8s.md) 用 kind 在自己的電腦上部署這個服務、做滾動更新，並有六個故意弄壞再排錯的練習；CI 每次都在 kind 叢集上實際部署一次。步驟、階段與檔案的對照、和網站內容的差異都寫在 [`companion/clinic-api/README.md`](companion/clinic-api/README.md)。這個目錄和網站的建置無關，`Companion` workflow 只在它變動時跑。
 
 ### 練習題
 
-- **程式題 190 道**（Python 120、SQL 38、config 20、JavaScript 12）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證。
-- **選擇題 429 道**：每課 3 題，含程式碼判讀與情境題。
+- **程式題 204 道**（Python 127、SQL 38、config 27、JavaScript 12）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證。
+- **選擇題 450 道**：每課 3 題，含程式碼判讀與情境題。
 - **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。
 
-### 課綱（16 週主線 + 6 週延伸）
+### 課綱（16 週主線、6 週延伸、10 週 K8s 專題）
 
 | 週 | 主題 |
 |---|---|
@@ -125,6 +127,8 @@
 | 20–22（延伸） | AI 時代的團隊開發、專案規範檔與模型呼叫、Agent 的身分授權與資安、地端模型、從 RAG 到 LLM Wiki |
 
 三個里程碑都以門診掛號服務為題，和實作路線同一個專案：M1 對應階段 1–3、M2 對應階段 4–6、M3 對應階段 7–8，階段 9、10 在延伸課綱；第 3、8 週的 SQL 練習另外用站上的電商範例庫。技能樹涵蓋本站 11 個領域。
+
+第四節「Docker 到 Kubernetes 專題」是給準備導入 K8s 的團隊用的 10 週順序（K1–K10）：前 3 週補容器、前端與 nginx、映像倉庫，後 7 週在本機 kind 叢集上從部署、排錯、網路、儲存、權限做到維運，每週有動手作業與驗收標準，可以直接排成讀書會。
 
 每週標題下列出該週對應的設計情境；情境頁的「第 N 週」可直接跳回課綱。全文在 `docs/CURRICULUM.md`。
 
@@ -151,7 +155,7 @@
 ```
 src/
   content/         內容（純資料，改這裡不用碰元件）
-    roadmap.js       領域索引、學習路線 PATH（30 站）、工作關鍵字 WORK_KEYWORDS、查詢 helper
+    roadmap.js       領域索引、學習路線 PATH（32 站）、工作關鍵字 WORK_KEYWORDS、查詢 helper
     d1-language.js … d11-knowledge.js   每個領域一檔的「索引」：skills[] 各有 id / title / en / level / summary / example / keywords / lab（跟著主 chunk）
     body/d1-language.js … d11-knowledge.js   每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs（技能頁才懶載入，每領域一個 chunk）
     deep/<skill-id>.md   每課的深入內容（markdown，技能頁逐課懶載入；格式見 docs/CONTRIBUTING-lessons.md）
@@ -207,7 +211,7 @@ npm run e2e:runtime              # Playground 的 Python / SQL / JS 能執行
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
 npm run e2e:deep                 # 深入內容的每個 run 區塊都能執行（ONLY=transactions 只驗指定的課）
 npm run e2e:ui                   # 練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停
-npm run e2e:labs                 # 71 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
+npm run e2e:labs                 # 73 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
 npm run e2e:mobile               # 390px 逐頁（每一課、情境、實驗室、題目、實作路線）：頁面不能橫向捲動、內容不能被裁切、不留需要左右滑的區塊
 npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Emulator 與 preview；需要 Java 11+）

@@ -1,0 +1,35 @@
+# 正式環境：映像在 GitLab 的 registry，PostgreSQL 與 Redis 是叢集外既有的服務，
+# clinic-api-secret 由叢集管理者建立（範本見 secret.example.yaml），namespace clinic 也由叢集管理者建立。
+#
+# 部署（.gitlab-ci.yml 的 deploy_production）：
+#   kustomize edit set image registry.gitlab.example/clinic/api=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+#   kubectl kustomize . > manifests.yaml   → 先套用 migration Job、等它完成 → 再套用全部
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: clinic
+resources:
+  - ../../base
+  - ingress.yaml
+images:
+  - name: registry.gitlab.example/clinic/api
+    newTag: 3f9c2a1b               # 示意值：CI 用 kustomize edit set image 換成該次的 commit SHA（不 commit 回來）；
+                                   # 所以不要從 Git 直接 kubectl apply -k 這個目錄，映像會被換成這個示意值
+# migration Job 的名稱接上映像的 tag（clinic-migrate-<SHA>）：從 Deployment 的 image 取第一個冒號後面那一段。
+# 映像位址的主機帶 port（例如 gitlab.example:5050/clinic/api）時會多一個冒號，source 的 index 要改成 2。
+replacements:
+  - source:
+      kind: Deployment
+      name: clinic-api
+      fieldPath: spec.template.spec.containers.[name=api].image
+      options:
+        delimiter: ":"
+        index: 1
+    targets:
+      - select:
+          kind: Job
+          name: clinic-migrate
+        fieldPaths:
+          - metadata.name
+        options:
+          delimiter: "-"
+          index: 2                 # clinic-migrate 切開只有兩段，index 2 等於接在最後面

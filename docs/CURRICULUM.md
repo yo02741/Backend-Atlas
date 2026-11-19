@@ -1,4 +1,4 @@
-# 後端工程師技能樹與課綱：16 週主線 + 6 週延伸
+# 後端工程師技能樹與課綱：16 週主線、6 週延伸、Docker 到 Kubernetes 專題
 
 > 對象：已有程式開發經驗（任何語言，或前端背景）、想系統地補後端基礎、目標是能獨立負責一個 API 服務從設計到上線的工程師。
 > 技術選型：Python 3.12+、uv、FastAPI、SQLAlchemy 2.0 + Alembic、PostgreSQL 16+、MongoDB、Redis、Docker Compose、nginx、GitHub Actions 與 GitLab CI。概念可搬到其他語言與框架。
@@ -253,7 +253,7 @@
 
 ### 本站領域對照
 
-本站把內容分成 11 個領域、143 堂課。主線領域 A–I 的技能與站上的課不是一對一（一堂課常涵蓋數個技能），下表是主要對應：
+本站把內容分成 11 個領域、150 堂課。主線領域 A–I 的技能與站上的課不是一對一（一堂課常涵蓋數個技能），下表是主要對應：
 
 | 本站領域 | 課數 | 技能樹 |
 |---|---|---|
@@ -262,10 +262,10 @@
 | 3 資料儲存 | 16 | 領域 C |
 | 4 驗證與授權 | 8 | 領域 D |
 | 5 資安 | 10 | 領域 E |
-| 6 容器與部署 | 10 | 領域 F |
+| 6 容器與部署 | 13 | 領域 F |
 | 7 CI/CD 與交付 | 7 | 領域 G |
 | 8 演算法與系統設計 | 13 | 領域 H、I |
-| 9 DevOps 與基礎建設 | 19 | 領域 J |
+| 9 DevOps 與基礎建設 | 23 | 領域 J |
 | 10 AI 時代的開發與 Agent 安全 | 29 | 領域 K |
 | 11 知識系統：從 RAG 到 LLM Wiki | 6 | 領域 L |
 
@@ -282,16 +282,20 @@
 - **J7 導入 Kubernetes 前要準備什麼** — 進階 · 第 18 週 · `k8s-readiness`
 - **J8 Kubernetes 實作：把服務寫成 manifest** — 進階 · 第 18 週 · `k8s-manifests`
 - **J9 Kubernetes 實作：設定、探針與資源** — 進階 · 第 18 週 · `k8s-config-probes`
-- **J10 Kubernetes 排錯：Pending、CrashLoopBackOff、連不到** — 進階 · 第 18 週 · `k8s-troubleshooting`
-- **J11 Helm、Kustomize 與 GitOps** — 深入 · 第 18 週 · `k8s-helm-gitops`
-- **J12 地端、雲端還是混合雲** — 進階 · 第 18 週 · `hosting-models`
-- **J13 數據中台之前：資料治理** — 進階 · 第 19 週 · `data-governance`
-- **J14 可重跑的批次管線：增量、冪等、回補** — 進階 · 第 19 週 · `data-pipelines`
-- **J15 維度模型：事實表、維度表與緩慢變動維度** — 進階 · 第 19 週 · `dimensional-modeling`
-- **J16 SLI、SLO 與錯誤預算** — 進階 · 第 19 週 · `slo-error-budget`
-- **J17 事故處理、on-call 與 postmortem** — 進階 · 第 19 週 · `incident-response`
-- **J18 AIOps：讓 agent 調查告警但不亂動** — 進階 · 第 19 週 · `aiops`
-- **J19 受監管環境的變更管理** — 進階 · 第 18 週 · `change-management`
+- **J10 Kubernetes 網路：Service、NetworkPolicy 與連到叢集外** — 深入 · 第 18 週 · `k8s-networking`
+- **J11 Kubernetes 儲存：PV、PVC 與有狀態服務** — 深入 · 第 18 週 · `k8s-storage`
+- **J12 Kubernetes 排錯：Pending、CrashLoopBackOff、連不到** — 進階 · 第 18 週 · `k8s-troubleshooting`
+- **J13 Helm、Kustomize 與 GitOps** — 深入 · 第 18 週 · `k8s-helm-gitops`
+- **J14 Kubernetes 權限與多租戶：RBAC、namespace 與配額** — 深入 · 第 18 週 · `k8s-rbac-tenancy`
+- **J15 Kubernetes 叢集維運：發行版、升級、節點維護與備份** — 深入 · 第 18 週 · `k8s-operations`
+- **J16 地端、雲端還是混合雲** — 進階 · 第 18 週 · `hosting-models`
+- **J17 數據中台之前：資料治理** — 進階 · 第 19 週 · `data-governance`
+- **J18 可重跑的批次管線：增量、冪等、回補** — 進階 · 第 19 週 · `data-pipelines`
+- **J19 維度模型：事實表、維度表與緩慢變動維度** — 進階 · 第 19 週 · `dimensional-modeling`
+- **J20 SLI、SLO 與錯誤預算** — 進階 · 第 19 週 · `slo-error-budget`
+- **J21 事故處理、on-call 與 postmortem** — 進階 · 第 19 週 · `incident-response`
+- **J22 AIOps：讓 agent 調查告警但不亂動** — 進階 · 第 19 週 · `aiops`
+- **J23 受監管環境的變更管理** — 進階 · 第 18 週 · `change-management`
 
 ### 領域 K：AI 時代的開發與 Agent 安全
 
@@ -472,7 +476,7 @@
 
 ### 第 11 週｜Docker 原理、正式 Dockerfile、Compose 進階、nginx、網路基礎
 
-- **對應技能**：B9、B11、F2–F5。現有：`docker-basics`、`dockerfile-python`、`compose`、`nginx`、`http-caching`；新增：`tcp-connections`、`http2-http3`、`load-balancing`
+- **對應技能**：B9、B11、F2–F5。現有：`docker-basics`、`dockerfile-python`、`compose`、`nginx`、`http-caching`；新增：`tcp-connections`、`http2-http3`、`load-balancing`、`container-operations`、`spa-containers`
 - **學習目標**
   1. 能解釋 layer 快取，重排 Dockerfile 讓改程式碼不重裝依賴，並用 `docker image history` 指出可瘦身處
   2. 能寫多階段、非 root、exec 形式 CMD、有 HEALTHCHECK 的 Python Dockerfile，image < 250MB
@@ -484,7 +488,7 @@
 
 ### 第 12 週｜CI/CD：管線、環境與 secrets、部署策略與零停機 migration
 
-- **對應技能**：G1–G4。現有：`git-workflow`、`ci-pipeline`、`environments-secrets`、`cd-strategies`
+- **對應技能**：G1–G4。現有：`git-workflow`、`ci-pipeline`、`environments-secrets`、`cd-strategies`；新增：`container-registry`
 - **學習目標**
   1. 能寫 GitHub Actions workflow：lint → 型別 → 測試（PostgreSQL service）→ build image（SHA tag）→ Trivy 掃描 → 推 registry；並改寫成 GitLab CI
   2. 能設定 prod environment 需人工核准且只接受 main；能說出 artifact 與 cache 的差別
@@ -589,7 +593,8 @@
 
 ### 第 18 週｜GitLab CI/CD、導入 K8s、主機放哪裡、變更管理
 
-- **對應技能**：`gitlab-cicd`、`k8s-readiness`、`k8s-manifests`、`k8s-config-probes`、`k8s-troubleshooting`、`k8s-helm-gitops`、`hosting-models`、`change-management`
+- **對應技能**：`gitlab-cicd`、`k8s-readiness`、`k8s-manifests`、`k8s-config-probes`、`k8s-networking`、`k8s-storage`、`k8s-troubleshooting`、`k8s-helm-gitops`、`k8s-rbac-tenancy`、`k8s-operations`、`hosting-models`、`change-management`
+- **K8s 的完整順序**：這一週只放 GitLab CI、導入準備與變更管理的作業；K8s 從入門到維運的十週順序見第四節「Docker 到 Kubernetes 專題」。
 - **學習目標**
   1. 能寫出含 stages、受保護變數、environments、MR pipeline 的 `.gitlab-ci.yml`
   2. 能列出導入 K8s 前要準備的元件（Ingress、儲存、映像倉庫、監控、秘密管理），並指出地端要自己補哪些
@@ -652,9 +657,128 @@
 
 ---
 
+## 四、Docker 到 Kubernetes 專題（10 週）
+
+給準備導入 Kubernetes 的團隊用的順序，可以直接排成讀書會。前 3 週補容器與映像，後 7 週從本機叢集一路做到權限與維運。每週約 6–8 小時，以地端自建叢集為主。
+
+- **動手的地方**：本機叢集用參考專案的 [本機 Kubernetes 實作指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)（kind），每週的作業都在同一座叢集上做；瀏覽器裡的模擬、實驗室與程式題當課前練習。
+- **每週的格式**：對應課程 / 學習目標 / 動手作業 / 驗收標準。驗收由讀書會的另一位成員照著做一次。
+- **和主線的關係**：K1–K3 與主線第 11–12 週重疊，主線走過的人可以只做作業；第 18 週的 K8s 部分由 K4–K10 取代。
+
+### K1｜容器與映像
+
+- **對應課程**：`docker-basics`、`dockerfile-python`、`container-operations`
+- **學習目標**
+  1. 能說明 image、layer、tag 與 digest 的關係，以及建置快取怎麼失效
+  2. 能寫出多階段、非 root、建置工具不進最終映像的 Dockerfile
+  3. 能用 `logs`、`exec`、`inspect`、`stats` 查一個起不來的容器，並從結束碼判斷是 OOM 還是收到訊號
+  4. 能讓 PID 1 收到 SIGTERM 後優雅關機
+- **動手作業**：挑一個團隊現有的服務，把 Dockerfile 改成多階段與非 root；替長連線的服務補上 SIGTERM 處理；設定日誌輪替與記憶體上限。
+- **驗收標準**：新映像比原本小，且不含編譯工具；`docker stop` 在 1 秒內結束且沒有中斷處理中的請求；`docker inspect` 看得到日誌輪替設定。
+- **預估時數**：7 小時
+
+### K2｜前端、nginx 與 compose
+
+- **對應課程**：`nginx`、`spa-containers`、`compose`
+- **學習目標**
+  1. 能說明 nginx 在前端與後端之間的角色：`/` 送靜態檔、`/api` 轉發
+  2. 能把前端建置寫成多階段映像，並把環境相關的設定改成執行期讀取
+  3. 能分開設定 `index.html` 與帶 hash 檔案的快取標頭
+  4. 能用 compose 起前端、後端、資料庫，並用健康檢查控制啟動順序
+- **動手作業**：把前端改成多階段建置的映像；修正快取標頭；用 compose 起整套系統，確認同一個前端映像能接兩組不同的後端位址。
+- **驗收標準**：第二次開頁時帶 hash 的檔案全部命中快取；換環境不需要重建前端映像。
+- **預估時數**：6 小時
+
+### K3｜映像倉庫與供應鏈
+
+- **對應課程**：`container-registry`、`supply-chain`、`security-operations`
+- **學習目標**
+  1. 能在 Harbor 設定專案權限、機器人帳號、弱點掃描政策與保留規則
+  2. 能讓 CI 用 commit SHA 當 tag 推送映像，部署時用不可變的 tag 或 digest
+  3. 能列出叢集需要的所有外部映像，並規劃代理快取或離線同步
+- **動手作業**：替 CI 建一個只能推送單一專案的機器人帳號；設定保留規則與掃描政策；列出參考專案與叢集元件用到的全部映像。
+- **驗收標準**：CI 的推送不使用個人帳號；有高風險弱點的映像拉不下來；映像清單裡沒有 `latest`。
+- **預估時數**：6 小時
+
+### K4｜Kubernetes 是什麼，導入前要準備什麼
+
+- **對應課程**：`k8s-readiness`、`hosting-models`、`capacity-planning`；設計情境「第一個上 K8s 的服務選哪個」
+- **學習目標**
+  1. 能畫出一個 web + DB 系統在叢集裡的物件與流量路徑
+  2. 能列出地端自建要自己補的元件（負載平衡、儲存、映像倉庫、監控、秘密管理）
+  3. 能用容量估算決定節點數與每個服務的 requests、limits
+- **動手作業**：照本機實作指南建好 kind 叢集；寫一頁團隊的導入準備清單；挑出第一批要搬的服務並寫下理由。
+- **驗收標準**：每個人的電腦上都有可用的叢集；準備清單的每一項都有負責人。
+- **預估時數**：6 小時
+
+### K5｜第一個服務上叢集
+
+- **對應課程**：`k8s-manifests`、`k8s-config-probes`；實作路線第 10 階段
+- **學習目標**
+  1. 能寫出 Deployment、Service、Gateway 或 Ingress，並說清楚三者之間靠哪些欄位接起來
+  2. 能用 ConfigMap 與 Secret 給設定，設好三種探針與 requests、limits
+  3. 能用 migration Job 先跑資料庫變更，再做滾動更新
+- **動手作業**：照本機實作指南部署參考專案，走完掛號流程；做一次滾動更新並在過程中持續打 API。
+- **驗收標準**：滾動更新期間沒有失敗的請求；刪掉一個 Pod 後服務不中斷。
+- **預估時數**：8 小時
+
+### K6｜排錯
+
+- **對應課程**：`k8s-troubleshooting`；實驗室 K8sDebugLab
+- **學習目標**
+  1. 能照 get → describe → logs → events 的順序定位 Pending、ImagePullBackOff、CrashLoopBackOff、OOMKilled、連不到
+  2. 能用 `exec`、`port-forward`、`kubectl debug` 進到容器裡查
+- **動手作業**：做本機實作指南的五個故意弄壞練習；把每種狀態的查法寫成團隊自己的 runbook。
+- **驗收標準**：另一位成員隨機弄壞一處，你能在 15 分鐘內找出原因並修好。
+- **預估時數**：6 小時
+
+### K7｜網路與連到院內舊系統
+
+- **對應課程**：`k8s-networking`、`network-troubleshooting`、`https-certificates`；實驗室 NetworkPolicyLab
+- **學習目標**
+  1. 能說明 Pod IP、Service、叢集 DNS 與地端 LoadBalancer 的運作
+  2. 能寫 default deny 再逐條放行的 NetworkPolicy，且不漏掉 DNS
+  3. 能說明 Pod 連到叢集外時對方看到的來源 IP，並據此寫防火牆申請
+- **動手作業**：在參考專案的 namespace 套 default deny，逐條放行到能正常運作；列出要向網路組申請的防火牆規則。
+- **驗收標準**：叢集內其他 namespace 的 Pod 連不到資料庫；防火牆申請單的來源 IP 與節點或出口位址一致。
+- **預估時數**：7 小時
+
+### K8｜儲存與有狀態服務
+
+- **對應課程**：`k8s-storage`、`reliability`
+- **學習目標**
+  1. 能說明 PV、PVC、StorageClass 的關係與存取模式的限制
+  2. 能判斷一個服務該用 Deployment 加共用 volume，還是 StatefulSet
+  3. 能決定資料庫放不放進叢集，並寫出備份與還原的做法
+- **動手作業**：把寫本機磁碟的服務改成掛 PVC；在本機叢集上試一次刪掉 Pod 後資料還在；為團隊的資料庫寫一頁「放不放叢集」的決定與理由。
+- **驗收標準**：Pod 重建後資料還在；還原演練有實際操作紀錄。
+- **預估時數**：6 小時
+
+### K9｜權限與多租戶
+
+- **對應課程**：`k8s-rbac-tenancy`、`secrets`、`enterprise-identity`
+- **學習目標**
+  1. 能寫 ServiceAccount、Role、RoleBinding，並用 `kubectl auth can-i` 驗證
+  2. 能為 CI 的部署帳號只給單一 namespace 的必要權限
+  3. 能用 namespace、配額與 Pod Security 隔開不同系統與環境
+- **動手作業**：替參考專案建 CI 部署帳號；在 namespace 上啟用 Pod Security 的 restricted 等級，修到參考專案能通過。
+- **驗收標準**：部署帳號不能讀 Secret、不能 exec；restricted 等級下參考專案可以正常部署。
+- **預估時數**：6 小時
+
+### K10｜部署流程與叢集維運
+
+- **對應課程**：`k8s-helm-gitops`、`gitlab-cicd`、`cd-strategies`、`k8s-operations`、`change-management`、`observability`
+- **學習目標**
+  1. 能用 Kustomize 的 base 與 overlay 管多個環境，並由 GitLab CI 或 GitOps 部署
+  2. 能規劃叢集版本升級、節點維護與 etcd 備份還原
+  3. 能列出叢集本身要監控與告警的項目
+- **動手作業**：用參考專案的 overlay 結構做出測試與正式兩個環境；寫一份叢集升級的變更單；在本機叢集上演練一次節點 drain。
+- **驗收標準**：兩個環境的差異只在 overlay；升級變更單有回退步驟與檢核點；drain 過程中服務不中斷。
+- **預估時數**：8 小時
+
 ---
 
-## 四、驗收方式設計
+## 五、驗收方式設計
 
 ### 4.1 各領域適合的形式
 

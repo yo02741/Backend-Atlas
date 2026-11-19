@@ -24,7 +24,7 @@ spec:
         runAsUser: 10001                  # Dockerfile 建的 UID
       containers:
         - name: api
-          image: registry.gitlab.example/clinic/api:3f9c2a1b   # commit SHA，由 CI 換成該次的版本
+          image: registry.gitlab.example/clinic/api:3f9c2a1b   # tag 由 overlay 的 images 換掉：正式環境是 CI 該次的 commit SHA
           ports:
             - name: http
               containerPort: 8000

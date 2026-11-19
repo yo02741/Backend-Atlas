@@ -217,7 +217,7 @@ Failed to pull image "registry.example.org/booking/web:3f9c2a1b": ... tls: faile
 
 拉 image 的是**節點上的容器執行環境**（例如 containerd），不是 Pod。內部 CA 的根憑證要裝在每一個節點上，新加入的節點也要。憑證的細節見 [HTTPS 憑證](#/skill/https-certificates)。
 
-**Ingress controller 的選擇**：Ingress 只是規則，實際處理流量的是 controller，選擇很多。要注意的是，Kubernetes 社群維護的 ingress-nginx 專案已宣布退役、停止後續維護（官方公告的停止時間是 2026 年 3 月），新的建置要評估其他 controller 或 Gateway API（Kubernetes 的新一代流量路由 API，已正式發布 v1）。選型前查清楚專案的維護狀態，這類資訊變動很快。
+**Ingress controller 的選擇**：Ingress 只是規則，實際處理流量的是 controller，選擇很多。要注意的是，Kubernetes 社群維護的 ingress-nginx 專案已在 2026 年 3 月停止維護，新的建置要評估其他 controller 或 Gateway API（Kubernetes 的新一代流量路由 API，已正式發布 v1）。選型前查清楚專案的維護狀態，這類資訊變動很快。
 
 **升級是持續的工作**：Kubernetes 大約每年發布三個 minor 版本，每個版本約有 14 個月的修補支援。也就是說，叢集大約每年要升級一到兩次才不會落到不再支援的版本，而且只能一個 minor 一個 minor 升。這要排進年度維運計畫，導入專案結束後仍要持續做。
 
@@ -278,6 +278,6 @@ Kubernetes 不會解決應用程式既有的問題，只會把它們放大。下
 ## 動手
 
 1. 拿一個現有系統，對照「導入前要具備的能力」那張表逐項打勾，沒做到的項目就是導入前的工作清單。
-2. 用 kind 或 minikube 在自己的電腦上建一個測試叢集，套用上面的 Deployment 與 Service（image 換成任何一個公開的 web image），然後故意把 readiness probe 的路徑改錯，更新一次，觀察 `kubectl rollout status` 停住、舊版 Pod 仍在服務。
+2. 照[本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)用 kind 在自己的電腦上建一個測試叢集，套用上面的 Deployment 與 Service（image 換成任何一個公開的 web image），然後故意把 readiness probe 的路徑改錯，更新一次，觀察 `kubectl rollout status` 停住、舊版 Pod 仍在服務。
 3. 在同一個測試叢集裡建一個 `type: LoadBalancer` 的 Service，觀察 `EXTERNAL-IP` 停在 `<pending>`：地端叢集沒有內建的負載平衡元件，要自己補。
 4. 把 [硬體資源與容量規劃](#/skill/capacity-planning) 裡的估算結果，換算成這個 Deployment 的 `replicas` 與 `resources`。

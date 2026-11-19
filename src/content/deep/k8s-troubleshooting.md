@@ -290,6 +290,6 @@ kubectl port-forward pod/export-api-84f9d6c5b7-m4n1z 8080:8000 -n booking
 1. 執行上面的診斷程式，自己加幾個 Pod：一個 `waiting` 是 `CrashLoopBackOff`、Events 有 `Liveness probe failed` 的；一個 `Pending`、訊息是 `pod has unbound immediate PersistentVolumeClaims` 的；一個 `Running` 但 `ready` 是 `False` 的。先預測輸出再執行。再把 `service` 的 selector 改對，看 Service 那一層的結果。
 2. 做本課的程式題：實作 `diagnose(pod)`，把狀態、結束碼與 Events 分類成固定的原因代碼。
 3. 到 [Kubernetes 排錯實驗室](#/lab/K8sDebugLab)練六種故障情境：按指令收集線索、判斷原因、看要改 manifest 的哪一行。
-4. 有 kind 或 minikube 的話，故意製造每一種狀態各一次，照「get → describe → logs → events」走一遍：把 image 的 tag 改成不存在的值；把記憶體 requests 改成 `500Gi`；把啟動指令改成 `["sh", "-c", "exit 1"]`；把 Service 的 selector 改錯。
+4. 在本機叢集上故意製造每一種狀態各一次（[本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)的「故意弄壞」一節有六個現成的練習），照「get → describe → logs → events」走一遍：把 image 的 tag 改成不存在的值；把記憶體 requests 改成 `500Gi`；把啟動指令改成 `["sh", "-c", "exit 1"]`；把 Service 的 selector 改錯。
 5. 把本課的幾張表整理成團隊自己的 runbook，加上自己環境的指令（namespace、registry 位址、監控面板的位置）。
 6. 同一個錯誤在每個環境重複出現，多半是 manifest 靠人工複製修改造成的，接著讀 [Helm、Kustomize 與 GitOps](#/skill/k8s-helm-gitops)。

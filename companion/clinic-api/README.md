@@ -11,6 +11,7 @@ Backend Atlas「實作路線：從零做完一個門診掛號後端」的參考�
 | 把服務跑起來 | Docker（含 `docker compose`） |
 | 跑測試、lint、在主機上直接啟動 | [uv](https://docs.astral.sh/uv/)（會依 `.python-version` 準備 Python 3.12）、一個 PostgreSQL 16 與一個 Redis（可以直接用 compose 起的那兩個） |
 | 貼下面的 curl 範例 | `curl`、`python3`（只用來從 JSON 取欄位） |
+| 在本機的 Kubernetes 叢集跑 | Docker、[kind](https://kind.sigs.k8s.io/) v0.33.0、kubectl v1.37.2（見 [docs/local-k8s.md](docs/local-k8s.md)） |
 
 ## 三步驟跑起來
 
@@ -138,6 +139,36 @@ uv run pytest tests/test_domain.py                 # 不需要資料庫的單元
 
 在主機上直接啟動（不用容器）：設定好 `DATABASE_URL`、`REDIS_URL`、`JWT_SECRET` 後 `uv run uvicorn clinic.main:app --no-access-log`。
 
+## 在本機的 Kubernetes 叢集跑
+
+實作指南：[docs/local-k8s.md](docs/local-k8s.md)。用 kind 建一個單節點叢集，套用 `k8s/overlays/kind`，走完：
+
+- 建置映像並 `kind load` → `kubectl apply -k` → migration Job、seed → `kubectl port-forward` 打 API 走完掛號流程
+- 滾動更新到新的 tag，叢集內持續打 `/ready` 確認沒有中斷
+- 六個故意弄壞的練習（ImagePullBackOff、Pending、OOMKilled、endpoints 是空的、readiness 打錯讓更新卡住、CrashLoopBackOff），每個寫怎麼弄壞、會看到什麼、用哪個指令查、怎麼修
+- 選讀：用 Envoy Gateway 接上 Gateway API；兩個 worker 的叢集上練 drain 與 PodDisruptionBudget
+
+一次做完、可以重複執行：
+
+```bash
+bash scripts/kind-up.sh      # 建叢集 → 建置並載入映像 → 套用 → 等資料庫、migration、滾動更新 → seed
+kubectl -n clinic port-forward service/clinic-api 8000:80     # 另一個終端機
+SEED_PASSWORD=local-dev-only bash scripts/smoke.sh
+bash scripts/kind-down.sh    # 刪掉叢集
+```
+
+`k8s/` 是 Kustomize 的 base 與 overlay：
+
+| 路徑 | 內容 |
+|---|---|
+| `k8s/base/` | 每個環境共用：Deployment、Service、ConfigMap、PodDisruptionBudget、migration Job |
+| `k8s/overlays/kind/` | 本機：映像 `clinic-api:<tag>`（`kind load`、`imagePullPolicy: IfNotPresent`）、只供本機的 PostgreSQL 與 Redis、`secretGenerator` 帶本機假值 |
+| `k8s/overlays/production/` | 正式環境：registry 的映像（tag 由 CI 設成 commit SHA）、Ingress；資料庫在叢集外，Secret 由叢集管理者建立（`secret.example.yaml` 是範本，不會被套用） |
+| `k8s/kind-config.yaml` | kind 叢集的設定（一個節點）；`k8s/kind-config-workers.yaml` 是一個 control plane 加兩個 worker，練 drain 用 |
+| `k8s/gateway-api/` | 選讀：Gateway 與 HTTPRoute |
+
+GitHub Actions 的 `kind-deploy` job 每次 push 都在 kind 叢集上跑一遍 `scripts/kind-up.sh`、smoke test 與一次滾動更新，並用 `kubectl apply --dry-run=server` 檢查 `overlays/production` 產生的 manifest。
+
 ## 階段 ↔ 檔案
 
 | 階段 | 檔案 | 測試 |
@@ -151,7 +182,7 @@ uv run pytest tests/test_domain.py                 # 不需要資料庫的單元
 | 7 打包與 CI | `Dockerfile`、`.dockerignore`、`compose.yaml`、`.gitlab-ci.yml`、`pyproject.toml`、`uv.lock`；GitHub 上實際在跑的是 repo 根目錄的 `.github/workflows/companion.yml` | `scripts/smoke.sh` |
 | 8 可觀測性 | `clinic/logging_setup.py`（JSON、`request_id`、遮罩）、`clinic/api/middleware.py`、`clinic/metrics.py`、`clinic/api/routes.py`（`/metrics`、`/healthz`、`/ready`）、`clinic/app.py`（SIGTERM 後 `/ready` 回 503） | `tests/test_observability.py` |
 | 9 MCP server | 不做（見下方） | — |
-| 10 Kubernetes | `k8s/deployment.yaml`、`service.yaml`、`ingress.yaml`、`configmap.yaml`、`secret.example.yaml`（範本，不含真實值）、`migrate-job.yaml`、`pdb.yaml`；`.gitlab-ci.yml` 的 `deploy_production` | — |
+| 10 Kubernetes | `k8s/base/`（`deployment.yaml`、`service.yaml`、`configmap.yaml`、`migrate-job.yaml`、`pdb.yaml`）、`k8s/overlays/production/`（`ingress.yaml`、`secret.example.yaml` 範本，不含真實值）、`k8s/overlays/kind/`、`k8s/kind-config.yaml`、`k8s/kind-config-workers.yaml`、`k8s/gateway-api/`；`.gitlab-ci.yml` 的 `deploy_production`；`scripts/kind-up.sh`、`scripts/kind-down.sh`、[docs/local-k8s.md](docs/local-k8s.md) | GitHub Actions 的 `kind-deploy` job |
 
 分層（依賴方向只有一個）：`clinic/api`（HTTP）→ `clinic/service`（用例、交易邊界、授權）→ `clinic/repository`（SQL、Redis）；`clinic/domain` 是純規則，不 import 框架與資料庫。組裝在 `clinic/app.py` 與 `clinic/api/deps.py`。
 
@@ -182,6 +213,7 @@ Redis 的連線與讀寫逾時都是 0.5 秒。連不上或逾時時：
 - **多的錯誤類型**：`invalid-status`（已取消或已報到的掛號再取消、報到）。
 - **依賴管理**：`pyproject.toml` + `uv.lock`，不是 `requirements.txt` + pip；映像裡的 venv 在 `/app/.venv`，`USER` 寫成數字 `10001`（網站 k8s.md 提到的 `runAsNonRoot` 問題）。
 - **SQLAlchemy 版本**：`uv.lock` 鎖到的是 2.1.x，寫法是 2.0 風格（`Mapped`、`select()`）。
+- **Kubernetes 的 manifest 分成 Kustomize 的 base 與 overlay**：網站第 10 階段的 `k8s/` 是一層目錄，deploy job 用 `sed` 代換 `__SHA__`、再 `kubectl set image`。這裡 deploy job 用 `kustomize edit set image` 設定 tag，migration Job 的名稱由 overlay 的 `replacements` 接上同一個 tag（`clinic-migrate-<SHA>`），先只套用 Job、等它完成，再套用全部。`kustomize edit` 只改 CI 工作目錄裡的檔案，Git 裡的 `newTag` 一直是示意值：不要從自己的電腦直接 `kubectl apply -k k8s/overlays/production`，那會把映像換成示意的 tag。要讓 Git 記下正式環境實際的 tag，是 GitOps 的做法（CI 把 tag commit 回設定 repo，見網站的 Helm、Kustomize 與 GitOps 一課）。
 
 ## 已知限制
 
@@ -193,6 +225,6 @@ Redis 的連線與讀寫逾時都是 0.5 秒。連不上或逾時時：
 - **400 可能早於 401**：FastAPI 先解析 body 才執行驗證身分的 dependency，沒帶 token 又送出不是 JSON 的 body 時回 400。
 - **Redis 沒有斷路器**：Redis 整台沒回應（不是拒絕連線）時，每個相關請求會多等最多 0.5 秒 × Redis 呼叫次數。
 - **`/metrics` 是每個行程各自一份**：多個副本時由 Prometheus 逐一抓取；不要用多個 uvicorn worker 共用一個 port。
-- **`.gitlab-ci.yml` 與 `k8s/` 沒有在真的 GitLab 與叢集上跑過**：通過的是網站驗收題的規則檢查與 YAML 解析。`deploy_production` 用的 kubectl 映像、registry 位址、IngressClass、`clinic-tls` 憑證都要換成實際環境的值；第一次部署要先手動 `kubectl apply -f k8s/deployment.yaml`，之後 CI 才用 `kubectl set image` 換版。
+- **正式環境的部署沒有在真的 GitLab 與叢集上跑過**：`k8s/overlays/kind` 每次 push 都在 GitHub Actions 的 kind 叢集上實際套用；`k8s/overlays/production` 只驗證到 `kubectl apply --dry-run=server`。`deploy_production` 用的映像（要有 kubectl 與 kustomize）、registry 位址、IngressClass、`clinic-tls` 憑證都要換成實際環境的值；namespace `clinic` 與 Secret `clinic-api-secret` 要由叢集管理者先建立。`overlays/production` 的 `replacements` 從映像位址取第一個冒號後面那一段當 tag，registry 主機帶 port 時要改設定（見檔案裡的註解）。
 - **`.gitlab-ci.yml` 的位置**：GitLab 只讀專案根目錄的那一份；把這個目錄獨立成一個 GitLab 專案時才會生效。
 - **migration 只有往前的版本經過完整測試**；`downgrade` 寫了，只驗證過能從 head 退回空的資料庫。

@@ -1,0 +1,70 @@
+# 只供本機 kind 叢集使用的 PostgreSQL。正式環境不這樣做：資料庫留在叢集外既有的主機
+# （取捨見網站的「導入 Kubernetes 前要準備什麼」）。這裡沒有備份、沒有高可用，刪掉叢集資料就跟著消失。
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: clinic
+spec:
+  clusterIP: None                # headless：名稱 postgres 直接解析到 Pod 的 IP，StatefulSet 用它當 serviceName
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: clinic
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: clinic
+            - name: POSTGRES_DB
+              value: clinic
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret        # kustomization.yaml 的 secretGenerator 產生
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata   # 資料放在 volume 的子目錄
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "clinic", "-d", "clinic"]
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:          # 每個 Pod 一個 PVC（data-postgres-0），由 kind 內建的 StorageClass standard 建立
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

@@ -13,6 +13,13 @@ import devopsConfig from './devops-config.js'
 import ai from './ai.js'
 import knowledge from './knowledge.js'
 import project from './project.js'
+import p11p3 from './p11-p3.js'
+import p11p2 from './p11-p2.js'
+import p11p1 from './p11-p1.js'
+import p11n4 from './p11-n4.js'
+import p11n3 from './p11-n3.js'
+import p11n2 from './p11-n2.js'
+import p11n1 from './p11-n1.js'
 import p10m6 from './p10-m6.js'
 import p10m5 from './p10-m5.js'
 import p10m4 from './p10-m4.js'
@@ -27,7 +34,7 @@ import p9l2 from './p9-l2.js'
 import p9l3 from './p9-l3.js'
 import p9l4 from './p9-l4.js'
 
-export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...p9l1, ...p9l2, ...p9l3, ...p9l4, ...p10m1, ...p10m2, ...p10m3, ...p10x1, ...p10x2, ...p10x3, ...p10m4, ...p10m5, ...p10m6, ...scenarios, ...project]
+export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...p9l1, ...p9l2, ...p9l3, ...p9l4, ...p10m1, ...p10m2, ...p10m3, ...p10x1, ...p10x2, ...p10x3, ...p10m4, ...p10m5, ...p10m6, ...p11n1, ...p11n2, ...p11n3, ...p11n4, ...p11p1, ...p11p2, ...p11p3, ...scenarios, ...project]
 
 export const KINDS = {
   sql: { label: 'SQL', runtime: 'sql' },

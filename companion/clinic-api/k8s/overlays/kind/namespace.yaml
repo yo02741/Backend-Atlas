@@ -1,0 +1,5 @@
+# 只有本機由 manifest 建立 namespace。正式環境的 namespace 由叢集管理者建立，deploy 用的身分只有 clinic 裡的權限。
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: clinic

@@ -1,0 +1,24 @@
+# 選讀：用 Gateway API 取代 Ingress（docs/local-k8s.md 的「接上 Gateway API」）。
+# 這一份是平台團隊管的部分：GatewayClass（由哪個實作處理）與 Gateway（入口與監聽的 port）。
+# 實作用 Envoy Gateway v1.10，要先照指南安裝；正式環境的 Gateway 通常在另一個 namespace，由叢集管理者建立。
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller   # Envoy Gateway 認得的名稱
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: clinic-gateway
+  namespace: clinic
+spec:
+  gatewayClassName: envoy
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80               # 本機只開 HTTP；正式環境加一個 HTTPS listener，憑證放在 kubernetes.io/tls 的 Secret
+      allowedRoutes:
+        namespaces:
+          from: Same         # 只讓同一個 namespace 的 HTTPRoute 掛上來（預設值，寫出來比較清楚）

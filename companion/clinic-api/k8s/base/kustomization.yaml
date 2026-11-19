@@ -1,0 +1,10 @@
+# 每個環境共用的部分。環境之間的差異（映像位址與 tag、資料庫、Secret、Ingress）寫在 overlays/ 底下，
+# 這裡不放：kind 用 overlays/kind，正式環境用 overlays/production。
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - pdb.yaml
+  - migrate-job.yaml

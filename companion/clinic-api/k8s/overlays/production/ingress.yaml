@@ -1,10 +1,11 @@
+# 只有正式環境有：kind 叢集沒有 Ingress controller，本機用 port-forward（見 docs/local-k8s.md）。
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: clinic-api
   namespace: clinic
 spec:
-  ingressClassName: nginx          # 換成叢集實際的 IngressClass（kubectl get ingressclass）
+  ingressClassName: nginx          # 示意：換成叢集實際的 IngressClass（kubectl get ingressclass）；ingress-nginx 已停止維護，用哪個 controller 先問叢集管理者
   tls:
     - hosts:
         - clinic.example

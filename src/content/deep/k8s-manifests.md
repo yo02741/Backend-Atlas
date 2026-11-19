@@ -251,7 +251,7 @@ spec:
 - **`pathType: Prefix`** 以路徑的「段」比對：`/api` 符合 `/api` 與 `/api/v1`，不符合 `/apiv2`。`Exact` 要完全相同。
 - **`backend`** 只能指向**同一個 namespace** 的 Service。
 
-Ingress 這個 API（`networking.k8s.io/v1`）是正式版，但官方文件說明它已凍結，新功能加在 Gateway API。另外如 [導入 Kubernetes 前要準備什麼](#/skill/k8s-readiness) 所述，社群維護的 ingress-nginx 專案已宣布退役（官方公告的停止維護時間是 2026 年 3 月），新的建置要評估其他 controller 或 Gateway API；這類資訊變動快，選型前查專案目前的維護狀態。
+Ingress 這個 API（`networking.k8s.io/v1`）是正式版，但官方文件說明它已凍結，新功能加在 Gateway API。另外如 [導入 Kubernetes 前要準備什麼](#/skill/k8s-readiness) 所述，社群維護的 ingress-nginx 專案已在 2026 年 3 月停止維護，新的建置要評估其他 controller 或 Gateway API；這類資訊變動快，選型前查專案目前的維護狀態。
 
 Gateway API 把 Ingress 拆成兩層：`Gateway`（入口、監聽的 port 與 TLS，通常由平台團隊管理）與 `HTTPRoute`（路由規則，由服務的團隊管理）。對應上面那份 Ingress 的 HTTPRoute：
 
@@ -354,5 +354,5 @@ kubectl rollout undo deployment/booking-api -n booking --to-revision=4
 1. 執行上面兩段 Python。把第一段的 selector 改成各種寫法，看 endpoints 怎麼變；把第二段改成 `rolling_update(10, "25%", "25%")`，先自己算出 maxSurge 與 maxUnavailable 各是幾個再對答案。
 2. 到 [K8sLab 實驗室](#/lab/K8sLab) 調整 maxSurge 與 maxUnavailable，並讓新版的 readiness 失敗，觀察更新停住時舊版的數量。
 3. 做本課的程式題：一份有五個問題的 `deployment.yaml`，把副本數、image tag 與三條接線修好。
-4. 有 kind 或 minikube 的話，套用本課的 Deployment 與 Service（image 換成任何公開的 web 映像），然後故意把 Service 的 selector 改錯，用 `kubectl get endpointslices` 看後端變成空的。
+4. 照[本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)建好 kind 叢集後，套用本課的 Deployment 與 Service（image 換成任何公開的 web 映像），然後故意把 Service 的 selector 改錯，用 `kubectl get endpointslices` 看後端變成空的。
 5. 接著讀 [Kubernetes 實作：設定、探針與資源](#/skill/k8s-config-probes)，把這份 Deployment 補成可以上線的樣子。

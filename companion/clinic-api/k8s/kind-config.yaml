@@ -1,0 +1,9 @@
+# 本機測試用的 kind 叢集：一個節點（同時是 control plane 與工作節點），Kubernetes v1.37.0。
+# kind create cluster --config k8s/kind-config.yaml；scripts/kind-up.sh 也用這個檔案。
+# 節點映像寫死版本與 digest：kind v0.33.0 發行時對應的映像，換 kind 版本時一起換（見 kind 的 release notes）。
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: clinic
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5

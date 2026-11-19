@@ -1,5 +1,8 @@
 // 領域 6：容器與部署（Docker、docker-compose、nginx） — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d6-deploy.js
-export default {
+import p1 from './parts/d6-deploy-p1.js'
+import p2 from './parts/d6-deploy-p2.js'
+import p3 from './parts/d6-deploy-p3.js'
+const base = {
   'linux-basics': {
     points: [
       { b: '程序與訊號', t: '`ps aux`、`top`、`kill -TERM`（優雅停止）與 `-KILL`（強制）。容器的 PID 1 收到 SIGTERM 要能正確退出，否則 `docker stop` 會等 10 秒再硬殺。' },
@@ -175,3 +178,6 @@ export default {
     refs: [],
   },
 }
+
+// 後續新增的課，內文放在 parts/ 底下，這裡合併
+export default { ...base, ...p1, ...p2, ...p3 }

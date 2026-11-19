@@ -1,0 +1,13 @@
+# 選讀：一個 control plane 加兩個 worker，練 drain 與 PodDisruptionBudget 用（docs/local-k8s.md 的「多個 worker 的叢集」）。
+# KIND_CONFIG=k8s/kind-config-workers.yaml bash scripts/kind-up.sh
+# 有 worker 時，kind 的 control plane 節點帶 taint，一般的 Pod 只會排到兩個 worker 上。
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: clinic
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5
+  - role: worker
+    image: kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5
+  - role: worker
+    image: kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5

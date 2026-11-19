@@ -2,6 +2,10 @@
 import l4 from './parts/d9-devops-l4.js'
 import m2 from './parts/d9-devops-m2.js'
 import m4 from './parts/d9-devops-m4.js'
+import n1 from './parts/d9-devops-n1.js'
+import n2 from './parts/d9-devops-n2.js'
+import n3 from './parts/d9-devops-n3.js'
+import n4 from './parts/d9-devops-n4.js'
 const base = {
   'devops-glossary': {
     points: [
@@ -203,4 +207,4 @@ const base = {
 }
 
 // P9 新課的內文放在 parts/ 底下，這裡合併
-export default { ...base, ...l4, ...m2, ...m4 }
+export default { ...base, ...l4, ...m2, ...m4, ...n1, ...n2, ...n3, ...n4 }

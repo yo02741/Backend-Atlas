@@ -86,3 +86,94 @@ jobs:
       - name: 清除
         if: always()
         run: docker compose down -v
+
+  # 在 kind 叢集上真的套用 k8s/overlays/kind：和 docs/local-k8s.md 同一套步驟（scripts/kind-up.sh），
+  # 再加上掛號流程的 smoke test、一次滾動更新（期間叢集內持續打 /ready，不能有失敗），
+  # 以及正式環境 overlay 的 server-side dry run。
+  kind-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # 固定版本與 SHA-256（linux/amd64）；升級時三個值一起改，並同步 docs/local-k8s.md
+      KIND_VERSION: v0.33.0
+      KIND_SHA256: aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d
+      KUBECTL_VERSION: v1.37.2
+      KUBECTL_SHA256: c04487523e7aa7d1493f7808174c899db93d7a9cf57531420cd76b9bd415f8f4
+      KUSTOMIZE_VERSION: v5.8.1        # 只用來照 .gitlab-ci.yml 的 deploy_production 跑 kustomize edit set image
+      KUSTOMIZE_SHA256: 029a7f0f4e1932c52a0476cf02a0fd855c0bb85694b82c338fc648dcb53a819d
+      SEED_PASSWORD: ci-only-password  # 只存在於這個 job 的叢集裡的測試帳號密碼
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安裝 kind、kubectl、kustomize（固定版本，驗證 SHA-256）
+        run: |
+          BIN="$RUNNER_TEMP/bin"
+          mkdir -p "$BIN"
+          curl -fsSLo "$BIN/kind" "https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/kind-linux-amd64"
+          curl -fsSLo "$BIN/kubectl" "https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/amd64/kubectl"
+          curl -fsSLo "$RUNNER_TEMP/kustomize.tar.gz" "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F$KUSTOMIZE_VERSION/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          printf '%s  %s\n' "$KIND_SHA256" "$BIN/kind" "$KUBECTL_SHA256" "$BIN/kubectl" "$KUSTOMIZE_SHA256" "$RUNNER_TEMP/kustomize.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/kustomize.tar.gz" -C "$BIN" kustomize
+          chmod +x "$BIN/kind" "$BIN/kubectl" "$BIN/kustomize"
+          echo "$BIN" >> "$GITHUB_PATH"   # 排在 runner 預裝的版本前面
+      - name: 確認版本
+        run: |
+          kind version
+          kubectl version --client
+          kustomize version
+      - name: 建叢集 → 建置映像並 kind load → kubectl apply -k k8s/overlays/kind → 等資料庫 → migration Job → rollout status → seed
+        run: bash scripts/kind-up.sh
+      - name: 正式環境的 overlay 也能產生合法的 manifest（kustomize edit set image + server-side dry run）
+        working-directory: companion/clinic-api/k8s/overlays/production
+        run: |
+          kustomize edit set image "registry.gitlab.example/clinic/api=registry.gitlab.example/clinic/api:$GITHUB_SHA"
+          kubectl kustomize . > "$RUNNER_TEMP/production.yaml"
+          grep -q "name: clinic-migrate-$GITHUB_SHA" "$RUNNER_TEMP/production.yaml"
+          # 只送到 API server 驗證（schema、預設值、admission），不會寫進叢集
+          kubectl apply --dry-run=server -f "$RUNNER_TEMP/production.yaml"
+          git checkout -- kustomization.yaml
+      - name: 掛號流程的 smoke test（kubectl port-forward 到 Service）
+        run: |
+          kubectl -n clinic port-forward service/clinic-api 8000:80 > "$RUNNER_TEMP/port-forward.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/port-forward.pid"
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/healthz > /dev/null 2>&1 && break
+            sleep 1
+          done
+          bash scripts/smoke.sh http://127.0.0.1:8000
+          kill "$(cat "$RUNNER_TEMP/port-forward.pid")"
+      - name: 改 tag 做一次滾動更新（v1 → v2），叢集內每 0.2 秒打一次 /ready
+        run: |
+          kubectl -n clinic run uptime-probe --image=curlimages/curl:8.22.0 --restart=Never -- \
+            sh -c 'while true; do curl -s -o /dev/null -w "%{http_code}\n" --max-time 2 http://clinic-api/ready; sleep 0.2; done'
+          kubectl -n clinic wait --for=condition=Ready pod/uptime-probe --timeout=120s
+          sed -i -E 's/^(\s*newTag:) v1\b/\1 v2/' k8s/overlays/kind/kustomization.yaml
+          grep -q 'newTag: v2' k8s/overlays/kind/kustomization.yaml
+          # 叢集沿用；建置並載入 clinic-api:v2；新的 Job clinic-migrate-v2；Deployment 滾動更新
+          bash scripts/kind-up.sh
+          kubectl -n clinic rollout history deployment/clinic-api
+          kubectl -n clinic get pods -o wide
+          sleep 10   # rollout status 結束時最後一個舊 Pod 還在 preStop（5 秒），等它真的結束再數
+          echo "滾動更新期間 /ready 的狀態碼（次數 狀態碼）："
+          kubectl -n clinic logs uptime-probe | sort | uniq -c
+          if kubectl -n clinic logs uptime-probe | grep -qv '^200$'; then
+            echo "滾動更新期間有請求沒有拿到 200"
+            exit 1
+          fi
+      - name: 失敗時印出叢集狀態（get → describe → logs → events）
+        if: failure()
+        run: |
+          kubectl get nodes -o wide || true
+          kubectl -n clinic get all,pvc,endpointslices -o wide || true
+          kubectl -n clinic describe deployments,statefulsets,jobs || true
+          kubectl -n clinic describe pods || true
+          for pod in $(kubectl -n clinic get pods -o name 2>/dev/null); do
+            echo "::group::logs $pod"
+            kubectl -n clinic logs "$pod" --all-containers --tail=200 || true
+            kubectl -n clinic logs "$pod" --all-containers --previous --tail=50 2>/dev/null || true
+            echo "::endgroup::"
+          done
+          kubectl -n clinic get events --sort-by=.lastTimestamp || true
+          cat "$RUNNER_TEMP/port-forward.log" 2>/dev/null || true
+      - name: 清除
+        if: always()
+        run: bash scripts/kind-down.sh

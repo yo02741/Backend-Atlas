@@ -1,0 +1,22 @@
+# kind 專用：本機的 PostgreSQL 和這個 Job 一起建立，Job 的 backoffLimit 是 0，資料庫還沒好就會直接失敗，
+# 所以先用 init container 等到資料庫能連線。正式環境的資料庫一直都在，不需要這一段。
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: clinic-migrate
+  namespace: clinic
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16             # 和資料庫同一個映像，裡面有 pg_isready
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "until pg_isready -h postgres -U clinic -d clinic; do sleep 2; done"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      containers:
+        - name: migrate
+          imagePullPolicy: IfNotPresent

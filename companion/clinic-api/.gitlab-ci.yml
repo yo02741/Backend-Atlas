@@ -1,5 +1,6 @@
 # 把這個目錄當成一個獨立的 GitLab 專案時，這個檔案放在專案根目錄。
 # push ──► lint ──► test（+ postgres、redis service）──► build（推 $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA）──► deploy（只有 main，手動核准）
+# deploy 套用 k8s/overlays/production（Kustomize）；本機與 GitHub CI 用的是 k8s/overlays/kind，見 docs/local-k8s.md。
 stages:
   - lint
   - test
@@ -50,17 +51,22 @@ build:
 
 deploy_production:
   stage: deploy
-  image: registry.gitlab.example/tools/kubectl:1.31   # 示意：換成內部維護、裝有 kubectl 的映像
+  image: registry.gitlab.example/tools/kubectl:1.31   # 示意：換成內部維護、裝有 kubectl 與 kustomize 的映像
   environment:
     name: production
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual                            # 有人按下才部署
+  # namespace clinic 與 Secret clinic-api-secret 由叢集管理者事先建立（k8s/overlays/production/secret.example.yaml）
   script:
-    - kubectl apply -n clinic -f k8s/configmap.yaml -f k8s/service.yaml -f k8s/ingress.yaml -f k8s/pdb.yaml
-    # 1. migration：每一版一個 Job，完成才往下走
-    - sed "s/__SHA__/$CI_COMMIT_SHA/g" k8s/migrate-job.yaml | kubectl apply -n clinic -f -
+    # 0. overlay 的映像換成這一次 build 推上去的 tag。只改這個 job 工作目錄裡的檔案，不 commit 回去；
+    #    migration Job 的名稱跟著變成 clinic-migrate-$CI_COMMIT_SHA（overlay 的 replacements）
+    - cd k8s/overlays/production
+    - kustomize edit set image "registry.gitlab.example/clinic/api=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - kubectl kustomize . > "$CI_PROJECT_DIR/manifests.yaml"
+    # 1. migration：先只套用 Job（label 篩選），完成才往下走；Deployment 這時還是舊版
+    - kubectl apply -n clinic -f "$CI_PROJECT_DIR/manifests.yaml" -l app.kubernetes.io/component=migration
     - kubectl wait -n clinic --for=condition=complete --timeout=300s "job/clinic-migrate-$CI_COMMIT_SHA"
-    # 2. 換映像，等滾動更新完成；逾時這個 job 就失敗
-    - kubectl set image -n clinic deployment/clinic-api "api=$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    # 2. 套用全部：Deployment 換成新的映像，Job 已經存在回 unchanged；等滾動更新完成，逾時這個 job 就失敗
+    - kubectl apply -n clinic -f "$CI_PROJECT_DIR/manifests.yaml"
     - kubectl rollout status -n clinic deployment/clinic-api --timeout=300s

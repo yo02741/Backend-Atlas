@@ -114,6 +114,7 @@ t('vue exercise page waits for 執行 before loading the sandbox', !sandboxLoade
 await page.click('.ex button:has-text("執行")')
 await page.waitForSelector('.fp iframe.sbx-frame', { timeout: 20000 })
 t('執行 loads the sandbox chunk and the self-hosted Vue', [...loaded].some((n) => /^frame-/.test(n)) && requested.slice(mark).some((u) => /\/vendor\/vue@[\d.]+\/vue\.esm-browser\.js$/.test(u)))
+t('a vue exercise without pinia / vue-router imports does not download them', !requested.slice(mark).some((u) => /\/vendor\/(pinia|vue-router)@/.test(u)), requested.slice(mark).filter((u) => u.includes('/vendor/')).join(','))
 // 後端的 SQL 題頁不請求 vendor（上一頁有預覽的 iframe 時，只換 hash 等不到 networkidle，改等 load 加元素）
 mark = requested.length
 await page.goto(base + '#/exercise/sql-joins-1', { waitUntil: 'load' })

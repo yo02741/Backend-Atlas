@@ -1,5 +1,6 @@
-// 把前端沙箱用的 Vue 從 node_modules 複製到 public/vendor/vue@<版本>/（自架，不依賴 CDN）。
-// 只複製 dist 檔，外殼不 import vue；iframe 經 import map 載入（src/runtime/frame.js）。public/vendor 已 gitignore。
+// 把前端沙箱用的 Vue、Pinia、Vue Router 從 node_modules 複製到 public/vendor/<套件>@<版本>/（自架，不依賴 CDN）。
+// 套件與檔案列在 src/runtime/versions.js（pinia、vue-router 只有 prod 檔）。只複製 dist 檔，外殼不 import 它們；
+// iframe 經 import map 載入（src/runtime/frame.js）。public/vendor 已 gitignore。
 import { copyFileSync, mkdirSync, existsSync, statSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'

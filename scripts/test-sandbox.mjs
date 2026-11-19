@@ -1,9 +1,12 @@
 // 前端沙箱的純函式單元測試：假 API（src/runtime/fakeApi.js）的路由、延遲、序列回應、abort、404、網路錯誤、內建門診路由；
-// 迴圈保護（src/runtime/loopGuard.js）的改寫；srcdoc 組成（src/runtime/frame.js 的 buildSrcdoc）的行號與跳脫。
+// 迴圈保護（src/runtime/loopGuard.js）的改寫；srcdoc 組成（src/runtime/frame.js 的 buildSrcdoc）的行號與跳脫；
+// vendor 套件的判斷（vendorsFor）與 import map（versions.js 的檔名、vue-router 的包裝模組）。
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { createFakeApi } from '../src/runtime/fakeApi.js'
 import { guardLoops, guardHtml } from '../src/runtime/loopGuard.js'
-import { buildSrcdoc } from '../src/runtime/frame.js'
+import { buildSrcdoc, vendorsFor, importMapFor, ROUTER_REDIRECT_LIMIT } from '../src/runtime/frame.js'
+import { VERSIONS, VENDOR_FILES, vendorPath } from '../src/runtime/versions.js'
 
 let n = 0
 const test = async (name, fn) => { await fn(); n++; console.log('ok  ' + name) }
@@ -274,6 +277,61 @@ await test('buildSrcdoc（css、html）：css 題把使用者的 CSS 接在題�
   const h = buildSrcdoc({ kind: 'html', code: '<p>hi</p>\n<script>while (x) {}</script>', runId: 'r3' })
   assert.match(h.html, /while \(__lp\(\) && \(x\)\)/)
   assert.equal(h.html.split('\n')[h.userStart - 1], '<p>hi</p>')
+})
+
+await test('vendorsFor：程式碼 import 了哪個套件才放進 import map；pinia、vue-router 一定連同 vue', () => {
+  assert.deepEqual(vendorsFor('vue', "import { ref } from 'vue'"), ['vue'])
+  assert.deepEqual(vendorsFor('vue', ''), ['vue'])                                   // vue 題一定有 Vue
+  assert.deepEqual(vendorsFor('html', '<p>hi</p>'), [])
+  assert.deepEqual(vendorsFor('css', '.a { color: red }'), [])
+  assert.deepEqual(vendorsFor('html', '<script type="module">import { createApp } from "vue"</script>'), ['vue'])
+  assert.deepEqual(vendorsFor('vue', "import { defineStore } from 'pinia'"), ['vue', 'pinia'])
+  assert.deepEqual(vendorsFor('html', "const { createRouter } = await import('vue-router')"), ['vue', 'vue-router'])
+  assert.deepEqual(vendorsFor('vue', "import { createRouter } from 'vue-router'\nimport { createPinia } from 'pinia'"), ['vue', 'pinia', 'vue-router'])
+  assert.deepEqual(vendorsFor('html', "import 'vue-router'"), ['vue', 'vue-router'])
+  assert.deepEqual(vendorsFor('vue', "// 註解裡提到 vue-router 與 pinia 不算\nconst s = 'pinia'"), ['vue'])
+  assert.deepEqual(vendorsFor('html', "import x from 'vue-router-extra'"), [])     // 名稱要完全相同
+})
+
+await test('versions.js：pinia、vue-router 只有 prod 檔，dev 退回 prod；每個 vendor 檔只 import import map 裡有的名稱', () => {
+  assert.equal(vendorPath('vue'), `vendor/vue@${VERSIONS.vue}/vue.esm-browser.js`)
+  assert.equal(vendorPath('pinia'), `vendor/pinia@${VERSIONS.pinia}/pinia.esm-browser.prod.js`)
+  assert.equal(vendorPath('vue-router', 'dev'), `vendor/vue-router@${VERSIONS['vue-router']}/vue-router.esm-browser.prod.js`)
+  for (const [pkg, files] of Object.entries(VENDOR_FILES)) {
+    for (const file of Object.values(files)) {
+      const src = readFileSync(new URL(`../node_modules/${pkg}/${file}`, import.meta.url), 'utf8')
+      const specs = [...src.matchAll(/(?:\bfrom|\bimport)\s*\(?\s*["']([^"'./][^"']*)["']/g)].map((m) => m[1])
+      for (const spec of specs) assert.ok(spec in VERSIONS, `${pkg}/${file} import 了 ${spec}，import map 裡沒有`)
+    }
+  }
+})
+
+await test('buildSrcdoc（imports）：import map 列出每個套件；vue-router 指到包裝模組，真正的檔在 @sandbox/vue-router', async () => {
+  // 瀏覽器環境的最小替身：frame.js 用 window.location 組網址、FileReader 把 vendor 檔轉成 data: URL
+  globalThis.window = { location: { href: 'http://localhost/' } }
+  globalThis.FileReader = class { readAsDataURL(blob) { blob.arrayBuffer().then((b) => { this.result = `data:${blob.type};base64,` + Buffer.from(b).toString('base64'); this.onload() }) } }
+  const realFetch = globalThis.fetch
+  const fake = { vue: 'data:text/javascript;base64,VlVF', pinia: 'data:text/javascript;base64,UElOSUE=', 'vue-router': 'data:text/javascript;base64,Uk9VVEVS' }
+  globalThis.fetch = async (url) => new Response(atob(fake[Object.keys(fake).find((k) => String(url).includes(`/${k}@`))].split(',')[1]))
+  try {
+    const map = await importMapFor('vue', "import { createRouter } from 'vue-router'\nimport { defineStore } from 'pinia'")
+    assert.deepEqual(Object.keys(map), ['vue', 'pinia', 'vue-router', '@sandbox/vue-router'])
+    assert.equal(map.vue, fake.vue)
+    assert.equal(map['@sandbox/vue-router'], fake['vue-router'])
+    const shim = Buffer.from(map['vue-router'].split(',')[1], 'base64').toString('utf8')
+    assert.match(shim, /export \* from '@sandbox\/vue-router'/)
+    assert.match(shim, new RegExp(`\\+\\+n <= ${ROUTER_REDIRECT_LIMIT}`))
+    assert.equal(await importMapFor('html', '<p>沒有 import</p>'), null)
+    const { html } = buildSrcdoc({ kind: 'vue', code: 'x', runId: 'r9', imports: map })
+    const im = JSON.parse(/<script type="importmap">(.*?)<\/script>/.exec(html)[1])
+    assert.deepEqual(Object.keys(im.imports), ['vue', 'pinia', 'vue-router', '@sandbox/vue-router'])
+    const cfg = JSON.parse(/"runId":"r9"[^\n]*?\}/.exec(html)[0].replace(/^/, '{'))
+    assert.deepEqual(cfg.vendors.map((v) => v[1]), ['vue', 'pinia', 'vue-router', 'vue-router'])   // stack 裡的 data: URL 換成套件名稱
+  } finally {
+    globalThis.fetch = realFetch
+    delete globalThis.window
+    delete globalThis.FileReader
+  }
 })
 
 console.log(`${n} passed`)

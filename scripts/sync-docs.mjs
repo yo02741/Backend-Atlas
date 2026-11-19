@@ -138,7 +138,7 @@ const blocks = {
   practice: () => [
     '### 練習題',
     '',
-    `- **程式題 ${EXERCISES.length} 道**（Python ${kinds.python || 0}、SQL ${kinds.sql || 0}、config ${kinds.config || 0}、JavaScript ${kinds.js || 0}、HTML ${kinds.html || 0}、CSS ${kinds.css || 0}、Vue ${kinds.vue || 0}）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、\`.gitlab-ci.yml\`、GitHub Actions）由 JS 檢查器逐條驗證；HTML、CSS、Vue 題在沙箱 iframe 裡執行（自架的 Vue ${VERSIONS.vue}，\`fetch\` 由假的門診 API 回應），測試透過 DOM 檢查畫面與行為，CSS 題在 390、768、1280 等寬度下各檢查一次。`,
+    `- **程式題 ${EXERCISES.length} 道**（Python ${kinds.python || 0}、SQL ${kinds.sql || 0}、config ${kinds.config || 0}、JavaScript ${kinds.js || 0}、HTML ${kinds.html || 0}、CSS ${kinds.css || 0}、Vue ${kinds.vue || 0}）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、\`.gitlab-ci.yml\`、GitHub Actions）由 JS 檢查器逐條驗證；HTML、CSS、Vue 題在沙箱 iframe 裡執行（自架的 Vue ${VERSIONS.vue}、Pinia ${VERSIONS.pinia}、Vue Router ${VERSIONS['vue-router']}，\`fetch\` 由假的門診 API 回應），測試透過 DOM 檢查畫面與行為，CSS 題在 390、768、1280 等寬度下各檢查一次。`,
     `- **選擇題 ${quizCount} 道**：每課 3 題，含程式碼判讀與情境題。`,
     '- **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。',
   ].join('\n'),

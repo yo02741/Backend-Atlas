@@ -1,14 +1,15 @@
 /* 沙箱 iframe 的 prelude：srcdoc 裡第一個執行的 classic script。frame.js 用 Function.prototype.toString 塞進去，
    所以 framePrelude 必須自給自足（不引用模組裡的其他東西）。
    做的事：console 與錯誤攔截後轉給外殼、localStorage / sessionStorage 的記憶體替身、假 API（window.api 與 window.fetch）、
-   迴圈保護 __lp、測試 helper、測試 runner。
+   迴圈保護 __lp、測試 helper（含模擬分頁切到背景的 setVisibility）、測試 runner。
 
-   cfg = { runId, mode: 'test' | 'preview' | 'once', userStart, userEnd, loopLimit }
+   cfg = { runId, mode: 'test' | 'preview' | 'once', userStart, userEnd, loopLimit, vendors: [[data: URL 的開頭, 套件名稱]] }
    傳給外殼的訊息（parent.postMessage(msg, '*')，外殼只收 source 是這個 iframe 且 runId 相符的）：
      { ns: 'frame', runId, type: 'console', level: 'log' | 'warn' | 'error', text }
      { ns: 'frame', runId, type: 'network', method, url, status, ms, aborted, network }
      { ns: 'frame', runId, type: 'error', message, stack }
      { ns: 'frame', runId, type: 'ready' }
+     { ns: 'frame', runId, type: 'navigate', text }                        iframe 要換頁（離開 about:srcdoc），畫面會消失
      { ns: 'frame', runId, type: 'done', test: { name, pass, error } } */
 export function framePrelude(cfg, createFakeApi) {
   const W = window
@@ -20,8 +21,10 @@ export function framePrelude(cfg, createFakeApi) {
 
   // ── 行號：srcdoc 的第幾行 → 使用者程式的第幾行 ──
   const userLine = (line) => (cfg.userStart && line >= cfg.userStart && line <= cfg.userEnd ? line - cfg.userStart + 1 : 0)
+  // vendor 檔是整段 data: URL：換成套件名稱（vue、pinia、vue-router）
+  const vendorName = (url) => { const v = (cfg.vendors || []).find((x) => url.startsWith(x[0])); return v ? v[1] : 'vendor' }
   const mapStack = (stack) => String(stack || '')
-    .replace(/data:text\/javascript[^\s)]*/g, 'vue')
+    .replace(/data:text\/javascript[^\s)]*/g, vendorName)
     .replace(/about:srcdoc:(\d+):(\d+)/g, (m, l, c) => { const u = userLine(Number(l)); return u ? `第 ${u} 行:${c}` : '執行環境' })
 
   // ── 輸出格式 ──
@@ -108,9 +111,21 @@ export function framePrelude(cfg, createFakeApi) {
     W.confirm = (m) => { record('log', `[confirm] ${m === undefined ? '' : m} → 確定`); return true }
     W.prompt = (m, d) => { record('log', `[prompt] ${m === undefined ? '' : m}`); return d === undefined ? '' : String(d) }
   }
-  // 表單沒擋預設行為時會讓 iframe 換頁，畫面就不見了：攔下來並提示
+  // 表單沒擋預設行為時會讓 iframe 換頁，畫面就不見了：攔下來並提示。
+  // <form method="dialog">（或送出鈕寫 formmethod="dialog"）只關閉 Dialog、不換頁，不攔，否則 Dialog 關不掉
   W.addEventListener('submit', (e) => {
+    const s = e.submitter
+    const method = s && s.hasAttribute && s.hasAttribute('formmethod') ? s.formMethod : e.target && e.target.method
+    if (method === 'dialog') return
     if (!e.defaultPrevented) { e.preventDefault(); record('warn', '表單送出會換頁（沙箱已攔下）：在 submit 處理函式呼叫 event.preventDefault()，Vue 用 @submit.prevent') }
+  })
+
+  // iframe 換頁時畫面就不見了，測試等不到結果：先告訴外殼。常見原因是 Vue Router 用了 createWebHashHistory／createWebHistory：
+  // srcdoc 的相對網址以外殼的網址為基準，replaceState('#/') 跨來源丟 SecurityError，router 接著用 location.replace() 換頁
+  W.addEventListener('beforeunload', () => {
+    const text = 'iframe 要換頁，畫面會消失：沙箱裡的 Vue Router 用 createMemoryHistory()，連結與 location 不要導向別的網址'
+    record('warn', text)
+    post({ type: 'navigate', text })
   })
 
   // ── 迴圈保護：主執行緒連續被占用超過上限就丟錯（loopGuard.js 在每個迴圈插入 __lp()） ──
@@ -177,6 +192,13 @@ export function framePrelude(cfg, createFakeApi) {
   W.box = (t) => need(t).getBoundingClientRect()
   W.focus = (t) => { need(t).focus() }
   W.activeElement = () => document.activeElement
+  // 分頁切到背景／回到前景（Page Visibility API）：改 document.visibilityState 與 document.hidden，再發出 visibilitychange
+  W.setVisibility = (state) => {
+    const hidden = state === 'hidden'
+    Object.defineProperty(document, 'visibilityState', { value: hidden ? 'hidden' : 'visible', configurable: true })
+    Object.defineProperty(document, 'hidden', { value: hidden, configurable: true })
+    document.dispatchEvent(new Event('visibilitychange', { bubbles: true }))
+  }
   W.logs = logs
 
   W.__frame = {

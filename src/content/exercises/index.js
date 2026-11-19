@@ -13,6 +13,7 @@ import devopsConfig from './devops-config.js'
 import ai from './ai.js'
 import knowledge from './knowledge.js'
 import project from './project.js'
+import projectFe from './project-fe.js'
 import p11p3 from './p11-p3.js'
 import p11p2 from './p11-p2.js'
 import p11p1 from './p11-p1.js'
@@ -40,8 +41,11 @@ import vue from './vue.js'
 import ui from './ui.js'
 import api from './api.js'
 import feAi from './fe-ai.js'
+import browser from './browser.js'
+import quality from './quality.js'
+import build from './build.js'
 
-export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...p9l1, ...p9l2, ...p9l3, ...p9l4, ...p10m1, ...p10m2, ...p10m3, ...p10x1, ...p10x2, ...p10x3, ...p10m4, ...p10m5, ...p10m6, ...p11n1, ...p11n2, ...p11n3, ...p11n4, ...p11p1, ...p11p2, ...p11p3, ...scenarios, ...project, ...layout, ...jsTs, ...vue, ...ui, ...api, ...feAi]
+export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...p9l1, ...p9l2, ...p9l3, ...p9l4, ...p10m1, ...p10m2, ...p10m3, ...p10x1, ...p10x2, ...p10x3, ...p10m4, ...p10m5, ...p10m6, ...p11n1, ...p11n2, ...p11n3, ...p11n4, ...p11p1, ...p11p2, ...p11p3, ...scenarios, ...project, ...projectFe, ...browser, ...layout, ...jsTs, ...vue, ...ui, ...api, ...build, ...quality, ...feAi]
 
 export const KINDS = {
   sql: { label: 'SQL', runtime: 'sql' },

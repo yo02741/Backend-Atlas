@@ -31,9 +31,10 @@
 | AI的領域 | 2（AI 時代的開發與 Agent 安全；知識系統） |
 | 技能（課） | 235，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
 | 互動實驗室 | 53，依領域列在下方 |
-| 程式題 | 220（Python 127 / SQL 38 / config 27 / JS 14 / HTML 2 / CSS 3 / Vue 9），含實作路線的 20 道驗收題；解答全部經真實執行環境驗證 |
+| 程式題 | 267（Python 127 / SQL 38 / config 29 / JS 19 / HTML 10 / CSS 10 / Vue 34），含實作路線的 35 道驗收題；解答全部經真實執行環境驗證 |
 | 選擇題 | 705（每課 3 題，含程式碼判讀與情境題） |
 | 設計情境 | 39（API 設計 8；資料與身分 4；高流量 7；維運與基礎建設 7；AI 與 Agent 安全 5；畫面與互動 3；資料與狀態 3；建置與上線 2） |
+| 前端的實作路線 | 從零做完一個門診掛號前端：7 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |
 | 後端的實作路線 | 從零做完一個門診掛號後端：10 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |
 | 課綱 | `docs/CURRICULUM.md`（後端與 AI）：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、10 週的 Docker 到 Kubernetes 專題、驗收設計；`docs/CURRICULUM-frontend.md`（前端） |
 <!-- /sync:stats -->
@@ -230,6 +231,10 @@
 
 `#/project`。資料表與約束 → 掛號規則寫成程式與測試 → REST 介面與狀態碼 → 登入與角色權限 → 同時搶最後一個號 → 快取與限流 → 打包與持續整合（Dockerfile、GitLab CI）→ 日誌、指標與追蹤 → 給 agent 一個唯讀查詢的 MCP server（OAuth 保護、依使用者限制可查的表、遮罩、稽核）→ 部署到 Kubernetes（Deployment、Service、Ingress、探針與資源、零停機滾動更新）。每階段一份說明，連回相關的課，驗收題在瀏覽器裡跑（SQL 約束、Python 規則與測試、Dockerfile 與 `.gitlab-ci.yml` 檢查）。
 
+### 實作路線：從零做完一個門診掛號前端
+
+`#/project?track=frontend`。登入（送出中、401 與 422、token 放記憶體、401 回登入頁並記下原頁）→ 診次清單（loading、success、empty、error 四種狀態，重新整理不閃畫面，篩選條件放網址）→ 掛號表單（422 對回欄位並移焦點、409 依 type 顯示、防重複送出與 Idempotency-Key、成功訊息寫進 live region）→ 我的掛號（cursor 分頁、原生 `<dialog>` 確認與焦點、換篩選時取消舊請求）→ 報到看板（setTimeout 輪詢、背景暫停、卸載清理、失敗時退避）→ 無障礙與 RWD（鍵盤、名稱、live region、換頁移焦點、390 與 1280 的 mobile-first 版面）→ 建置與部署（`/clinic/` 子路徑的 base、nginx fallback 與快取、執行時的 `config.js`、`vite:preloadError`）。每階段一份說明，關鍵程式是 Vue 3.5 的 SFC（Vue Router、Pinia）；15 道驗收題在沙箱 iframe 裡跑（fetch 由假 API 回應），第 7 階段有一題 nginx 設定檢查。
+
 ### 參考專案 `companion/clinic-api/`
 
 實作路線的題目做成一個可以 clone 下來跑的服務：FastAPI、SQLAlchemy + Alembic、PostgreSQL 16、Redis，對應階段 1–8 與第 10 階段（第 9 階段的 MCP server 不在裡面）。`docker compose up -d --build --wait` 之後跑 migration 與 seed 就能用 curl 走完掛號流程；74 個測試含並發搶號，需要真的 PostgreSQL 與 Redis。另附 Dockerfile、`.gitlab-ci.yml` 與 `k8s/` 的 manifest（Kustomize 的 base 加 `kind`、`production` 兩個 overlay）。[本機 Kubernetes 實作指南](companion/clinic-api/docs/local-k8s.md) 用 kind 在自己的電腦上部署這個服務、做滾動更新，並有六個故意弄壞再排錯的練習；CI 每次都在 kind 叢集上實際部署一次。步驟、階段與檔案的對照、和網站內容的差異都寫在 [`companion/clinic-api/README.md`](companion/clinic-api/README.md)。這個目錄和網站的建置無關，`Companion` workflow 只在它變動時跑。
@@ -237,7 +242,7 @@
 <!-- sync:practice -->
 ### 練習題
 
-- **程式題 220 道**（Python 127、SQL 38、config 27、JavaScript 14、HTML 2、CSS 3、Vue 9）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證；HTML、CSS、Vue 題在沙箱 iframe 裡執行（自架的 Vue 3.5.45，`fetch` 由假的門診 API 回應），測試透過 DOM 檢查畫面與行為，CSS 題在 390、768、1280 等寬度下各檢查一次。
+- **程式題 267 道**（Python 127、SQL 38、config 29、JavaScript 19、HTML 10、CSS 10、Vue 34）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證；HTML、CSS、Vue 題在沙箱 iframe 裡執行（自架的 Vue 3.5.45、Pinia 4.1.0、Vue Router 5.5.1，`fetch` 由假的門診 API 回應），測試透過 DOM 檢查畫面與行為，CSS 題在 390、768、1280 等寬度下各檢查一次。
 - **選擇題 705 道**：每課 3 題，含程式碼判讀與情境題。
 - **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。
 <!-- /sync:practice -->
@@ -287,11 +292,13 @@
 | Python 3 | [Pyodide](https://pyodide.org/)（CPython → WASM），跑在 Web Worker；自架於 `public/pyodide/`（build 前由 `scripts/copy-pyodide.mjs` 從 node_modules 複製，已 gitignore） | 約 13 MB，首次載入後快取 |
 | PostgreSQL | [PGlite](https://pglite.dev/)（Postgres → WASM，記憶體模式），Vite 打包成 assets | 約 16 MB |
 | JavaScript | 原生，跑在 Web Worker（每次執行新開） | — |
-| HTML、CSS、Vue | 沙箱 iframe（`sandbox="allow-scripts allow-forms allow-modals"`，不給 `allow-same-origin`，`srcdoc` 組成，每個測試一個新的 iframe）；Vue 3.5.45 自架在 `public/vendor/vue@3.5.45/`（build、dev 前由 `scripts/copy-vendor.mjs` 從 node_modules 複製，已 gitignore），外殼讀一次轉成 data: URL 放進 import map | 約 0.6 MB，第一次執行 vue 題時下載 |
+| HTML、CSS、Vue | 沙箱 iframe（`sandbox="allow-scripts allow-forms allow-modals"`，不給 `allow-same-origin`，`srcdoc` 組成，每個測試一個新的 iframe）；Vue 3.5.45、Pinia 4.1.0、Vue Router 5.5.1 自架在 `public/vendor/<套件>@<版本>/`（版本與檔名在 `src/runtime/versions.js`，build、dev 前由 `scripts/copy-vendor.mjs` 從 node_modules 複製，已 gitignore；Pinia 與 Vue Router 只用 prod 版，非 prod 版另外 import `@vue/devtools-api` 與 `nostics`），外殼讀一次轉成 data: URL 放進 import map | Vue 約 0.6 MB，第一次執行 vue 題時下載；Pinia（5 KB）、Vue Router（26 KB）只在程式碼 import 它們時下載 |
 
 - 逾時保護：Python 12 秒、JS 8 秒，超過就砍掉 worker 重開（沒有 SharedArrayBuffer 無法中斷 Python）。
 - 沙箱的 import map 用 data: URL：不受 CORS 限制，dev、preview、Pages、Firebase 的行為一樣（網址直連的話，伺服器要對 null origin 回 `Access-Control-Allow-Origin`）。
 - 沙箱的迴圈保護：組 srcdoc 前在 `while`、`for`、`do` 迴圈插入檢查，主執行緒連續被占用 1.5 秒就中止；另有每個測試 8 秒逾時。沙箱 iframe 可能和外殼同一個程序（Chromium 實測是），`eval`、`new Function` 裡的迴圈保護不到。
+- 表單沒有取消預設動作時，沙箱攔下送出並在 Console 提示（否則 iframe 會換頁）；`<form method="dialog">` 只關閉 Dialog，不攔。
+- Pinia 與 Vue Router：程式碼（使用者的程式與測試）出現 `from 'pinia'`、`from 'vue-router'` 或 `import('…')` 才放進 import map，兩者的 `import 'vue'` 經同一個 import map 共用一份 Vue。沙箱的網址是 `about:srcdoc`，相對網址卻以外殼的網址為基準：`createWebHashHistory()`、`createWebHistory()` 一開始的 `history.replaceState` 會丟 `SecurityError`，router 接著用 `location.replace()` 讓 iframe 換頁，所以題目一律用 `createMemoryHistory()`；iframe 要換頁時 prelude 先通知外殼，測試馬上失敗並說明原因。兩者是正式建置版：沒有 `next` 的棄用警告、setup store 的 `$reset()` 不丟錯；prod 版也偵測不到導航守衛的無窮導向（實測會讓 iframe 與外殼一起卡死），import map 的 `vue-router` 因此指到一個包裝模組，`createRouter` 先掛一個守衛，同一個 task 裡導航超過 100 次就取消並丟出說明原因的錯誤。
 - 假 API：沙箱裡的 `fetch` 由 `src/runtime/fakeApi.js` 回應，內建門診系統的路由（`/api/auth/login`、`/api/sessions`、`/api/appointments`…，錯誤用 Problem Details），題目可以設定延遲與失敗；這些請求不會出現在 DevTools 的 Network 分頁，預覽下方有「網路」面板。
 - SQL 練習每次執行前重建 `public` schema 並套用該題的 setup；執行後自動 `ROLLBACK` 收掉沒 COMMIT 的交易。
 - 編輯器：CodeMirror 6，主題全走 CSS token（亮暗自動）。
@@ -310,7 +317,7 @@ src/
     project/         實作路線：stages.js（階段定義）、<stage-id>.md（各階段說明，懶載入）
     skillBody.js     內文的 Suspense 載入器（readSkillBody / preloadSkillBody）
     schemas.js       SQL 練習與 Playground 共用的電商範例資料庫
-    exercises/       程式題（sql / python / js / config），index.js 匯總；project.js 是實作路線的驗收題
+    exercises/       程式題（sql / python / js / config / html / css / vue），index.js 匯總；project.js、project-fe.js 是實作路線的驗收題
     quizzes/         選擇題題庫，每領域一檔（extra.js 放跨領域補題），index.js 以 glob 自動收集
     scenarios/       設計情境，每個一檔，index.js 以 glob 自動收集（分組定義也在這）
   labs/            互動實驗室：ui.jsx（共用元件）、lab.css、index.js（登錄表）、*Lab.jsx
@@ -346,7 +353,7 @@ hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/
 - **技能**：分兩處，`content/dN-*.js` 的 `skills` 加索引物件（id 全站唯一），`content/body/dN-*.js` 加同一個 id 的內文（`points` / `checklist` / `refs`）；`refs` 只放確定存在的官方文件。寫完跑 `npm run validate:content`（索引與內文的 id 必須一一對應）。
 - **深入內容**：見 `docs/CONTRIBUTING-lessons.md`（段落結構、語氣、可執行區塊的限制、新課的完整清單）；寫完跑 `npm run validate:content` 與 `npm run e2e:deep`。
 - **實驗室**：見 `docs/CONTRIBUTING-labs.md`（合約、共用元件 API、驗證流程）。
-- **程式題**：在 `content/exercises/<領域>.js` 加一筆：`kind` 為 `sql`（`setup` + `expect: { columns, rows, ordered }`，或 `expect.query` 指定驗證查詢）、`python` / `js`（`tests: [{ name, code }]`，測試碼與使用者程式碼在同一命名空間；JS 內建 `assert` / `assertEqual`）或 `config`（使用者的設定檔成為 `source` / `lines`，交給 JS 測試檢查）；前端題是 `html`（body 內容）、`css`（CSS 加必填的 `html` 固定標記）、`vue`（一個 module，自己 mount 到 `#app`），可另給 `api`、`css`、`html`，測試可加 `api`（假 API 設定）與 `viewport`（iframe 寬度，預設 1024），測試 helper 有 `$`、`$$`、`text`、`click`、`input`、`select`、`check`、`submit`、`press`、`tick`、`wait`、`waitFor`、`css`、`box`、`focus`、`logs`、`api`。寫完跑 `npm run e2e:verify` 確認解答通過、起始碼不通過。
+- **程式題**：在 `content/exercises/<領域>.js` 加一筆：`kind` 為 `sql`（`setup` + `expect: { columns, rows, ordered }`，或 `expect.query` 指定驗證查詢）、`python` / `js`（`tests: [{ name, code }]`，測試碼與使用者程式碼在同一命名空間；JS 內建 `assert` / `assertEqual`）或 `config`（使用者的設定檔成為 `source` / `lines`，交給 JS 測試檢查）；前端題是 `html`（body 內容）、`css`（CSS 加必填的 `html` 固定標記）、`vue`（一個 module，自己 mount 到 `#app`），可另給 `api`、`css`、`html`，測試可加 `api`（假 API 設定）與 `viewport`（iframe 寬度，預設 1024）；測試會移動焦點（`focus()`、`showModal()`、方向鍵）的題目加 `serial: true`，測試一個一個跑（同時只有一個 iframe 拿得到焦點）；nginx 設定題可以接 `exercises/nginx-sim.js` 的直譯器，測試 helper 有 `$`、`$$`、`text`、`click`、`input`、`select`、`check`、`submit`、`press`、`tick`、`wait`、`waitFor`、`css`、`box`、`focus`、`setVisibility`（模擬分頁切到背景與回到前景）、`logs`、`api`；vue 題可以 `import` `pinia` 與 `vue-router`（router 用 `createMemoryHistory()`）。寫完跑 `npm run e2e:verify` 確認解答通過、起始碼不通過。
 - **選擇題**：見 `docs/CONTRIBUTING-quizzes.md`；寫完跑 `npm run validate:quizzes`。
 - **設計情境**：見 `docs/CONTRIBUTING-scenarios.md`（內容格式、模擬器規則）；寫完跑 `npm run validate:scenarios`。
 
@@ -354,7 +361,7 @@ hash 路由：`#/`、`#/roadmap?kw=JWT`、`#/curriculum`、`#/domain/data`、`#/
 
 ```bash
 npm run validate                 # 技能索引與內文對應、深入內容、實作路線、題庫、情境結構
-npm run test:unit                # 進度合併規則（兩台裝置、離線、取消完成）、複習頁的抽題與錯題紀錄、沙箱的假 API 與迴圈保護
+npm run test:unit                # 進度合併規則（兩台裝置、離線、取消完成）、複習頁的抽題與錯題紀錄、沙箱的假 API、迴圈保護與 vendor 的 import map
 npm run docs:check               # README 與課綱的產生段落是否最新、每堂課是否排進課綱（npm run docs:sync 重新產生）
 npm run check:links              # 延伸閱讀與深入內容裡的外部連結（需要連外網；Actions 的 Links workflow 每月跑一次）
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
@@ -365,7 +372,7 @@ npm run e2e:ui                   # 首頁路線圖（2／3／4／6 欄：站序�
 npm run e2e:labs                 # 92 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
 npm run e2e:mobile               # 390px 逐頁（每一課、情境、實驗室、題目、實作路線）：頁面不能橫向捲動、內容不能被裁切、不留需要左右滑的區塊
-npm run e2e:frame                # 前端沙箱 iframe 的自我測試：隔離、無窮迴圈、Console 與 Vue warn、假 API、viewport、表單、偽造訊息、390px 預覽（BROWSERS=chromium,firefox,webkit 換瀏覽器）
+npm run e2e:frame                # 前端沙箱 iframe 的自我測試：隔離、無窮迴圈、Console 與 Vue warn、假 API、viewport、表單、偽造訊息、Pinia 與 Vue Router 的懶載入、iframe 換頁、守衛的無窮導向、390px 預覽（BROWSERS=chromium,firefox,webkit 換瀏覽器）
 npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Emulator 與 preview；需要 Java 11+）
 ```
 

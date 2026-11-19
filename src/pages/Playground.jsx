@@ -228,6 +228,52 @@ const App = {
 
 createApp(App).mount('#app')
 ` },
+  { label: 'Pinia 與 Vue Router', code: `import { createApp, ref, computed } from 'vue'
+import { createPinia, defineStore, storeToRefs } from 'pinia'
+import { createRouter, createMemoryHistory, RouterLink, RouterView, useRoute } from 'vue-router'
+
+// setup store：ref 是 state、computed 是 getter、函式是 action
+const useQueueStore = defineStore('queue', () => {
+  const current = ref({ 101: 12, 102: 5 })
+  const total = computed(() => Object.values(current.value).reduce((a, b) => a + b, 0))
+  function next(room) { current.value[room]++ }
+  return { current, total, next }
+})
+
+const Room = {
+  setup() {
+    const route = useRoute()                       // /rooms/:room 換診間時元件會被重用，直接讀 route.params
+    const queue = useQueueStore()
+    const { current } = storeToRefs(queue)         // 解構 state 要用 storeToRefs
+    return { route, current, next: queue.next }
+  },
+  template: \`
+    <p>{{ route.params.room }} 診：目前 {{ current[route.params.room] }} 號</p>
+    <button type="button" @click="next(route.params.room)">叫下一號</button>\`,
+}
+
+// 沙箱的網址是 about:srcdoc，router 用 createMemoryHistory()
+const router = createRouter({
+  history: createMemoryHistory(),
+  routes: [
+    { path: '/', redirect: '/rooms/101' },
+    { path: '/rooms/:room', component: Room },
+  ],
+})
+
+const App = {
+  setup() {
+    const { total } = storeToRefs(useQueueStore())
+    return { total }
+  },
+  template: \`
+    <nav><RouterLink to="/rooms/101">101 診</RouterLink> · <RouterLink to="/rooms/102">102 診</RouterLink></nav>
+    <RouterView />
+    <p>已叫號合計 {{ total }}</p>\`,
+}
+
+createApp(App).use(createPinia()).use(router).mount('#app')
+` },
   { label: '[Vue warn]：直接改 props', code: `import { createApp } from 'vue'
 
 const Badge = {

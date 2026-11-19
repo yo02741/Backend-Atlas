@@ -94,12 +94,12 @@ export function TestResults({ results }) {
 const NOOP_SUB = () => () => {}
 const READY = () => 'ready'
 export function RuntimeStatus({ kind }) {
-  // html、css 題不需要下載任何東西；vue 題第一次執行時下載自架的 Vue
+  // html、css 題不需要下載任何東西；vue 題第一次執行時下載自架的 Vue（import pinia、vue-router 時另外下載，各幾十 KB）
   const get = kind === 'python' ? pyStatus : kind === 'sql' ? sqlStatus : kind === 'vue' ? frameStatus : READY
   const sub = kind === 'python' ? onPyStatus : kind === 'sql' ? onSqlStatus : kind === 'vue' ? onFrameStatus : NOOP_SUB
   const [s, setS] = useState(get())
   useEffect(() => sub(setS), [sub])
-  const label = { python: 'Python（Pyodide）', sql: 'PostgreSQL（PGlite）', js: 'JavaScript', html: 'HTML（沙箱 iframe）', css: 'CSS（沙箱 iframe）', vue: `Vue ${VERSIONS.vue}（沙箱 iframe）` }[kind]
+  const label = { python: 'Python（Pyodide）', sql: 'PostgreSQL（PGlite）', js: 'JavaScript', html: 'HTML（沙箱 iframe）', css: 'CSS（沙箱 iframe）', vue: `Vue ${VERSIONS.vue}、Pinia ${VERSIONS.pinia}、Vue Router ${VERSIONS['vue-router']}（沙箱 iframe）` }[kind]
   const size = { python: '約 13 MB', sql: '約 16 MB', js: '', vue: '約 0.6 MB' }[kind] || ''
   const text = s === 'ready' ? '就緒' : s === 'loading' ? `下載中 ${size}，只需一次` : s === 'error' ? '載入失敗' : (kind === 'js' ? '就緒' : '第一次執行時載入')
   return (

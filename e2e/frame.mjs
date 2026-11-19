@@ -1,5 +1,6 @@
 // 前端沙箱執行環境（src/runtime/frame.js）的自我測試：隔離、無窮迴圈、Console 與錯誤、假 API、viewport、表單送出、
-// 舊 runId 的訊息、390px 的預覽窗格。用 ?verify=frame harness 直接呼叫 window.__frame。
+// 舊 runId 的訊息、Pinia 與 Vue Router 的懶載入、iframe 換頁、守衛的無窮導向、390px 的預覽窗格。
+// 用 ?verify=frame harness 直接呼叫 window.__frame。
 // 前置：npm run build && npm run preview。BROWSERS=chromium,firefox,webkit 依序跑（預設 chromium；要先 npx playwright install 對應的瀏覽器）
 import { chromium, firefox, webkit } from 'playwright'
 import { mkdirSync } from 'node:fs'
@@ -123,6 +124,9 @@ createApp({ components: { Badge }, template: '<Badge :count="3" />' }).mount('#a
   t('submit event fires (@submit.prevent runs)', form.test.pass, form.test.error)
   const noPrevent = await run({ kind: 'html', code: '<form><button>送出</button></form><p id=alive>ok</p>', test: { code: "click('button')\nawait wait(50)\nassertEqual(text('#alive'), 'ok')" } })
   t('form without preventDefault does not navigate the frame away', noPrevent.test.pass && noPrevent.logs.some((l) => /表單送出會換頁/.test(l.text)), noPrevent.test.error)
+  // <form method="dialog"> 不換頁，沙箱不能攔：攔了 Dialog 就關不掉
+  const dialogForm = await run({ kind: 'html', code: '<button id=opener>開</button><dialog id=d><form method="dialog"><button value="keep">保留</button></form></dialog><script>document.getElementById("opener").onclick = () => document.getElementById("d").showModal()</script>', test: { code: "focus('#opener')\nclick('#opener')\nawait tick()\nassert($('#d').open, '沒有打開')\nclick('#d button')\nawait waitFor(() => !$('#d').open)\nassertEqual($('#d').returnValue, 'keep')\nassertEqual(document.activeElement.id, 'opener', '關閉後的焦點')" } })
+  t('form method="dialog" closes the dialog (not blocked, no warning)', dialogForm.test.pass && !dialogForm.logs.some((l) => /表單送出會換頁/.test(l.text)), dialogForm.test.error)
 
   // ── 舊 runId / 偽造的訊息被丟掉 ──
   const spoof = await run({ kind: 'html', code: '<p>x</p>', test: { code: "parent.postMessage({ ns: 'frame', runId: 'run-stale-1', type: 'done', test: { name: 't', pass: true } }, '*')\nawait wait(50)\nassert(false, '真正的結果')" } })
@@ -146,6 +150,68 @@ createApp({ components: { Badge }, template: '<Badge :count="3" />' }).mount('#a
     return { ok: ok.ok, out: ok.output, bad: bad.ok, err: bad.error }
   })
   t('runOnce: a working vue block succeeds, a late error fails', once.ok && once.out === '3' && !once.bad && /晚一點才壞/.test(once.err || ''), JSON.stringify(once))
+
+  // ── Pinia 與 Vue Router：import 了才下載，經同一個 import map 共用一份 Vue ──
+  {
+    const lp = await ctx.newPage()   // 新分頁：vendor 的記憶體快取是空的
+    lp.on('pageerror', (e) => errs.push('PAGEERROR(vendor) ' + e.message))
+    lp.on('console', (m) => { if (m.type() === 'error') errs.push('CONSOLE(vendor) ' + m.text().slice(0, 200)) })
+    const vendorReqs = []
+    lp.on('request', (r) => { const m = /\/vendor\/([^/]+)\//.exec(r.url()); if (m) vendorReqs.push(m[1].replace(/@.*/, '')) })
+    await lp.goto(base + '?verify=frame', { waitUntil: 'networkidle' })
+    await lp.waitForFunction(() => window.__frameReady, null, { timeout: 30000 })
+    const lrun = (o) => lp.evaluate(async (o) => {
+      const t0 = performance.now()
+      const r = await window.__frame.runTest({ ex: {}, ...o, test: { name: 't', ...o.test } })
+      return { ...r, ms: Math.round(performance.now() - t0) }
+    }, o)
+    const seen = () => [...new Set(vendorReqs)].sort().join(',')
+    await lrun({ kind: 'html', code: '<p id=x>hi</p>', test: { code: "assertEqual(text('#x'), 'hi')" } })
+    t('html without imports downloads no vendor file', vendorReqs.length === 0, seen())
+    const vueOnly = await lrun({ kind: 'vue', code: vue("createApp({ template: '<p id=x>{{ 1 + 1 }}</p>' }).mount('#app')"), test: { code: "await waitFor(() => text('#x') === '2')" } })
+    t('a vue-only exercise downloads vue, not pinia or vue-router', vueOnly.test.pass && seen() === 'vue', seen())
+    const piniaOnly = await lrun({ kind: 'vue', code: `import { createApp, ref } from 'vue'
+import { createPinia, defineStore, storeToRefs } from 'pinia'
+const useQueue = defineStore('queue', () => { const current = ref(12); function next() { current.value++ } return { current, next } })
+createApp({ setup() { const q = useQueue(); const { current } = storeToRefs(q); return { current, next: q.next } }, template: '<button type="button" @click="next">{{ current }}</button>' }).use(createPinia()).mount('#app')`, test: { code: "await waitFor(() => $('button'))\nclick('button')\nawait tick()\nassertEqual(text('button'), '13')" } })
+    t('import from pinia: store and storeToRefs work, vue-router is not downloaded', piniaOnly.test.pass && seen() === 'pinia,vue', `${piniaOnly.test.error} / ${seen()}`)
+    const both = await lrun({ kind: 'vue', code: `import { createApp, ref } from 'vue'
+import { createPinia, defineStore } from 'pinia'
+import { createRouter, createMemoryHistory, RouterView, RouterLink, useRoute } from 'vue-router'
+const useSession = defineStore('session', () => { const user = ref(null); return { user } })
+const Patient = { setup() { return { route: useRoute() } }, template: '<p id=patient>{{ route.params.id }}</p>' }
+const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<p id=home>home</p>' } }, { path: '/login', component: { template: '<p id=login>login</p>' } }, { path: '/patients/:id', component: Patient, meta: { requiresAuth: true } }] })
+router.beforeEach((to) => { if (to.meta.requiresAuth && !useSession().user) return { path: '/login', query: { redirect: to.fullPath } } })
+const App = { setup() { const s = useSession(); return { route: useRoute(), login: () => { s.user = { name: '林醫師' } } } }, template: '<RouterLink id=to7 to="/patients/7">7</RouterLink><button id=login-btn type="button" @click="login">登入</button><b id=path>{{ route.fullPath }}</b><RouterView />' }
+createApp(App).use(createPinia()).use(router).mount('#app')`, test: { code: "await waitFor(() => $('#home'))\nclick('#to7')\nawait waitFor(() => $('#login'))\nassertEqual(text('#path'), '/login?redirect=/patients/7')\nclick('#login-btn')\nclick('#to7')\nawait waitFor(() => text('#patient') === '7')" } })
+    t('pinia + vue-router (createMemoryHistory): guard reads the store, RouterView renders params', both.test.pass, both.test.error)
+    t('vue-router is downloaded only when imported', seen() === 'pinia,vue,vue-router', seen())
+    const n = vendorReqs.length
+    await lrun({ kind: 'vue', code: "import { createApp } from 'vue'\nimport { createPinia } from 'pinia'\nimport { createRouter, createMemoryHistory } from 'vue-router'\ncreateApp({ template: '<p>x</p>' }).use(createPinia()).use(createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<i />' } }] })).mount('#app')", test: { code: 'await tick()' } })
+    t('vendor files are read once per page', vendorReqs.length === n && n === 3, JSON.stringify(vendorReqs))
+
+    // createWebHashHistory：srcdoc 的相對網址以外殼為基準，replaceState('#/') 丟 SecurityError，router 改用 location.replace 讓 iframe 換頁
+    const hash = await lrun({ kind: 'vue', code: "import { createApp } from 'vue'\nimport { createRouter, createWebHashHistory, RouterView } from 'vue-router'\nconst router = createRouter({ history: createWebHashHistory(), routes: [{ path: '/', component: { template: '<p id=home>home</p>' } }] })\ncreateApp({ template: '<RouterView />' }).use(router).mount('#app')", test: { code: "await waitFor(() => $('#home'))" } })
+    t('createWebHashHistory in srcdoc navigates the frame away: reported at once, not after the 8 s timeout', !hash.test.pass && !hash.timeout && /createMemoryHistory/.test(hash.test.error || '') && hash.ms < 3000 && hash.logs.some((l) => /SecurityError/.test(l.text)), `${hash.ms}ms ${hash.test.error} ${JSON.stringify(hash.logs.map((l) => l.text.slice(0, 100)))}`)
+
+    // 錯誤的 stack 裡，vendor 的 data: URL 換成套件名稱
+    const stack = await lp.evaluate(async () => {
+      const F = window.__frame
+      const code = "import { defineStore } from 'pinia'\nconst useS = defineStore('s', () => ({}))\nuseS()"
+      const imports = await F.importMapFor('vue', code)
+      const { html } = F.buildSrcdoc({ kind: 'vue', code, runId: 'stack-1', mode: 'once', imports })
+      return new Promise((res) => {
+        const f = F.createFrame({ host: document.getElementById('frame-host'), html, runId: 'stack-1', onMessage: (m) => { if (m.type === 'error') { f.destroy(); res(m.stack) } } })
+        setTimeout(() => { f.destroy(); res(null) }, 5000)
+      })
+    })
+    t('stack traces name the vendor package instead of the data: URL', !!stack && /\(pinia\)|at pinia\b/.test(stack) && !/data:/.test(stack), stack)
+
+    // setVisibility：測試 helper，模擬分頁切到背景再回來
+    const vis = await lrun({ kind: 'html', code: "<p>x</p><script>window.seen = []; document.addEventListener('visibilitychange', () => seen.push(document.visibilityState + ':' + document.hidden))</script>", test: { code: "setVisibility('hidden')\nsetVisibility('visible')\nassertEqual(seen, ['hidden:true', 'visible:false'])\nassertEqual(document.visibilityState, 'visible')" } })
+    t('setVisibility() fires visibilitychange with the new visibilityState', vis.test.pass, vis.test.error)
+    await lp.close()
+  }
 
   // ── 390px：題目頁的預覽窗格不溢出；切到 1280 時縮小顯示 ──
   const mob = await browser.newContext({ viewport: { width: 390, height: 844 } })
@@ -190,17 +256,28 @@ createApp({ components: { Badge }, template: '<Badge :count="3" />' }).mount('#a
   t('pasting the solution passes in the UI and is saved to progress', stored?.exercises?.['api-states-1'] === 'pass', await mp.textContent('.ex-verdict'))
   await mob.close()
 
-  // ── Playground：html 與 vue 模式 ──
-  for (const lang of ['html', 'vue']) {
+  // ── Playground：html 與 vue 模式；vue 模式的程式 import pinia、vue-router 也能跑 ──
+  const piniaRouter = `import { createApp, ref } from 'vue'
+import { createPinia, defineStore, storeToRefs } from 'pinia'
+import { createRouter, createMemoryHistory, RouterView, RouterLink } from 'vue-router'
+const useQueue = defineStore('queue', () => { const current = ref(12); return { current } })
+const Board = { setup() { const { current } = storeToRefs(useQueue()); return { current } }, template: '<p id=board>{{ current }} 號</p>' }
+const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: Board }] })
+createApp({ template: '<button type="button">看板</button><RouterView />' }).use(createPinia()).use(router).mount('#app')`
+  const b64 = Buffer.from(piniaRouter, 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  for (const [lang, hash, label] of [['html', 'lang=html', 'html'], ['vue', 'lang=vue', 'vue'], ['vue', `lang=vue&code=${b64}`, 'vue with pinia + vue-router']]) {
     const pg = await ctx.newPage()
     pg.on('pageerror', (e) => errs.push('PAGEERROR(pg) ' + e.message))
-    await pg.goto(base + `#/playground?lang=${lang}`, { waitUntil: 'networkidle' })
+    await pg.goto(base + `#/playground?${hash}`, { waitUntil: 'networkidle' })
     await pg.waitForSelector('.pg-api')
     await pg.click('.pg-toolbar button:has-text("執行")')
     await pg.waitForSelector('.fp iframe.sbx-frame', { timeout: 20000 })
     const f = pg.frames().find((x) => x.url() === 'about:srcdoc')
     await f?.waitForSelector('button, main', { timeout: 10000 }).catch(() => {})
-    t(`playground ${lang} runs in the sandbox`, !!f && (await f.$$('button')).length > 0)
+    if (label === 'vue with pinia + vue-router') {
+      await f?.waitForSelector('#board', { timeout: 10000 }).catch(() => {})
+      t(`playground ${label} runs in the sandbox`, !!f && (await f.textContent('#board').catch(() => '')) === '12 號')
+    } else t(`playground ${label} runs in the sandbox`, !!f && (await f.$$('button')).length > 0)
     await pg.close()
   }
 
@@ -222,6 +299,24 @@ createApp({ components: { Badge }, template: '<Badge :count="3" />' }).mount('#a
   ]).catch(() => null)
   console.log(`INFO unguarded loop (new Function, only the 8 s timeout applies): ${unguarded ? `${unguarded.timeout ? 'timed out' : 'finished'} after ${unguarded.ms} ms; the shell kept running` : 'the shell was blocked (iframe shares its process)'}`)
   await Promise.race([lone.close(), new Promise((r) => setTimeout(r, 5000))])
+
+  // 導航守衛的無窮導向：vue-router 的 prod 版偵測不到，沒有沙箱的包裝時 iframe 與外殼一起卡住、記憶體一直漲。
+  // 用獨立的 context，卡住就整個關掉並記成失敗
+  const loopCtx = await browser.newContext()
+  const loopPage = await loopCtx.newPage()
+  await loopPage.goto(base + '?verify=frame', { waitUntil: 'networkidle' })
+  await loopPage.waitForFunction(() => window.__frameReady, null, { timeout: 30000 })
+  const redirect = await Promise.race([
+    loopPage.evaluate(async () => {
+      const t0 = performance.now()
+      const r = await window.__frame.runTest({ kind: 'vue', ex: {}, code: "import { createApp } from 'vue'\nimport { createRouter, createMemoryHistory, RouterView } from 'vue-router'\nconst router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<p>home</p>' } }, { path: '/login', component: { template: '<p id=login>login</p>' } }] })\nrouter.beforeEach(() => '/login')\ncreateApp({ template: '<RouterView />' }).use(router).mount('#app')", test: { name: 't', code: "await wait(300)\nassert(true)" } })
+      const alive = await new Promise((res) => setTimeout(() => res(true), 0))
+      return { error: r.test.error, pass: r.test.pass, ms: Math.round(performance.now() - t0), alive }
+    }),
+    new Promise((r) => setTimeout(() => r(null), 15000)),
+  ]).catch(() => null)
+  t('a guard that always redirects is stopped with a message (the shell keeps running)', !!redirect && redirect.alive && !redirect.pass && /導航守衛一直導向/.test(redirect.error || '') && redirect.ms < 5000, JSON.stringify(redirect))
+  await Promise.race([loopCtx.close(), new Promise((r) => setTimeout(r, 5000))])
   await browser.close()
 }
 process.exit(failed ? 1 : 0)

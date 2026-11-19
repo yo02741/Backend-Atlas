@@ -108,6 +108,6 @@ const { rooms, connection } = useQueueStream()
   </ul>
 </template>` },
   ],
-  exercise: 'realtime-choice-1',
+  exercise: 'realtime-frontend-1',
   refs: [],
 }

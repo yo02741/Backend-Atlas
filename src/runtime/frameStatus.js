@@ -1,4 +1,4 @@
-/* 沙箱執行環境的載入狀態（Vue vendor 檔）。獨立成小檔：Output.jsx 的 RuntimeStatus 讀狀態時不必把 frame.js 拉進來。 */
+/* 沙箱執行環境的載入狀態（vendor 檔：Vue，用到時加上 Pinia、Vue Router）。獨立成小檔：Output.jsx 的 RuntimeStatus 讀狀態時不必把 frame.js 拉進來。 */
 let status = 'idle' // idle | loading | ready | error
 const listeners = new Set()
 export function frameStatus() { return status }

@@ -182,4 +182,384 @@ onMounted(() => {
       },
     ],
   },
+  {
+    skill: 'props-emits-model',
+    questions: [
+      {
+        q: '父元件寫 `<DatePicker v-model:date="selectedDate" />`，Vue 會把它展開成什麼？',
+        options: [
+          '`:date="selectedDate"` 加上 `@update:date="(v) => (selectedDate = v)"`',
+          '`:modelValue="selectedDate"` 加上 `@update:modelValue="(v) => (selectedDate = v)"`',
+          '`:date="selectedDate"`，子元件改 `props.date` 時自動同步回父元件',
+          '`:date="selectedDate"` 加上 `@change="(v) => (selectedDate = v)"`',
+        ],
+        answer: 0,
+        explain: '有名稱的 `v-model:date` 用 `date` 這個 prop 與 `update:date` 事件；不寫名稱的 `v-model` 才用 `modelValue` 與 `update:modelValue`。props 是唯讀的，子元件改 `props.date` 只會得到警告，不會同步回去；元件上的 `v-model` 用的是 `update:` 事件，不是 `change`。',
+      },
+      {
+        q: '父元件寫 `<DatePicker v-model:date="selected" @confirm="onConfirm" />`，`selected` 原本是 `2026-11-20`。使用者點了 11/21，`onConfirm` 收到什麼？',
+        code: `<script setup>
+const date = defineModel('date')
+const emit = defineEmits(['confirm'])
+
+function pick(d) {
+  date.value = d
+  emit('confirm', date.value)
+}
+</script>`,
+        lang: 'vue',
+        options: [
+          '`2026-11-21`：寫入 `date.value` 之後立刻就是新值',
+          '`2026-11-20`：寫入只是發出 `update:date`，父元件更新 prop 之前 `date.value` 仍是舊值',
+          '`undefined`：`defineModel` 的 ref 在發事件時會被清空',
+          '收不到：同一個函式裡發出第二個事件會被 Vue 忽略',
+        ],
+        answer: 1,
+        explain: '父元件有綁 `v-model` 時，寫入 `defineModel` 回傳的 ref 等於 `emit(\'update:date\', d)`，新值要等父元件改了 `selected`、重新渲染傳下新的 prop 才會出現，所以緊接著讀到的是舊值。要送新值就用參數 `d`。同一個函式可以發好幾個事件。',
+      },
+      {
+        q: 'AI 產出的預約列元件在按「取消」時寫 `props.appointment.status = \'cancelled\'`，畫面上的狀態變了，Console 也沒有警告。這段程式的問題是什麼？',
+        options: [
+          '沒有問題：Vue 3 允許改物件 prop 的內部屬性，這是官方建議的寫法',
+          '它會丟出 TypeError，只是錯誤被 Vue 攔下來沒有顯示',
+          '改到的是父元件持有的物件：父元件沒有機會檢查或呼叫 API，伺服器上的預約沒有取消；應該 `emit(\'cancel\', id)` 交給父元件處理',
+          '只要再用 `defineEmits` 宣告 `cancel` 事件，這一行就變成合法的寫法',
+        ],
+        answer: 2,
+        explain: 'props 只有第一層是唯讀的，物件裡的屬性仍然是父元件那一份資料，改了不會警告，畫面也會變，但父元件不知道發生了什麼，取消的 API 沒有被呼叫。lint 規則 `vue/no-mutating-props` 會抓到這種寫法。宣告事件不會讓修改 props 變得合法，要把「取消」交給持有資料的父元件。',
+      },
+    ],
+  },
+  {
+    skill: 'slots-provide',
+    questions: [
+      {
+        q: '表格元件 `DataTable` 負責列與欄，但每個頁面要自己決定「狀態」這一格怎麼畫（有的畫 Badge、有的加按鈕）。最合適的做法是？',
+        options: [
+          '加一個 `statusType` prop，在 DataTable 裡用 `v-if` 判斷每一種畫法',
+          '狀態格放作用域 slot `<slot name="cell-status" :row="row">`，頁面用 `#cell-status="{ row }"` 自己畫',
+          '每個頁面用 `provide` 把畫法函式傳給 DataTable',
+          '每個頁面複製一份 DataTable，再各自修改狀態格',
+        ],
+        answer: 1,
+        explain: '作用域 slot 讓表格決定有哪些列、把每一列的資料交出去，頁面決定那一格的畫面；新增頁面不用改表格元件。用 prop 加 `v-if` 會讓元件隨需求越長越大；provide 適合跨層共用的設定，不適合傳一塊畫面；複製元件會讓同一個 bug 要修好幾次。',
+      },
+      {
+        q: '父元件這樣使用 `AppointmentList`，執行時會發生什麼？',
+        code: `<!-- AppointmentList.vue 的模板 -->
+<li v-for="a in items" :key="a.id">
+  <slot :appointment="a">{{ a.patientName }}</slot>
+</li>
+
+<!-- 父元件 -->
+<AppointmentList :items="items">
+  <b>{{ a.patientName }}</b>
+</AppointmentList>`,
+        lang: 'vue',
+        options: [
+          '每一列顯示粗體的病患姓名',
+          '每一列顯示子元件的備用內容，因為父元件沒有寫 `#default`',
+          '編譯失敗：slot 內容裡不能讀任何變數',
+          'Console 警告 `Property "a" was accessed during render but is not defined on instance` 並出錯；要寫 `<template #default="{ appointment }">` 取 slot 參數',
+        ],
+        answer: 3,
+        explain: 'slot 內容寫在父元件的模板裡，屬於父元件的作用域，讀不到子元件 `v-for` 的變數 `a`，所以 Vue 警告找不到 `a`，接著讀 `undefined.patientName` 出錯。子元件交出的資料要從作用域 slot 的參數拿。沒有包 `<template>` 的內容會進預設 slot，不會顯示備用內容；編譯本身會通過。',
+      },
+      {
+        q: '`App.vue` 寫 `provide(\'clinic\', clinic.value)`（`clinic` 是 ref）。管理者在設定頁換了院區（`clinic.value = newClinic`），深層的 `TimeCell` 顯示的時區沒有更新。原因與修法是？',
+        options: [
+          'provide 的是當下的物件，換掉 `clinic.value` 後後代還拿著舊的；改成 provide ref 本身，例如 `provide(clinicKey, readonly(clinic))`',
+          '`inject` 只在元件建立時讀一次，要在 `TimeCell` 裡用 `watch` 監看 inject 的回傳值',
+          'provide 的 key 要用 `Symbol` 才會有響應式，字串 key 不會更新',
+          'provide 只能傳給直接的子元件，`TimeCell` 隔了太多層',
+        ],
+        answer: 0,
+        explain: '`clinic.value` 是當下那個物件，整個換掉 `.value` 之後，後代手上仍是舊物件。提供 ref 本身，後代讀 `.value` 時就會追蹤到更換；包 `readonly` 讓後代只能讀。key 用 Symbol 是為了避免撞名，和響應式無關；inject 拿到 ref 就會更新，不需要另外 watch；provide 對任何一層後代都有效。',
+      },
+    ],
+  },
+  {
+    skill: 'watchers',
+    questions: [
+      {
+        q: '下列哪一個需求適合用 `watch`，而不是 `computed`？',
+        options: [
+          '依搜尋字串篩選出來的病患清單',
+          '今天已報到的人數',
+          '科別或日期改變時，呼叫 API 重抓時段，並把條件寫進網址 query',
+          '把生日格式化成「2026 年 11 月 20 日」顯示',
+        ],
+        answer: 2,
+        explain: '呼叫 API 與改網址是「資料變了要做的事」（副作用），用 watch。篩選、計數、格式化都能從現有狀態算出來，用 computed：有快取、不需要第二份狀態同步，第一次渲染就有值。用 watch 去維護這些值，會多一份要同步的狀態。',
+      },
+      {
+        q: '這段程式執行後，Console 會印出什麼？',
+        code: `const selected = ref([])
+
+watch(selected, (list) => {
+  console.log('已選', list.length)
+})
+
+selected.value.push(101)`,
+        lang: 'js',
+        options: [
+          '什麼都不印：監看 ref 只比較 `.value` 本身，`push` 沒有換掉陣列；要加 `{ deep: true }` 或監看 `() => selected.value.length`',
+          '`已選 1`：Vue 3 的 Proxy 會追蹤陣列的 `push`',
+          '`已選 0`：callback 在 `push` 之前就執行了',
+          '`已選 1` 印兩次：一次是建立時，一次是 `push` 後',
+        ],
+        answer: 0,
+        explain: '直接監看 ref 時，Vue 只在 `.value` 換成另一個值時觸發；`push` 改的是陣列內容，陣列本身還是同一個。監看 reactive 物件才會自動深層。`watch` 預設也不會在建立時執行，需要的話加 `immediate: true`。',
+      },
+      {
+        q: '時段查詢頁寫 `watch(dept, async (d) => { slots.value = await fetchSlots(d) })`。使用者快速切換科別時，偶爾顯示前一個科別的時段。怎麼改？',
+        options: [
+          '加上 `immediate: true`，讓 watcher 一建立就先抓一次',
+          '改成 `watchEffect`，讓依賴自動收集',
+          '加上 `flush: \'post\'`，等 DOM 更新之後再送請求',
+          '在 callback 開頭建立 `AbortController`，在第一個 `await` 之前寫 `onWatcherCleanup(() => controller.abort())`，`catch` 略過 `AbortError`',
+        ],
+        answer: 3,
+        explain: '多個請求同時在路上，回應順序不保證，慢的舊請求會在新請求之後寫入。`onWatcherCleanup` 在下一次觸發前執行，取消上一個請求，被取消的 `await` 丟出 `AbortError`。`immediate` 只影響第一次；`watchEffect` 一樣有競態；`flush` 改的是 callback 相對於 DOM 更新的時機。',
+      },
+    ],
+  },
+  {
+    skill: 'forms',
+    questions: [
+      {
+        q: '手機號碼欄位要在手機上叫出數字鍵盤，送到後端的值要保留開頭的 0。哪一種寫法正確？',
+        options: [
+          '`<input v-model.number="phone">`',
+          '`<input type="number" v-model="phone">`',
+          '`<input v-model="phone" inputmode="numeric" autocomplete="tel">`',
+          '`<input v-model.trim.number="phone">`',
+        ],
+        answer: 2,
+        explain: '`inputmode="numeric"` 只改鍵盤，`v-model` 綁出來仍是字串，`0912345678` 保持原樣。`.number` 用 `parseFloat` 轉成數字，開頭的 0 不見；`type="number"` 的輸入框也會自動轉成數字，還會出現上下調整的箭頭。電話、郵遞區號這類「長得像數字的字串」都該保留字串。',
+      },
+      {
+        q: '使用者勾了「發燒」，會發生什麼？',
+        code: `<script setup>
+import { ref } from 'vue'
+const symptoms = ref('')
+</script>
+
+<template>
+  <label><input type="checkbox" value="fever" v-model="symptoms"> 發燒</label>
+  <label><input type="checkbox" value="cough" v-model="symptoms"> 咳嗽</label>
+</template>`,
+        lang: 'vue',
+        options: [
+          '`symptoms` 變成 `\'fever\'`，只有發燒被勾選',
+          '`symptoms` 變成 `[\'fever\']`，Vue 會自動把字串換成陣列',
+          'Console 警告 `v-model` 的型別不符，勾選沒有作用',
+          '`symptoms` 變成 `true`，兩個 checkbox 都顯示成已勾選；多選要把初始值寫成 `ref([])`',
+        ],
+        answer: 3,
+        explain: '多個 checkbox 綁同一個值時，Vue 依初始值的型別決定行為：是陣列才當成多選，把勾選項目的 `value` 放進陣列；不是陣列就當成單一 checkbox，綁布林值。所以勾一個後值變成 `true`，每個 checkbox 都顯示勾選。Vue 不會自動轉型，也不會警告。',
+      },
+      {
+        q: '掛號表單一打開，每個欄位下方都是紅字「必填」。需求是錯誤在使用者離開欄位後才出現，按送出時再全部顯示。最合適的做法是？',
+        options: [
+          '把驗證掛在 `@input`，使用者每打一個字就檢查一次',
+          '記錄每個欄位是否離開過（`@blur` 設 touched），錯誤只在 touched 或按過送出之後顯示；送出時把焦點移到第一個錯的欄位',
+          '改用 `v-model.lazy`，錯誤自然會晚一點才出現',
+          '拿掉前端驗證，等後端回 `422` 再把錯誤顯示出來',
+        ],
+        answer: 1,
+        explain: '錯誤該不該顯示，除了值合不合法，還要看使用者碰過這個欄位沒有。`@input` 會讓錯誤在打字途中就出現；`.lazy` 只改同步的時機，空欄位一開始就不合法，紅字照樣出現；只靠後端驗證要等送出才有回饋。前端驗證是即時回饋，後端驗證仍然要做。',
+      },
+    ],
+  },
+  {
+    skill: 'composables',
+    questions: [
+      {
+        q: '一個 composable 回傳 `reactive({ data: null, loading: false })`，元件寫 `const { data, loading } = useFetch(url)`。結果是？',
+        options: [
+          '解構拿到當下的 `null` 與 `false`，資料回來後畫面不更新；composable 應該回傳 ref 組成的一般物件',
+          '正常運作：reactive 物件解構後的屬性仍然是響應式的',
+          '編譯錯誤：composable 不能回傳 reactive 物件',
+          '正常運作，只是 Console 會出現效能警告',
+        ],
+        answer: 0,
+        explain: '解構 reactive 物件時，讀屬性的那一刻拿到的是普通值，之後和原物件沒有關係。Vue 官方的慣例是回傳 `{ data, loading }` 這種一般物件、每個值是 ref，解構後仍連著 composable 裡的狀態。Vue 不會因此報錯或警告，畫面只是不更新。',
+      },
+      {
+        q: '使用者把日期改成 `2026-11-21` 之後，會發生什麼？',
+        code: `// 元件裡
+const date = ref('2026-11-20')
+const { data } = useFetch('/api/slots?date=' + date.value)
+
+// useFetch 內部
+export function useFetch(url) {
+  const data = ref(null)
+  watchEffect(async () => {
+    const res = await fetch(toValue(url))
+    data.value = await res.json()
+  })
+  return { data }
+}`,
+        lang: 'js',
+        options: [
+          '`watchEffect` 追蹤到 `date`，重新抓 11/21 的資料',
+          '`toValue` 會把字串轉回 ref，所以會重新抓',
+          '不會重抓：傳進去的是呼叫當下算好的字串，`watchEffect` 沒有任何響應式依賴；要傳 getter `() => \'/api/slots?date=\' + date.value`',
+          '丟出錯誤：`toValue` 只接受 ref，不接受字串',
+        ],
+        answer: 2,
+        explain: '`\'/api/slots?date=\' + date.value` 在呼叫 `useFetch` 時就算成字串，`date` 的讀取發生在 composable 外面，沒有被任何 effect 追蹤。改傳 getter 後，`toValue(url)` 在 `watchEffect` 裡呼叫它、讀到 `date.value`，日期一改就重新執行。`toValue` 對字串原樣回傳，不會出錯。',
+      },
+      {
+        q: '一個 composable 在模組頂層宣告 `const draft = ref(\'\')`，函式裡回傳它。兩個掛號 Dialog 同時開啟時，在其中一個打的字出現在另一個。原因是？',
+        options: [
+          'Vue 的 ref 預設是全域共用的',
+          'composable 同時只能在一個元件裡使用',
+          '兩個 Dialog 沒有各自呼叫一次 composable',
+          'ref 宣告在函式外面，所有呼叫者共用同一份；要每個元件一份就把 ref 移進函式裡',
+        ],
+        answer: 3,
+        explain: '模組頂層的程式只在第一次 import 時執行一次，那個 ref 被所有呼叫者共用。composable 函式裡宣告的 ref 才會每次呼叫各建一份。ref 本身沒有全域或局部之分，要看它在哪裡建立；就算兩個 Dialog 各呼叫一次，回傳的仍是同一個頂層 ref。',
+      },
+    ],
+  },
+  {
+    skill: 'pinia',
+    questions: [
+      {
+        q: '下列狀態，哪一個最適合放進 Pinia store？',
+        options: [
+          '預約清單目前的頁碼與排序方式',
+          '目前登入的醫師與他的權限，頁首、選單與路由守衛都要讀',
+          '掛號表單輸入到一半的姓名與電話',
+          '某一個確認 Dialog 是否開啟',
+        ],
+        answer: 1,
+        explain: '登入者與權限跨好幾個頁面與元件共用，換頁後還要在，適合放 store。頁碼與排序放網址 query，才能分享連結、按上一頁回得去；輸入到一半的表單與 Dialog 開關只屬於一個元件，留在元件裡。',
+      },
+      {
+        q: '頁首元件已經顯示之後，使用者才完成登入（store 的 `user` 被設定）。頁首會怎樣？',
+        code: `<script setup>
+import { useSessionStore } from '@/stores/session'
+const { user, logout } = useSessionStore()
+</script>
+
+<template>
+  <span>{{ user ? user.name : '訪客' }}</span>
+  <button v-if="user" type="button" @click="logout">登出</button>
+</template>`,
+        lang: 'vue',
+        options: [
+          '顯示醫師的名字，因為 store 是全域共用的',
+          '丟出錯誤：store 的 action 不能解構',
+          '登出按鈕出現，名字仍然顯示「訪客」',
+          '仍然顯示「訪客」、沒有登出按鈕：解構 store 拿到當下的 `null`；`user` 要用 `storeToRefs`，`logout` 可以直接解構',
+        ],
+        answer: 3,
+        explain: 'store 是 reactive 物件，直接解構 state 拿到的是當下的值，之後不會變，所以名字與按鈕都停在未登入的樣子。`storeToRefs(store)` 把 state 與 getter 轉成 ref；action 綁在 store 上，可以直接解構。',
+      },
+      {
+        q: '`src/router.ts` 的最外層寫了 `const session = useSessionStore()`，`main.ts` 先 `import { router } from \'./router\'`，之後才 `app.use(createPinia())`。啟動時丟出 `"getActivePinia()" was called but there was no active Pinia`。怎麼改？',
+        options: [
+          '把 `useSessionStore()` 移到 `router.beforeEach` 的函式裡呼叫，導航發生時 Pinia 已經安裝好了',
+          '把 session store 從 setup store 改寫成 option store',
+          '在 `router.ts` 裡另外呼叫 `createPinia()` 建立一個實例',
+          '把 store 的 id 改成和檔名一樣的 `router`',
+        ],
+        answer: 0,
+        explain: '模組最外層的程式在 import 時就執行，這時還沒 `app.use(pinia)`。把呼叫移進守衛函式，等到真的導航時才執行。另外 `createPinia()` 會得到和 App 不同的實例，兩邊的狀態對不起來；store 的寫法與 id 都和這個錯誤無關。',
+      },
+    ],
+  },
+  {
+    skill: 'vue-router',
+    questions: [
+      {
+        q: '使用者從 `/patients/7` 點到 `/patients/8`，兩個網址都對到 `PatientPage`。下列哪一個敘述正確？',
+        options: [
+          'Vue Router 卸載舊的 PatientPage 再掛載新的，`onMounted` 會再執行一次',
+          '沿用同一個元件實例，`onMounted` 不會再執行；要用 `watch` 監看參數或 `onBeforeRouteUpdate` 重抓資料',
+          '網址會改變，但 `route.params` 要重新整理頁面後才會更新',
+          '要在路由設定加上 `reuse: false`，畫面才會更新',
+        ],
+        answer: 1,
+        explain: '同一個路由只換參數時，Vue Router 沿用原本的元件實例，只更新 `route.params`（`props: true` 時是 prop），所以只在 `onMounted` 抓資料的頁面會停在舊資料。`route.params` 會立刻更新；路由設定沒有 `reuse` 這個選項，要強迫重建可以在 `<RouterView>` 加 `key`。',
+      },
+      {
+        q: '沒登入的使用者打開 `/appointments`，會發生什麼？',
+        code: `router.beforeEach((to) => {
+  const session = useSessionStore()
+  if (!session.user) return '/login'
+})`,
+        lang: 'js',
+        options: [
+          '導向 `/login`，顯示登入頁',
+          '停在 `/appointments`，因為守衛沒有呼叫 `next()`',
+          '導向 `/login` 時又經過同一個守衛、再導向 `/login`；Vue Router 偵測到無窮導向後中止並警告，要先排除 `/login` 這類不需要登入的頁面',
+          '顯示空白頁，因為守衛不能回傳字串',
+        ],
+        answer: 2,
+        explain: '回傳位置會觸發一次新的導航，新的導航同樣經過 `beforeEach`；`/login` 也沒登入，於是又回傳 `/login`。Vue Router 偵測到後中止並警告 `Detected a possibly infinite redirection in a navigation guard…`。守衛可以回傳字串或位置物件，不需要 `next`。',
+      },
+      {
+        q: '部署到 nginx 後，從首頁點進 `/patients/7` 正常，在這一頁按重新整理卻出現 nginx 的 404。最可能的原因與修法是？',
+        options: [
+          '路由少了 `/:pathMatch(.*)*`，加上之後重新整理就正常',
+          '只能改用 `createWebHashHistory()`，history 模式沒有辦法重新整理',
+          '`PatientPage` 是懶載入的，改成直接 import 就好',
+          '`createWebHistory()` 的網址重新整理時請求送到伺服器，伺服器沒有這個檔；nginx 要加 `try_files $uri $uri/ /index.html`',
+        ],
+        answer: 3,
+        explain: '從首頁點進去時，換頁由前端的 History API 處理，伺服器不知道；重新整理時瀏覽器向伺服器要 `/patients/7`，沒有 fallback 就回 404。前端的 404 路由只有在 `index.html` 載入之後才派得上用場；hash 模式是一種替代方案，不是唯一解；懶載入與這個 404 無關。',
+      },
+    ],
+  },
+  {
+    skill: 'react-mapping',
+    questions: [
+      {
+        q: 'Vue 的 `const available = computed(() => slots.value.filter((s) => s.left > 0))`，在 React 19 最直接的寫法是？',
+        options: [
+          '`useEffect(() => setAvailable(slots.filter((s) => s.left > 0)), [slots])`',
+          '在元件函式裡直接寫 `const available = slots.filter((s) => s.left > 0)`，計算成本高時才包 `useMemo`',
+          '`const [available] = useState(slots.filter((s) => s.left > 0))`',
+          '`const available = useRef(slots.filter((s) => s.left > 0))`',
+        ],
+        answer: 1,
+        explain: 'React 每次渲染都重新執行元件函式，衍生值直接算就會是最新的。用 `useEffect` 加 `setState` 同步，會多一次渲染，第一次渲染還拿到舊值；`useState` 的初始值只在第一次使用，之後 `slots` 改變也不會更新；`useRef` 的值不會觸發渲染。',
+      },
+      {
+        q: '這個元件跑了幾秒之後，畫面顯示什麼？',
+        code: `function Counter() {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setCount(count + 1), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return <p>{count}</p>
+}`,
+        lang: 'js',
+        options: [
+          '停在 1：callback 記住的是第一次渲染的 `count`（0），每秒都設成 0 + 1；改成 `setCount((c) => c + 1)`',
+          '每秒加一：1、2、3……',
+          '一直是 0：`setInterval` 裡不能呼叫 setter',
+          'Console 出現 `Too many re-renders`，畫面停止更新',
+        ],
+        answer: 0,
+        explain: '依賴陣列是空的，effect 只在第一次渲染後執行，裡面的箭頭函式記住了那一次的 `count`，也就是 0。之後每秒都呼叫 `setCount(1)`，值沒變。更新函式 `setCount((c) => c + 1)` 由 React 傳入目前的值。Vue 寫 `count.value++` 每次都讀最新的值，沒有這個問題。',
+      },
+      {
+        q: '把 Vue 的 `watch(dept, load, { immediate: true })` 改寫成 React，AI 產出 `useEffect(() => { load(dept) })`（沒有第二個參數），`load` 抓完資料會 `setSlots`。上線後會發生什麼？',
+        options: [
+          '只在 `dept` 改變時抓一次，和 Vue 的行為相同',
+          '只在第一次渲染後抓一次',
+          'Console 出現 `Rendered more hooks than during the previous render.`',
+          '每次渲染後都執行：抓完 `setSlots` 觸發重新渲染，effect 又送一次請求，請求停不下來；要加依賴陣列 `[dept]`',
+        ],
+        answer: 3,
+        explain: '沒有依賴陣列的 effect 在每次渲染後都執行，資料回來 `setSlots` 又引起渲染，形成迴圈。`[dept]` 才相當於 Vue 的「指定來源」；空陣列 `[]` 才是只在第一次執行。`Rendered more hooks…` 是 hook 寫在條件式裡的錯誤，和依賴陣列無關。',
+      },
+    ],
+  },
 ]

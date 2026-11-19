@@ -61,7 +61,7 @@ function parseHash(hash) {
   if (seg[0] === 'scenarios') return { view: 'scenarios', track }
   if (seg[0] === 'scenario' && seg[1]) return { view: 'scenario', id: seg[1] }
   if (seg[0] === 'exercise' && seg[1]) return { view: 'exercise', id: seg[1] }
-  if (seg[0] === 'project') return { view: 'project', id: seg[1] || '' }
+  if (seg[0] === 'project') return { view: 'project', id: seg[1] || '', track }
   if (seg[0] === 'review') return { view: 'review', seed: params.get('seed') || '', track }
   if (seg[0] === 'playground') return { view: 'playground', lang: params.get('lang') || seg[1] || 'python', code: params.get('code') || '' }
   return { view: 'home' }
@@ -121,7 +121,7 @@ export default function App() {
     case 'labs': page = <Labs track={route.track} />; break
     case 'lab': page = <LabPage name={route.name} />; break
     case 'exercises': page = <Exercises key={route.track} track={route.track} />; break
-    case 'project': page = <Project key={route.id} id={route.id} />; break
+    case 'project': page = <Project key={route.id + route.track} id={route.id} track={route.track} />; break
     case 'review': page = <Review key={route.seed + route.track} seed={route.seed} track={route.track} />; break
     case 'curriculum': page = <Curriculum key={route.track} week={route.week} track={route.track} />; break
     case 'scenarios': page = <Scenarios track={route.track} />; break

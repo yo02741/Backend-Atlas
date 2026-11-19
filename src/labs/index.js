@@ -50,6 +50,11 @@ export const LAB_META = {
   RenderPipelineLab: { title: '渲染管線的七段', blurb: '從請求、DOM、CSSOM 到 layout、paint、composite；script 沒有 defer 時解析在哪裡停下，改 color、width、transform 或新增節點時各要重跑哪幾段。', skill: 'how-browsers-render' },
   FlexboxLab:        { title: 'Flexbox 的主軸與剩餘空間', blurb: '真的 flex 容器與五張門診卡片：容器與子項的屬性、主軸與交叉軸的方向、剩餘空間與溢出，以及對應的 CSS。', skill: 'flexbox' },
   ApiStatesLab:      { title: 'API 的四種狀態', blurb: '門診預約清單呼叫假的 API：成功、空清單、403、500、逾時、斷線各落在哪個畫面狀態與驗收條件，以及舊回應蓋掉新結果的競態。', skill: 'api-states' },
+  EventPropagationLab: { title: '事件的捕獲、冒泡與預設動作', blurb: '「我的掛號」清單裡的一次點擊：事件經過哪些元素、每一站執行哪些監聽，stopPropagation 與 preventDefault 各擋下什麼，以及事件委派。', skill: 'dom-events' },
+  GridLab:           { title: 'Grid 的軌道、格線與命名區域', blurb: '真的 grid 容器與門診看板：fr、minmax、auto-fill 與 auto-fit、命名區域，畫出格線編號與每欄寬度，並列出 390、768、1280 三種寬度各排成幾欄。', skill: 'grid' },
+  EventLoopLab:      { title: '事件迴圈逐步執行', blurb: '同步程式、setTimeout、Promise.then、await、queueMicrotask 逐行執行：call stack、microtask queue、task queue 與 Console 的順序，以及長迴圈與 Vue 的 nextTick 讓畫面在什麼時候才更新。', skill: 'event-loop' },
+  UiStatesLab:       { title: 'UI 元件的狀態', blurb: '按鈕、輸入框、下拉選單與 Dialog 的各個狀態：畫面、CSS 選擇器或屬性、輔助科技讀到的狀態與驗收條件，以及 Dialog 開關時焦點去哪。', skill: 'ui-states' },
+  ReactivityLab:     { title: '改一個值，誰跟著動', blurb: '門診掛號表單元件的 ref、reactive、computed、watch 與畫面：改一個值時哪些 computed 重算、哪些 watch 觸發、哪個元件重新渲染，以及解構 reactive 與直接改 props 兩種錯誤。', skill: 'reactivity' },
 }
 
 export const LAB_NAMES = Object.keys(LAB_META)

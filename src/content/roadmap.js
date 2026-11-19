@@ -9,6 +9,8 @@ import jsTs from './d23-js-ts.js'
 import vue from './d24-vue.js'
 import ui from './d25-ui.js'
 import api from './d26-api.js'
+import build from './d27-build.js'
+import quality from './d28-quality.js'
 import feAi from './d29-fe-ai.js'
 import language from './d1-language.js'
 import web from './d2-web.js'
@@ -24,7 +26,7 @@ import knowledge from './d11-knowledge.js'
 
 // ALL_DOMAINS 含還沒有任何技能的領域（撰寫中）；站上只列出已有技能的領域。順序就是路線內的顯示順序。
 export const ALL_DOMAINS = [
-  browser, layout, jsTs, vue, ui, api, feAi,
+  browser, layout, jsTs, vue, ui, api, build, quality, feAi,
   language, web, data, auth, security, deploy, cicd, algo, devops,
   ai, knowledge,
 ]
@@ -34,7 +36,7 @@ export const LEVELS = { 1: '入門', 2: '進階', 3: '深入' }
 
 /* 技術關鍵字（正規化顯示名）→ 對應到技能的 keywords 欄位；每條路線一組 */
 export const KEYWORDS = {
-  frontend: ['HTML', 'CSS', 'JavaScript', 'Vue', 'RWD', 'Chrome DevTools', '無障礙'],
+  frontend: ['HTML', 'CSS', 'JavaScript', 'TypeScript', 'Vue', 'Pinia', 'Vue Router', 'React', 'Vite', 'RWD', 'Chrome DevTools', '無障礙'],
   backend: [
     'Python', 'uv', 'MongoDB', 'PostgreSQL', 'nginx', 'Docker', 'docker-compose', 'SQL',
     'GitLab CI', 'GitHub Actions', 'Token', 'JWT', 'RBAC', 'ABAC', 'OAuth', 'OWASP',
@@ -47,20 +49,37 @@ export const PATHS = {
   frontend: [
     { skill: 'how-browsers-render', label: '網頁怎麼畫出來', note: 'DOM、CSSOM、render tree 到 layout、paint、composite，改哪個屬性重跑哪一段。' },
     { skill: 'devtools', label: '開發者工具', note: 'Console、Network、Elements、Application、Lighthouse 的固定驗收順序。' },
+    { skill: 'page-loading', label: '頁面載入順序', note: 'CSS 擋畫面、script 擋解析，defer、async、module 與 preload。' },
     { skill: 'semantic-html', label: '語意化 HTML', note: '地標元素、button 與 label、input 的 type 與 inputmode。' },
+    { skill: 'css-cascade', label: 'CSS 層疊與權重', note: '誰勝出：!important、@layer、選擇器權重、出現順序，以及 Vue scoped CSS。' },
+    { skill: 'box-model', label: '盒模型', note: 'border-box、margin 合併、overflow 與 outline。' },
     { skill: 'flexbox', label: 'Flexbox', note: '主軸與交叉軸、剩餘空間怎麼分，以及 min-width 造成的溢出。' },
+    { skill: 'grid', label: 'Grid', note: 'fr、minmax、auto-fill 與 auto-fit、命名區域。' },
     { skill: 'rwd', label: 'RWD 與斷點', note: 'viewport meta、mobile-first 的 media query 與 container query。' },
+    { skill: 'js-essentials', label: 'JS 必要語法', note: 'const、箭頭函式、解構、展開、?. 與 ??，陣列方法會不會改原陣列。' },
     { skill: 'async-js', label: '非同步 JS', note: '依序與平行、Promise.all 與 allSettled、finally 關掉 loading。' },
+    { skill: 'event-loop', label: '事件迴圈', note: 'task、microtask 與渲染時機，長迴圈為什麼讓畫面凍結。' },
+    { skill: 'dom-events', label: 'DOM 與事件', note: '捕獲與冒泡、事件委派，stopPropagation 與 preventDefault 各管什麼。' },
     { skill: 'components-sfc', label: '元件化', note: '把畫面拆成元件樹，SFC 的 template、<script setup>、<style scoped>。' },
     { skill: 'reactivity', label: '響應式', note: 'ref、reactive、computed，以及解構之後失去響應式。' },
     { skill: 'template-syntax', label: '模板語法', note: 'v-bind、v-on、v-if 與 v-show、v-for 的 key。' },
+    { skill: 'props-emits-model', label: 'props 與事件', note: '單向資料流、defineEmits、defineModel，子元件不改 props。' },
     { skill: 'lifecycle', label: '生命週期', note: 'onMounted 拿 DOM、onUnmounted 清掉計時器、監聽與請求。' },
     { skill: 'ui-states', label: '互動狀態', note: 'hover、focus-visible、disabled、loading 的狀態表與驗收。' },
     { skill: 'feedback', label: '回饋與空狀態', note: 'Toast、Alert、Skeleton、Empty state 各用在哪裡。' },
+    { skill: 'overlays', label: '浮層與焦點', note: 'Dialog、Drawer、Popover、Tooltip：擋不擋操作、焦點進出、Esc 關閉。' },
+    { skill: 'a11y-basics', label: '無障礙基礎', note: '鍵盤走得完、控制項有名稱、對比 4.5:1、狀態念得出來。' },
+    { skill: 'forms', label: '表單與驗證', note: 'v-model 綁出的型別、離開欄位才顯示錯誤、aria-describedby。' },
     { skill: 'fetch-basics', label: 'fetch 與 HTTP', note: 'res.ok、JSON body、Problem Details 與逾時。' },
     { skill: 'api-states', label: 'API 四種狀態', note: 'loading、success、empty、error，哪些錯誤給重試。' },
+    { skill: 'cancel-race', label: '取消與競態', note: 'AbortController 取消舊請求、debounce，畫面只反映最後的條件。' },
+    { skill: 'form-submit', label: '表單送出', note: '422 對回欄位、409 放表單上方、停用按鈕加冪等鍵防止重複送出。' },
+    { skill: 'vue-router', label: 'Vue Router', note: '動態參數、守衛用回傳值、懶載入，history 模式的伺服器 fallback。' },
+    { skill: 'pinia', label: 'Pinia', note: 'setup store、storeToRefs，狀態放元件、網址還是 store。' },
+    { skill: 'vite-basics', label: 'Vite 與建置', note: 'dev server、HMR、vite build 的產物，以及 Vite 6 與 8 的差別。' },
     { skill: 'describe-ui', label: '把畫面寫成文字', note: '版面、元件、狀態、資料、互動五段，加上斷點與文案。' },
     { skill: 'ai-common-mistakes', label: 'AI 常見的錯', note: 'Vue 2 寫法、混用 API、多餘的 watch、錯的 key，用工具抓。' },
+    { skill: 'ai-acceptance', label: '驗收 AI 產出', note: '指令、每個狀態、三個寬度、只用鍵盤、Console 與 Network，最後寫成測試。' },
   ],
   backend: [
     { skill: 'http-basics', label: 'HTTP 請求的一生', note: '看清一個請求從瀏覽器到伺服器的每一步。' },

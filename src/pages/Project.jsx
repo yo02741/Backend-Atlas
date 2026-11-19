@@ -1,5 +1,7 @@
 import React, { Suspense, useEffect } from 'react'
-import { PROJECT, STAGES, findStage } from '../content/project/stages.js'
+import { PROJECTS, findStage, stagesOf } from '../content/project/stages.js'
+import { TRACKS, findTrack } from '../content/tracks.js'
+import { withTrack } from '../components/TrackFilter.jsx'
 import { readStageDoc } from '../content/project/docs.js'
 import { exercisesForStage } from '../content/exercises/index.js'
 import { findSkill } from '../content/roadmap.js'
@@ -8,9 +10,9 @@ import Markdown from '../components/Markdown.jsx'
 import ExerciseRunner from '../components/ExerciseRunner.jsx'
 import { playgroundHref, PLAYGROUND_LANGS } from '../playgroundLink.js'
 
-/* 實作路線：總覽（#/project）與單一階段（#/project/<id>） */
-export default function Project({ id }) {
-  return id ? <Stage id={id} /> : <Overview />
+/* 實作路線：總覽（#/project?track=<路線>，沒帶時是後端）與單一階段（#/project/<id>，路線由階段推出） */
+export default function Project({ id, track = '' }) {
+  return id ? <Stage id={id} /> : <Overview track={PROJECTS[track] ? track : 'backend'} />
 }
 
 function stageProgress(stage, exerciseStatus) {
@@ -18,15 +20,23 @@ function stageProgress(stage, exerciseStatus) {
   return { total: ex.length, passed: ex.filter((e) => exerciseStatus(e.id) === 'pass').length }
 }
 
-function Overview() {
+function Overview({ track }) {
   const { exerciseStatus } = useProgress()
+  const PROJECT = PROJECTS[track]
+  const STAGES = stagesOf(track)
+  const tracks = TRACKS.filter((t) => PROJECTS[t.id])
   return (
     <div className="fade-swap">
       <header className="masthead">
-        <p className="kicker">PROJECT · 實作路線</p>
+        <p className="kicker">PROJECT · 實作路線 · {findTrack(track).title}</p>
         <h1 className="display">{PROJECT.title}</h1>
         <p className="lede">{PROJECT.summary}</p>
       </header>
+      <div className="toolbar track-filter" role="group" aria-label="路線">
+        {tracks.map((t) => (
+          <a key={t.id} href={withTrack('project', t.id)} className={`chip${t.id === track ? ' on' : ''}`} aria-current={t.id === track ? 'true' : undefined}>{t.title}</a>
+        ))}
+      </div>
       {PROJECT.companion && (
         <p className="proj-companion">
           <strong>參考實作</strong>　{PROJECT.companion.note}
@@ -64,6 +74,8 @@ function Stage({ id }) {
   const { exerciseStatus } = useProgress()
   useEffect(() => { window.scrollTo({ top: 0 }) }, [id])
   if (!s) return <p className="status-msg">找不到這個階段：{id}　<a href="#/project">回實作路線</a></p>
+  const STAGES = stagesOf(s.track)
+  const overview = withTrack('project', s.track)
   const i = STAGES.indexOf(s)
   const prev = STAGES[i - 1]
   const next = STAGES[i + 1]
@@ -73,7 +85,7 @@ function Stage({ id }) {
   return (
     <article className="lesson fade-swap">
       <div className="reading">
-        <p className="crumbs"><a href="#/">首頁</a> / <a href="#/project">實作路線</a></p>
+        <p className="crumbs"><a href="#/">首頁</a> / <a href={`#/track/${s.track}`}>{findTrack(s.track).title}</a> / <a href={overview}>實作路線</a></p>
         <header className="lesson-head">
           <p className="kicker tinted">第 {s.no} 階段 · {STAGES.length} 個階段</p>
           <h1>{s.title}</h1>
@@ -91,7 +103,7 @@ function Stage({ id }) {
           {exercises.map((ex) => <ExerciseRunner key={ex.id} exercise={ex} compact />)}
         </div>
         <nav className="lesson-nav">
-          {prev ? <a href={`#/project/${prev.id}`}><small>上一階段</small>← {prev.title}</a> : <a href="#/project"><small>實作路線</small>← 總覽</a>}
+          {prev ? <a href={`#/project/${prev.id}`}><small>上一階段</small>← {prev.title}</a> : <a href={overview}><small>實作路線</small>← 總覽</a>}
           {next ? <a className="next" href={`#/project/${next.id}`}><small>下一階段</small>{next.title} →</a> : <span />}
         </nav>
       </div>

@@ -7,6 +7,9 @@ export const SCENARIO_GROUPS = [
   { id: 'traffic', title: '高流量', en: 'HIGH TRAFFIC', track: 'backend', color: 'red', blurb: '流量上來之後每一層怎麼撐：擴展路徑、秒殺、削峰、資料庫擴展、邊緣快取、通知扇出。' },
   { id: 'ops', title: '維運與基礎建設', en: 'OPERATIONS', track: 'backend', color: 'slate', blurb: '主機放哪裡、資料治理從哪開始、變更怎麼上線、事故怎麼收：系統上線之後的決定。' },
   { id: 'agent', title: 'AI 與 Agent 安全', en: 'AI & AGENTS', track: 'ai', color: 'teal', blurb: 'Agent 拿什麼身分、經過哪道閘門、工具與憑證怎麼隔離：讓 AI 工具接上內部系統之前的決定。' },
+  { id: 'screen', title: '畫面與互動', en: 'SCREENS & INTERACTION', track: 'frontend', color: 'aqua', blurb: '元件自己做還是用元件庫、一萬列的表格怎麼呈現、表單驗證放哪裡：畫面上的決定。' },
+  { id: 'state', title: '資料與狀態', en: 'DATA & STATE', track: 'frontend', color: 'green', blurb: '狀態放哪裡、列表頁的資料怎麼抓、看板怎麼即時更新：前端資料流的決定。' },
+  { id: 'delivery', title: '建置與上線', en: 'BUILD & DELIVERY', track: 'frontend', color: 'magenta', blurb: 'CSR、SSR 還是 SSG，設定在建置時還是執行時：前端上線前的決定。' },
 ]
 
 export const SCENARIOS = Object.entries(mods)

@@ -25,16 +25,16 @@
 <!-- sync:stats -->
 | 內容 | 數量 |
 |---|---|
-| 路線 | 3（前端 16 課；後端 115 課；AI 35 課） |
-| 前端的領域 | 7（瀏覽器與網頁怎麼運作；HTML 與 CSS 版面；JavaScript 與 TypeScript；元件與框架；UI 元件詞彙；呼叫後端；用 AI 寫前端） |
+| 路線 | 3（前端 60 課；後端 115 課；AI 35 課） |
+| 前端的領域 | 9（瀏覽器與網頁怎麼運作；HTML 與 CSS 版面；JavaScript 與 TypeScript；元件與框架；UI 元件詞彙；呼叫後端；建置與部署；品質；用 AI 寫前端） |
 | 後端的領域 | 9（語言與工程實踐；網路、HTTP 與 API 設計；資料儲存；驗證與授權；資安；容器與部署；CI/CD 與交付；演算法與系統設計；DevOps 與基礎建設） |
 | AI的領域 | 2（AI 時代的開發與 Agent 安全；知識系統） |
-| 技能（課） | 166，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
-| 互動實驗室 | 45，依領域列在下方 |
+| 技能（課） | 210，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
+| 互動實驗室 | 50，依領域列在下方 |
 | 程式題 | 204（Python 127 / SQL 38 / config 27 / JS 12），含實作路線的 20 道驗收題；解答全部經真實執行環境驗證 |
-| 選擇題 | 498（每課 3 題，含程式碼判讀與情境題） |
+| 選擇題 | 630（每課 3 題，含程式碼判讀與情境題） |
 | 設計情境 | 31（API 設計 8；資料與身分 4；高流量 7；維運與基礎建設 7；AI 與 Agent 安全 5） |
-| 實作路線 | 從零做完一個門診掛號後端：10 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |
+| 後端的實作路線 | 從零做完一個門診掛號後端：10 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |
 | 課綱 | `docs/CURRICULUM.md`（後端與 AI）：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、10 週的 Docker 到 Kubernetes 專題、驗收設計；`docs/CURRICULUM-frontend.md`（前端） |
 <!-- /sync:stats -->
 
@@ -43,30 +43,47 @@
 後端以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照；AI 路線的範例也用 Python；前端以 Vue 3 為主，React 作對照。
 
 <!-- sync:route -->
-### 建議學習路線（3 條、共 51 站）
+### 建議學習路線（3 條、共 68 站）
 
-各路線首頁路線圖的站點，每站約一週。★ 表示附互動實驗室。站點定義在 `src/content/roadmap.js` 的 `PATHS`（`label` 是地圖上的短站名，`note` 是下表的「內容」）。
+各路線首頁路線圖的站點。★ 表示附互動實驗室。站點定義在 `src/content/roadmap.js` 的 `PATHS`（`label` 是地圖上的短站名，`note` 是下表的「內容」）。
 
-#### 前端（16 站）
+#### 前端（33 站）
 
 | 站 | 課 | 領域 | 內容 |
 |---|---|---|---|
 | 1 | 瀏覽器怎麼把網頁畫出來★ | 瀏覽器與網頁怎麼運作 | DOM、CSSOM、render tree 到 layout、paint、composite，改哪個屬性重跑哪一段。 |
 | 2 | 開發者工具：驗收前端的固定路線 | 瀏覽器與網頁怎麼運作 | Console、Network、Elements、Application、Lighthouse 的固定驗收順序。 |
-| 3 | 語意化 HTML 與表單元素 | HTML 與 CSS 版面 | 地標元素、button 與 label、input 的 type 與 inputmode。 |
-| 4 | Flexbox：一維排列★ | HTML 與 CSS 版面 | 主軸與交叉軸、剩餘空間怎麼分，以及 min-width 造成的溢出。 |
-| 5 | RWD 與斷點 | HTML 與 CSS 版面 | viewport meta、mobile-first 的 media query 與 container query。 |
-| 6 | 非同步：Promise 與 async/await | JavaScript 與 TypeScript | 依序與平行、Promise.all 與 allSettled、finally 關掉 loading。 |
-| 7 | 元件化與單檔元件 | 元件與框架 | 把畫面拆成元件樹，SFC 的 template、<script setup>、<style scoped>。 |
-| 8 | 響應式：ref、reactive、computed | 元件與框架 | ref、reactive、computed，以及解構之後失去響應式。 |
-| 9 | 模板語法、條件與列表渲染 | 元件與框架 | v-bind、v-on、v-if 與 v-show、v-for 的 key。 |
-| 10 | Vue 的生命週期 | 元件與框架 | onMounted 拿 DOM、onUnmounted 清掉計時器、監聽與請求。 |
-| 11 | 互動狀態 | UI 元件詞彙 | hover、focus-visible、disabled、loading 的狀態表與驗收。 |
-| 12 | 回饋：Toast、Alert、Skeleton、Empty state | UI 元件詞彙 | Toast、Alert、Skeleton、Empty state 各用在哪裡。 |
-| 13 | fetch 與 HTTP | 呼叫後端 | res.ok、JSON body、Problem Details 與逾時。 |
-| 14 | API 的四種狀態：loading、success、empty、error★ | 呼叫後端 | loading、success、empty、error，哪些錯誤給重試。 |
-| 15 | 把畫面描述成文字 | 用 AI 寫前端 | 版面、元件、狀態、資料、互動五段，加上斷點與文案。 |
-| 16 | AI 寫前端的常見錯誤 | 用 AI 寫前端 | Vue 2 寫法、混用 API、多餘的 watch、錯的 key，用工具抓。 |
+| 3 | 一個頁面的載入順序 | 瀏覽器與網頁怎麼運作 | CSS 擋畫面、script 擋解析，defer、async、module 與 preload。 |
+| 4 | 語意化 HTML 與表單元素 | HTML 與 CSS 版面 | 地標元素、button 與 label、input 的 type 與 inputmode。 |
+| 5 | CSS 怎麼決定套用哪一條 | HTML 與 CSS 版面 | 誰勝出：!important、@layer、選擇器權重、出現順序，以及 Vue scoped CSS。 |
+| 6 | 盒模型 | HTML 與 CSS 版面 | border-box、margin 合併、overflow 與 outline。 |
+| 7 | Flexbox：一維排列★ | HTML 與 CSS 版面 | 主軸與交叉軸、剩餘空間怎麼分，以及 min-width 造成的溢出。 |
+| 8 | Grid：二維版面★ | HTML 與 CSS 版面 | fr、minmax、auto-fill 與 auto-fit、命名區域。 |
+| 9 | RWD 與斷點 | HTML 與 CSS 版面 | viewport meta、mobile-first 的 media query 與 container query。 |
+| 10 | JavaScript 必要語法 | JavaScript 與 TypeScript | const、箭頭函式、解構、展開、?. 與 ??，陣列方法會不會改原陣列。 |
+| 11 | 非同步：Promise 與 async/await | JavaScript 與 TypeScript | 依序與平行、Promise.all 與 allSettled、finally 關掉 loading。 |
+| 12 | 事件迴圈★ | JavaScript 與 TypeScript | task、microtask 與渲染時機，長迴圈為什麼讓畫面凍結。 |
+| 13 | DOM 與事件★ | 瀏覽器與網頁怎麼運作 | 捕獲與冒泡、事件委派，stopPropagation 與 preventDefault 各管什麼。 |
+| 14 | 元件化與單檔元件 | 元件與框架 | 把畫面拆成元件樹，SFC 的 template、<script setup>、<style scoped>。 |
+| 15 | 響應式：ref、reactive、computed★ | 元件與框架 | ref、reactive、computed，以及解構之後失去響應式。 |
+| 16 | 模板語法、條件與列表渲染 | 元件與框架 | v-bind、v-on、v-if 與 v-show、v-for 的 key。 |
+| 17 | props、emits 與 v-model | 元件與框架 | 單向資料流、defineEmits、defineModel，子元件不改 props。 |
+| 18 | Vue 的生命週期 | 元件與框架 | onMounted 拿 DOM、onUnmounted 清掉計時器、監聽與請求。 |
+| 19 | 互動狀態★ | UI 元件詞彙 | hover、focus-visible、disabled、loading 的狀態表與驗收。 |
+| 20 | 回饋：Toast、Alert、Skeleton、Empty state | UI 元件詞彙 | Toast、Alert、Skeleton、Empty state 各用在哪裡。 |
+| 21 | 浮層：Dialog、Drawer、Popover、Tooltip | UI 元件詞彙 | Dialog、Drawer、Popover、Tooltip：擋不擋操作、焦點進出、Esc 關閉。 |
+| 22 | 無障礙基礎 | 品質：測試、效能、無障礙 | 鍵盤走得完、控制項有名稱、對比 4.5:1、狀態念得出來。 |
+| 23 | 表單綁定與驗證 | 元件與框架 | v-model 綁出的型別、離開欄位才顯示錯誤、aria-describedby。 |
+| 24 | fetch 與 HTTP | 呼叫後端 | res.ok、JSON body、Problem Details 與逾時。 |
+| 25 | API 的四種狀態：loading、success、empty、error★ | 呼叫後端 | loading、success、empty、error，哪些錯誤給重試。 |
+| 26 | 取消請求與競態★ | 呼叫後端 | AbortController 取消舊請求、debounce，畫面只反映最後的條件。 |
+| 27 | 表單送出與驗證錯誤 | 呼叫後端 | 422 對回欄位、409 放表單上方、停用按鈕加冪等鍵防止重複送出。 |
+| 28 | Vue Router：路由 | 元件與框架 | 動態參數、守衛用回傳值、懶載入，history 模式的伺服器 fallback。 |
+| 29 | Pinia：全域狀態 | 元件與框架 | setup store、storeToRefs，狀態放元件、網址還是 store。 |
+| 30 | Vite：開發與建置 | 建置與部署 | dev server、HMR、vite build 的產物，以及 Vite 6 與 8 的差別。 |
+| 31 | 把畫面描述成文字 | 用 AI 寫前端 | 版面、元件、狀態、資料、互動五段，加上斷點與文案。 |
+| 32 | AI 寫前端的常見錯誤 | 用 AI 寫前端 | Vue 2 寫法、混用 API、多餘的 watch、錯的 key，用工具抓。 |
+| 33 | 驗收 AI 產出的前端 | 用 AI 寫前端 | 指令、每個狀態、三個寬度、只用鍵盤、Console 與 Network，最後寫成測試。 |
 
 #### 後端（23 站）
 
@@ -115,22 +132,24 @@
 <!-- /sync:route -->
 
 <!-- sync:lessons -->
-### 技能課程（18 領域、166 課）
+### 技能課程（20 領域、210 課）
 
 每課有重點卡（摘要、範例技術、重點、自我檢核清單、官方文件連結）與深入內容。★ 表示附互動實驗室。
 
 
-#### 前端（7 領域、16 課）
+#### 前端（9 領域、60 課）
 
 | 領域 | 課程 |
 |---|---|
-| 01. 瀏覽器與網頁怎麼運作 | 瀏覽器怎麼把網頁畫出來★；開發者工具（驗收前端的固定路線） |
-| 02. HTML 與 CSS 版面 | 語意化 HTML 與表單元素；Flexbox（一維排列）★；RWD 與斷點 |
-| 03. JavaScript 與 TypeScript | 非同步（Promise 與 async/await） |
-| 04. 元件與框架 | 元件化與單檔元件；響應式（ref、reactive、computed）；模板語法、條件與列表渲染；Vue 的生命週期 |
-| 05. UI 元件詞彙 | 互動狀態；回饋（Toast、Alert、Skeleton、Empty state） |
-| 06. 呼叫後端 | fetch 與 HTTP；API 的四種狀態（loading、success、empty、error）★ |
-| 07. 用 AI 寫前端 | 把畫面描述成文字；AI 寫前端的常見錯誤 |
+| 01. 瀏覽器與網頁怎麼運作 | 瀏覽器怎麼把網頁畫出來★；開發者工具（驗收前端的固定路線）；一個頁面的載入順序；DOM 與事件★；瀏覽器裡的儲存；從前端看同源與 CORS；網址與瀏覽紀錄 |
+| 02. HTML 與 CSS 版面 | 語意化 HTML 與表單元素；CSS 怎麼決定套用哪一條；盒模型；Flexbox（一維排列）★；Grid（二維版面）★；定位與疊放；RWD 與斷點；圖片與媒體 |
+| 03. JavaScript 與 TypeScript | JavaScript 必要語法；值、參考與不可變更新；模組與套件；非同步（Promise 與 async/await）；事件迴圈★；TypeScript 基礎；錯誤與除錯 |
+| 04. 元件與框架 | 元件化與單檔元件；響應式（ref、reactive、computed）★；模板語法、條件與列表渲染；props、emits 與 v-model；slots 與元件組合；Vue 的生命週期；watch 與 watchEffect；表單綁定與驗證；composables（抽出可重用的邏輯）；Pinia（全域狀態）；Vue Router（路由）；React 對照表 |
+| 05. UI 元件詞彙 | 互動狀態★；回饋（Toast、Alert、Skeleton、Empty state）；按鈕與輸入元件；選擇類元件；浮層（Dialog、Drawer、Popover、Tooltip）；導覽元件；資料顯示元件；design token 與主題 |
+| 06. 呼叫後端 | fetch 與 HTTP；API 的四種狀態（loading、success、empty、error）★；取消請求與競態★；分頁、篩選與網址；表單送出與驗證錯誤；登入狀態與 401；錯誤分類與重試；即時更新（輪詢、SSE、WebSocket） |
+| 07. 建置與部署 | Vite（開發與建置）；建置時設定與執行時設定；bundle、chunk 與 hash；SPA 的部署 |
+| 08. 品質：測試、效能、無障礙 | 無障礙基礎 |
+| 09. 用 AI 寫前端 | 把畫面描述成文字；AI 寫前端的常見錯誤；給截圖與線框；先拆元件再寫；驗收 AI 產出的前端 |
 
 #### 後端（9 領域、115 課）
 
@@ -155,12 +174,15 @@
 <!-- /sync:lessons -->
 
 <!-- sync:labs -->
-### 互動實驗室（45 個）
+### 互動實驗室（50 個）
 
 依路線與領域列出：
 
-- **前端｜瀏覽器與網頁怎麼運作**：渲染管線的七段
-- **前端｜HTML 與 CSS 版面**：Flexbox 的主軸與剩餘空間
+- **前端｜瀏覽器與網頁怎麼運作**：渲染管線的七段；事件的捕獲、冒泡與預設動作
+- **前端｜HTML 與 CSS 版面**：Flexbox 的主軸與剩餘空間；Grid 的軌道、格線與命名區域
+- **前端｜JavaScript 與 TypeScript**：事件迴圈逐步執行
+- **前端｜元件與框架**：改一個值，誰跟著動
+- **前端｜UI 元件詞彙**：UI 元件的狀態
 - **前端｜呼叫後端**：API 的四種狀態
 - **後端｜語言與工程實踐**：同步 vs 執行緒 vs async；uv 從零到能跑；覆蓋率 100% 的測試抓不抓得到錯
 - **後端｜網路、HTTP 與 API 設計**：HTTP 請求的一生；REST 資源設計
@@ -199,7 +221,7 @@
 ### 練習題
 
 - **程式題 204 道**（Python 127、SQL 38、config 27、JavaScript 12）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證。
-- **選擇題 498 道**：每課 3 題，含程式碼判讀與情境題。
+- **選擇題 630 道**：每課 3 題，含程式碼判讀與情境題。
 - **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。
 <!-- /sync:practice -->
 
@@ -260,7 +282,7 @@
 src/
   content/         內容（純資料，改這裡不用碰元件）
     tracks.js        路線定義（前端、後端、AI）：名稱、說明、課綱檔、精選實驗室；站名與 repo 網址（SITE）
-    roadmap.js       領域索引、每條路線的學習路線 PATHS（51 站）與關鍵字 KEYWORDS、查詢 helper（domainsOf、stationsOf、displayNo…）
+    roadmap.js       領域索引、每條路線的學習路線 PATHS（68 站）與關鍵字 KEYWORDS、查詢 helper（domainsOf、stationsOf、displayNo…）
     dN-<id>.js       每個領域一檔的「索引」，track 決定所屬路線；檔名用全站唯一的 no（後端 1–9、AI 10–11、前端 21–29），畫面上顯示路線內的順序。skills[] 各有 id / title / en / level / summary / example / keywords / lab / related（跟著主 chunk）
     body/dN-<id>.js  每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs / map（技能頁才懶載入，每領域一個 chunk）
     deep/<skill-id>.md   每課的深入內容（markdown，技能頁逐課懶載入；格式見 docs/CONTRIBUTING-lessons.md）
@@ -319,7 +341,7 @@ npm run e2e:runtime              # Playground 的 Python / SQL / JS 能執行
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
 npm run e2e:deep                 # 深入內容的每個 run 區塊都能執行（ONLY=transactions 只驗指定的課）
 npm run e2e:ui                   # 首頁路線圖（2／3／4／6 欄：站序、文字不重疊、線不穿過字）；練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停
-npm run e2e:labs                 # 76 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
+npm run e2e:labs                 # 81 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
 npm run e2e:mobile               # 390px 逐頁（每一課、情境、實驗室、題目、實作路線）：頁面不能橫向捲動、內容不能被裁切、不留需要左右滑的區塊
 npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Emulator 與 preview；需要 Java 11+）

@@ -119,24 +119,34 @@ for (const f of deepFiles) {
   for (const w of BANNED) if (md.includes(w)) errors.push(`${tag}: 不用「${w}」這類措辭（見 CLAUDE.md 語氣規則）`)
   for (const m of prose.matchAll(/\]\(([^)]+)\)/g)) if (!/^https:\/\//.test(m[1]) && !/^#\//.test(m[1])) errors.push(`${tag}: 連結要是 https:// 或站內 #/ 路由（${m[1]}）`)
 }
+// 站內連結 #/skill/<id>、#/lab/<Name>：深入內容裡連到的課與實驗室要存在（跨路線也一樣）
+const labNames = new Set(readdirSync(resolve(here, '../src/labs')).filter((f) => /Lab\.jsx$/.test(f)).map((f) => f.replace('.jsx', '')))
+for (const f of deepFiles) {
+  const md = readFileSync(resolve(deepDir, f), 'utf8')
+  for (const m of md.matchAll(/\(#\/skill\/([a-z0-9-]+)/g)) if (!seen.has(m[1])) errors.push(`deep/${f}: 連到不存在的課 #/skill/${m[1]}`)
+  for (const m of md.matchAll(/\(#\/lab\/(\w+)/g)) if (!labNames.has(m[1])) errors.push(`deep/${f}: 連到不存在的實驗室 #/lab/${m[1]}`)
+}
 
 // 實作路線：每個階段要有說明檔、對得到的技能與程式題
 const { STAGES } = await import(pathToFileURL(resolve(content, 'project/stages.js')).href)
-const { default: projectExercises } = await import(pathToFileURL(resolve(content, 'exercises/project.js')).href)
+// 實作路線的驗收題：任何題庫檔裡帶 project 欄位的題目
+const { EXERCISES: allExercises } = await import(pathToFileURL(resolve(content, 'exercises/index.js')).href)
+const projectExercises = allExercises.filter((e) => e.project)
 const stageIds = new Set()
 for (const st of STAGES) {
   const tag = `project/${st.id}`
   if (stageIds.has(st.id)) errors.push(`${tag}: 階段 id 重複`)
   stageIds.add(st.id)
-  for (const k of ['id', 'no', 'title', 'summary']) if (!st[k]) errors.push(`${tag}: 缺 ${k}`)
+  for (const k of ['id', 'track', 'no', 'title', 'summary']) if (!st[k]) errors.push(`${tag}: 缺 ${k}`)
+  if (st.track && !trackIds.has(st.track)) errors.push(`${tag}: track "${st.track}" 不在 tracks.js`)
   if (!existsSync(resolve(content, 'project', `${st.id}.md`))) errors.push(`${tag}: 缺說明檔 project/${st.id}.md`)
   for (const l of st.lessons || []) if (!seen.has(l)) errors.push(`${tag}: lessons 裡的技能 "${l}" 不存在`)
   const exIds = new Set(projectExercises.filter((e) => e.project === st.id).map((e) => e.id))
-  for (const e of st.exercises || []) if (!exIds.has(e)) errors.push(`${tag}: exercises 裡的 "${e}" 在 exercises/project.js 找不到（或 project 欄位不是 "${st.id}"）`)
+  for (const e of st.exercises || []) if (!exIds.has(e)) errors.push(`${tag}: exercises 裡的 "${e}" 在題庫找不到（或 project 欄位不是 "${st.id}"）`)
 }
 for (const e of projectExercises) {
-  if (!stageIds.has(e.project)) errors.push(`exercises/project.js ${e.id}: project "${e.project}" 不是任何階段`)
-  if (e.skill && !seen.has(e.skill)) errors.push(`exercises/project.js ${e.id}: skill "${e.skill}" 不存在`)
+  if (!stageIds.has(e.project)) errors.push(`程式題 ${e.id}: project "${e.project}" 不是任何階段`)
+  if (e.skill && !seen.has(e.skill)) errors.push(`程式題 ${e.id}: skill "${e.skill}" 不存在`)
 }
 
 // 程式題：欄位齊全（技能頁與題目頁直接讀這些欄位，缺了會壞頁）、id 唯一、對得到技能

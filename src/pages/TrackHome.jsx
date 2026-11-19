@@ -9,6 +9,7 @@ import HeroArt from '../components/HeroArt.jsx'
 import { EXERCISES } from '../content/exercises/index.js'
 import { SCENARIOS, groupOf } from '../content/scenarios/index.js'
 import { withTrack } from '../components/TrackFilter.jsx'
+import { stagesOf } from '../content/project/stages.js'
 
 /* 路線首頁 #/track/<id>：hero、學習路線圖、領域、關鍵字、設計情境、精選實驗室。
    還沒有課的路線列出規劃中的領域。 */
@@ -42,7 +43,7 @@ export default function TrackHome({ id }) {
               {doneHere ? `繼續：${nextStation.label || nextStation.title}` : '從第一站開始'} →
             </a>
             <a className="btn ghost" href={withTrack('roadmap', t.id)}>技能盤點</a>
-            {t.id === 'backend' && <a className="btn ghost" href="#/project">實作路線</a>}
+            {stagesOf(t.id).length > 0 && <a className="btn ghost" href={withTrack('project', t.id)}>實作路線</a>}
           </div>
           <div className="hero-stats">
             <div className="stat"><b>{domains.length}</b><span>領域</span></div>
@@ -60,7 +61,7 @@ export default function TrackHome({ id }) {
         <section className="home-section" id="route">
           <div className="section-head">
             <h2 className="section-title">學習路線</h2>
-            <p>{stations.length} 站，每站約一週。<a href={withTrack('curriculum', t.id)}>完整課綱 →</a>{t.id === 'backend' && <>　<a href="#/project">實作路線 →</a></>}</p>
+            <p>{stations.length} 站。<a href={withTrack('curriculum', t.id)}>完整課綱 →</a>{stagesOf(t.id).length > 0 && <>　<a href={withTrack('project', t.id)}>實作路線 →</a></>}</p>
           </div>
           <MetroMap stations={stations} isDone={isDone} label={`${t.title}學習路線`} />
           <div className="metro-legend">

@@ -22,7 +22,7 @@ const LIVE = TRACKS.filter((t) => DOMAINS.some((d) => d.track === t.id))
 const domainsOf = (t) => DOMAINS.filter((d) => d.track === t.id)
 const pathCount = LIVE.reduce((n, t) => n + (PATHS[t.id] || []).length, 0)
 const { EXERCISES } = await imp('src/content/exercises/index.js')
-const { STAGES } = await imp('src/content/project/stages.js')
+const { STAGES, PROJECTS } = await imp('src/content/project/stages.js')
 const skills = DOMAINS.flatMap((d) => d.skills.map((s) => ({ ...s, domain: d })))
 const skillById = new Map(skills.map((s) => [s.id, s]))
 
@@ -60,7 +60,7 @@ const star = (s) => (s.lab ? '★' : '')
 const short = (t) => t.split('：')[0]
 const paren = (t) => t.replace(/：(.+)$/, '（$1）')
 // 清單項目之間用「；」：很多課名、實驗室與情境的名稱本身就有頓號
-const groupCounts = GROUPS.map((g) => `${g.title} ${scenarios.filter((s) => s.group === g.id).length}`).join('；')
+const groupCounts = GROUPS.filter((g) => scenarios.some((s) => s.group === g.id)).map((g) => `${g.title} ${scenarios.filter((s) => s.group === g.id).length}`).join('；')
 
 // ── README 的產生段落 ─────────────────────────────────
 const blocks = {
@@ -74,14 +74,14 @@ const blocks = {
     `| 程式題 | ${EXERCISES.length}（Python ${kinds.python || 0} / SQL ${kinds.sql || 0} / config ${kinds.config || 0} / JS ${kinds.js || 0}），含實作路線的 ${projEx} 道驗收題；解答全部經真實執行環境驗證 |`,
     `| 選擇題 | ${quizCount}（每課 3 題，含程式碼判讀與情境題） |`,
     `| 設計情境 | ${scenarios.length}（${groupCounts}） |`,
-    `| 實作路線 | 從零做完一個門診掛號後端：${STAGES.length} 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |`,
+    ...LIVE.filter((t) => STAGES.some((s) => s.track === t.id)).map((t) => `| ${t.title}的實作路線 | ${PROJECTS[t.id].title}：${STAGES.filter((s) => s.track === t.id).length} 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |`),
     '| 課綱 | `docs/CURRICULUM.md`（後端與 AI）：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、10 週的 Docker 到 Kubernetes 專題、驗收設計' + (fs.existsSync(path.join(root, 'docs/CURRICULUM-frontend.md')) ? '；`docs/CURRICULUM-frontend.md`（前端）' : '') + ' |',
   ].join('\n'),
 
   route: () => [
     `### 建議學習路線（${LIVE.length} 條、共 ${pathCount} 站）`,
     '',
-    '各路線首頁路線圖的站點，每站約一週。★ 表示附互動實驗室。站點定義在 `src/content/roadmap.js` 的 `PATHS`（`label` 是地圖上的短站名，`note` 是下表的「內容」）。',
+    '各路線首頁路線圖的站點。★ 表示附互動實驗室。站點定義在 `src/content/roadmap.js` 的 `PATHS`（`label` 是地圖上的短站名，`note` 是下表的「內容」）。',
     ...LIVE.filter((t) => (PATHS[t.id] || []).length).flatMap((t) => [
       '',
       `#### ${t.title}（${PATHS[t.id].length} 站）`,
@@ -128,7 +128,7 @@ const blocks = {
     '',
     '每個情境包含背景與限制、模擬器、取捨表、決策題與落地程式碼。',
     '',
-    ...GROUPS.map((g) => {
+    ...GROUPS.filter((g) => scenarios.some((s) => s.group === g.id)).map((g) => {
       const ss = scenarios.filter((s) => s.group === g.id)
       return `- **${g.title}（${ss.length}）**：${ss.map((s) => s.title).join('；')}`
     }),

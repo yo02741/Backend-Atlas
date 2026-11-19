@@ -5,7 +5,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const { DOMAINS } = await import(pathToFileURL(resolve(here, '../src/content/roadmap.js')).href)
 const skillIds = new Set(DOMAINS.flatMap((d) => d.skills.map((s) => s.id)))
-const GROUPS = new Set(['api', 'data', 'traffic', 'ops', 'agent'])
+// 分組與路線從 index.js 解析（index.js 用 import.meta.glob，Node 不能直接 import）：每筆 { id, title, en, track, … }
+import { readFileSync } from 'node:fs'
+const { TRACKS } = await import(pathToFileURL(resolve(here, '../src/content/tracks.js')).href)
+const groupSrc = readFileSync(resolve(here, '../src/content/scenarios/index.js'), 'utf8')
+const GROUP_DEFS = [...groupSrc.matchAll(/\{ id: '(\w+)', title: '[^']+', en: '[^']+', track: '(\w+)'/g)].map((m) => ({ id: m[1], track: m[2] }))
+const GROUPS = new Set(GROUP_DEFS.map((g) => g.id))
 const dir = resolve(here, '../src/content/scenarios')
 const labDir = resolve(here, '../src/labs/scenarios')
 const errors = []
@@ -20,7 +25,7 @@ for (const f of readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'index
   if (!s.id || ids.has(s.id)) errors.push(`${tag}: id 缺少或重複 (${s.id})`)
   ids.add(s.id)
   if (s.id && f !== `${s.id}.js`) errors.push(`${tag}: 檔名應為 ${s.id}.js`)
-  if (!GROUPS.has(s.group)) errors.push(`${tag}: group 必須是 api / data / traffic / ops / agent`)
+  if (!GROUPS.has(s.group)) errors.push(`${tag}: group 必須是 ${[...GROUPS].join(' / ')}`)
   if (!s.title || !s.summary || !s.situation) errors.push(`${tag}: title / summary / situation 必填`)
   if (![1, 2, 3].includes(s.level)) errors.push(`${tag}: level 必須是 1–3`)
   if (!Array.isArray(s.constraints) || s.constraints.length < 3) errors.push(`${tag}: constraints 至少 3 條`)
@@ -57,5 +62,12 @@ for (const f of readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'index
   if (/為什麼要學|為什麼重要|你工作上|給前端工程師|你已經會/.test(text)) errors.push(`${tag}: 含不符合語氣規範的措辭`)
 }
 console.log(`情境 ${count} 個`)
+// 分組的 track 要在 TRACKS 裡；情境的 related（其他路線的相關情境）要存在
+for (const g of GROUP_DEFS) if (!TRACKS.some((t) => t.id === g.track)) errors.push(`SCENARIO_GROUPS.${g.id}: track "${g.track}" 不在 tracks.js`)
+if (GROUP_DEFS.length !== (groupSrc.match(/\{ id: '/g) || []).length) errors.push('SCENARIO_GROUPS 每筆要寫成 { id, title, en, track, … }（validate 與 docs:sync 靠這個順序解析）')
+for (const f of readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'index.js')) {
+  const s = (await import(pathToFileURL(resolve(dir, f)).href)).default
+  for (const r of s?.related || []) if (!ids.has(r)) errors.push(`${f}: related 的情境 "${r}" 不存在`)
+}
 if (errors.length) { console.log('錯誤：\n' + errors.join('\n')); process.exit(1) }
 console.log('OK')

@@ -1,6 +1,35 @@
 // 領域內文（d9-devops，m2 批）：以技能 id 為 key，由 body/d9-devops.js 合併。只放這些技能：k8s-manifests, k8s-config-probes, k8s-troubleshooting, k8s-helm-gitops
 export default {
   'k8s-manifests': {
+    map: {
+      names: [
+        { n: 'Deployment', t: '管副本數、Pod 範本（`template`）與滾動更新；只有 `template` 的內容變了才會觸發更新，只改 `replicas` 是擴縮。' },
+        { n: 'Service', t: '用 `selector` 選出一組 ready 的 Pod，給它們穩定的名稱與 port；`port` 是 Service 自己開的，`targetPort` 對到容器實際聽的。' },
+        { n: 'Ingress', t: '依網域與路徑把外部流量導到同一個 namespace 的 Service，要有 controller 處理它的 `ingressClassName`；新功能加在 Gateway API 的 HTTPRoute。' },
+        { n: 'label 與 selector', t: '物件之間靠鍵值對接線：Service 的 `selector` 對 Pod 的 label、Deployment 的 `selector` 對 `template` 的 label；只有後者寫錯會在套用時被擋下。' },
+        { n: 'maxSurge 與 maxUnavailable', t: '滾動更新期間 Pod 總數不超過 replicas + maxSurge、可用數不低於 replicas − maxUnavailable；預設都是 25%，兩個不能同時為 0。' },
+        { n: 'namespace', t: 'Deployment、Service、Ingress、TLS Secret 要在同一個；manifest 沒寫 `metadata.namespace` 時，物件建在目前 context 的 namespace。' },
+        { n: 'EndpointSlice', t: 'Service 實際選到的 Pod 位址；空的代表 selector 對不上 label、Pod 沒有 ready，或不在同一個 namespace。' },
+        { n: '`kubectl rollout`', t: '`rollout status` 等更新完成，失敗或逾時回非零結束碼；`rollout undo` 回上一版，但只改叢集，Git 裡的 manifest 要另外改回來。' },
+      ],
+      ask: [
+        '服務名稱、namespace、對外網域與路徑。',
+        '容器聽的 port、Service 開的 port，以及兩者的對應。',
+        '副本數，更新時能不能少一個副本（`maxUnavailable`）、節點有沒有多放一個 Pod 的資源（`maxSurge`）。',
+        'image 的 tag 規則：commit SHA 或版本號，不用 `latest`。',
+        '由哪個 controller 或 Gateway 接外部流量（`ingressClassName` 或 `parentRefs`），TLS 憑證放在哪個 Secret。',
+        '套用後用哪些指令確認，出錯時怎麼回退。',
+      ],
+      prompt: '門診掛號的 `booking-api` 要寫 Deployment、Service、Ingress 三份 manifest，都放在 namespace `booking`。Deployment 3 個副本，image 用 commit SHA 當 tag，容器聽 8000；滾動更新設 `maxSurge: 1`、`maxUnavailable: 0`，更新期間可用的 Pod 不少於 3 個。Service 是 ClusterIP，`selector` 用 `app: booking-api`，`port` 80 對到 `targetPort` 8000；Ingress 用叢集現有的 `ingressClassName`，把 `api.booking.example.org` 的 `/` 導到這個 Service 的 80，TLS 用 Secret `booking-api-tls`。最後附上套用後的確認指令：`rollout status`、查 EndpointSlice、`port-forward` 直接測 Service。',
+      verify: [
+        { c: '接線', t: '`kubectl get pods -n booking --show-labels` 對照 Service 的 `selector`；Ingress backend 寫的是 Service 的名稱與 80，不是容器的 8000。' },
+        { c: 'Service 後面有沒有 Pod', t: '`kubectl get endpointslices -n booking -l kubernetes.io/service-name=booking-api` 的 ENDPOINTS 要有 Pod 的 IP；空的就回頭查 selector、readiness 與 namespace。' },
+        { c: '更新完成', t: '`kubectl rollout status deployment/booking-api -n booking --timeout=120s` 要成功結束；`apply` 回 `created` 或 `configured` 不代表接通了。' },
+        { c: '跳過 Ingress', t: '`kubectl port-forward -n booking service/booking-api 8080:80` 後 `curl -i localhost:8080/healthz`；這裡通、外面不通，問題在 Ingress，`ADDRESS` 一直空的多半是沒有 controller 處理那個 class。' },
+        { c: '過時的寫法', t: 'image 是 `latest` 或沒寫 tag 要改；Ingress 要是 `networking.k8s.io/v1` 並有 `pathType`，AI 產生或從舊文章複製的 `extensions/v1beta1` 會報 `no matches for kind "Ingress"`。' },
+        { c: '套用前', t: '`kubectl diff -f k8s/` 先看會改到什麼；欄位名稱拼錯（大小寫也算）會報 `unknown field`，用 `kubectl explain` 查正確寫法。' },
+      ],
+    },
     points: [
       { b: '一個對外的服務要三份 manifest', t: 'Deployment（`apps/v1`）管副本數、Pod 範本與更新方式；Service（`v1`）給一組 Pod 穩定的名稱與 port；Ingress（`networking.k8s.io/v1`）依網域與路徑把外部流量導到 Service。三者要在同一個 namespace。' },
       { b: '靠 label 與 selector 接線', t: '四條接線：Ingress 的 backend 對到 Service 的名稱與 port、Service 的 selector 對到 Pod 的 label、targetPort 對到容器監聽的 port、Deployment 的 selector 對到 template 的 label。只有最後一條寫錯會被 API server 擋下，其他都是套用成功但不通。' },

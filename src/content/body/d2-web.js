@@ -1,6 +1,33 @@
 // 領域 2：網路、HTTP 與 API 設計 — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d2-web.js
 export default {
   'http-basics': {
+    map: {
+      names: [
+        { n: 'DNS、TCP、TLS', t: '請求送出前的三步：把主機名換成 IP、三次握手建立連線、驗證憑證並協商金鑰（TCP 加 TLS 1.3 共 2 RTT）。第一個請求慢、連不上，多半卡在這三段。' },
+        { n: 'TTFB', t: '送出請求到收到回應第一個位元組的時間，約等於一趟來回加上伺服器處理；Chrome 開發者工具的 Timing 裡叫 `Waiting for server response`。' },
+        { n: 'keep-alive 與連線池', t: '同一條連線接著送下一個請求，省掉握手：新的 HTTPS 連線至少 3 RTT 才拿到第一個位元組，重用的只要 1 RTT。後端呼叫外部服務要共用 client 的連線池。' },
+        { n: '標頭', t: '`Host` 指定網站、`Content-Type` 說 body 的格式、`Accept` 說想要的格式、`Authorization` 帶憑證、`Retry-After` 說多久後再試；標頭名稱不分大小寫。' },
+        { n: '狀態碼類別', t: '2xx 成功、3xx 去別處、4xx 請求有問題（不改請求就不要重送）、5xx 伺服器有問題（視情況重試）；監控、重試、CDN 都依類別判斷。' },
+        { n: '`502`、`503`、`504`', t: '經過 proxy 時常見的三種 5xx：後端回應無效（例如連線被重設）、暫時無法服務（可帶 `Retry-After`）、等後端逾時。' },
+        { n: '安全與冪等', t: '`GET`、`HEAD` 不改伺服器狀態（安全）；`GET`、`PUT`、`DELETE` 送 N 次和送一次的最終狀態相同（冪等）。`POST` 兩者都不是，斷線後直接重送可能建出兩筆。' },
+      ],
+      ask: [
+        '呼叫外部服務時共用哪個 client 與連線池，連線逾時與讀取逾時各幾秒。',
+        '每種失敗回哪個狀態碼，屬於 4xx（客戶端要改請求）還是 5xx（可以重試）。',
+        '哪些請求失敗後自動重試：只重試冪等的方法，重試幾次、間隔多久，`POST` 重送會不會建出兩筆。',
+        '請求與回應的 `Content-Type`，以及 body 大小上限（超過回 `413`）。',
+        '前面經過哪些 proxy，只信任哪一層設的 `X-Forwarded-For` 與 `X-Forwarded-Proto`。',
+      ],
+      prompt: '掛號服務建立掛號時要呼叫院內病歷服務的 `GET /patients/{id}`。整個行程共用一個 HTTP client，用連線池重用 keep-alive 連線，連線逾時 2 秒、讀取逾時 5 秒。`GET` 是冪等的，遇到連線錯誤或 `502`、`503`、`504` 時重試，最多 2 次，`503` 帶 `Retry-After` 就照它等；4xx 不重試。病歷服務逾時時，掛號 API 回 `504`，不包成 `200` 加 `{"error": ...}`。',
+      verify: [
+        { c: '卡在哪個階段', t: '`curl -o /dev/null -s -w` 印出 `time_namelookup`、`time_connect`、`time_appconnect`、`time_starttransfer`；這些是累計秒數，相減才是各段花的時間。' },
+        { c: '連線有沒有重用', t: 'Network 分頁點同一網域第二個請求的 Timing，還有 `Initial connection` 與 `SSL` 代表每次都開新連線；後端程式每次呼叫都 `requests.get(...)`、沒有共用 Session 或 client，也是每次新連線。' },
+        { c: '狀態碼', t: '`curl -i` 打一次不存在的資源、一次不帶 token、一次讓下游逾時，應該分別是 `404`、`401`、`504`；全部 `200` 加錯誤 body，或全部 `500`，監控與重試都會判斷錯。' },
+        { c: '`401` 與 `403`', t: '沒帶或帶了無效的憑證回 `401` 並附 `WWW-Authenticate`，身分有效但沒權限回 `403`；兩者寫反是常見的錯。' },
+        { c: '重試條件', t: '讀重試的程式：條件只該包含連線錯誤與 `502`、`503`、`504`，方法限冪等的；`POST` 或 4xx 出現在重試清單裡就要改。' },
+        { c: '改狀態的 `GET`', t: '對照路由表，找用 `GET` 卻會改資料的路徑（例如 `GET /orders/42/cancel`）；瀏覽器預先載入或爬蟲一抓，訂單就被取消。' },
+      ],
+    },
     points: [
       { b: 'HTTP 是無狀態的', t: '每個請求自帶全部資訊（標頭、cookie、token）。「登入狀態」是靠 session 或 token 在每次請求重建出來的。' },
       { b: '連線很貴，重用它', t: 'TCP 三向交握 + TLS 握手要來回好幾趟。keep-alive / HTTP/2 多工讓同一條連線跑很多請求；後端呼叫外部服務也要用連線池。' },
@@ -38,6 +65,31 @@ export default {
     ],
   },
   'rest-design': {
+    map: {
+      names: [
+        { n: '資源與路徑', t: '名詞代表資料，例如 `/appointments`、`/appointments/{id}`；動作交給 HTTP 方法，不寫成 `/getAppointments`。' },
+        { n: 'HTTP 方法', t: '`GET` 讀、`POST` 建立、`PUT` 整筆取代、`PATCH` 部分更新、`DELETE` 刪除；`GET`、`PUT`、`DELETE` 重送不會多出副作用（冪等）。' },
+        { n: '狀態碼', t: '`201` 建立成功、`204` 成功但沒有 body、`422` 欄位驗證失敗、`401` 沒登入、`403` 沒權限、`404` 找不到、`409` 和目前狀態衝突。' },
+        { n: '`Location` 標頭', t: '建立成功時指向新資源的網址，客戶端不用自己拼。' },
+        { n: 'Problem Details（RFC 9457）', t: '錯誤回應的標準格式 `application/problem+json`，有 `type`、`title`、`status`、`detail`，前端可以統一處理。' },
+        { n: '查詢參數', t: '列表的過濾、排序、分頁放在 `?status=booked&sort=-created_at&limit=20`，可用的欄位列成白名單。' },
+      ],
+      ask: [
+        '有哪些資源、彼此的從屬關係（例如掛號屬於某個診次）。',
+        '每個 endpoint 的方法、路徑、成功狀態碼與回應 body。',
+        '每種失敗回哪個狀態碼，錯誤 body 用哪個格式。',
+        '非 CRUD 的動作（取消、報到）建模成子資源的 `POST`，還是狀態欄位的 `PATCH`。',
+        '列表能用哪些欄位過濾與排序、分頁方式與筆數上限。',
+      ],
+      prompt: '設計門診掛號的 REST API：資源是 `/sessions/{id}/appointments`（某個診次的掛號）與 `/appointments/{id}`。建立掛號用 `POST`，成功回 `201` 並帶 `Location`；名額已滿或重複掛號回 `409`，欄位驗證失敗回 `422`，錯誤一律用 RFC 9457 的 `application/problem+json`。取消建模成 `POST /appointments/{id}/cancel`，已取消再取消回 `409`。列表只能依 `status` 過濾、依 `created_at` 排序，`limit` 上限 100。',
+      verify: [
+        { c: '狀態碼', t: '用 `curl -i` 打一次成功、一次重複、一次缺欄位，看是不是 `201`、`409`、`422`，而不是全部 `200` 或 `500`。' },
+        { c: '錯誤格式', t: '每種錯誤的 `Content-Type` 都是 `application/problem+json`、欄位一致；AI 產生的程式常常每支 API 各寫一種。' },
+        { c: '路徑與方法', t: '對照 OpenAPI 規格或路由表：路徑裡沒有動詞（`/createAppointment`），取消與刪除沒有用 `GET`。' },
+        { c: '冪等', t: '同一個 `PUT` 或 `DELETE` 送兩次，資料和送一次相同；`DELETE` 第二次回 `404` 還是 `204` 要先定好並寫進測試。' },
+        { c: '列表參數', t: '傳一個不在白名單裡的 `sort` 欄位，應該回 `400`，而不是被默默忽略或變成慢查詢。' },
+      ],
+    },
     points: [
       { b: '先畫資源樹', t: '`/orders`、`/orders/{id}`、`/orders/{id}/items`。動作用 HTTP 方法表達，不要 `/getOrders`、`/orders/delete/42`。' },
       { b: 'PUT 取代整筆、PATCH 部分更新', t: '兩者都對 `/orders/{id}`；PUT 少給欄位等於清空，PATCH 只改給的欄位。團隊要選定一種語意並寫進規範。' },

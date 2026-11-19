@@ -19,6 +19,35 @@ const base = {
     ],
   },
   'jwt': {
+    map: {
+      names: [
+        { n: 'header、payload、signature', t: '用 `.` 分開的三段，前兩段是 Base64URL 編碼的 JSON。Base64URL 不是加密，拿到 token 的人都讀得到 payload，簽章只保證內容沒被改過。' },
+        { n: '標準聲明', t: '`sub`（使用者）、`iss`（發行者）、`aud`（給哪個服務用）、`exp`／`nbf`／`iat`（時間）、`jti`（token 的 id）；驗證時 `exp`、`iss`、`aud` 都要檢查。' },
+        { n: 'HS256 與 RS256／ES256', t: 'HS256 用同一把 secret 簽與驗，能驗的人就能簽；RS256、ES256 私鑰簽、公鑰驗，多個服務驗同一種 token 時用它們。' },
+        { n: '允許的演算法', t: '驗證時由伺服器指定接受哪個 `alg`，不照 header 寫的做；`alg: none` 與把 RS256 換成 HS256 的混淆攻擊都靠這一步擋下。' },
+        { n: '`kid` 與 JWKS', t: '`kid` 指出用哪一把金鑰驗，公鑰以 JWK Set 公布在一個網址；輪替時先讓驗證端認得新金鑰，再開始用它簽。' },
+        { n: 'access token 與 refresh token', t: 'access token 短效（5～15 分鐘），每個請求帶著；refresh token 效期較長、放 HttpOnly cookie，伺服器端有紀錄可撤銷，每用一次換一張新的（rotation）。' },
+        { n: '撤銷', t: 'JWT 發出去收不回，只能靠短效期、`jti` 撤銷清單、使用者層級的 `tokens_valid_after`，或改用 opaque token 查狀態；停用帳號要多快生效決定選哪一種。' },
+        { n: 'leeway', t: '時間檢查容許的時鐘誤差，常見 30～60 秒；設成幾小時等於沒有到期檢查。' },
+      ],
+      ask: [
+        '誰簽發、誰驗證：一個服務自己簽自己驗用 HS256；授權伺服器簽、多個服務驗用 RS256 或 ES256。',
+        'payload 放哪些聲明：`sub`、`role`、`exp` 可以，密碼、身分證號、病歷內容不放。',
+        'access token 與 refresh token 各自的效期與存放位置（記憶體、HttpOnly cookie）。',
+        '驗證要檢查的項目：允許的 `alg`、`iss` 與 `aud` 的值、時鐘誤差、必須存在的聲明。',
+        '撤銷要多快生效（例如停用帳號 10 分鐘內），用哪種方式做到。',
+        '金鑰怎麼輪替：`kid` 怎麼命名、新舊金鑰並存多久。',
+      ],
+      prompt: '門診系統的 API（`aud` 是 `https://api.clinic.example`）要驗證授權伺服器 `https://auth.clinic.example` 簽發的 access token。只接受 `ES256`，依 header 的 `kid` 在快取的 JWKS 裡找公鑰，遇到不認得的 `kid` 才重抓一次並限流；簽章通過後檢查 `exp`、`nbf`（leeway 30 秒）、`iss`、`aud`，缺 `exp` 或 `sub` 一律拒絕，任何一項失敗回 `401`。payload 只放 `sub` 與 `role`，不放病歷號或身分證號。access token 效期 10 分鐘；停用帳號時撤銷伺服器端的 refresh token，最晚 10 分鐘後失效，不另做撤銷清單。',
+      verify: [
+        { c: '竄改', t: '把 payload 的 `role` 改成 `admin`、重新 Base64URL 編碼後換掉中間那段送出，要回 `401`；通過代表沒驗簽章，或先讀 payload 才驗。' },
+        { c: '`alg: none`', t: '送一張 header 是 `{"alg":"none"}`、第三段空白的 token，要被拒絕；程式的 decode 呼叫要寫死允許的演算法（PyJWT 的 `algorithms=[...]`）。' },
+        { c: '`aud` 與 `iss`', t: '拿發給別的服務的 token（`aud` 不同）打你的 API，要回 `401`；PyJWT 沒傳 `issuer` 時不檢查 `iss`，讀程式確認有傳。' },
+        { c: '關掉檢查的選項', t: '搜尋 `verify_signature`、`verify_aud` 被設成 `False` 的地方；這類選項常是為了讓測試先通過而加上的，出現在授權判斷前面，代表 token 沒有被完整驗證。' },
+        { c: '過期與時鐘', t: '用 `exp` 已過的 token 打 API 要回 `401`；大量出現 `ExpiredSignatureError` 或 `ImmatureSignatureError` 時，先查伺服器時鐘（NTP）與 leeway。' },
+        { c: 'payload 內容', t: '把開發環境 token 的中間那段做 Base64URL 解碼，確認沒有個資、列出缺了哪些聲明；不要把正式環境的 token 貼到第三方網站。' },
+      ],
+    },
     points: [
       { b: 'base64url 不是加密', t: 'payload 任何人解開都能讀。放 user id、role、exp 可以；密碼、個資、信用卡不行。' },
       { b: '簽章保證完整性', t: 'HS256 用共享 secret（單一服務）、RS256 / ES256 用私鑰簽、公鑰驗（多服務只需公鑰）。改一個字元簽章就不符。' },

@@ -19,6 +19,34 @@ const base = {
     refs: [],
   },
   'docker-basics': {
+    map: {
+      names: [
+        { n: 'image 與 container', t: 'image 是唯讀的檔案系統層加一份設定；container 是 image 加上一層可寫層跑起來的行程，同一個 image 可以同時跑很多個。' },
+        { n: 'layer 與建置快取', t: '`RUN`、`COPY` 各產生一層；某一層的輸入（指令文字、被複製檔案的內容）變了，它和之後的每一層都重做，所以少變的指令放前面。' },
+        { n: '`.dockerignore`', t: '列出不送進建置的檔案（`.git`、`.venv`、`node_modules`、`.env`），避免 `COPY . .` 又慢又把秘密帶進 image。' },
+        { n: 'tag 與 digest', t: 'tag 是可以被移動的名字，`latest` 也只是其中一個；digest 是內容的 SHA-256。部署用不重複的 tag（commit SHA）或 digest，才確定每台跑的是同一份。' },
+        { n: 'volume', t: '可寫層在 `docker rm` 時跟著消失；資料庫、上傳檔放 named volume，生命週期和容器分開。開發時掛程式碼用 bind mount。' },
+        { n: 'PID 1 與 `SIGTERM`', t: '`docker stop` 送 `SIGTERM` 給 PID 1，10 秒內沒結束就 `SIGKILL`；PID 1 沒註冊處理函式時 `SIGTERM` 會被忽略，`CMD` 要用 exec 形式。' },
+        { n: '發布埠（`-p`）', t: '`-p 主機:容器` 把主機的埠接到容器；容器裡的程式要聽 `0.0.0.0`，聽 `127.0.0.1` 只有容器自己連得到。' },
+      ],
+      ask: [
+        'image 的 tag 規則（commit SHA 或版本號），部署時用 tag 還是 digest、要不要 `--pull=always`。',
+        'Dockerfile 的指令順序：先複製依賴清單並安裝，最後才 `COPY . .`。',
+        '哪些資料要在 `docker rm` 之後還在，放 volume 還是外部服務。',
+        '設定與秘密在執行時從哪裡注入（`-e`、`--env-file`），不寫進 image。',
+        '用哪個非 root 使用者執行，記憶體與 CPU 上限（`--memory`、`--cpus`）。',
+        '程式聽哪個埠與位址，主機上發布給所有介面還是只給本機（`127.0.0.1:8000:8000`）。',
+      ],
+      prompt: '電商的 API（FastAPI + uv）寫一份 Dockerfile 與 `.dockerignore`：基底用 `python:3.12-slim`，先 `COPY pyproject.toml uv.lock ./` 再 `RUN uv sync --frozen --no-dev`，最後才 `COPY . .`，只改程式碼時依賴那一層要用快取。`CMD` 用 exec 形式跑 `uvicorn`、聽 `0.0.0.0:8000`，`docker stop` 要在 10 秒內正常結束。`.dockerignore` 排除 `.git`、`.venv`、`.env`。image 的 tag 用 git commit SHA，不推 `latest`；資料庫連線字串在執行時用 `--env-file` 注入。',
+      verify: [
+        { c: '快取', t: '只改一行程式碼再 `docker build`，裝依賴那一步要顯示 `CACHED`；它重跑代表 `COPY . .` 放在裝依賴之前。' },
+        { c: '每層的大小與內容', t: '`docker image history <image>` 看哪一層最大，後面的 `RUN rm` 不會讓 image 變小；`docker run --rm -it <image> sh` 進去確認沒有 `.env` 與 `.git`。' },
+        { c: '每台跑同一份', t: '在每台執行 `docker image inspect --format \'{{index .RepoDigests 0}}\' <image>` 比 digest；不同代表某台用了本機留著的舊 `latest`，`docker run` 沒有重新拉。' },
+        { c: '停止要多久', t: '`time docker stop <容器>` 每次都剛好 10 秒左右，代表 PID 1 沒處理 `SIGTERM`；檢查 `CMD` 是不是寫成 shell 形式（`CMD uvicorn ...`）。' },
+        { c: '起不來或連不到', t: '`docker ps -a` 看到 `Exited (1)` 先看 `docker logs`；`Exited (137)` 加上 `OOMKilled=true` 是超過記憶體上限；主機 `curl localhost:8000` 得到 `Empty reply from server`，通常是程式只聽 `127.0.0.1`。' },
+        { c: '資料會不會消失', t: '寫入資料後 `docker rm -f` 容器，再用同一個 volume 起新容器，資料要還在；指令裡沒有 `-v`，資料只寫在可寫層。' },
+      ],
+    },
     points: [
       { b: 'image vs container', t: 'image 像 class、container 像 instance：同一個 image 可以跑很多 container，各自有一層可寫層，image 本身不變。' },
       { b: '每個指令一層，層可快取', t: '`COPY`、`RUN` 各產生一層；只要該層的輸入（檔案內容、指令）沒變就用快取。一旦某層失效，它之後的所有層都重做。' },

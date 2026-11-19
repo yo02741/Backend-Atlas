@@ -419,6 +419,18 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .lesson-body li::marker { color: var(--ink-3); }
 .lesson-body code { font-size: 0.86em; background: var(--surface-2); padding: 1px 6px; border-radius: 3px; color: var(--ink-1); overflow-wrap: anywhere; }
 .lesson-body .lab { margin: 26px 0; }
+/* 地圖層：叫得出名字、說得出要求、驗得出對錯 */
+.map-layer { margin-top: 8px; }
+.map-layer h2 { margin-top: 26px; }
+.map-block { border-top: 1px solid var(--hairline); padding-top: 4px; margin-top: 14px; }
+.map-block h3 { font-family: var(--sans); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; color: var(--tint, var(--accent)); margin: 10px 0 8px; }
+.map-names { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 10px 22px; margin: 0 0 6px; }
+.map-names dt { font-weight: 700; color: var(--ink-1); font-size: 0.95rem; }
+.map-names dd { margin: 2px 0 0; color: var(--ink-2); font-size: 0.92rem; line-height: 1.6; }
+.map-prompt { margin: 10px 0 6px; border: 1px solid var(--border); border-left: 3px solid var(--tint, var(--accent)); border-radius: var(--radius); background: var(--surface-1); padding: 8px 14px 4px; max-width: 72ch; }
+.map-prompt figcaption { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.08em; color: var(--ink-3); }
+.lesson-body .map-prompt p { color: var(--ink-1); margin: 6px 0 8px; line-height: 1.75; }
+.map-verify li b { color: var(--ink-1); }
 .points { list-style: none; padding: 0; display: grid; gap: 10px; margin: 8px 0 0; }
 .points li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
 .points li::before { content: '→'; color: var(--tint, var(--accent)); font-weight: 700; margin-top: 1px; }

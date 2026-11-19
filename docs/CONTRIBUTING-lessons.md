@@ -1,15 +1,35 @@
 # 課程內容撰寫合約
 
-一課由四個部分組成：
+一課由五個部分組成：
 
 | 部分 | 檔案 | 說明 |
 |---|---|---|
 | 索引 | `src/content/dN-<domain>.js` 的 `skills[]` | id、title、en、level、summary、example、keywords、lab |
+| **地圖** | `src/content/body/dN-<domain>.js` 的 `map` | 每課的基底：叫得出名字、說得出要求、驗得出對錯（見下方「地圖層」） |
 | 重點卡 | `src/content/body/dN-<domain>.js` | 5 條 points、3 條 checklist、refs |
 | **深入** | `src/content/deep/<skill-id>.md` | 本檔主要規範的部分：一篇完整的課 |
 | 驗收 | `src/content/quizzes/<domain>.js`（3 題選擇題，見 `CONTRIBUTING-quizzes.md`）、`src/content/exercises/`（程式題，選配） | |
 
-重點卡是複習用的摘要；深入內容才是教學本體。兩者不矛盾、不重複整段文字。
+地圖是每課的基底，讓讀者叫得出名字、說得出要求、驗得出對錯；重點卡是複習用的摘要；深入內容是選讀的細節。三者不矛盾、不重複整段文字。
+
+## 地圖層（`map`）
+
+教學方式：不鉅細靡遺地講一個技術的所有細節，而是宏觀交代必須知道的項目，讓讀者用 AI 寫程式或跟同事溝通時，能用正確的名詞具體描述腦中的想法，並判斷產出對不對。地圖放在技能頁的最上方，深入內容在後面選讀。
+
+```js
+map: {
+  names: [ { n: '名詞', t: '一句：是什麼、解決什麼問題' } ],      // 4–8 條：叫得出名字
+  ask: [ '描述需求時要講清楚的一件事' ],                           // 3–6 條：說得出要求
+  prompt: '2–4 句的描述範例，用上面的名詞把一個具體需求講清楚',      // 頁面上有「複製」按鈕
+  verify: [ { c: '檢查什麼', t: '一句：怎麼看、跑什麼、錯的時候長什麼樣' } ],  // 3–6 條：驗得出對錯
+}
+```
+
+- 名詞選「寫需求、讀 AI 產出時會出現的那些」，不是課文的完整索引。
+- `ask` 每條寫成「要講清楚的事」（例如「失敗時回哪個狀態碼、錯誤 body 長什麼樣」），不寫成命令句或問句。
+- `prompt` 是一段真的能用的描述：情境具體、用到 `names` 的名詞，不寫「請你」「幫我」這類客套。
+- `verify` 要可操作：指令、開發者工具的哪個分頁、哪個查詢、看到什麼代表錯了；適合時點出 AI 產生的程式常見的錯。
+- 範例：`body/d2-web.js` 的 `rest-design`。`npm run validate:content` 會檢查格式。
 
 ## 深入內容（`deep/<skill-id>.md`）
 
@@ -65,7 +85,7 @@ print(Decimal('0.1') + Decimal('0.2'))
 新增一課時要一次備齊：
 
 1. 索引：`dN-*.js` 加一筆（id 全站唯一、小寫英數與連字號）。內容會隨時間變動的課（規格還在改、提到版本或效期、引用事件）加 `reviewed: 'YYYY-MM'`，技能頁會顯示「內容核對：YYYY 年 M 月」；之後每次核對內容就更新這個欄位
-2. 重點卡：`body/dN-*.js` 加同 id 的 points（5 條，每條 `{ b, t }`）、checklist（3 條）、refs（只放確定存在的官方 https 連結，不確定就留空陣列）
+2. 地圖與重點卡：`body/dN-*.js` 加同 id 的 `map`（見上方「地圖層」）、points（5 條，每條 `{ b, t }`）、checklist（3 條）、refs（只放確定存在的官方 https 連結，不確定就留空陣列）
 3. 深入：`deep/<id>.md`
 4. 選擇題：`quizzes/<domain>.js` 3 題
 5. 程式題（選配）：`exercises/` 加題；題型有 `sql`、`python`、`js`、`config`（設定檔：使用者內容成為 `source`／`lines`，用 JS 測試檢查）

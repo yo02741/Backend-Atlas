@@ -19,6 +19,32 @@ const base = {
     ],
   },
   'sql-joins': {
+    map: {
+      names: [
+        { n: 'INNER JOIN', t: '只留兩邊都配得上的列，例如「有訂單的使用者」。' },
+        { n: 'LEFT JOIN', t: '左表每一列至少出現一次，配不到的右邊欄位填 NULL，例如「所有使用者，含沒有訂單的」；`RIGHT JOIN` 都能對調兩張表改寫成它。' },
+        { n: '`ON` 與 `WHERE`', t: 'LEFT JOIN 時 `ON` 決定右表哪些列能配對，`WHERE` 在配對完成後才過濾；限制右表的條件放進 `WHERE`，LEFT 會變成 INNER。' },
+        { n: '粒度', t: '結果的一列代表什麼。一對多 JOIN 之後，一列從「一張訂單」變成「一個品項」，訂單金額的 `sum` 會被品項數放大。' },
+        { n: '先聚合再 JOIN', t: '把多的那一邊先 `GROUP BY` 成每個鍵一列再接上，讓每個聚合在自己的粒度上算。' },
+        { n: 'anti-join', t: '找「沒有對應」的資料：從未下單的使用者、找不到使用者的孤兒訂單。用 `NOT EXISTS`；`NOT IN` 遇到子查詢裡有 NULL，結果整個變空。' },
+        { n: 'semi-join（`EXISTS`）', t: '只問「有沒有至少一筆對應」，左表每一列最多出現一次；改用 JOIN 寫，有兩筆對應的人會出現兩次。' },
+      ],
+      ask: [
+        '結果的一列代表什麼：每位使用者一列，或每張訂單一列。',
+        '沒有對應資料的列要不要出現，數字顯示 0 還是 NULL。',
+        '每個數字在哪個粒度上算：訂單金額按訂單加總、件數按品項加總。',
+        '每個過濾條件限制的是哪一邊（例如「只算已付款的訂單」，但沒有已付款訂單的使用者照樣列出）。',
+        '關聯欄位可不可能是 NULL（例如訪客訂單的 `user_id`），以及用哪個資料庫（MySQL 沒有 FULL JOIN）。',
+      ],
+      prompt: '寫一句 PostgreSQL 查詢給月報：每位使用者一列，欄位是姓名、已付款訂單數、已付款訂單總金額、購買件數，沒有已付款訂單的使用者也要列出、數字顯示 0。users 對 orders、orders 對 order_items 都是一對多，order_items 先依 `order_id` 聚合成每張訂單一列再 JOIN，不要用 `sum(DISTINCT ...)` 補救。users 用 LEFT JOIN 接 orders，`status = \'paid\'` 放在 `ON`，後面接的表也用 LEFT JOIN。',
+      verify: [
+        { c: '列數', t: '拿掉 `GROUP BY`，只留 FROM 與 JOIN 跑 `SELECT count(*)`，和預期的粒度比（應該是幾位使用者、幾張訂單）；多出來代表某段 JOIN 是一對多。' },
+        { c: '對帳', t: '挑一位有多品項訂單的使用者手算訂單總額；結果剛好多出某張訂單的金額，是 `sum(o.amount)` 被品項數放大了。' },
+        { c: '沒有資料的列', t: '沒有訂單的使用者要出現、數字是 0；整列消失通常是右表條件放進了 `WHERE`，數字是 1 通常是 LEFT JOIN 後用了 `count(*)`，該用 `count(o.id)`。' },
+        { c: 'NULL 陷阱', t: '在 orders 塞一筆 `user_id` 是 NULL 的訪客訂單再跑一次，「從未下單的使用者」不該變成 0 筆；變成 0 筆代表用了 `NOT IN`。' },
+        { c: '可疑寫法', t: '出現 `sum(DISTINCT ...)` 或用 `SELECT DISTINCT` 消掉重複列，通常是在掩蓋一對多放大的列數；`NATURAL JOIN` 與沒有條件的逗號 JOIN 也要改成明寫 `ON`。' },
+      ],
+    },
     points: [
       { b: 'JOIN 是在配對列', t: 'ON 條件決定左表每列跟右表哪些列配成一列。一對多會讓左表「變多」，後續 SUM / COUNT 重複計算就是從這裡來的。' },
       { b: 'LEFT 保左、INNER 只留配對', t: '「所有使用者含沒訂單的」用 LEFT；「有訂單的使用者」用 INNER。RIGHT 幾乎都能改寫成 LEFT。' },
@@ -72,6 +98,34 @@ const base = {
     ],
   },
   'indexes': {
+    map: {
+      names: [
+        { n: 'B-tree 索引', t: '把欄位值排序後另存一份並組成樹，查一個值或一段範圍只要走幾層，依這個欄位 `ORDER BY` 也不用另外排序；代價是每次寫入都要維護。' },
+        { n: 'Seq Scan 與 Index Scan', t: '計畫裡的兩種讀法：讀整張表逐列過濾，或沿索引找到位置再回表。表很小或條件留下大部分列時，Seq Scan 是對的選擇。' },
+        { n: '`EXPLAIN ANALYZE`', t: '和 `EXPLAIN` 不同，它會實際執行查詢，附上每個節點的時間與列數；估計的 `rows` 和實際差十倍以上，代表統計過期，先跑 `ANALYZE`。' },
+        { n: '複合索引', t: '`(user_id, created_at)` 先依 user_id、再依時間排序，能服務「某人的訂單依時間排」，通常不能服務只有 `created_at` 的條件；等值欄位放前，範圍或排序欄位放後。' },
+        { n: '選擇性', t: '條件篩掉多少資料。只留下少數列時走索引划算，留下大半時循序讀比較便宜，所以 status 這類欄位查只佔 1% 的值會走索引、查佔六成的值不會。' },
+        { n: '部分索引', t: '只收錄符合 `WHERE` 的列，例如 `WHERE status = \'pending\'` 或 `WHERE deleted_at IS NULL`；查詢只關心一小部分列時，索引小、維護也少。' },
+        { n: '表達式索引', t: '索引 `lower(email)` 這類運算結果；`WHERE` 裡用函數包住欄位時一般索引用不到，要建寫法一模一樣的表達式索引。' },
+        { n: '`CREATE INDEX CONCURRENTLY`', t: '正式環境的大表加索引時不長時間擋寫入，但比較慢、不能放在交易裡，中途失敗會留下 INVALID 的索引。' },
+      ],
+      ask: [
+        '要加速哪幾句查詢（完整的 `WHERE`、`ORDER BY`、`LIMIT`），各自多常跑、目標回應時間多少。',
+        '資料量與分佈：現在幾筆、每月長多少、條件欄位各個值佔多少比例。',
+        '這張表的寫入量，能接受寫入變慢多少、索引多佔多少空間。',
+        '資料庫與版本：PostgreSQL 18 才有 B-tree skip scan，舊版以最左前綴為準。',
+        '正式環境怎麼建：用 `CREATE INDEX CONCURRENTLY`，migration 工具要關掉交易包裝。',
+      ],
+      prompt: '電商的「我的訂單」頁跑 `SELECT id, status, amount, created_at FROM orders WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20`，orders 有 800 萬筆，現在要 1 秒以上，目標 50 ms 內。資料庫是 PostgreSQL 16，建一個 `(user_id, created_at)` 的複合索引，讓計畫沿索引倒著讀、沒有 Sort 節點，並附上建索引前後的 `EXPLAIN (ANALYZE, BUFFERS)`。正式環境用 `CREATE INDEX CONCURRENTLY`，這個 migration 檔不能包在交易裡；如果已經有單獨 `(user_id)` 的索引，說明它是否變成多餘。',
+      verify: [
+        { c: '計畫用了索引', t: '對目標查詢跑 `EXPLAIN ANALYZE`：`Seq Scan` 加上很大的 `Rows Removed by Filter` 代表沒用到索引；「我的訂單」這種查詢應該是 `Index Scan Backward` 接 `Limit`，沒有 `Sort`。' },
+        { c: '估計與實際', t: '比對同一個節點估計的 `rows=` 和 `actual` 裡的 `rows=`；差十倍以上先 `ANALYZE 表名` 再看一次。' },
+        { c: '欄位被包住', t: '找 `WHERE` 裡被函數、轉型或運算包住的欄位：`lower(email)`、`created_at::date`、`user_id::text`，或參數型別和欄位不同（`user_id = 42.0`）；用 ORM 時要看實際送出的 SQL。' },
+        { c: '測試資料量', t: '幾十筆的表，規劃器選 Seq Scan 是對的；用 `generate_series` 造出接近正式環境的資料量再看計畫，不拿 `SET enable_seqscan = off` 的結果下結論。' },
+        { c: '缺的與多的索引', t: '外鍵欄位要有索引（PostgreSQL 不會自動建）；`pg_stat_user_indexes` 裡 `idx_scan` 長期是 0 的索引是刪除候選，主鍵與唯一索引除外。' },
+        { c: 'migration', t: '`CREATE INDEX CONCURRENTLY` 被包進交易會報 `cannot run inside a transaction block`；中途失敗留下的 INVALID 索引用 `\\d 表名` 找出來，`DROP INDEX` 後重建。' },
+      ],
+    },
     points: [
       { b: '索引是排序好的副本', t: 'B-tree 把欄位值排序存在樹裡，查一個值只要走樹高（幾層），不用掃整張表。代價：每次寫入要同步更新索引。' },
       { b: '什麼時候索引沒用', t: '對欄位套函數（`LOWER(email)`，要建表達式索引）、前置萬用字元 `LIKE \'%abc\'`、選擇性太低（status 只有 3 種值）、資料量太小（掃全表更快）。' },
@@ -110,6 +164,33 @@ const base = {
     ],
   },
   'transactions': {
+    map: {
+      names: [
+        { n: '交易', t: '`BEGIN` 到 `COMMIT` 之間的操作全部生效或全部不算；中間任何一句失敗，整個交易作廢，要 `ROLLBACK`。' },
+        { n: '隔離等級', t: '並行的交易看得到彼此多少。PostgreSQL 預設 `READ COMMITTED` 每一句重拍快照，`REPEATABLE READ` 整個交易用同一份，`SERIALIZABLE` 要求結果等同依序執行。' },
+        { n: 'lost update', t: '兩個請求都讀到舊值、在程式裡算好再寫回，後寫的蓋掉先寫的，最後一件商品賣給兩個人；在 `READ COMMITTED` 下包進交易也擋不住。' },
+        { n: '條件式 `UPDATE`', t: '`UPDATE products SET stock = stock - 1 WHERE id = $1 AND stock > 0 RETURNING stock`：判斷和扣減在同一句完成，更新 0 列代表售完。' },
+        { n: '`SELECT ... FOR UPDATE`', t: '先鎖住要改的列再判斷，其他要改同一列的交易排隊到你 COMMIT；判斷邏輯塞不進一句 `WHERE` 時用（限購、會員等級）。' },
+        { n: '樂觀鎖', t: '資料表加 `version` 欄位，更新時帶 `WHERE version = <讀到的值>`；更新到 0 列代表有人先改了，重讀再試。適合衝突少的情況。' },
+        { n: '可重試的錯誤', t: '`40001`（序列化失敗）與 `40P01`（死結）要整個交易重做；`23505`（違反唯一鍵）是邏輯錯誤，重試也一樣失敗。' },
+      ],
+      ask: [
+        '哪些操作要在同一個交易裡（例如扣名額與新增掛號），任何一步失敗時整組撤銷。',
+        '並行時要守住的規則（名額不能為負、同一位病人同一診次只能掛一次），用條件式 `UPDATE`、`FOR UPDATE` 還是樂觀鎖守住。',
+        '隔離等級；用 `REPEATABLE READ` 以上時，序列化失敗怎麼重試、最多幾次。',
+        '交易裡不做的事：金流、寄信、簡訊這類外部呼叫放在 COMMIT 之後，或用 outbox 交給背景工作。',
+        '搶不到或衝突時使用者看到什麼，哪些錯誤自動重試、哪些直接回報。',
+      ],
+      prompt: '門診掛號的 `POST /appointments`：同一個交易裡先扣診次名額、再新增掛號，任何一步失敗就 ROLLBACK。扣名額用一句條件式 `UPDATE sessions SET remaining = remaining - 1 WHERE id = $1 AND remaining > 0 RETURNING remaining`，更新 0 列代表額滿，回 `409`；不要先 `SELECT` 出名額、在程式裡判斷再寫回。隔離等級維持 `READ COMMITTED`，遇到 `40P01` 死結整個交易重做，最多 3 次；`23505`（同一位病人重複掛號）不重試，回 `409`。確認簡訊在 COMMIT 之後才送。',
+      verify: [
+        { c: '並行測試', t: '把名額設成 1，用 `xargs -P 20` 同時送 20 個 `curl`：應該只有 1 個成功、其餘 `409`，名額停在 0。成功超過 1 個代表有 lost update。' },
+        { c: '讀→算→寫', t: '在程式裡找先 `SELECT` 出數量、在程式判斷、再 `UPDATE ... SET remaining = <算好的值>` 的寫法；這是最常見的錯，AI 產生的程式也常這樣寫，改成條件式 `UPDATE` 或 `FOR UPDATE`。' },
+        { c: '原子性', t: '讓第二步故意失敗（例如重複掛號），查名額有沒有回到原值；沒回來代表兩步不在同一個交易，或連線開著自動提交。' },
+        { c: '交易範圍', t: '交易裡不該有 HTTP 呼叫或等待；`SELECT pid, state, xact_start, query FROM pg_stat_activity WHERE state = \'idle in transaction\';` 長時間有結果，代表有交易開著沒結束。' },
+        { c: '重試', t: '重試的單位是整個交易，只針對 `40001`、`40P01`，而且有次數上限；重試清單裡有 `23505`，或只重送失敗的那一句，都要改。' },
+        { c: '有沒有 COMMIT', t: '寫入後從另一個連線（例如 `psql`）查得到資料；查不到通常是忘了 COMMIT，連線關掉時交易被 rollback。' },
+      ],
+    },
     points: [
       { b: 'ACID 四個字', t: '原子性（全做或全不做）、一致性（約束永遠成立）、隔離性（並發交易互不干擾的程度）、持久性（COMMIT 後斷電也在）。' },
       { b: '隔離等級是「看得到多少別人的變更」', t: 'READ COMMITTED（PostgreSQL 預設：只看到已 commit 的）→ REPEATABLE READ（同一交易內讀到的一致）→ SERIALIZABLE（等同序列執行，可能失敗要重試）。' },

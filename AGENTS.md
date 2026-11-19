@@ -30,6 +30,10 @@ npm run check:links         # 外部連結（要連外網；CI 每月跑）
 
 CI 的 `docs-sync` workflow 會補上忘記同步的 commit，部署前也會先同步；但 commit 前自己跑，不要依賴 CI。
 
+## 教學方式：地圖層
+
+每課的基底是「地圖」：叫得出名字（名詞與一句說明）、說得出要求（描述需求要講清楚的事，附一段描述範例）、驗得出對錯（怎麼檢查產出）。不鉅細靡遺講細節，讓讀者用 AI 寫程式時能具體描述想法並驗收結果；深入內容是選讀。新課一定要有 `map`，改舊課時順手補上。格式與寫法見 `docs/CONTRIBUTING-lessons.md` 的「地圖層」。
+
 ## 寫作
 
 - 規則以 `.claude/skills/atlas-writing/SKILL.md` 為準，搭配 `.claude/skills/stop-slop/`。

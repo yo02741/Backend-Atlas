@@ -42,7 +42,17 @@ for (const d of DOMAINS) {
     if (!Array.isArray(b.checklist) || b.checklist.length < 1) errors.push(`${st}: checklist 至少 1 條`)
     if (!Array.isArray(b.refs)) errors.push(`${st}: refs 要是陣列（可為空）`)
     for (const r of b.refs || []) if (!r?.label || !/^https:\/\//.test(r?.url || '')) errors.push(`${st}: refs 每筆要有 label 與 https:// 開頭的 url`)
-    const extra = Object.keys(b).filter((k) => !['points', 'checklist', 'refs'].includes(k))
+    // 地圖層（選填，試做中）：叫得出名字、說得出要求、驗得出對錯
+    if (b.map !== undefined) {
+      const m = b.map
+      if (!Array.isArray(m.names) || m.names.length < 3 || m.names.some((x) => !x?.n || !x?.t)) errors.push(`${st}: map.names 至少 3 條，每條要有 n（名詞）與 t（說明）`)
+      if (!Array.isArray(m.ask) || m.ask.length < 2 || m.ask.some((x) => typeof x !== 'string' || !x)) errors.push(`${st}: map.ask 至少 2 條字串`)
+      if (typeof m.prompt !== 'string' || !m.prompt) errors.push(`${st}: map.prompt 要有一段描述範例`)
+      if (!Array.isArray(m.verify) || m.verify.length < 2 || m.verify.some((x) => !x?.c || !x?.t)) errors.push(`${st}: map.verify 至少 2 條，每條要有 c（檢查什麼）與 t（怎麼看）`)
+      const mx = Object.keys(m).filter((k) => !['names', 'ask', 'prompt', 'verify'].includes(k))
+      if (mx.length) errors.push(`${st}: map 有不認得的欄位 ${mx.join(', ')}`)
+    }
+    const extra = Object.keys(b).filter((k) => !['points', 'checklist', 'refs', 'map'].includes(k))
     if (extra.length) errors.push(`${st}: 內文多了不認識的欄位 ${extra.join(', ')}`)
   }
   for (const id of Object.keys(body)) if (!ids.has(id)) errors.push(`${tag}: body 有 "${id}" 但索引沒有這個技能`)

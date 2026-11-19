@@ -59,6 +59,7 @@ export default function Skill({ id }) {
 
       <div className="course-bar">
         <nav className="course-toc" aria-label="本課章節">
+          {body.map && <a href="#map">地圖</a>}
           {s.lab && <a href="#lab" className="lab-link">▶ 實驗室</a>}
           <a href="#points">重點（{body.points.length}）</a>
           {hasDeep(s.id) && <a href="#deep">深入</a>}
@@ -70,6 +71,8 @@ export default function Skill({ id }) {
           {done ? '✓ 已完成' : '標記完成'}
         </button>
       </div>
+
+      {body.map && <MapLayer map={body.map} />}
 
       {s.lab && (
         <section className="lab-full">
@@ -156,6 +159,42 @@ function Deep({ id }) {
 }
 
 /* 重點文字裡的 `code` 轉成 <code> */
+/* 地圖層：每課的基底。叫得出名字（名詞）、說得出要求（描述需求要講清楚的事與一段範例）、驗得出對錯（怎麼檢查）。
+   格式見 docs/CONTRIBUTING-lessons.md 的「地圖層」。 */
+function MapLayer({ map }) {
+  const [copied, setCopied] = React.useState(false)
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(map.prompt.replace(/`/g, '')); setCopied(true); setTimeout(() => setCopied(false), 1600) } catch { /* 不能寫剪貼簿時不做事 */ }
+  }
+  return (
+    <div className="reading">
+      <section className="lesson-body map-layer" aria-labelledby="map">
+        <h2 id="map">地圖</h2>
+        <div className="map-block">
+          <h3>叫得出名字</h3>
+          <dl className="map-names">
+            {map.names.map((x) => <div key={x.n}><dt><Inline text={x.n} /></dt><dd><Inline text={x.t} /></dd></div>)}
+          </dl>
+        </div>
+        <div className="map-block">
+          <h3>說得出要求</h3>
+          <ul>{map.ask.map((a, i) => <li key={i}><Inline text={a} /></li>)}</ul>
+          {map.prompt && (
+            <figure className="map-prompt">
+              <figcaption><span>描述範例</span><button type="button" className="btn ghost small" onClick={copy}>{copied ? '已複製' : '複製'}</button></figcaption>
+              <p><Inline text={map.prompt} /></p>
+            </figure>
+          )}
+        </div>
+        <div className="map-block">
+          <h3>驗得出對錯</h3>
+          <ul className="map-verify">{map.verify.map((v, i) => <li key={i}><b><Inline text={v.c} /></b>　<Inline text={v.t} /></li>)}</ul>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function Inline({ text }) {
   const parts = text.split(/(`[^`]+`)/g)
   return <>{parts.map((p, i) => p.startsWith('`') ? <code key={i}>{p.slice(1, -1)}</code> : <React.Fragment key={i}>{p}</React.Fragment>)}</>

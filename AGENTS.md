@@ -14,6 +14,7 @@ npm run docs:check          # 產生段落是否最新、每堂課是否排進�
 npm run build && npm run preview          # 另開終端跑 e2e
 E2E_BASE=http://localhost:4173/ npm run e2e   # 全部 e2e（Playwright）
 LAB=XxxLab npm run e2e:labs                  # 單一實驗室；加 SMOKE_MOBILE=1 再跑 390px
+SHOTS=1 node e2e/ui-metro.mjs               # 首頁路線圖（手機與桌機），順便存截圖
 ONLY=id1,id2 npm run e2e:deep                # 只驗某幾課的 run 區塊
 npm run check:links         # 外部連結（要連外網；CI 每月跑）
 ```
@@ -22,7 +23,7 @@ npm run check:links         # 外部連結（要連外網；CI 每月跑）
 
 1. **`npm run docs:sync`**：重新產生 `README.md` 與 `docs/CURRICULUM.md` 裡跟著內容變動的段落：統計數字、學習路線表、課程表、實驗室與情境清單、練習題數量、K8s 專題路線、課綱技能樹。README 裡 `<!-- sync:名稱 -->` 包住的段落不要手改；要改格式就改 `scripts/sync-docs.mjs`。
 2. **新課排進課綱**：在 `docs/CURRICULUM.md` 某一週的「對應技能」加上 `` `id` ``，否則 `docs:check` 會失敗。Docker 或 Kubernetes 相關的課，也評估要不要加進第四節的 K 週。
-3. **學習路線**：新課值得放進首頁路線時，在 `src/content/roadmap.js` 的 `PATH` 加一站（`label` 是地圖上的短站名，`note` 是一句內容）；README 的路線表由 `docs:sync` 產生。
+3. **學習路線**：新課值得放進首頁路線時，在 `src/content/roadmap.js` 的 `PATH` 加一站（`label` 是地圖上的短站名，`note` 是一句內容）；README 的路線表由 `docs:sync` 產生。改了 `PATH` 或 `src/components/MetroMap.jsx` 之後，**一定要確認手機與桌機的路線圖**：跑 `node e2e/ui-metro.mjs`（2、3、4、6 欄 × 亮暗：站數與站序、文字不重疊不超出、線不穿過字、頁面不用左右滑），再加 `SHOTS=1` 產生 `e2e/shots/metro-<寬度>.png`，實際看 390 與 1280 兩張。站名太長會折成兩行或截斷，`label` 盡量 8 個字以內。
 4. **會過期的內容**（版本、產品、法規）：索引加 `reviewed: 'YYYY-MM'`，課頁會顯示「內容核對」年月。
 5. **手寫的 README 段落**（新增內容、結構、驗證、部署）跟著程式改動更新。
 6. **大範圍的工作**記在 `docs/PLAN-2026Q4.md`（起因、分批、完成後的狀態）。

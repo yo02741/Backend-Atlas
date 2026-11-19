@@ -245,7 +245,7 @@ npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx pla
 npm run e2e:runtime              # Playground 的 Python / SQL / JS 能執行
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
 npm run e2e:deep                 # 深入內容的每個 run 區塊都能執行（ONLY=transactions 只驗指定的課）
-npm run e2e:ui                   # 練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停
+npm run e2e:ui                   # 首頁路線圖（2／3／4／6 欄：站序、文字不重疊、線不穿過字）；練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停
 npm run e2e:labs                 # 73 個實驗室與情境模擬器：每個控制項都動過（Seg / Toggle / Slider / Stepper / 按鈕），無錯誤、畫面有反應、無溢出
 npm run e2e:sweep                # 全站每個路由 × 亮/暗/手機：無錯誤、無橫向溢出
 npm run e2e:mobile               # 390px 逐頁（每一課、情境、實驗室、題目、實作路線）：頁面不能橫向捲動、內容不能被裁切、不留需要左右滑的區塊

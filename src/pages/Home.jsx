@@ -1,143 +1,62 @@
 import React from 'react'
-import { DOMAINS, PATH, KEYWORDS, allSkills, findSkill, skillsByKeyword } from '../content/roadmap.js'
-import { LAB_META } from '../labs/index.js'
-import { useProgress } from '../progress.js'
-import { ProgressRing, LabIcon } from '../components/bits.jsx'
-import MetroMap from '../components/MetroMap.jsx'
-import HeroArt from '../components/HeroArt.jsx'
+import { TRACKS } from '../content/tracks.js'
+import { skillsOf, stationsOf, plannedDomainsOf } from '../content/roadmap.js'
 import { EXERCISES } from '../content/exercises/index.js'
-import { SCENARIOS, groupOf } from '../content/scenarios/index.js'
+import { useProgress } from '../progress.js'
+import { ProgressRing } from '../components/bits.jsx'
+import { lastTrack } from '../track.js'
 
-const FEATURED_LABS = ['SqlJoinLab', 'JwtLab', 'IndexLab', 'OAuthLab', 'DockerLab', 'NginxLab']
-
+/* 首頁 #/：一句開場，下面三條路線。每張卡：課數、進度、下一站。 */
 export default function Home() {
-  const { done, isDone } = useProgress()
-  const skills = allSkills()
-  const labCount = skills.filter((s) => s.lab).length
-  const stations = PATH.map((p) => { const s = findSkill(p.skill); return s && { ...s, label: p.label || s.title } }).filter(Boolean)
-  const nextStation = stations.find((s) => !isDone(s.id)) || stations[0]
-
+  const { isDone } = useProgress()
+  const last = lastTrack()
   return (
     <div className="fade-swap">
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="kicker">BACKEND ATLAS</p>
-          <h1 className="display">看得見的<br />後端基礎</h1>
-          <p className="lede">用可以操作的圖學後端：JOIN、索引、交易、JWT、Docker 的層。程式題在瀏覽器裡執行。</p>
-          <div className="hero-actions">
-            <a className="btn" href={`#/skill/${nextStation.id}`}>
-              {done.length ? '繼續路線' : '從第一站開始'} →
-            </a>
-            <a className="btn ghost" href="#/roadmap">技能盤點</a>
-            <a className="btn ghost" href="#/playground">Playground</a>
-          </div>
-          <div className="hero-stats">
-            <div className="stat"><b>{DOMAINS.length}</b><span>領域</span></div>
-            <div className="stat"><b>{skills.length}</b><span>技能</span></div>
-            <div className="stat"><b>{labCount}</b><span>互動實驗室</span></div>
-            <div className="stat"><b>{EXERCISES.length}</b><span>程式題</span></div>
-            <div className="stat"><b>{SCENARIOS.length}</b><span>設計情境</span></div>
-            <div className="stat"><b>{done.length}</b><span>已完成</span></div>
-          </div>
-        </div>
-        <div className="hero-art"><HeroArt /></div>
+      <section className="home-hero">
+        <p className="ai-said"><span className="ai-said-ok" aria-hidden="true">✓</span>AI said all good.</p>
+        <h1 className="display">但這些，<br /><span className="uksk">u kinda should know</span>。</h1>
+        <p className="lede home-three">叫得出名字、說得出要求、驗得出對錯。</p>
       </section>
 
-      <section className="home-section">
-        <div className="section-head">
-          <h2 className="section-title">建議學習路線</h2>
-          <p>每站約一週。<a href="#/curriculum">完整課綱 →</a>　<a href="#/project">實作路線 →</a></p>
-        </div>
-        <MetroMap stations={stations} isDone={isDone} />
-        <div className="metro-legend">
-          {DOMAINS.filter((d) => stations.some((s) => s.domain.id === d.id)).map((d) => (
-            <span key={d.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <i style={{ width: 8, height: 8, borderRadius: '50%', background: `var(--c-${d.color})`, display: 'inline-block' }} />{d.title}
-            </span>
-          ))}
-        </div>
+      <section className="track-cards" aria-label="路線">
+        {TRACKS.map((t) => <TrackCard key={t.id} t={t} isDone={isDone} last={last === t.id} />)}
       </section>
-
-      <section className="home-section">
-        <div className="section-head">
-          <h2 className="section-title">{DOMAINS.length} 個領域</h2>
-          <p>1–8 是主線，9–11 是延伸。範例以 Python 與 PostgreSQL 為主。</p>
-        </div>
-        <div className="domain-grid">
-          {DOMAINS.map((d) => {
-            const doneN = d.skills.filter((s) => isDone(s.id)).length
-            const kws = [...new Set(d.skills.flatMap((s) => s.keywords))].slice(0, 4)
-            return (
-              <a key={d.id} href={`#/domain/${d.id}`} className="dcard" style={{ '--tint': `var(--c-${d.color})` }}>
-                <div className="dcard-head">
-                  <span className="dcard-no">{String(d.no).padStart(2, "0")}</span>
-                  <ProgressRing value={doneN} total={d.skills.length} color={`var(--c-${d.color})`} />
-                </div>
-                <h3>{d.title}</h3>
-                <p>{d.tagline}</p>
-                <div className="dcard-meta">
-                  <span>{d.skills.length} 技能 · {d.skills.filter((s) => s.lab).length} 實驗室</span>
-                </div>
-                {kws.length > 0 && <div className="dcard-tags">{kws.map((k) => <span key={k}>{k}</span>)}</div>}
-              </a>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="home-section">
-        <div className="section-head">
-          <h2 className="section-title">從技術名詞找課</h2>
-        </div>
-        <div className="kw-cloud">
-          {KEYWORDS.map((k) => (
-            <a key={k} href={`#/roadmap?kw=${encodeURIComponent(k)}`}>{k}<small>{skillsByKeyword(k).length} 課</small></a>
-          ))}
-        </div>
-      </section>
-
-      <section className="home-section">
-        <div className="section-head">
-          <h2 className="section-title">設計情境</h2>
-          <a href="#/scenarios" className="muted" style={{ fontSize: '0.88rem' }}>全部 {SCENARIOS.length} 個 →</a>
-        </div>
-        <div className="scen-grid">
-          {SCENARIOS.slice(0, 6).map((sc) => {
-            const g = groupOf(sc)
-            return (
-              <a key={sc.id} href={`#/scenario/${sc.id}`} className="scen-card" style={{ '--tint': `var(--c-${g.color})` }}>
-                <div className="scen-card-head"><span className="kicker tinted" style={{ '--tint': `var(--c-${g.color})` }}>{g.title}</span></div>
-                <h3>{sc.title}</h3>
-                <p>{sc.summary}</p>
-                <div className="scen-card-opts">{sc.options.map((o) => <span key={o.id}>{o.name}</span>)}</div>
-              </a>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="home-section">
-        <div className="section-head">
-          <h2 className="section-title">互動實驗室精選</h2>
-          <a href="#/labs" className="muted" style={{ fontSize: '0.88rem' }}>全部 {labCount} 個 →</a>
-        </div>
-        <div className="lab-strip">
-          {FEATURED_LABS.map((name) => {
-            const meta = LAB_META[name]
-            const skill = findSkill(meta.skill)
-            const color = `var(--c-${skill.domain.color})`
-            return (
-              <a key={name} href={`#/lab/${name}`} className="lcard">
-                <div className="lcard-icon"><LabIcon name={name} color={color} /></div>
-                <h4>{meta.title}</h4>
-                <p>{meta.blurb}</p>
-                <span className="pill tint" style={{ '--tint': color }}>{skill.domain.title}</span>
-              </a>
-            )
-          })}
-        </div>
-      </section>
-
     </div>
+  )
+}
+
+function TrackCard({ t, isDone, last }) {
+  const skills = skillsOf(t.id)
+  const color = `var(--c-${t.color})`
+  if (!skills.length) {
+    return (
+      <article className="track-card soon" style={{ '--tint': color }}>
+        <p className="kicker tinted">{t.en}</p>
+        <h2><a href={`#/track/${t.id}`}>{t.title}</a></h2>
+        <p className="track-card-tag">{t.tagline}</p>
+        <p className="track-card-meta"><span className="pill">撰寫中</span>規劃 {plannedDomainsOf(t.id).length} 個領域</p>
+        <div className="track-card-actions"><a className="btn ghost small" href={`#/track/${t.id}`}>看規劃 →</a></div>
+      </article>
+    )
+  }
+  const stations = stationsOf(t.id)
+  const doneN = skills.filter((s) => isDone(s.id)).length
+  const next = stations.find((s) => !isDone(s.id)) || stations[0] || skills[0]
+  const labs = skills.filter((s) => s.lab).length
+  const ex = EXERCISES.filter((e) => !e.project && skills.some((s) => s.id === e.skill)).length
+  return (
+    <article className={`track-card${last ? ' last' : ''}`} style={{ '--tint': color }}>
+      <div className="track-card-head">
+        <p className="kicker tinted">{t.en}{last && <span className="track-card-last">上次在看</span>}</p>
+        <ProgressRing value={doneN} total={skills.length} color={color} />
+      </div>
+      <h2><a href={`#/track/${t.id}`}>{t.title}</a></h2>
+      <p className="track-card-tag">{t.tagline}</p>
+      <p className="track-card-meta">{skills.length} 課 · {labs} 實驗室 · {ex} 程式題{stations.length > 0 && ` · 路線 ${stations.length} 站`}</p>
+      <div className="track-card-actions">
+        <a className="btn small" href={`#/skill/${next.id}`}>{doneN ? '繼續' : '第一站'}：{next.label || next.title} →</a>
+        <a className="btn ghost small" href={`#/track/${t.id}`}>路線首頁</a>
+      </div>
+    </article>
   )
 }

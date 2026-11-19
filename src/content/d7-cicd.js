@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d7-cicd.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'cicd',
+  track: 'backend',
   no: 7,
   title: 'CI/CD 與交付',
   en: 'CI/CD & DELIVERY',

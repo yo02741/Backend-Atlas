@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Backend Atlas 的學習進度：每位使用者一份文件 users/{uid}，只有本人讀得到、寫得了。
+// u kinda should know 的學習進度：每位使用者一份文件 users/{uid}，只有本人讀得到、寫得了。
 // 文件形狀固定為 { v: 1, progress: {...}, updatedAt: 伺服器時間 }，其他欄位一律拒絕。
 // 改完用 `npm run e2e:cloud` 驗（跑在 Firebase Emulator 上，含越權與壞資料的拒絕測試）。
 service cloud.firestore {

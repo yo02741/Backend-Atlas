@@ -1,11 +1,16 @@
 import React, { useMemo, useState } from 'react'
-import { DOMAINS, LEVELS, KEYWORDS } from '../content/roadmap.js'
+import { LEVELS, domainsOf, keywordsOf, displayNo } from '../content/roadmap.js'
+import { findTrack } from '../content/tracks.js'
+import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
 import { useProgress } from '../progress.js'
 import { Level } from '../components/bits.jsx'
 import { assessmentFor } from '../assess.js'
 
-/* 技能盤點：全部領域 + 技能列表，可依工作關鍵字 / 難度 / 關鍵字搜尋過濾 */
-export default function Roadmap({ initialKw = '' }) {
+/* 技能盤點：領域 + 技能列表，可依路線 / 關鍵字 / 難度 / 搜尋過濾。路線與關鍵字在網址上（?track=&kw=） */
+export default function Roadmap({ initialKw = '', track: rawTrack = '' }) {
+  const track = normTrack(rawTrack)
+  const DOMAINS = domainsOf(track)
+  const KEYWORDS = keywordsOf(track)
   const [kw, setKw] = useState(initialKw)
   const [level, setLevel] = useState(0)
   const [q, setQ] = useState('')
@@ -25,12 +30,14 @@ export default function Roadmap({ initialKw = '' }) {
   return (
     <div className="fade-swap">
       <header className="masthead">
-        <p className="kicker">SKILL INVENTORY · 後端工程師技能盤點</p>
-        <h1 className="display">後端技能盤點</h1>
+        <p className="kicker">SKILL INVENTORY · 技能盤點</p>
+        <h1 className="display">{track === 'all' ? '技能盤點' : `${findTrack(track).title}技能盤點`}</h1>
         <p className="lede">
-          領域 1–8 依 roadmap.sh 的 Backend Developer 路線整理，9–11 是延伸：DevOps 與基礎建設、AI 時代的開發與 Agent 安全、知識系統。每個技能標示一項範例技術與常見替代品、難度、相關關鍵字；有實驗室的可以直接動手。
+          每個技能標示一項範例技術與常見替代品、難度、相關關鍵字；有實驗室的可以直接動手。
         </p>
       </header>
+
+      <TrackFilter value={track} hrefFor={(t) => withTrack('roadmap', t, { kw: keywordsOf(t).includes(kw) ? kw : '' })} />
 
       <div className="toolbar" role="group" aria-label="篩選">
         <button className={`chip${!kw ? ' on' : ''}`} onClick={() => setKw('')}>全部</button>
@@ -52,19 +59,19 @@ export default function Roadmap({ initialKw = '' }) {
       {DOMAINS.map((d) => {
         const list = d.skills.filter(match)
         if (!list.length) return null
-        return <DomainBlock key={d.id} domain={d} skills={list} isDone={isDone} kw={kw} progress={progress} />
+        return <DomainBlock key={d.id} domain={d} skills={list} isDone={isDone} kw={kw} progress={progress} showTrack={track === 'all'} />
       })}
       {shown === 0 && <p className="status-msg">沒有符合的技能</p>}
     </div>
   )
 }
 
-export function DomainBlock({ domain: d, skills, isDone, kw, showDesc = true, progress }) {
+export function DomainBlock({ domain: d, skills, isDone, kw, showDesc = true, progress, showTrack = false }) {
   const doneN = d.skills.filter((s) => isDone(s.id)).length
   return (
     <section className="domain-block" style={{ '--tint': `var(--c-${d.color})` }}>
       <div className="domain-block-head">
-        <span className="kicker tinted">{String(d.no).padStart(2, "0")}</span>
+        <span className="kicker tinted">{showTrack && `${findTrack(d.track).title} `}{displayNo(d)}</span>
         <h2><a href={`#/domain/${d.id}`} style={{ textDecoration: 'none' }}>{d.title}</a></h2>
         <span className="en">{d.en}</span>
         <span className="count">{doneN} / {d.skills.length} 完成</span>

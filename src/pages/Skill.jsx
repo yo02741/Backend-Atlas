@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react'
-import { findSkill, neighbors } from '../content/roadmap.js'
+import { findSkill, neighbors, displayNo, relatedOf, PATHS } from '../content/roadmap.js'
+import { findTrack } from '../content/tracks.js'
+import { withTrack } from '../components/TrackFilter.jsx'
 import { readSkillBody } from '../content/skillBody.js'
 import { readSkillDeep, preloadSkillDeep, hasDeep } from '../content/skillDeep.js'
 import Markdown from '../components/Markdown.jsx'
@@ -29,23 +31,28 @@ export default function Skill({ id }) {
   const checkedN = checkState.filter(Boolean).length
   const assess = assessmentFor(s.id, progress)
   const related = scenariosForSkill(s.id)
+  const t = findTrack(d.track)
+  const crossTrack = relatedOf(s.id)
+  const path = PATHS[d.track] || []
+  const station = path.findIndex((p) => p.skill === s.id)
 
   return (
     <article className="lesson fade-swap" style={{ '--tint': color }}>
       <div className="reading">
         <p className="crumbs">
-          <a href="#/">首頁</a> / <a href="#/roadmap">技能盤點</a> / <a href={`#/domain/${d.id}`}>{d.title}</a>
+          <a href="#/">首頁</a> / <a href={`#/track/${t.id}`}>{t.title}</a> / <a href={`#/domain/${d.id}`}>{d.title}</a>
         </p>
         <header className="lesson-head">
-          <p className="kicker tinted">{String(d.no).padStart(2, "0")} · {d.en}</p>
+          <p className="kicker tinted">{t.title} {displayNo(d)} · {d.en}</p>
           <h1>{s.title}</h1>
           <p className="en">{s.en}</p>
           <div className="lesson-meta">
             <Level level={s.level} />
             <DomainPill domain={d} />
+            {station >= 0 && <a href={`#/track/${t.id}`} className="pill" title={`${t.title}學習路線`}>學習路線 第 {station + 1} / {path.length} 站</a>}
             {s.lab && <a href="#lab" className="pill tint" style={{ '--tint': color }}>互動實驗室</a>}
             {assess.total > 0 && <a href="#assess" className={`pill${assess.complete ? ' assess-ok' : ''}`}>{assess.complete ? '✓ 驗收通過' : `驗收 ${assess.passed}/${assess.total}`}</a>}
-            {s.keywords.map((k) => <a key={k} href={`#/roadmap?kw=${encodeURIComponent(k)}`} className="pill mono">{k}</a>)}
+            {s.keywords.map((k) => <a key={k} href={withTrack('roadmap', d.track, { kw: k })} className="pill mono">{k}</a>)}
             {s.reviewed && <span className="pill" title="這一課提到的版本、規格或事件會隨時間變動，這是最後一次核對內容的時間">內容核對：{s.reviewed.replace('-', ' 年 ').replace(/^(\d+ 年 )0?(\d+)$/, '$1$2 月')}</span>}
           </div>
           <p className="lede">{s.summary}</p>
@@ -98,7 +105,7 @@ export default function Skill({ id }) {
           {assess.total === 0 && <p className="muted">這一課的驗收題目撰寫中。</p>}
           {assess.exercises.map((ex) => <ExerciseRunner key={ex.id} exercise={ex} compact />)}
           {assess.quiz && <Quiz key={s.id} skillId={s.id} questions={assess.quiz} />}
-          {assess.quiz && <p className="rv-after">做完了？<a href="#/review">到複習頁混合練習 →</a></p>}
+          {assess.quiz && <p className="rv-after">做完了？<a href={withTrack('review', d.track)}>到複習頁混合練習 →</a></p>}
 
           <h2 id="check">自我檢核 <span className="muted" style={{ fontSize: '0.85rem', fontFamily: 'var(--sans)', fontWeight: 500 }}>{checkedN} / {body.checklist.length}</span></h2>
           <ul className="checklist">
@@ -120,6 +127,15 @@ export default function Skill({ id }) {
               <h2 id="scenarios">相關設計情境</h2>
               <ul className="refs">
                 {related.map((sc) => <li key={sc.id}><a href={`#/scenario/${sc.id}`}>{sc.title} →</a></li>)}
+              </ul>
+            </>
+          )}
+
+          {crossTrack.length > 0 && (
+            <>
+              <h2 id="related">其他路線的相關課</h2>
+              <ul className="refs">
+                {crossTrack.map((x) => <li key={x.id}><a href={`#/skill/${x.id}`}>{findTrack(x.domain.track).title}｜{x.title} →</a></li>)}
               </ul>
             </>
           )}

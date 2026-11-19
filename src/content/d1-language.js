@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d1-language.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'language',
+  track: 'backend',
   no: 1,
   title: '語言與工程實踐',
   en: 'LANGUAGE & ENGINEERING',

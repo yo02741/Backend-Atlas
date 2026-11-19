@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from 'react'
 import { EXERCISES, KINDS, findExercise } from '../content/exercises/index.js'
-import { DOMAINS, LEVELS, findSkill } from '../content/roadmap.js'
+import { LEVELS, findSkill, domainsOf } from '../content/roadmap.js'
+import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
 import { quizCount, QUIZZES } from '../content/quizzes/index.js'
 import { useProgress } from '../progress.js'
 import ExerciseRunner from '../components/ExerciseRunner.jsx'
 import { Level } from '../components/bits.jsx'
 
-/* 練習題總表：像 LeetCode 一樣一列一題，可依領域 / 類型 / 狀態篩 */
-export default function Exercises() {
+/* 練習題總表：像 LeetCode 一樣一列一題，可依路線（?track=）/ 領域 / 類型 / 狀態篩 */
+export default function Exercises({ track: rawTrack = '' }) {
+  const track = normTrack(rawTrack)
+  const DOMAINS = domainsOf(track)
+  const inTrack = (sk) => track === 'all' || sk?.domain.track === track
   const { exerciseStatus, quizzes } = useProgress()
   const [kind, setKind] = useState('')
   const [domain, setDomain] = useState('')
   const [only, setOnly] = useState('') // '' | 'todo' | 'pass'
   const rows = EXERCISES.map((e) => ({ ...e, skillObj: findSkill(e.skill), status: exerciseStatus(e.id) }))
-    .filter((r) => (!kind || r.kind === kind) && (!domain || r.skillObj?.domain.id === domain) && (!only || (only === 'pass' ? r.status === 'pass' : r.status !== 'pass')))
+    .filter((r) => inTrack(r.skillObj) && (!kind || r.kind === kind) && (!domain || r.skillObj?.domain.id === domain) && (!only || (only === 'pass' ? r.status === 'pass' : r.status !== 'pass')))
   const passed = EXERCISES.filter((e) => exerciseStatus(e.id) === 'pass').length
   const quizSkills = Object.keys(QUIZZES).length
   const quizPassed = Object.values(quizzes || {}).filter((v) => v === 'pass').length
@@ -31,7 +35,7 @@ export default function Exercises() {
         </div>
       </header>
 
-      <a href="#/review" className="rv-entry">
+      <a href={withTrack('review', track)} className="rv-entry">
         <span className="rv-entry-text">
           <span className="kicker">REVIEW · 複習</span>
           <b>跨課混合複習</b>
@@ -39,6 +43,7 @@ export default function Exercises() {
         <span className="btn small">開始 →</span>
       </a>
 
+      <TrackFilter value={track} hrefFor={(t) => withTrack('exercises', t)} />
       <div className="toolbar">
         <button className={`chip${!kind ? ' on' : ''}`} onClick={() => setKind('')}>全部類型</button>
         {Object.entries(KINDS).map(([k, v]) => <button key={k} className={`chip${kind === k ? ' on' : ''}`} onClick={() => setKind(kind === k ? '' : k)}>{v.label}</button>)}

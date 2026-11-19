@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d6-deploy.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'deploy',
+  track: 'backend',
   no: 6,
   title: '容器與部署',
   en: 'CONTAINERS & DEPLOYMENT',

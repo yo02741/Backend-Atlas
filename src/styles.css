@@ -1,5 +1,5 @@
 /* ============================================================
-   Backend Atlas — 後端學習地圖
+   u kinda should know — 前端、後端、AI
    tokens 與每日熱點站同源（dataviz 參考 palette），雜誌排版層自定。
    ============================================================ */
 :root {
@@ -36,6 +36,12 @@
   --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.06);
   --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.12);
   --radius: 4px;
+  /* 站的標誌（BrandMark、favicon）：深色底、綠色打勾、黃色問號，亮暗主題同一組 */
+  --brand-tile: #15171a;
+  --brand-check: #22c55e;
+  --brand-ask: #f5b324;
+  /* 首頁「u kinda should know」字樣：亮色用深一點的琥珀色才有足夠對比 */
+  --ask-ink: #a35f00;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -53,6 +59,7 @@
     --c-slate: #93a4bd; --c-teal: #2bb0b5; --c-brown: #c99560;
     --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.35);
     --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
+    --ask-ink: #f5b324;
   }
 }
 :root[data-theme="dark"] {
@@ -70,6 +77,7 @@
     --c-slate: #93a4bd; --c-teal: #2bb0b5; --c-brown: #c99560;
   --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.35);
   --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --ask-ink: #f5b324;
 }
 
 /* ============ 基底 ============ */
@@ -123,11 +131,17 @@ code, pre, kbd { font-family: var(--mono); }
   background: color-mix(in srgb, var(--page) 82%, transparent);
   backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
-.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
-.brand-mark { width: 22px; height: 22px; flex-shrink: 0; }
-.brand-name { font-family: var(--serif); font-weight: 700; letter-spacing: 0.02em; font-size: 1rem; white-space: nowrap; }
-.brand-sub { color: var(--ink-3); font-size: 0.78rem; letter-spacing: 0.08em; white-space: nowrap; }
-@media (max-width: 440px) { .brand-sub { display: none; } }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+.brand-mark { width: 26px; height: 26px; flex-shrink: 0; }
+.brand-name { font-family: var(--mono); font-weight: 700; letter-spacing: -0.01em; font-size: 0.95rem; white-space: nowrap; color: var(--ink-1); }
+@media (max-width: 560px) { .brand-name { display: none; } }
+/* 路線分頁：一直顯示（手機也是），目前的路線底下畫路線色的線 */
+.track-tabs { display: flex; align-items: center; gap: 4px; margin-right: auto; }
+.track-tab { color: var(--ink-2); text-decoration: none; padding: 4px 10px; border-radius: 999px; font-weight: 600; white-space: nowrap; position: relative; }
+.track-tab:hover { color: var(--ink-1); background: var(--surface-2); }
+.track-tab.on { color: var(--ink-1); background: color-mix(in srgb, var(--tint) 14%, transparent); }
+.track-tab.on::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: -2px; border-bottom: 2px solid var(--tint); }
+.track-tab.soon { color: var(--ink-3); }
 .topnav-links { display: flex; align-items: center; gap: 22px; }
 .topnav-links a { color: var(--ink-2); text-decoration: none; padding: 4px 0; position: relative; }
 .topnav-links a:hover { color: var(--ink-1); }
@@ -181,7 +195,7 @@ code, pre, kbd { font-family: var(--mono); }
 .account-msg.bad { border-left-color: var(--critical); }
 .account-msg span { flex: 1; }
 .account-msg-x { background: none; border: 0; cursor: pointer; color: var(--ink-3); font-size: 1rem; line-height: 1; padding: 0 2px; }
-@media (max-width: 760px) {
+@media (max-width: 1100px) {
   .topnav-links { display: none; }
   .topnav-links.open {
     display: flex; flex-direction: column; align-items: stretch; gap: 0;
@@ -303,6 +317,47 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .lcard h4 { font-family: var(--serif); font-size: 1.02rem; font-weight: 700; line-height: 1.35; }
 .lcard p { font-size: 0.82rem; color: var(--ink-2); line-height: 1.55; }
 .lcard .pill { align-self: flex-start; margin-top: 4px; }
+
+/* ============ 首頁：開場與三條路線 ============ */
+.home-hero { padding: 72px 0 36px; max-width: 900px; }
+.ai-said {
+  display: inline-flex; align-items: center; gap: 10px; margin-bottom: 22px;
+  font-family: var(--mono); font-size: clamp(0.95rem, 2.2vw, 1.1rem); color: var(--ink-2);
+  padding: 6px 14px 6px 10px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface-1);
+}
+.ai-said-ok { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--brand-tile); color: var(--brand-check); font-size: 0.8rem; font-weight: 700; }
+.home-hero h1.display { font-size: clamp(2.4rem, 7vw, 4.4rem); line-height: 1.12; }
+.home-hero .uksk { font-family: var(--mono); font-weight: 700; letter-spacing: -0.03em; color: var(--ask-ink); }
+.home-hero .home-three { margin-top: 20px; font-size: clamp(1.05rem, 2.4vw, 1.25rem); color: var(--ink-1); }
+.track-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 8px 0 24px; }
+@media (max-width: 900px) { .track-cards { grid-template-columns: minmax(0, 1fr); } }
+.track-card {
+  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 20px 20px 18px;
+  background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius);
+}
+.track-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--tint); border-radius: var(--radius) var(--radius) 0 0; }
+.track-card.last { border-color: color-mix(in srgb, var(--tint) 55%, var(--hairline)); box-shadow: var(--shadow-1); }
+.track-card.soon { background: transparent; border-style: dashed; }
+.track-card.soon::before { opacity: 0.45; }
+.track-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.track-card-last { margin-left: 10px; letter-spacing: 0.04em; color: var(--ink-2); text-transform: none; font-weight: 500; }
+.track-card h2 { font-family: var(--serif); font-size: 1.9rem; line-height: 1.15; }
+.track-card h2 a { color: var(--ink-1); text-decoration: none; }
+.track-card h2 a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--tint); }
+.track-card-tag { color: var(--ink-2); font-size: 0.9rem; line-height: 1.65; }
+.track-card-meta { color: var(--ink-3); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.track-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px; }
+.track-card-actions .btn { max-width: 100%; white-space: normal; text-align: left; }
+/* 路線首頁沒有 hero 圖時單欄 */
+.hero.hero-solo { grid-template-columns: minmax(0, 1fr); }
+.hero .crumbs { margin-bottom: 10px; }
+.soon-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding: 0; }
+.soon-list li { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border: 1px dashed var(--hairline); border-left: 3px solid var(--tint); border-radius: var(--radius); }
+.soon-list b { font-family: var(--serif); }
+.soon-list p { color: var(--ink-2); font-size: 0.86rem; line-height: 1.6; margin-top: 4px; }
+.other-tracks-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.track-filter { margin-bottom: 4px; }
+.track-filter .chip { text-decoration: none; }
 
 .home-section { padding: 44px 0 0; }
 .home-section .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }

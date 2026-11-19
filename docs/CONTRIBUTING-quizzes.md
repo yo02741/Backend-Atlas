@@ -1,6 +1,6 @@
 # 題庫（選擇題）撰寫合約
 
-目的：Backend Atlas 每個技能（skill）都要能「驗收」。你負責替指派的技能各寫 **3 題選擇題**（繁體中文、台灣用語）。
+目的：站上每個技能（skill）都要能「驗收」。你負責替指派的技能各寫 **3 題選擇題**（繁體中文、台灣用語）。
 
 ## 檔案與格式
 每個領域一個檔：`./src/content/quizzes/<domainId>.js`（domainId 見 roadmap.js：language / web / data / auth / security / deploy / cicd / algo）。內容：

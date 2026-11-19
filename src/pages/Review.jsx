@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Md from '../components/Md.jsx'
 import { Code } from '../labs/ui.jsx'
-import { DOMAINS, findDomain } from '../content/roadmap.js'
+import { DOMAINS, findDomain, domainsOf } from '../content/roadmap.js'
+import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
 import { QUIZZES } from '../content/quizzes/index.js'
 import { useProgress } from '../progress.js'
 import { COUNTS, SCOPES, applyRound, buildPool, grade, loadRecord, mulberry32, parseSeed, randomSeed, sample, saveRecord, scopePool } from '../review.js'
@@ -9,14 +10,19 @@ import { COUNTS, SCOPES, applyRound, buildPool, grade, loadRecord, mulberry32, p
 /* 複習頁：跨課的混合測驗。設定（範圍、題數）→ 一次作答 → 交卷看分數、解析、依領域的答對率。
    抽題、計分、錯題紀錄都在 src/review.js（純函式）；題目的呈現沿用 Quiz 的 class（.quiz-q / .quiz-opt / .quiz-explain）。
    這一頁不改各課的選擇題通過狀態；錯題與成績另外存在 localStorage 的 atlas-review-v1，不進雲端同步。 */
-const POOL = buildPool(QUIZZES, DOMAINS)
-const POOL_DOMAINS = DOMAINS.filter((d) => POOL.some((it) => it.domain === d.id))
+// 題庫依路線（?track=）：只抽那條路線的領域；'all' 是全部路線。錯題紀錄三條路線共用一份（題目 id 全站唯一）
+const poolFor = (track) => {
+  const pool = buildPool(QUIZZES, domainsOf(track))
+  return [pool, domainsOf(track).filter((d) => pool.some((it) => it.domain === d.id))]
+}
 const SCOPE_LABEL = { done: '已完成的課', domains: '選領域', wrong: '上次答錯的題', all: '全部', retry: '重做答錯的' }
 const letter = (i) => String.fromCharCode(65 + i)
 const fmtTime = (at) => new Date(at).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 
-export default function Review({ seed = '' }) {
+export default function Review({ seed = '', track: rawTrack = '' }) {
   const { done } = useProgress()
+  const track = normTrack(rawTrack)
+  const [POOL, POOL_DOMAINS] = useMemo(() => poolFor(track), [track])
   // 網址帶 ?seed= 就用固定種子（e2e 用）；第 k 輪用 seed + k，同一串操作抽到的題目完全一樣
   const baseSeed = useMemo(() => parseSeed(seed) ?? randomSeed(), [seed])
   const roundNo = useRef(0)
@@ -80,6 +86,7 @@ export default function Review({ seed = '' }) {
           <p className="kicker">REVIEW · 複習</p>
           <h1 className="display">混合複習</h1>
         </header>
+        <TrackFilter value={track} hrefFor={(t) => withTrack('review', t, { seed })} />
 
         <section className="rv-setup">
           <fieldset className="rv-field">

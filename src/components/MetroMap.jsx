@@ -4,7 +4,7 @@ import { useWidth } from '../labs/ui.jsx'
 /* 學習路線的地鐵圖：站點蛇形排列，線段顏色跟隨起點站的領域色，
    完成的站填滿色、未完成空心。窄螢幕自動改成每列較少站。
    換列的彎道會經過列尾站的站名，所以用遮罩在每個站名底下把線挖掉（不靠底色描邊，漸層背景也適用）。 */
-export default function MetroMap({ stations, isDone }) {
+export default function MetroMap({ stations, isDone, label = '學習路線' }) {
   const ref = useRef(null)
   const maskId = `metro-gap-${useId().replace(/:/g, '')}`
   const width = useWidth(ref, 1000)
@@ -44,7 +44,7 @@ export default function MetroMap({ stations, isDone }) {
 
   return (
     <div className="metro" ref={ref}>
-      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="list" aria-label="建議學習路線">
+      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="list" aria-label={label}>
         <defs>
           <mask id={maskId} maskUnits="userSpaceOnUse" x="-60" y="-20" width={W + 120} height={H + 40}>
             <rect x="-60" y="-20" width={W + 120} height={H + 40} fill="#fff" />

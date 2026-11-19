@@ -1,11 +1,13 @@
 // 技能內容結構校驗：索引（src/content/dN-*.js）與內文（src/content/body/dN-*.js）技能 id 一一對應、
-// 必填欄位齊全、id 全站唯一、lab 檔存在、refs 是 https 連結、PATH / KEYWORDS 對得到技能。
+// 必填欄位齊全、id 全站唯一、lab 檔存在、refs 是 https 連結、每條路線的 PATHS / KEYWORDS 對得到該路線的技能、mapRequired 的路線每課都有 map、related 指向其他路線的課。
 import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const content = resolve(here, '../src/content')
-const { ALL_DOMAINS: DOMAINS, PATH, KEYWORDS } = await import(pathToFileURL(resolve(content, 'roadmap.js')).href)
+const { ALL_DOMAINS: DOMAINS, PATHS, KEYWORDS } = await import(pathToFileURL(resolve(content, 'roadmap.js')).href)
+const { TRACKS } = await import(pathToFileURL(resolve(content, 'tracks.js')).href)
+const trackIds = new Set(TRACKS.map((t) => t.id))
 
 const errors = []
 const seen = new Set()
@@ -13,9 +15,17 @@ let skills = 0
 const files = readdirSync(content).filter((f) => /^d\d+-.*\.js$/.test(f))
 if (files.length !== DOMAINS.length) errors.push(`dN-*.js 有 ${files.length} 個，roadmap.js 的 DOMAINS 有 ${DOMAINS.length} 個`)
 
+const seenNo = new Set(), seenDomain = new Set()
+const skillTrack = new Map()   // 技能 id → 路線
+const relatedOf = []           // [技能 id, related, 標籤]
 for (const d of DOMAINS) {
   const tag = `d${d.no}-${d.id}`
-  for (const k of ['id', 'no', 'title', 'en', 'color', 'tagline']) if (d[k] === undefined || d[k] === '') errors.push(`${tag}: 領域缺 ${k}`)
+  for (const k of ['id', 'track', 'no', 'title', 'en', 'color', 'tagline']) if (d[k] === undefined || d[k] === '') errors.push(`${tag}: 領域缺 ${k}`)
+  if (d.track && !trackIds.has(d.track)) errors.push(`${tag}: track "${d.track}" 不在 tracks.js 的 TRACKS`)
+  if (seenNo.has(d.no)) errors.push(`${tag}: 領域編號 no=${d.no} 重複（全站唯一）`)
+  if (seenDomain.has(d.id)) errors.push(`${tag}: 領域 id 重複（全站唯一）`)
+  seenNo.add(d.no); seenDomain.add(d.id)
+  const mapRequired = TRACKS.find((t) => t.id === d.track)?.mapRequired
   if (!existsSync(resolve(content, `${tag}.js`))) errors.push(`${tag}: 索引檔名要是 ${tag}.js（d<no>-<id>.js）`)
   const bodyPath = resolve(content, 'body', `${tag}.js`)
   if (!existsSync(bodyPath)) { errors.push(`${tag}: 缺內文檔 body/${tag}.js`); continue }
@@ -26,7 +36,8 @@ for (const d of DOMAINS) {
     const st = `${tag}/${s.id}`
     if (!/^[a-z0-9-]+$/.test(s.id || '')) errors.push(`${st}: id 只能是小寫英數與連字號`)
     if (seen.has(s.id)) errors.push(`${st}: id 重複`)
-    seen.add(s.id); ids.add(s.id)
+    seen.add(s.id); ids.add(s.id); skillTrack.set(s.id, d.track)
+    if (s.related !== undefined) relatedOf.push([s.id, s.related, st])
     for (const k of ['title', 'en', 'summary']) if (!s[k]) errors.push(`${st}: 缺 ${k}`)
     if (![1, 2, 3].includes(s.level)) errors.push(`${st}: level 要是 1 / 2 / 3`)
     if (!s.example?.primary) errors.push(`${st}: example.primary 必填`)
@@ -42,7 +53,8 @@ for (const d of DOMAINS) {
     if (!Array.isArray(b.checklist) || b.checklist.length < 1) errors.push(`${st}: checklist 至少 1 條`)
     if (!Array.isArray(b.refs)) errors.push(`${st}: refs 要是陣列（可為空）`)
     for (const r of b.refs || []) if (!r?.label || !/^https:\/\//.test(r?.url || '')) errors.push(`${st}: refs 每筆要有 label 與 https:// 開頭的 url`)
-    // 地圖層（選填，試做中）：叫得出名字、說得出要求、驗得出對錯
+    // 地圖層：叫得出名字、說得出要求、驗得出對錯（mapRequired 的路線必填，其他路線選填）
+    if (b.map === undefined && mapRequired) errors.push(`${st}: 這條路線的課都要有 map（地圖層）`)
     if (b.map !== undefined) {
       const m = b.map
       if (!Array.isArray(m.names) || m.names.length < 3 || m.names.some((x) => !x?.n || !x?.t)) errors.push(`${st}: map.names 至少 3 條，每條要有 n（名詞）與 t（說明）`)
@@ -57,9 +69,30 @@ for (const d of DOMAINS) {
   }
   for (const id of Object.keys(body)) if (!ids.has(id)) errors.push(`${tag}: body 有 "${id}" 但索引沒有這個技能`)
 }
-for (const p of PATH) if (!seen.has(p.skill)) errors.push(`PATH: 技能 "${p.skill}" 不存在`)
-const allKw = new Set(DOMAINS.flatMap((d) => d.skills.flatMap((s) => (s.keywords || []).map((k) => k.toLowerCase()))))
-for (const k of KEYWORDS) if (!allKw.has(k.toLowerCase())) errors.push(`KEYWORDS: "${k}" 沒有任何技能對應`)
+// 跨路線的相關課：存在、屬於另一條路線、不重複
+for (const [id, rel, st] of relatedOf) {
+  if (!Array.isArray(rel)) { errors.push(`${st}: related 要是技能 id 的陣列`); continue }
+  if (new Set(rel).size !== rel.length) errors.push(`${st}: related 有重複的 id`)
+  for (const r of rel) {
+    if (!skillTrack.has(r)) errors.push(`${st}: related 的 "${r}" 不存在`)
+    else if (skillTrack.get(r) === skillTrack.get(id)) errors.push(`${st}: related 只放其他路線的課（"${r}" 在同一條路線，寫在課文裡）`)
+  }
+}
+// 每條路線的學習路線與關鍵字
+for (const key of Object.keys(PATHS)) if (!trackIds.has(key)) errors.push(`PATHS: "${key}" 不是 TRACKS 裡的路線`)
+for (const key of Object.keys(KEYWORDS)) if (!trackIds.has(key)) errors.push(`KEYWORDS: "${key}" 不是 TRACKS 裡的路線`)
+for (const t of TRACKS) {
+  const inPath = new Set()
+  for (const p of PATHS[t.id] || []) {
+    if (!seen.has(p.skill)) errors.push(`PATHS.${t.id}: 技能 "${p.skill}" 不存在`)
+    else if (skillTrack.get(p.skill) !== t.id) errors.push(`PATHS.${t.id}: 技能 "${p.skill}" 屬於 ${skillTrack.get(p.skill)} 路線`)
+    if (inPath.has(p.skill)) errors.push(`PATHS.${t.id}: 技能 "${p.skill}" 重複出現`)
+    inPath.add(p.skill)
+    if (!p.label || !p.note) errors.push(`PATHS.${t.id}: "${p.skill}" 要有 label 與 note`)
+  }
+  const kw = new Set(DOMAINS.filter((d) => d.track === t.id).flatMap((d) => d.skills.flatMap((s) => (s.keywords || []).map((k) => k.toLowerCase()))))
+  for (const k of KEYWORDS[t.id] || []) if (!kw.has(k.toLowerCase())) errors.push(`KEYWORDS.${t.id}: "${k}" 在這條路線沒有任何技能對應`)
+}
 
 // 深入內容（src/content/deep/<skill-id>.md）：檔名對得到技能、至少三個 ## 段落、篇幅足夠、
 // 不用禁用措辭、連結是 https、程式碼區塊有收尾、標 run 的區塊只能是 python / sql / js

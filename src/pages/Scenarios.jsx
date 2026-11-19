@@ -7,19 +7,27 @@ import { Level, LabEmbed } from '../components/bits.jsx'
 import Md from '../components/Md.jsx'
 import Decisions from '../components/Decisions.jsx'
 import { Code } from '../labs/ui.jsx'
+import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
+import { TRACKS } from '../content/tracks.js'
+const TRACK_TITLE = Object.fromEntries(TRACKS.map((t) => [t.id, t.title]))
 
-/* 設計情境總覽 */
-export default function Scenarios() {
+/* 設計情境總覽：依路線（?track=，由情境分組的 track 決定）與分組分段 */
+export default function Scenarios({ track: rawTrack = '' }) {
   const { scenarioStatus } = useProgress()
-  const passed = SCENARIOS.filter((s) => scenarioStatus(s.id) === 'pass').length
+  const track = normTrack(rawTrack)
+  const groups = SCENARIO_GROUPS.filter((g) => track === 'all' || g.track === track)
+  const shown = SCENARIOS.filter((s) => groups.includes(groupOf(s)))
+  const passed = shown.filter((s) => scenarioStatus(s.id) === 'pass').length
   return (
     <div className="fade-swap">
       <header className="masthead">
         <p className="kicker">SCENARIOS · 設計情境</p>
         <h1 className="display">在限制下做選擇</h1>
-        <p className="muted" style={{ marginTop: 10, fontSize: '0.85rem' }}>{SCENARIOS.length} 個情境 · 已通過 {passed}</p>
+        <p className="muted" style={{ marginTop: 10, fontSize: '0.85rem' }}>{shown.length} 個情境 · 已通過 {passed}</p>
       </header>
-      {SCENARIO_GROUPS.map((g) => {
+      <TrackFilter value={track} hrefFor={(t) => withTrack('scenarios', t)} />
+      {shown.length === 0 && <p className="status-msg">這條路線還沒有設計情境。</p>}
+      {groups.map((g) => {
         const list = scenariosInGroup(g.id)
         if (!list.length) return null
         return (
@@ -71,7 +79,7 @@ export function ScenarioPage({ id }) {
   return (
     <article className="lesson fade-swap" style={{ '--tint': color }}>
       <div className="reading">
-        <p className="crumbs"><a href="#/">首頁</a> / <a href="#/scenarios">設計情境</a> / {g.title}</p>
+        <p className="crumbs"><a href="#/">首頁</a> / <a href={`#/track/${g.track}`}>{TRACK_TITLE[g.track]}</a> / <a href={withTrack('scenarios', g.track)}>設計情境</a> / {g.title}</p>
         <header className="lesson-head">
           <p className="kicker tinted">{g.en} · 設計情境</p>
           <h1>{s.title}</h1>
@@ -81,7 +89,7 @@ export function ScenarioPage({ id }) {
             <a href="#/scenarios" className="pill tint" style={{ '--tint': color }}>{g.title}</a>
             {status === 'pass' && <span className="pill assess-ok">✓ 決策題通過</span>}
             {(s.skills || []).map((k) => { const sk = findSkill(k); return sk ? <a key={k} href={`#/skill/${k}`} className="pill">{sk.title}</a> : null })}
-            {s.week && <a href={`#/curriculum?week=${s.week}`} className="pill mono" title="到課綱的這一週">第 {s.week} 週</a>}
+            {s.week && <a href={withTrack('curriculum', g.track, { week: s.week })} className="pill mono" title="到課綱的這一週">第 {s.week} 週</a>}
           </div>
           <p className="lede">{s.summary}</p>
         </header>

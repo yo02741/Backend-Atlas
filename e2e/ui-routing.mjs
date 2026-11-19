@@ -17,21 +17,31 @@ const t = (label, ok, extra = '') => { if (!ok) failed++; console.log(`${ok ? 'P
 const loaded = new Set()
 page.on('response', (r) => { const u = r.url(); if (u.includes('/assets/') && u.endsWith('.js')) loaded.add(u.split('/').pop()) })
 await page.goto(base, { waitUntil: 'networkidle' })
-await page.waitForSelector('.metro')
+await page.waitForSelector('.track-cards')
 const homeChunks = [...loaded]
 t('home does not load CodeMirror chunk', !homeChunks.some((n) => /^CodeEditor-/.test(n)), homeChunks.join(','))
 t('home does not load Curriculum chunk', !homeChunks.some((n) => /^Curriculum-/.test(n)))
-t('home does not load page chunks', !homeChunks.some((n) => /^(Skill|Exercises|Scenarios|Playground|Roadmap)-/.test(n)))
+t('home does not load page chunks', !homeChunks.some((n) => /^(Skill|Exercises|Scenarios|Playground|Roadmap|TrackHome)-/.test(n)))
+t('home lists the three tracks', (await page.$$eval('.track-card h2', (hs) => hs.map((h) => h.textContent))).join() === '前端,後端,AI')
 t('home does not load skill body chunks', !homeChunks.some((n) => /^d\d+-[a-z]+-/.test(n)))
 t('home does not load the Firebase SDK (only after 登入 or a restored session)', !homeChunks.some((n) => /^firebase-/.test(n)))
-t('home title', await page.title() === 'Backend Atlas · 後端學習地圖', await page.title())
+t('home title', await page.title() === 'u kinda should know', await page.title())
+
+// 路線首頁：懶載入 TrackHome，有路線圖；導覽列的路線分頁標出目前的路線，功能連結帶上 ?track=
+await page.goto(base + '#/track/backend', { waitUntil: 'networkidle' })
+await page.waitForSelector('.metro svg')
+t('track home loads its chunk on demand', [...loaded].some((n) => /^TrackHome-/.test(n)))
+t('track home title', await page.title() === '後端 · u kinda should know', await page.title())
+t('track tab marks current track', await page.$eval('.track-tab.on', (a) => a.textContent) === '後端')
+t('nav links carry the current track', await page.$eval('.topnav-links a[href^="#/roadmap"]', (a) => a.getAttribute('href')) === '#/roadmap?track=backend')
 
 // 技能頁：只載自己領域的內文 chunk；同領域換課不再下載；換領域才多載一個
 const bodyChunks = () => [...loaded].filter((n) => /^d\d+-[a-z]+-/.test(n))
 await page.goto(base + '#/skill/sql-joins', { waitUntil: 'networkidle' })
 await page.waitForSelector('.points li')
 t('skill page renders body (points)', (await page.$$('.points li')).length >= 2)
-t('skill page title', await page.title() === 'JOIN 七兄弟 · Backend Atlas', await page.title())
+t('skill page title', await page.title() === 'JOIN 七兄弟 · u kinda should know', await page.title())
+t('skill page crumbs show its track', /首頁\s*\/\s*後端\s*\/\s*資料儲存/.test(await page.textContent('.crumbs')), await page.textContent('.crumbs'))
 t('skill page loads exactly its domain body chunk', bodyChunks().length === 1 && /^d3-data-/.test(bodyChunks()[0]), bodyChunks().join(','))
 const h1Before = await page.textContent('h1')
 await page.click('.lesson-nav a.next')
@@ -47,7 +57,7 @@ await cdp.send('Network.enable')
 await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 400, downloadThroughput: 80 * 1024, uploadThroughput: 80 * 1024 })
 
 const homeHeading = await page.textContent('h1')
-await page.click('.topnav-links a[href="#/curriculum"]')
+await page.click('.topnav-links a[href^="#/curriculum"]')
 // 過渡期間：舊頁面還在、有進度條、沒有「載入中…」
 await page.waitForSelector('.route-progress', { timeout: 3000 }).catch(() => {})
 const during = await page.evaluate(() => ({
@@ -62,16 +72,16 @@ t('previous page stays visible', during.h1 === homeHeading, during.h1)
 await page.waitForFunction(() => /課綱/.test(document.querySelector('h1')?.textContent || ''), null, { timeout: 30000 })
 await page.waitForFunction(() => !document.querySelector('.route-progress'), null, { timeout: 5000 })
 t('curriculum rendered', /課綱|週/.test(await page.textContent('h1')), await page.textContent('h1'))
-t('curriculum title', await page.title() === '課綱 · Backend Atlas', await page.title())
+t('curriculum title', await page.title() === '課綱 · u kinda should know', await page.title())
 t('curriculum chunk loaded on demand', [...loaded].some((n) => /^Curriculum-/.test(n)))
-t('nav active state follows route', await page.$eval('.topnav-links a[href="#/curriculum"]', (a) => a.classList.contains('active')))
+t('nav active state follows route', await page.$eval('.topnav-links a[href^="#/curriculum"]', (a) => a.classList.contains('active')))
 
 // 直接深連結到懶載入頁（整頁載入）：首屏顯示 fallback 也可以，但最後要渲染出來、無錯誤
 await cdp.send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 })
 await page.goto(base + '#/scenario/cache', { waitUntil: 'networkidle' })
 await page.waitForSelector('section.lab', { timeout: 30000 })
 t('deep link to lazy page renders', /API 快取/.test(await page.textContent('h1')))
-t('scenario title', await page.title() === 'API 快取 · Backend Atlas', await page.title())
+t('scenario title', await page.title() === 'API 快取 · u kinda should know', await page.title())
 
 // 課綱：每週標題下掛該週的情境；?week=10 會捲到第 10 週
 await page.goto(base + '#/curriculum?week=10', { waitUntil: 'networkidle' })
@@ -81,7 +91,7 @@ t('curriculum week 10 has scenario chips', (await page.$$('#week-10 + .curri-wee
 await page.waitForFunction(() => { const r = document.getElementById('week-10').getBoundingClientRect(); return r.top >= -5 && r.top < 200 }, null, { timeout: 3000 }).catch(() => {})
 const weekTop = await page.evaluate(() => [Math.round(document.getElementById('week-10').getBoundingClientRect().top), Math.round(scrollY), document.querySelector('h1')?.textContent])
 t('curriculum ?week= scrolls to the week', weekTop[0] >= -5 && weekTop[0] < 200, JSON.stringify(weekTop))
-t('scenario page week pill links to curriculum week', (await (await (await page.goto(base + '#/scenario/pagination', { waitUntil: 'networkidle' }), page.waitForSelector('.lesson-meta a.mono')), page.getAttribute('.lesson-meta a.mono', 'href'))) === '#/curriculum?week=10')
+t('scenario page week pill links to curriculum week', (await (await (await page.goto(base + '#/scenario/pagination', { waitUntil: 'networkidle' }), page.waitForSelector('.lesson-meta a.mono')), page.getAttribute('.lesson-meta a.mono', 'href'))) === '#/curriculum?track=backend&week=10')
 
 console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'no page/console errors')
 await browser.close()

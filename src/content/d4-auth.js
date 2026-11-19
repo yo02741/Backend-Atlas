@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d4-auth.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'auth',
+  track: 'backend',
   no: 4,
   title: '驗證與授權',
   en: 'AUTHENTICATION & AUTHORIZATION',

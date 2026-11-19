@@ -1,11 +1,11 @@
-// 首頁學習路線圖：在每一種欄數（手機 2 欄、3 欄、4 欄、桌機 6 欄）下檢查
-//   - 站數等於 roadmap.js 的 PATH，站序與 PATH 一致
+// 路線首頁的學習路線圖：每條有站的路線（roadmap.js 的 PATHS），在每一種欄數（手機 2 欄、3 欄、4 欄、桌機 6 欄）下檢查
+//   - 站數等於 PATHS[路線]，站序一致
 //   - 站名與領域名彼此不重疊、不超出路線圖左右邊界、頁面不需要左右滑
 //   - 每段文字都在遮罩挖掉的範圍裡（轉彎的線不會穿過文字）
 // 前置：npm run build && npm run preview。改了 PATH 或 MetroMap 之後必跑。
-// SHOTS=1 會把每種寬度的路線圖存成 e2e/shots/metro-<寬度>.png（已 gitignore），用來目視確認。
+// SHOTS=1 會把每種寬度的路線圖存成 e2e/shots/metro-<路線>-<寬度>.png（已 gitignore），用來目視確認。
 import { chromium } from 'playwright'
-import { PATH } from '../src/content/roadmap.js'
+import { PATHS } from '../src/content/roadmap.js'
 
 const base = process.env.E2E_BASE || 'http://localhost:4173/'
 const WIDTHS = [390, 600, 900, 1280]
@@ -13,12 +13,12 @@ const browser = await chromium.launch()
 let failed = 0
 const t = (label, ok, extra = '') => { if (!ok) failed++; console.log(`${ok ? 'PASS' : 'FAIL'} ${label} ${ok ? '' : extra}`) }
 
-for (const width of WIDTHS) {
+for (const [track, PATH] of Object.entries(PATHS).filter(([, p]) => p.length)) for (const width of WIDTHS) {
   for (const scheme of ['light', 'dark']) {
     const page = await browser.newPage({ viewport: { width, height: 900 }, colorScheme: scheme })
     const errs = []
     page.on('pageerror', (e) => errs.push(e.message))
-    await page.goto(base + '#/', { waitUntil: 'networkidle' })
+    await page.goto(base + `#/track/${track}`, { waitUntil: 'networkidle' })
     await page.waitForSelector('.metro svg')
     const r = await page.evaluate(() => {
       const svg = document.querySelector('.metro svg')
@@ -45,7 +45,7 @@ for (const width of WIDTHS) {
       const masked = [...svg.querySelectorAll('path')].filter((p) => p.closest('g[mask]')).length
       return { ids, overlaps, outside, uncovered, masked, paths: svg.querySelectorAll('g[mask] path').length, scrollW: document.documentElement.scrollWidth }
     })
-    const tag = `${width}px ${scheme}`
+    const tag = `${track} ${width}px ${scheme}`
     t(`${tag}：站數 ${r.ids.length} = PATH ${PATH.length}`, r.ids.length === PATH.length)
     t(`${tag}：站序與 PATH 一致`, r.ids.join() === PATH.map((p) => p.skill).join(), r.ids.join())
     t(`${tag}：文字不重疊`, r.overlaps.length === 0, r.overlaps.slice(0, 5).join(' | '))
@@ -56,7 +56,7 @@ for (const width of WIDTHS) {
     t(`${tag}：沒有 page error`, errs.length === 0, errs.join(' | '))
     if (process.env.SHOTS && scheme === 'light') {
       await page.addStyleTag({ content: '.topnav { position: static !important; }' })
-      await (await page.$('.metro')).screenshot({ path: `e2e/shots/metro-${width}.png` })
+      await (await page.$('.metro')).screenshot({ path: `e2e/shots/metro-${track}-${width}.png` })
     }
     await page.close()
   }

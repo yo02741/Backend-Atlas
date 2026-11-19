@@ -13,7 +13,8 @@ const { ALL_DOMAINS } = await import(src('content/roadmap.js'))
 const { STAGES } = await import(src('content/project/stages.js'))
 const domains = ALL_DOMAINS.filter((d) => d.skills.length).map((d) => d.id)
 const routes = [
-  '#/', '#/roadmap', '#/roadmap?kw=JWT', '#/labs', '#/curriculum', '#/curriculum?week=21', '#/exercises', '#/review',
+  '#/', '#/track/frontend', '#/track/backend', '#/track/ai', '#/roadmap', '#/roadmap?track=backend&kw=JWT', '#/roadmap?track=ai',
+  '#/labs', '#/labs?track=ai', '#/curriculum', '#/curriculum?week=21', '#/exercises', '#/exercises?track=ai', '#/review', '#/review?track=ai', '#/scenarios?track=ai',
   '#/exercise/sql-joins-1', '#/exercise/jwt-1', '#/exercise/http-basics-1', '#/exercise/gitlab-cicd-1', '#/exercise/project-schema-1',
   '#/playground', '#/playground?lang=sql', '#/playground?lang=js',
   '#/scenarios', ...scenarios.map((id) => `#/scenario/${id}`),
@@ -26,7 +27,7 @@ const routes = [
   '#/skill/mcp-gateway', '#/skill/key-scope-lifetime', '#/skill/agent-credential-isolation', '#/skill/rag-basics', '#/skill/llm-wiki',
   ...labs.map((l) => `#/lab/${l}`),
 ]
-const shotFor = { '#/scenarios': 'scenarios', '#/scenario/pagination': 'scenario-pagination', '#/': 'home', '#/curriculum': 'curriculum', '#/exercises': 'exercises', '#/skill/sql-joins': 'skill-joins', '#/labs': 'labs', '#/lab/JwtLab': 'lab-jwt', '#/playground?lang=sql': 'playground-sql' }
+const shotFor = { '#/scenarios': 'scenarios', '#/scenario/pagination': 'scenario-pagination', '#/': 'home', '#/track/backend': 'track-backend', '#/track/ai': 'track-ai', '#/curriculum': 'curriculum', '#/exercises': 'exercises', '#/skill/sql-joins': 'skill-joins', '#/labs': 'labs', '#/lab/JwtLab': 'lab-jwt', '#/playground?lang=sql': 'playground-sql' }
 mkdirSync('e2e/shots', { recursive: true })
 
 const browser = await chromium.launch()

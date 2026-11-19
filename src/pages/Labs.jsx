@@ -1,24 +1,28 @@
 import React, { useEffect } from 'react'
 import { LAB_META, LAB_NAMES } from '../labs/index.js'
-import { findSkill, DOMAINS } from '../content/roadmap.js'
+import { findSkill, domainsOf, displayNo } from '../content/roadmap.js'
+import { findTrack } from '../content/tracks.js'
+import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
 import { LabIcon, LabEmbed } from '../components/bits.jsx'
 
-/* 實驗室總覽 */
-export default function Labs() {
+/* 實驗室總覽：依路線（?track=）與領域分段 */
+export default function Labs({ track: rawTrack = '' }) {
+  const track = normTrack(rawTrack)
   return (
     <div className="fade-swap">
       <header className="masthead">
         <p className="kicker">LABS · 互動實驗室</p>
-        <h1 className="display">動手玩的後端</h1>
+        <h1 className="display">互動實驗室</h1>
       </header>
-      {DOMAINS.map((d) => {
+      <TrackFilter value={track} hrefFor={(t) => withTrack('labs', t)} />
+      {domainsOf(track).map((d) => {
         const names = LAB_NAMES.filter((n) => findSkill(LAB_META[n].skill)?.domain.id === d.id)
         if (!names.length) return null
         const color = `var(--c-${d.color})`
         return (
           <section key={d.id} className="domain-block" style={{ '--tint': color }}>
             <div className="domain-block-head">
-              <span className="kicker tinted">{String(d.no).padStart(2, "0")}</span>
+              <span className="kicker tinted">{track === 'all' && `${findTrack(d.track).title} `}{displayNo(d)}</span>
               <h2>{d.title}</h2>
               <span className="count">{names.length} 個</span>
             </div>

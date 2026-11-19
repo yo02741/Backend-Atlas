@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d5-security.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'security',
+  track: 'backend',
   no: 5,
   title: '資安',
   en: 'SECURITY',

@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d2-web.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'web',
+  track: 'backend',
   no: 2,
   title: '網路、HTTP 與 API 設計',
   en: 'HTTP & API DESIGN',

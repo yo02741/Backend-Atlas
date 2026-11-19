@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Backend Atlas：純靜態站，base 用相對路徑，放在任何子路徑（GitHub Pages /Backend-Atlas/）都能跑。
+// u kinda should know：純靜態站，base 用相對路徑，放在任何子路徑（GitHub Pages /Backend-Atlas/）都能跑。
 export default defineConfig({
   plugins: [react()],
   base: './',

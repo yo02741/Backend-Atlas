@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d8-algo.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'algo',
+  track: 'backend',
   no: 8,
   title: '演算法與系統設計',
   en: 'ALGORITHMS & SYSTEM DESIGN',

@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d3-data.js，索引與內文的技能 id 一一對應（npm run validate 會檢查）
 export default {
   id: 'data',
+  track: 'backend',
   no: 3,
   title: '資料儲存',
   en: 'DATABASES & STORAGE',

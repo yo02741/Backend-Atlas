@@ -21,7 +21,7 @@ for (const f of files) {
   for (const m of prose.matchAll(re)) where.set(m[1], [...(where.get(m[1]) || []), f])
 }
 
-const UA = 'Mozilla/5.0 (compatible; backend-atlas-link-check)'
+const UA = 'Mozilla/5.0 (compatible; u-kinda-should-know-link-check)'
 async function check(url) {
   let r = await once(url)
   // 網路層的暫時性錯誤（DNS 逾時、連線被重設）再試一次，避免單次抖動被當成失效

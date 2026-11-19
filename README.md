@@ -1,31 +1,51 @@
-# Backend Atlas
+# u kinda should know
 
-後端學習網站。JOIN、索引、交易、JWT、Docker 的層都做成可以操作的圖；練習題在瀏覽器裡執行（PostgreSQL、Python、JavaScript），不需要後端伺服器。
+**AI said all good.** 但這些，u kinda should know。
 
-- **線上**：[backend-atlas.web.app](https://backend-atlas.web.app/)（Firebase Hosting）、[yo02741.github.io/Backend-Atlas](https://yo02741.github.io/Backend-Atlas/)（GitHub Pages），每次 push 到 `main` 兩邊同時更新
+學習網站，三條路線：**前端**、**後端**、**AI**。每課的基底是一張「地圖」：叫得出名字（名詞與一句說明）、說得出要求（描述需求要講清楚的事，附一段描述範例）、驗得出對錯（怎麼檢查產出）；深入內容、互動實驗室與練習題是選讀。程式題在瀏覽器裡執行（PostgreSQL、Python、JavaScript），不需要後端伺服器。
+
+- **線上**：[backend-atlas.web.app](https://backend-atlas.web.app/)（Firebase Hosting）、[yo02741.github.io/Backend-Atlas](https://yo02741.github.io/Backend-Atlas/)（GitHub Pages），每次 push 到 `main` 兩邊同時更新。repo 與 Firebase 專案改名後，這兩個網址、`src/content/tracks.js` 的 `SITE.repo`、`.firebaserc`、`.env.production` 與 `deploy.yml` 的 `projectId` 要一起改。
 - **本機**：`npm install && npm run dev`（第一次會把 Pyodide 複製到 `public/pyodide/`）
+
+### 網頁流程
+
+```
+#/                首頁：一句開場，三張路線卡（課數、進度、下一站）
+└ #/track/<路線>   路線首頁：學習路線圖、領域、關鍵字、設計情境、精選實驗室（frontend / backend / ai）
+  └ #/domain/<id>  領域：這個領域的課
+    └ #/skill/<id> 課：地圖 → 實驗室 → 重點 → 深入 → 驗收 → 自我檢核 → 其他路線的相關課
+```
+
+- 導覽列一直顯示三個路線分頁，目前的路線會標出來；技能盤點、課綱、實驗室、設計情境、練習題的連結帶上目前的路線（`?track=`），列表頁上方可以切換「全部、前端、後端、AI」。
+- 課頁的麵包屑是「首頁 / 路線 / 領域」；在路線圖上的課標「學習路線 第 N / M 站」。
+- 還沒有課的路線（目前是前端）首頁卡片標「撰寫中」，路線首頁列出規劃中的領域。
+- 站的標誌是打勾加問號（`public/favicon.svg`，元件 `src/components/BrandMark.jsx`），另有 `favicon-32.png`、`apple-touch-icon.png`（180）、`icon-512.png`。
 
 <!-- sync:stats -->
 | 內容 | 數量 |
 |---|---|
-| 領域 | 11（語言與工程實踐；網路、HTTP 與 API 設計；資料儲存；驗證與授權；資安；容器與部署；CI/CD 與交付；演算法與系統設計；DevOps 與基礎建設；AI 時代的開發與 Agent 安全；知識系統） |
+| 路線 | 2（後端 115 課；AI 35 課） |
+| 後端的領域 | 9（語言與工程實踐；網路、HTTP 與 API 設計；資料儲存；驗證與授權；資安；容器與部署；CI/CD 與交付；演算法與系統設計；DevOps 與基礎建設） |
+| AI的領域 | 2（AI 時代的開發與 Agent 安全；知識系統） |
 | 技能（課） | 150，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |
 | 互動實驗室 | 42，依領域列在下方 |
 | 程式題 | 204（Python 127 / SQL 38 / config 27 / JS 12），含實作路線的 20 道驗收題；解答全部經真實執行環境驗證 |
 | 選擇題 | 450（每課 3 題，含程式碼判讀與情境題） |
 | 設計情境 | 31（API 設計 8；資料與身分 4；高流量 7；維運與基礎建設 7；AI 與 Agent 安全 5） |
 | 實作路線 | 從零做完一個門診掛號後端：10 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |
-| 課綱 | `docs/CURRICULUM.md`：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、10 週的 Docker 到 Kubernetes 專題、驗收設計 |
+| 課綱 | `docs/CURRICULUM.md`（後端與 AI）：獨立盤點的技能樹、16 週主線課綱（含實作路線對照）、第 17–22 週延伸課綱、10 週的 Docker 到 Kubernetes 專題、驗收設計 |
 <!-- /sync:stats -->
 
 ## 內容總覽
 
-以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照。
+後端以 Python 與 PostgreSQL 為主，MongoDB、Redis 作對照；AI 路線的範例也用 Python；前端以 Vue 3 為主，React 作對照。
 
 <!-- sync:route -->
-### 建議學習路線（32 站）
+### 建議學習路線（2 條、共 35 站）
 
-首頁路線圖的站點，每站約一週。★ 表示附互動實驗室。
+各路線首頁路線圖的站點，每站約一週。★ 表示附互動實驗室。站點定義在 `src/content/roadmap.js` 的 `PATHS`（`label` 是地圖上的短站名，`note` 是下表的「內容」）。
+
+#### 後端（23 站）
 
 | 站 | 課 | 領域 | 內容 |
 |---|---|---|---|
@@ -52,17 +72,23 @@
 | 21 | 舊系統整合與逐步替換 | 演算法與系統設計 | 逐步替換舊系統，每一步都能回退。 |
 | 22 | 可重跑的批次管線：增量、冪等、回補 | DevOps 與基礎建設 | 增量、冪等、回補：重跑不會重複寫入。 |
 | 23 | 測試品質：覆蓋率、假綠燈與突變測試★ | 語言與工程實踐 | 用突變測試檢查測試有沒有驗到東西。 |
-| 24 | Harness Engineering：評測集、重試與多數決★ | AI 時代的開發與 Agent 安全 | 同一個 prompt 跑 N 次：評測集、重試與檢查器。 |
-| 25 | 後端怎麼呼叫模型：串流、結構化輸出、重試與成本 | AI 時代的開發與 Agent 安全 | 逾時、重試、串流與結構化輸出的驗證。 |
-| 26 | Agent 的執行迴圈：工具呼叫、狀態機、預算與中斷★ | AI 時代的開發與 Agent 安全 | 工具呼叫、狀態機、步數與 token 預算。 |
-| 27 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
-| 28 | AI Gateway：模型路由、金鑰集中、用量與成本 | AI 時代的開發與 Agent 安全 | 模型路由、金鑰集中、配額與用量。 |
-| 29 | 地端模型：自架推論與依敏感度分流 | AI 時代的開發與 Agent 安全 | 資料不能送出去時，自架模型要自己負責的事。 |
-| 30 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述被下毒與 rug pull 的防法。 |
-| 31 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
-| 32 | Semantic Layer：讓 agent 查資料不用猜欄位★ | 知識系統：從 RAG 到 LLM Wiki | agent 用定義好的指標查資料，不猜欄位。 |
 
-站點定義在 `src/content/roadmap.js` 的 `PATH`（`label` 是地圖上的短站名，`note` 是上表的「內容」）。
+#### AI（12 站）
+
+| 站 | 課 | 領域 | 內容 |
+|---|---|---|---|
+| 1 | 專案規範檔與 context：模型看得到什麼 | AI 時代的開發與 Agent 安全 | 專案規範檔與 context：模型每一輪實際看到的內容。 |
+| 2 | Skill 與 MCP 是什麼 | AI 時代的開發與 Agent 安全 | 把做法寫成 Skill、把工具接成 MCP server。 |
+| 3 | 規範要變成測試：AI 協作下的 TDD | AI 時代的開發與 Agent 安全 | 把規範寫成測試，AI 改程式時由測試把關。 |
+| 4 | Harness Engineering：評測集、重試與多數決★ | AI 時代的開發與 Agent 安全 | 同一個 prompt 跑 N 次：評測集、重試與檢查器。 |
+| 5 | 後端怎麼呼叫模型：串流、結構化輸出、重試與成本 | AI 時代的開發與 Agent 安全 | 逾時、重試、串流與結構化輸出的驗證。 |
+| 6 | Agent 的執行迴圈：工具呼叫、狀態機、預算與中斷★ | AI 時代的開發與 Agent 安全 | 工具呼叫、狀態機、步數與 token 預算。 |
+| 7 | 沒有瀏覽器或沒有使用者的授權：Device Code、PKCE、Client Credentials★ | AI 時代的開發與 Agent 安全 | CLI 與 agent 沒有瀏覽器時怎麼授權。 |
+| 8 | AI Gateway：模型路由、金鑰集中、用量與成本 | AI 時代的開發與 Agent 安全 | 模型路由、金鑰集中、配額與用量。 |
+| 9 | 地端模型：自架推論與依敏感度分流 | AI 時代的開發與 Agent 安全 | 資料不能送出去時，自架模型要自己負責的事。 |
+| 10 | Tool Poisoning 與 rug pull★ | AI 時代的開發與 Agent 安全 | 工具描述被下毒與 rug pull 的防法。 |
+| 11 | RAG 怎麼運作，以及它的限制★ | 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，限制在哪裡。 |
+| 12 | Semantic Layer：讓 agent 查資料不用猜欄位★ | 知識系統：從 RAG 到 LLM Wiki | agent 用定義好的指標查資料，不猜欄位。 |
 <!-- /sync:route -->
 
 <!-- sync:lessons -->
@@ -70,37 +96,45 @@
 
 每課有重點卡（摘要、範例技術、重點、自我檢核清單、官方文件連結）與深入內容。★ 表示附互動實驗室。
 
+
+#### 後端（9 領域、115 課）
+
 | 領域 | 課程 |
 |---|---|
-| 1. 語言與工程實踐 | Python 後端心智模型；電腦怎麼跑你的程式（行程、執行緒、記憶體）；資料表示（編碼、序列化、時間與金額）；uv 與專案管理★；同步、多執行緒與 async★；Web 框架與請求生命週期；專案分層與依賴注入；錯誤設計（錯誤碼與 Problem Details）；測試金字塔與 pytest；測試品質（覆蓋率、假綠燈與突變測試）★；型別檢查、lint 與格式化；日誌、錯誤處理與設定；除錯方法（最小重現、讀 traceback、二分法） |
-| 2. 網路、HTTP 與 API 設計 | 一個 HTTP 請求的一生★；TCP/IP 與連線（握手、keep-alive、連線池）；REST API 設計★；分頁、篩選、版本與冪等鍵；呼叫外部服務的韌性（timeout、重試、斷路器）；OpenAPI 與 API 契約；CORS、Cookie 與同源；HTTP 快取與條件請求；DNS、TLS 與憑證；HTTP/2 與 HTTP/3；即時通訊怎麼選（輪詢、SSE、WebSocket）；GraphQL、gRPC、WebSocket 與 Webhook |
-| 3. 資料儲存 | SQL 基礎（SELECT 到 GROUP BY）；JOIN 七兄弟★；資料建模與正規化；Schema 設計實戰（從需求到資料表）；索引與查詢計畫★；全文檢索；交易、ACID 與隔離等級★；鎖與死結；子查詢、CTE 與視窗函數；ORM 與 migration；資料庫維運（備份還原、連線池、慢查詢）；從舊資料庫同步資料（批次、CDC、雙寫與對帳）；MongoDB 文件模型★；MongoDB 查詢、聚合與索引；Redis 與快取策略★；關聯式 vs 非關聯式怎麼選 |
-| 4. 驗證與授權 | 驗證基礎（Session vs Token）；JWT 解剖★；OAuth 2.0 與 OpenID Connect★；RBAC 與 ABAC 授權模型★；驗證授權落地（middleware 與 dependency）；帳號生命週期（註冊、驗證、重設密碼、鎖定）；API key、服務間驗證、MFA 與 SSO；企業身分（LDAP、AD、SAML 與 SCIM） |
-| 5. 資安 | OWASP Top 10 地圖；注入攻擊（SQL 與它的親戚）★；密碼儲存（編碼、雜湊、加密）★；密碼學工具箱（雜湊、HMAC、加密、亂數）★；XSS、CSRF 與安全標頭★；輸入驗證與檔案上傳；秘密管理；日誌與稽核紀錄裡的個資；依賴與供應鏈安全★；資安維運（弱點管理、修補與邊界防護） |
-| 6. 容器與部署 | Linux 與 shell 基礎；Docker（image、container、layer）★；容器的日常維運（日誌、資源上限、訊號與執行環境）；幫 Python 專案寫好 Dockerfile；私有映像倉庫（Harbor、映像同步與離線環境）；docker-compose 開發環境★；nginx 反向代理★；前端與 nginx 上 K8s（靜態檔、/api 轉發與執行期設定）；負載平衡；環境設定與 12-factor；應用伺服器與程序管理；物件儲存（bucket、預簽網址與生命週期）；雲端與主機基礎 |
-| 7. CI/CD 與交付 | Git 工作流與分支策略；CI 管線（lint、test、build）★；環境、secrets 與 artifact；部署策略與資料庫遷移★；可觀測性（log、metrics、trace）★；LLM 應用的可觀測性；健康檢查、備份與事故處理 |
-| 8. 演算法與系統設計 | Big-O 與後端常見複雜度★；後端常用資料結構；限流演算法★；LRU 與快取淘汰；並發問題（race condition 與死結）；訊息佇列與背景工作；事件驅動系統的一致性；排程工作（cron、重複執行與遺漏）；效能量測與壓測（p95、飽和點、找瓶頸）★；擴展（無狀態、負載平衡、讀寫分離）；分散式基礎（CAP、一致性與時間）；系統設計思考框架；舊系統整合與逐步替換 |
-| 9. DevOps 與基礎建設 | DevOps 會議在講什麼（詞彙對照）；網路通不通（從 DNS 到防火牆）★；HTTPS 憑證（要買哪種、怎麼續）★；硬體資源與容量規劃★；FinOps（雲端與 AI 工具的計費結構）★；GitLab CI/CD 實戰；導入 Kubernetes 前要準備什麼★；Kubernetes 實作（把服務寫成 manifest）；Kubernetes 實作（設定、探針與資源）；Kubernetes 網路（Service、NetworkPolicy 與連到叢集外）★；Kubernetes 儲存（PV、PVC 與有狀態服務）；Kubernetes 排錯（Pending、CrashLoopBackOff、連不到）★；Helm、Kustomize 與 GitOps；Kubernetes 權限與多租戶（RBAC、namespace 與配額）；Kubernetes 叢集維運（發行版、升級、節點維護與備份）；地端、雲端還是混合雲；數據中台之前（資料治理）；可重跑的批次管線（增量、冪等、回補）；維度模型（事實表、維度表與緩慢變動維度）；SLI、SLO 與錯誤預算★；事故處理、on-call 與 postmortem；AIOps（讓 agent 調查告警但不亂動）；受監管環境的變更管理 |
-| 10. AI 時代的開發與 Agent 安全 | ADR（把架構決策寫下來）；把需求拆成垂直切片；規範要變成測試（AI 協作下的 TDD）；驗收設計（驗收條件與獨立驗收）；AI 改程式的品質閘門；架構測試（用測試守住分層與相依）；Harness Engineering（評測集、重試與多數決）★；把 agent 當軟體交付（版本、評測與跨模型 CI/CD）；Skill 與 MCP 是什麼；專案規範檔與 context（模型看得到什麼）；Skill 的發布與版本（內部 registry 與更新通知）；多 agent 協作（分支與工作區隔離）；後端怎麼呼叫模型（串流、結構化輸出、重試與成本）；Agent 的執行迴圈（工具呼叫、狀態機、預算與中斷）★；Agent 的記憶（要記什麼、存哪裡、怎麼忘）；Agent 協定地圖（MCP、A2A、ACP、WebMCP 與 x402）；沒有瀏覽器或沒有使用者的授權（Device Code、PKCE、Client Credentials）★；MCP 的授權（OAuth、受保護資源與 JWKS）；MCP Gateway（集中管理憑證與上架）；AI Gateway（模型路由、金鑰集中、用量與成本）；地端模型（自架推論與依敏感度分流）；集中式身分閘道（多個工具共用一套登入）；CLI 與 Agent 的 token 存哪裡；金鑰的範圍與壽命；OWASP MCP Top 10；AI 應用的威脅建模（OWASP LLM Top 10 與 MITRE ATLAS）；Tool Poisoning 與 rug pull★；Credential 隔離與執行邊界；行為層的供應鏈管理 |
-| 11. 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，以及它的限制★；LLM Wiki（讓模型維護一份 markdown 知識庫）；知識圖譜（wikilink、反向連結與 GraphRAG）★；RAG、LLM Wiki、知識圖譜怎麼選；Semantic Layer（讓 agent 查資料不用猜欄位）★；原始資料下毒與間接提示注入 |
+| 01. 語言與工程實踐 | Python 後端心智模型；電腦怎麼跑你的程式（行程、執行緒、記憶體）；資料表示（編碼、序列化、時間與金額）；uv 與專案管理★；同步、多執行緒與 async★；Web 框架與請求生命週期；專案分層與依賴注入；錯誤設計（錯誤碼與 Problem Details）；測試金字塔與 pytest；測試品質（覆蓋率、假綠燈與突變測試）★；型別檢查、lint 與格式化；日誌、錯誤處理與設定；除錯方法（最小重現、讀 traceback、二分法） |
+| 02. 網路、HTTP 與 API 設計 | 一個 HTTP 請求的一生★；TCP/IP 與連線（握手、keep-alive、連線池）；REST API 設計★；分頁、篩選、版本與冪等鍵；呼叫外部服務的韌性（timeout、重試、斷路器）；OpenAPI 與 API 契約；CORS、Cookie 與同源；HTTP 快取與條件請求；DNS、TLS 與憑證；HTTP/2 與 HTTP/3；即時通訊怎麼選（輪詢、SSE、WebSocket）；GraphQL、gRPC、WebSocket 與 Webhook |
+| 03. 資料儲存 | SQL 基礎（SELECT 到 GROUP BY）；JOIN 七兄弟★；資料建模與正規化；Schema 設計實戰（從需求到資料表）；索引與查詢計畫★；全文檢索；交易、ACID 與隔離等級★；鎖與死結；子查詢、CTE 與視窗函數；ORM 與 migration；資料庫維運（備份還原、連線池、慢查詢）；從舊資料庫同步資料（批次、CDC、雙寫與對帳）；MongoDB 文件模型★；MongoDB 查詢、聚合與索引；Redis 與快取策略★；關聯式 vs 非關聯式怎麼選 |
+| 04. 驗證與授權 | 驗證基礎（Session vs Token）；JWT 解剖★；OAuth 2.0 與 OpenID Connect★；RBAC 與 ABAC 授權模型★；驗證授權落地（middleware 與 dependency）；帳號生命週期（註冊、驗證、重設密碼、鎖定）；API key、服務間驗證、MFA 與 SSO；企業身分（LDAP、AD、SAML 與 SCIM） |
+| 05. 資安 | OWASP Top 10 地圖；注入攻擊（SQL 與它的親戚）★；密碼儲存（編碼、雜湊、加密）★；密碼學工具箱（雜湊、HMAC、加密、亂數）★；XSS、CSRF 與安全標頭★；輸入驗證與檔案上傳；秘密管理；日誌與稽核紀錄裡的個資；依賴與供應鏈安全★；資安維運（弱點管理、修補與邊界防護） |
+| 06. 容器與部署 | Linux 與 shell 基礎；Docker（image、container、layer）★；容器的日常維運（日誌、資源上限、訊號與執行環境）；幫 Python 專案寫好 Dockerfile；私有映像倉庫（Harbor、映像同步與離線環境）；docker-compose 開發環境★；nginx 反向代理★；前端與 nginx 上 K8s（靜態檔、/api 轉發與執行期設定）；負載平衡；環境設定與 12-factor；應用伺服器與程序管理；物件儲存（bucket、預簽網址與生命週期）；雲端與主機基礎 |
+| 07. CI/CD 與交付 | Git 工作流與分支策略；CI 管線（lint、test、build）★；環境、secrets 與 artifact；部署策略與資料庫遷移★；可觀測性（log、metrics、trace）★；LLM 應用的可觀測性；健康檢查、備份與事故處理 |
+| 08. 演算法與系統設計 | Big-O 與後端常見複雜度★；後端常用資料結構；限流演算法★；LRU 與快取淘汰；並發問題（race condition 與死結）；訊息佇列與背景工作；事件驅動系統的一致性；排程工作（cron、重複執行與遺漏）；效能量測與壓測（p95、飽和點、找瓶頸）★；擴展（無狀態、負載平衡、讀寫分離）；分散式基礎（CAP、一致性與時間）；系統設計思考框架；舊系統整合與逐步替換 |
+| 09. DevOps 與基礎建設 | DevOps 會議在講什麼（詞彙對照）；網路通不通（從 DNS 到防火牆）★；HTTPS 憑證（要買哪種、怎麼續）★；硬體資源與容量規劃★；FinOps（雲端與 AI 工具的計費結構）★；GitLab CI/CD 實戰；導入 Kubernetes 前要準備什麼★；Kubernetes 實作（把服務寫成 manifest）；Kubernetes 實作（設定、探針與資源）；Kubernetes 網路（Service、NetworkPolicy 與連到叢集外）★；Kubernetes 儲存（PV、PVC 與有狀態服務）；Kubernetes 排錯（Pending、CrashLoopBackOff、連不到）★；Helm、Kustomize 與 GitOps；Kubernetes 權限與多租戶（RBAC、namespace 與配額）；Kubernetes 叢集維運（發行版、升級、節點維護與備份）；地端、雲端還是混合雲；數據中台之前（資料治理）；可重跑的批次管線（增量、冪等、回補）；維度模型（事實表、維度表與緩慢變動維度）；SLI、SLO 與錯誤預算★；事故處理、on-call 與 postmortem；AIOps（讓 agent 調查告警但不亂動）；受監管環境的變更管理 |
+
+#### AI（2 領域、35 課）
+
+| 領域 | 課程 |
+|---|---|
+| 01. AI 時代的開發與 Agent 安全 | ADR（把架構決策寫下來）；把需求拆成垂直切片；規範要變成測試（AI 協作下的 TDD）；驗收設計（驗收條件與獨立驗收）；AI 改程式的品質閘門；架構測試（用測試守住分層與相依）；Harness Engineering（評測集、重試與多數決）★；把 agent 當軟體交付（版本、評測與跨模型 CI/CD）；Skill 與 MCP 是什麼；專案規範檔與 context（模型看得到什麼）；Skill 的發布與版本（內部 registry 與更新通知）；多 agent 協作（分支與工作區隔離）；後端怎麼呼叫模型（串流、結構化輸出、重試與成本）；Agent 的執行迴圈（工具呼叫、狀態機、預算與中斷）★；Agent 的記憶（要記什麼、存哪裡、怎麼忘）；Agent 協定地圖（MCP、A2A、ACP、WebMCP 與 x402）；沒有瀏覽器或沒有使用者的授權（Device Code、PKCE、Client Credentials）★；MCP 的授權（OAuth、受保護資源與 JWKS）；MCP Gateway（集中管理憑證與上架）；AI Gateway（模型路由、金鑰集中、用量與成本）；地端模型（自架推論與依敏感度分流）；集中式身分閘道（多個工具共用一套登入）；CLI 與 Agent 的 token 存哪裡；金鑰的範圍與壽命；OWASP MCP Top 10；AI 應用的威脅建模（OWASP LLM Top 10 與 MITRE ATLAS）；Tool Poisoning 與 rug pull★；Credential 隔離與執行邊界；行為層的供應鏈管理 |
+| 02. 知識系統：從 RAG 到 LLM Wiki | RAG 怎麼運作，以及它的限制★；LLM Wiki（讓模型維護一份 markdown 知識庫）；知識圖譜（wikilink、反向連結與 GraphRAG）★；RAG、LLM Wiki、知識圖譜怎麼選；Semantic Layer（讓 agent 查資料不用猜欄位）★；原始資料下毒與間接提示注入 |
 <!-- /sync:lessons -->
 
 <!-- sync:labs -->
 ### 互動實驗室（42 個）
 
-依領域列出：
+依路線與領域列出：
 
-- **語言與工程實踐**：同步 vs 執行緒 vs async；uv 從零到能跑；覆蓋率 100% 的測試抓不抓得到錯
-- **網路、HTTP 與 API 設計**：HTTP 請求的一生；REST 資源設計
-- **資料儲存**：JOIN 七兄弟；索引為什麼快；表格 vs 文件；Cache-aside；兩個交易搶最後一件
-- **驗證與授權**：JWT 解剖；OAuth 授權碼流程；RBAC vs ABAC
-- **資安**：SQL Injection；編碼、雜湊、加密；XSS 與 CSRF 各擋在哪一層；雜湊、HMAC、加密、簽章；一個相依套件出問題時
-- **容器與部署**：Dockerfile 每行一層；docker-compose 拓樸；nginx 反向代理
-- **CI/CD 與交付**：CI/CD 管線對照；三種部署策略與 migration；用 trace id 串起 log、metrics、trace
-- **演算法與系統設計**：Big-O 成長曲線；Token bucket 限流；逐步加壓，找飽和點
-- **DevOps 與基礎建設**：網路壞在哪一層；憑證鏈驗證；容量估算；Deployment 與滾動更新；SLO 與錯誤預算；Agent 工作流一個月花多少；Kubernetes 排錯；NetworkPolicy 放行或擋下
-- **AI 時代的開發與 Agent 安全**：三種授權流程；Tool Poisoning；同一個 Prompt 跑 N 次；Agent 的執行迴圈
-- **知識系統：從 RAG 到 LLM Wiki**：RAG 的切段與檢索；猜欄位 vs 用定義好的指標；wikilink 長成知識圖譜
+- **後端｜語言與工程實踐**：同步 vs 執行緒 vs async；uv 從零到能跑；覆蓋率 100% 的測試抓不抓得到錯
+- **後端｜網路、HTTP 與 API 設計**：HTTP 請求的一生；REST 資源設計
+- **後端｜資料儲存**：JOIN 七兄弟；索引為什麼快；表格 vs 文件；Cache-aside；兩個交易搶最後一件
+- **後端｜驗證與授權**：JWT 解剖；OAuth 授權碼流程；RBAC vs ABAC
+- **後端｜資安**：SQL Injection；編碼、雜湊、加密；XSS 與 CSRF 各擋在哪一層；雜湊、HMAC、加密、簽章；一個相依套件出問題時
+- **後端｜容器與部署**：Dockerfile 每行一層；docker-compose 拓樸；nginx 反向代理
+- **後端｜CI/CD 與交付**：CI/CD 管線對照；三種部署策略與 migration；用 trace id 串起 log、metrics、trace
+- **後端｜演算法與系統設計**：Big-O 成長曲線；Token bucket 限流；逐步加壓，找飽和點
+- **後端｜DevOps 與基礎建設**：網路壞在哪一層；憑證鏈驗證；容量估算；Deployment 與滾動更新；SLO 與錯誤預算；Agent 工作流一個月花多少；Kubernetes 排錯；NetworkPolicy 放行或擋下
+- **AI｜AI 時代的開發與 Agent 安全**：三種授權流程；Tool Poisoning；同一個 Prompt 跑 N 次；Agent 的執行迴圈
+- **AI｜知識系統：從 RAG 到 LLM Wiki**：RAG 的切段與檢索；猜欄位 vs 用定義好的指標；wikilink 長成知識圖譜
 <!-- /sync:labs -->
 
 <!-- sync:scenarios -->
@@ -187,9 +221,10 @@
 ```
 src/
   content/         內容（純資料，改這裡不用碰元件）
-    roadmap.js       領域索引、學習路線 PATH（32 站）、工作關鍵字 WORK_KEYWORDS、查詢 helper
-    d1-language.js … d11-knowledge.js   每個領域一檔的「索引」：skills[] 各有 id / title / en / level / summary / example / keywords / lab（跟著主 chunk）
-    body/d1-language.js … d11-knowledge.js   每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs（技能頁才懶載入，每領域一個 chunk）
+    tracks.js        路線定義（前端、後端、AI）：名稱、說明、課綱檔、精選實驗室；站名與 repo 網址（SITE）
+    roadmap.js       領域索引、每條路線的學習路線 PATHS（35 站）與關鍵字 KEYWORDS、查詢 helper（domainsOf、stationsOf、displayNo…）
+    dN-<id>.js       每個領域一檔的「索引」，track 決定所屬路線；檔名用全站唯一的 no（後端 1–9、AI 10–11、前端 21–29），畫面上顯示路線內的順序。skills[] 各有 id / title / en / level / summary / example / keywords / lab / related（跟著主 chunk）
+    body/dN-<id>.js  每個領域一檔的「內文」：以技能 id 為 key 的 points / checklist / refs / map（技能頁才懶載入，每領域一個 chunk）
     deep/<skill-id>.md   每課的深入內容（markdown，技能頁逐課懶載入；格式見 docs/CONTRIBUTING-lessons.md）
     project/         實作路線：stages.js（階段定義）、<stage-id>.md（各階段說明，懶載入）
     skillBody.js     內文的 Suspense 載入器（readSkillBody / preloadSkillBody）

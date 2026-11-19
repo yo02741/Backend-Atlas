@@ -51,8 +51,8 @@ const sameSet = (a, b) => same([...a].sort(), [...b].sort())
 /* ── 設定畫面 ── */
 let page = await open('#/review?seed=42')
 await page.waitForSelector('.rv-setup')
-t('page title', await page.title() === '複習 · Backend Atlas', await page.title())
-t('nav still has 7 links, none to review', await page.$$eval('.topnav-links a', (as) => as.length === 7 && !as.some((a) => a.getAttribute('href').includes('review'))))
+t('page title', await page.title() === '複習 · u kinda should know', await page.title())
+t('nav still has 6 links, none to review', await page.$$eval('.topnav-links a', (as) => as.length === 6 && !as.some((a) => a.getAttribute('href').includes('review'))))
 t('「已完成的課」disabled without finished lessons, with a reason', await page.$eval(scopeInput('done'), (i) => i.disabled) && (await page.textContent('.rv-scope:has(input[value="done"])')).includes('還沒有完成的課'))
 t('「上次答錯的題」disabled without records, with a reason', await page.$eval(scopeInput('wrong'), (i) => i.disabled) && (await page.textContent('.rv-scope:has(input[value="wrong"])')).includes('沒有答錯紀錄'))
 t('default scope is 全部', await page.$eval(scopeInput('all'), (i) => i.checked))
@@ -76,6 +76,11 @@ t('submit disabled before answering', await page.$eval('.rv-quiz .btn.submit', (
   const [s4, s5] = [await p4.$eval('.rv-quiz', (e) => e.dataset.seed), await p5.$eval('.rv-quiz', (e) => e.dataset.seed)]
   t('no seed in URL → random seed each visit', /^\d+$/.test(s4) && s4 !== s5, `${s4} vs ${s5}`)
   await p4.context().close(); await p5.context().close()
+  // ?track= 只抽那條路線：AI 路線兩個領域
+  const p6 = await open('#/review?track=ai&seed=42')
+  t('?track=ai limits the pool to the AI domains', (await p6.textContent('.rv-scope:has(input[value="all"])')).includes('2 個領域'), await p6.textContent('.rv-scope:has(input[value="all"])'))
+  t('track filter marks AI', await p6.$eval('.track-filter .chip.on', (a) => a.textContent) === 'AI')
+  await p6.context().close()
 }
 
 /* ── 作答（鍵盤）→ 交卷 → 分數、解析、回到這一課、依領域小結 ── */
@@ -201,7 +206,7 @@ page.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message))
 const loaded = new Set()
 page.on('response', (r) => { const u = r.url(); if (u.includes('/assets/') && u.endsWith('.js')) loaded.add(u.split('/').pop()) })
 await page.goto(base, { waitUntil: 'networkidle' })
-await page.waitForSelector('.metro')
+await page.waitForSelector('.track-cards')
 t('home does not load the Review chunk', ![...loaded].some((n) => /^Review-/.test(n)), [...loaded].join(','))
 const homeJs = loaded.size
 await page.goto(base + '#/exercises', { waitUntil: 'networkidle' })
@@ -213,7 +218,7 @@ t('entry card opens the review page', (await page.evaluate(() => location.hash))
 t('Review chunk loaded on demand', [...loaded].some((n) => /^Review-/.test(n)) && loaded.size > homeJs)
 await page.goto(base + '#/skill/sql-joins', { waitUntil: 'networkidle' })
 await page.waitForSelector('.quiz')
-t('skill page: link under the quiz', await page.$eval('.quiz + .rv-after a', (a) => a.getAttribute('href')) === '#/review')
+t('skill page: link under the quiz opens review for its track', await page.$eval('.quiz + .rv-after a', (a) => a.getAttribute('href')) === '#/review?track=backend')
 await ctx.close()
 
 /* ── 390px：設定畫面、作答中、交卷後都不橫向溢出 ── */

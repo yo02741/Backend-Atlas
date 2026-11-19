@@ -2,6 +2,7 @@
 // 技能內文（points / checklist / refs）在 ./body/d9-devops.js，深入內容在 ./deep/<skill-id>.md
 export default {
   id: 'devops',
+  track: 'backend',
   no: 9,
   title: 'DevOps 與基礎建設',
   en: 'DEVOPS & INFRASTRUCTURE',

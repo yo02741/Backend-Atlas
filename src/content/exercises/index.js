@@ -33,8 +33,15 @@ import p9l1 from './p9-l1.js'
 import p9l2 from './p9-l2.js'
 import p9l3 from './p9-l3.js'
 import p9l4 from './p9-l4.js'
+// 前端路線：html、css、vue 題在沙箱 iframe 裡執行，js 題沿用 Worker
+import layout from './layout.js'
+import jsTs from './js-ts.js'
+import vue from './vue.js'
+import ui from './ui.js'
+import api from './api.js'
+import feAi from './fe-ai.js'
 
-export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...p9l1, ...p9l2, ...p9l3, ...p9l4, ...p10m1, ...p10m2, ...p10m3, ...p10x1, ...p10x2, ...p10x3, ...p10m4, ...p10m5, ...p10m6, ...p11n1, ...p11n2, ...p11n3, ...p11n4, ...p11p1, ...p11p2, ...p11p3, ...scenarios, ...project]
+export const EXERCISES = [...language, ...web, ...data, ...auth, ...security, ...deploy, ...cicd, ...algo, ...devops, ...devopsConfig, ...ai, ...knowledge, ...p9l1, ...p9l2, ...p9l3, ...p9l4, ...p10m1, ...p10m2, ...p10m3, ...p10x1, ...p10x2, ...p10x3, ...p10m4, ...p10m5, ...p10m6, ...p11n1, ...p11n2, ...p11n3, ...p11n4, ...p11p1, ...p11p2, ...p11p3, ...scenarios, ...project, ...layout, ...jsTs, ...vue, ...ui, ...api, ...feAi]
 
 export const KINDS = {
   sql: { label: 'SQL', runtime: 'sql' },
@@ -42,6 +49,10 @@ export const KINDS = {
   js: { label: 'JavaScript', runtime: 'js' },
   // 設定檔題（Dockerfile、.gitlab-ci.yml、nginx.conf…）：不執行，交卷時把內容當成字串 `source`（另有 `lines`）交給 JS 測試檢查
   config: { label: '設定檔', runtime: 'js' },
+  // 前端題：在沙箱 iframe 裡執行（src/runtime/frame.js），測試透過 DOM 檢查行為
+  html: { label: 'HTML', runtime: 'frame' },   // 使用者寫 body 的內容（可含 <style>、<script>）
+  css: { label: 'CSS', runtime: 'frame' },     // 使用者寫 CSS，套在題目的 html 上；測試可指定 viewport
+  vue: { label: 'Vue', runtime: 'frame' },     // 使用者寫一個 module，自己 createApp(…).mount('#app')
 }
 
 export function findExercise(id) { return EXERCISES.find((e) => e.id === id) || null }

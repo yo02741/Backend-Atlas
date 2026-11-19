@@ -6,6 +6,7 @@ import { runJs } from './runtime/js.js'
 import { runSql, resetSchema } from './runtime/sql.js'
 import { SHOP_SCHEMA } from './content/schemas.js'
 import { parse } from './components/Markdown.jsx'
+import { runLangOf } from './playgroundLink.js'
 
 /* 開發用：?verify=1 依序把每題的「解答」與「起始碼」丟進真實執行環境評分。
    解答必須通過、起始碼應該不通過。結果放在 window.__verify 供 Playwright 讀取。 */
@@ -23,7 +24,9 @@ export default function VerifyHarness() {
         const sol = await grade(ex, ex.solution)
         const st = await grade(ex, ex.starter)
         const row = { id: ex.id, kind: ex.kind, solutionPass: sol.pass, starterPass: st.pass, solutionMsg: sol.message + (sol.error ? ' ' + sol.error : ''), starterMsg: st.message, ms: Math.round(performance.now() - t0),
-          failedTests: (sol.results || []).filter((r) => !r.pass).map((r) => `${r.name}: ${r.error}`) }
+          failedTests: (sol.results || []).filter((r) => !r.pass).map((r) => `${r.name}: ${r.error}`),
+          // 起始碼沒通過的測試（STARTER=1 時 e2e 會列出來，確認起始碼是因為題目要修的問題而失敗）
+          starterFailed: st.results ? st.results.filter((r) => !r.pass).map((r) => `${r.name}: ${r.error}`) : [st.message + (st.error ? ' ' + st.error : '')] }
         out.push(row)
         if (cancelled) return
         setRows([...out])
@@ -55,7 +58,8 @@ export default function VerifyHarness() {
 }
 
 /* 開發用：?verify=deep 把每課深入內容裡標 run 的程式碼區塊丟進真實執行環境（跟「在 Playground 開啟」同樣的方式：
-   SQL 先重設成電商範例資料庫再執行）。每個區塊都必須執行成功。結果放在 window.__verifyDeep。 */
+   SQL 先重設成電商範例資料庫再執行；html 與 js run vue 在沙箱 iframe 跑，載入後一段時間內沒有未處理的錯誤才算成功）。
+   每個區塊都必須執行成功。結果放在 window.__verifyDeep。 */
 const DEEP = import.meta.glob('./content/deep/*.md', { query: '?raw', import: 'default', eager: true })
 export function DeepVerify() {
   const [rows, setRows] = useState([])
@@ -69,9 +73,10 @@ export function DeepVerify() {
         if (only && !only.includes(id)) continue
         const blocks = parse(md).filter((b) => b.type === 'code' && b.flags?.includes('run'))
         for (const [n, b] of blocks.entries()) {
-          const lang = b.rawLang === 'javascript' ? 'js' : b.rawLang
+          const lang = runLangOf(b)
           let res
-          if (lang === 'python') res = await runPython(b.text)
+          if (lang === 'html' || lang === 'vue') res = await (await import('./runtime/frame.js')).runOnce({ kind: lang, code: b.text })
+          else if (lang === 'python') res = await runPython(b.text)
           else if (lang === 'js') res = await runJs(b.text)
           else if (lang === 'sql') { await resetSchema(SHOP_SCHEMA, 'shop', true); res = await runSql(b.text) }
           else res = { ok: false, error: `不支援的語言 ${b.rawLang}` }
@@ -90,6 +95,20 @@ export function DeepVerify() {
         <thead><tr><th>區塊</th><th>語言</th><th>結果</th><th>錯誤</th></tr></thead>
         <tbody>{rows.map((r) => <tr key={r.id}><td>{r.id}</td><td>{r.lang}</td><td style={{ color: r.ok ? 'var(--good)' : 'var(--critical)' }}>{r.ok ? 'ok' : 'FAIL'}</td><td style={{ whiteSpace: 'pre-wrap', maxWidth: 520 }}>{r.error}</td></tr>)}</tbody>
       </table>
+    </div>
+  )
+}
+
+/* 開發用：?verify=frame 把沙箱執行環境（frame.js）掛在 window.__frame，給 e2e/frame.mjs 直接呼叫。 */
+export function FrameHarness() {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    import('./runtime/frame.js').then((m) => { window.__frame = m; window.__frameReady = true; setReady(true) })
+  }, [])
+  return (
+    <div className="page" style={{ paddingTop: 20 }}>
+      <h1 className="display" style={{ fontSize: '1.6rem' }}>Frame harness {ready ? '（就緒）' : '（載入中…）'}</h1>
+      <div id="frame-host" />
     </div>
   )
 }

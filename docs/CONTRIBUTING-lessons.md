@@ -77,6 +77,8 @@ print(Decimal('0.1') + Decimal('0.2'))
 | `python run` | Pyodide（瀏覽器內 CPython） | 只能用標準函式庫（`sqlite3`、`asyncio`、`json`、`decimal`、`datetime` 可用；`zoneinfo` 沒有時區資料，時區用 `datetime.timezone(timedelta(hours=8))`）；不能連網、不能裝套件；12 秒逾時 |
 | `sql run` | PGlite（瀏覽器內 PostgreSQL） | 執行前資料庫會重設成電商範例：`users(id, name, email, city, created_at)`、`products(id, name, price, stock)`、`orders(id, user_id, status, amount, created_at)`、`order_items(order_id, product_id, qty)`。可以自己 `CREATE TABLE`。單一連線（沒辦法真的開兩個並行交易） |
 | `js run` | Web Worker | 沒有 DOM、不能連網；8 秒逾時 |
+| `html run` | 沙箱 iframe（不給 `allow-same-origin`） | 寫 `body` 的內容，可含 `<style>`、`<script>`、`<script type="module">`。`fetch` 由假 API 回應（路徑一律寫 `/api/…`，內建門診系統的路由，見 `src/runtime/fakeApi.js`），不能連到真的網路；`localStorage` 是記憶體替身，`document.cookie` 讀不到；載入後 0.6 秒內不能有未處理的錯誤；迴圈連續跑 1.5 秒會被中止，8 秒逾時 |
+| `js run vue` | 同上，import map 有自架的 Vue 3.5.45 | 一個 module：`import { … } from 'vue'`，自己 `createApp(…).mount('#app')`（頁面有 `<div id="app">`）；元件寫成物件、模板放 `template` 字串（瀏覽器不能直接跑 `.vue` 檔，SFC 範例照常用 `vue` 程式碼區塊，但不加 `run`）。其他同 `html run` |
 
 不能在瀏覽器跑的（bash、Dockerfile、YAML、nginx、HTTP 原文、需要第三方套件的 Python）照樣用程式碼區塊，但**不要**加 `run`。
 

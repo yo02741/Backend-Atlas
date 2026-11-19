@@ -8,7 +8,7 @@ import { findSkill } from '../content/roadmap.js'
 import { useProgress } from '../progress.js'
 import Markdown from '../components/Markdown.jsx'
 import ExerciseRunner from '../components/ExerciseRunner.jsx'
-import { playgroundHref, PLAYGROUND_LANGS } from '../playgroundLink.js'
+import { playgroundHref, runLangOf } from '../playgroundLink.js'
 
 /* 實作路線：總覽（#/project?track=<路線>，沒帶時是後端）與單一階段（#/project/<id>，路線由階段推出） */
 export default function Project({ id, track = '' }) {
@@ -114,8 +114,8 @@ function Stage({ id }) {
 function StageDoc({ id }) {
   const text = readStageDoc(id)
   if (!text) return null
-  const action = (b) => (b.flags.includes('run') && PLAYGROUND_LANGS[b.rawLang]
-    ? <a className="btn ghost small" href={playgroundHref(b.rawLang, b.text)}>在 Playground 開啟 ↗</a>
+  const action = (b) => (runLangOf(b)
+    ? <a className="btn ghost small" href={playgroundHref(runLangOf(b), b.text)}>在 Playground 開啟 ↗</a>
     : null)
   return <Markdown text={text} className="deep-body" idFor={(_, slug) => `doc-${slug}`} codeAction={action} />
 }

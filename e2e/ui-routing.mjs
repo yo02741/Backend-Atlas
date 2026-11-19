@@ -15,7 +15,11 @@ const t = (label, ok, extra = '') => { if (!ok) failed++; console.log(`${ok ? 'P
 
 // 首頁載入時不該下載 CodeMirror / 題庫 / 課綱的 chunk
 const loaded = new Set()
+const requested = []   // 所有請求的網址（執行環境的檔案不在 /assets/ 底下）
 page.on('response', (r) => { const u = r.url(); if (u.includes('/assets/') && u.endsWith('.js')) loaded.add(u.split('/').pop()) })
+page.on('request', (r) => requested.push(r.url()))
+// 沙箱執行環境：frame.js 的 chunk 與 public/vendor/（自架的 Vue）只在執行前端題時才下載
+const sandboxLoaded = (from = 0) => [...loaded].some((n) => /^frame-/.test(n)) || requested.slice(from).some((u) => u.includes('/vendor/'))
 await page.goto(base, { waitUntil: 'networkidle' })
 await page.waitForSelector('.track-cards')
 const homeChunks = [...loaded]
@@ -26,6 +30,8 @@ t('home lists the three tracks', (await page.$$eval('.track-card h2', (hs) => hs
 t('home does not load skill body chunks', !homeChunks.some((n) => /^d\d+-[a-z]+-/.test(n)))
 t('home does not load the Firebase SDK (only after 登入 or a restored session)', !homeChunks.some((n) => /^firebase-/.test(n)))
 t('home title', await page.title() === 'u kinda should know', await page.title())
+t('home does not load the sandbox runtime (frame chunk, vendor/)', !sandboxLoaded(), requested.filter((u) => u.includes('/vendor/')).join(','))
+t('home does not request Pyodide or PGlite', !requested.some((u) => /\/pyodide\/|pglite/i.test(u)))
 
 // 路線首頁：懶載入 TrackHome，有路線圖；導覽列的路線分頁標出目前的路線，功能連結帶上 ?track=
 await page.goto(base + '#/track/backend', { waitUntil: 'networkidle' })
@@ -34,6 +40,12 @@ t('track home loads its chunk on demand', [...loaded].some((n) => /^TrackHome-/.
 t('track home title', await page.title() === '後端 · u kinda should know', await page.title())
 t('track tab marks current track', await page.$eval('.track-tab.on', (a) => a.textContent) === '後端')
 t('nav links carry the current track', await page.$eval('.topnav-links a[href^="#/roadmap"]', (a) => a.getAttribute('href')) === '#/roadmap?track=backend')
+for (const tr of ['frontend', 'ai']) {
+  await page.goto(base + `#/track/${tr}`, { waitUntil: 'networkidle' })
+  await page.waitForSelector('.metro svg, .track-home, h1')
+}
+t('track homes do not load the sandbox runtime', !sandboxLoaded(), requested.filter((u) => u.includes('/vendor/')).join(','))
+
 
 // 技能頁：只載自己領域的內文 chunk；同領域換課不再下載；換領域才多載一個
 const bodyChunks = () => [...loaded].filter((n) => /^d\d+-[a-z]+-/.test(n))
@@ -92,6 +104,21 @@ await page.waitForFunction(() => { const r = document.getElementById('week-10').
 const weekTop = await page.evaluate(() => [Math.round(document.getElementById('week-10').getBoundingClientRect().top), Math.round(scrollY), document.querySelector('h1')?.textContent])
 t('curriculum ?week= scrolls to the week', weekTop[0] >= -5 && weekTop[0] < 200, JSON.stringify(weekTop))
 t('scenario page week pill links to curriculum week', (await (await (await page.goto(base + '#/scenario/pagination', { waitUntil: 'networkidle' }), page.waitForSelector('.lesson-meta a.mono')), page.getAttribute('.lesson-meta a.mono', 'href'))) === '#/curriculum?track=backend&week=10')
+
+// 前端題頁：進頁不下載 Pyodide、PGlite 與 vendor；按「執行」才載入沙箱與自架的 Vue
+let mark = requested.length
+await page.goto(base + '#/exercise/api-states-1', { waitUntil: 'networkidle' })
+await page.waitForSelector('.ex .fp')
+t('vue exercise page does not request Pyodide or PGlite', !requested.slice(mark).some((u) => /\/pyodide\/|pglite/i.test(u)), requested.slice(mark).filter((u) => /pyodide|pglite/i.test(u)).join(','))
+t('vue exercise page waits for 執行 before loading the sandbox', !sandboxLoaded(mark))
+await page.click('.ex button:has-text("執行")')
+await page.waitForSelector('.fp iframe.sbx-frame', { timeout: 20000 })
+t('執行 loads the sandbox chunk and the self-hosted Vue', [...loaded].some((n) => /^frame-/.test(n)) && requested.slice(mark).some((u) => /\/vendor\/vue@[\d.]+\/vue\.esm-browser\.js$/.test(u)))
+// 後端的 SQL 題頁不請求 vendor（上一頁有預覽的 iframe 時，只換 hash 等不到 networkidle，改等 load 加元素）
+mark = requested.length
+await page.goto(base + '#/exercise/sql-joins-1', { waitUntil: 'load' })
+await page.waitForSelector('.ex')
+t('sql exercise page does not request vendor/', !requested.slice(mark).some((u) => u.includes('/vendor/')))
 
 console.log(errs.length ? 'ERRORS:\n' + errs.join('\n') : 'no page/console errors')
 await browser.close()

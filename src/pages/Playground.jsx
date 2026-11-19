@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { decodePlaygroundCode } from '../playgroundLink.js'
+import FramePreview from '../components/FramePreview.jsx'
 import CodeEditor from '../components/CodeEditor.jsx'
 import { ConsoleOut, ResultTable, PlanTree, RuntimeStatus } from '../components/Output.jsx'
 import { runPython, ensurePython } from '../runtime/py.js'
@@ -7,7 +8,8 @@ import { runSql, resetSchema, explain, ensureSql, invalidateSchema } from '../ru
 import { runJs } from '../runtime/js.js'
 import { SHOP_SCHEMA, SHOP_TABLES } from '../content/schemas.js'
 
-/* Playground：像 CodePen 一樣自由打程式，Python / PostgreSQL / JavaScript 都在瀏覽器裡跑。 */
+/* Playground：像 CodePen 一樣自由打程式，Python / PostgreSQL / JavaScript 都在瀏覽器裡跑。
+   HTML 與 Vue 在沙箱 iframe 裡跑（src/runtime/frame.js，第一次執行時才載入），fetch 由假 API 回應，可以調延遲與錯誤率。 */
 
 const SAMPLES = {
   python: [
@@ -124,11 +126,128 @@ console.log([...c.map.keys()])  // b 被淘汰
   ],
 }
 
+SAMPLES.html = [
+  { label: '表單與 Console', code: `<main>
+  <h1>預約掛號</h1>
+  <form id="f">
+    <label for="name">姓名</label>
+    <input id="name" name="name" autocomplete="name" required>
+    <button type="submit">送出</button>
+  </form>
+  <p id="msg" role="status"></p>
+</main>
+
+<style>
+  main { font-family: system-ui, sans-serif; padding: 16px; }
+  form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+</style>
+
+<script>
+  document.getElementById('f').addEventListener('submit', (e) => {
+    e.preventDefault()   // 不擋的話，表單送出會換頁
+    const name = new FormData(e.target).get('name')
+    console.log('送出：', name)
+    document.getElementById('msg').textContent = name + ' 已送出'
+  })
+</script>
+` },
+  { label: 'fetch 假 API：門診時段', code: `<ul id="list"><li>載入中…</li></ul>
+
+<script type="module">
+  // 假 API 內建門診系統的路由：GET /api/sessions、POST /api/sessions/:id/appointments…
+  const res = await fetch('/api/sessions')
+  const list = document.getElementById('list')
+  if (!res.ok) {
+    const problem = await res.json()   // 錯誤 body 是 Problem Details
+    list.innerHTML = '<li>讀取失敗：' + problem.title + '</li>'
+  } else {
+    const sessions = await res.json()
+    list.innerHTML = sessions.map((s) => '<li>' + s.session_date + ' ' + s.period + '，剩 ' + s.remaining + ' 位</li>').join('')
+  }
+</script>
+` },
+  { label: 'Flexbox：卡片換行', code: `<div class="cards">
+  <article class="card">診間 1</article>
+  <article class="card">診間 2</article>
+  <article class="card">診間 3</article>
+</div>
+
+<style>
+  .cards { display: flex; flex-wrap: wrap; gap: 12px; padding: 12px; }
+  .card { flex: 1 1 200px; padding: 16px; border: 2px solid #333; border-radius: 8px; }
+  @media (max-width: 480px) { .card { flex-basis: 100%; } }
+</style>
+` },
+]
+SAMPLES.vue = [
+  { label: '計數器（ref）', code: `import { createApp, ref, computed } from 'vue'
+
+const App = {
+  setup() {
+    const count = ref(0)
+    const label = computed(() => (count.value >= 5 ? '候診人數偏多' : '候診人數'))
+    return { count, label }
+  },
+  template: \`
+    <p>{{ label }}：{{ count }}</p>
+    <button type="button" @click="count++">+1</button>\`,
+}
+
+createApp(App).mount('#app')
+` },
+  { label: '掛號：四種狀態', code: `import { createApp, ref, onMounted } from 'vue'
+
+// 用上方的延遲與錯誤率調整假 API，看 loading、error 的畫面
+const App = {
+  setup() {
+    const status = ref('loading')
+    const sessions = ref([])
+    async function load() {
+      status.value = 'loading'
+      try {
+        const res = await fetch('/api/sessions')
+        if (!res.ok) throw new Error('HTTP ' + res.status)
+        sessions.value = await res.json()
+        status.value = sessions.value.length ? 'success' : 'empty'
+      } catch (e) {
+        console.warn('讀取失敗：', e.message)
+        status.value = 'error'
+      }
+    }
+    onMounted(load)
+    return { status, sessions, load }
+  },
+  template: \`
+    <p v-if="status === 'loading'">載入中…</p>
+    <p v-else-if="status === 'error'">讀取失敗 <button type="button" @click="load">重試</button></p>
+    <p v-else-if="status === 'empty'">沒有門診</p>
+    <ul v-else>
+      <li v-for="s in sessions" :key="s.id">{{ s.session_date }} {{ s.period }}，剩 {{ s.remaining }} 位</li>
+    </ul>\`,
+}
+
+createApp(App).mount('#app')
+` },
+  { label: '[Vue warn]：直接改 props', code: `import { createApp } from 'vue'
+
+const Badge = {
+  props: { count: Number },
+  // 錯：props 是唯讀的，Console 會出現 [Vue warn]
+  template: '<button type="button" @click="count++">候診 {{ count }}</button>',
+}
+
+createApp({ components: { Badge }, template: '<Badge :count="3" />' }).mount('#app')
+` },
+]
+
 const LANGS = [
   { id: 'python', label: 'Python' },
   { id: 'sql', label: 'PostgreSQL' },
   { id: 'js', label: 'JavaScript' },
+  { id: 'html', label: 'HTML' },
+  { id: 'vue', label: 'Vue' },
 ]
+const FRAME_LANGS = ['html', 'vue']
 
 function loadDraft(lang) { try { return localStorage.getItem(`atlas-playground-${lang}`) } catch { return null } }
 function saveDraft(lang, code) { try { localStorage.setItem(`atlas-playground-${lang}`, code) } catch { /* ignore */ } }
@@ -143,12 +262,16 @@ export default function Playground({ initialLang = 'python', initialCode = '' })
   const [out, setOut] = useState(null)
   const [busy, setBusy] = useState(false)
   const [plan, setPlan] = useState(null)
+  const isFrame = FRAME_LANGS.includes(lang)
+  const [preview, setPreview] = useState({ key: 0, code: '' })
+  const [latency, setLatency] = useState(300)
+  const [errorRate, setErrorRate] = useState(0)
 
   const firstLang = React.useRef(true)
   useEffect(() => {
     if (firstLang.current) { firstLang.current = false; return }
     linked.current = null
-    setCode(loadDraft(lang) ?? SAMPLES[lang][0].code); setOut(null); setPlan(null)
+    setCode(loadDraft(lang) ?? SAMPLES[lang][0].code); setOut(null); setPlan(null); setPreview({ key: 0, code: '' })
   }, [lang])
   useEffect(() => { if (linked.current === null || code !== linked.current) { linked.current = null; saveDraft(lang, code) } }, [lang, code])
   // 進頁就預載執行環境，按下執行時已經好了
@@ -156,13 +279,14 @@ export default function Playground({ initialLang = 'python', initialCode = '' })
 
   const run = useCallback(async () => {
     if (busy) return
+    if (isFrame) { setPreview((p) => ({ key: p.key + 1, code })); return }
     setBusy(true); setPlan(null)
     try {
       if (lang === 'python') setOut(await runPython(code))
       else if (lang === 'js') setOut(await runJs(code))
       else { await resetSchema(SHOP_SCHEMA, 'shop'); setOut(await runSql(code)) }
     } finally { setBusy(false) }
-  }, [lang, code, busy])
+  }, [lang, code, busy, isFrame])
 
   const doExplain = async () => {
     setBusy(true)
@@ -195,7 +319,7 @@ export default function Playground({ initialLang = 'python', initialCode = '' })
             <span className="spacer" />
             <label className="pg-sample">
               範例
-              <select value="" onChange={(e) => { const s = SAMPLES[lang][Number(e.target.value)]; if (s) { setCode(s.code); setOut(null); setPlan(null) } }}>
+              <select value="" onChange={(e) => { const s = SAMPLES[lang][Number(e.target.value)]; if (s) { setCode(s.code); setOut(null); setPlan(null); if (isFrame) setPreview((p) => ({ key: p.key + 1, code: s.code })) } }}>
                 <option value="">載入範例…</option>
                 {SAMPLES[lang].map((s, i) => <option key={i} value={i}>{s.label}</option>)}
               </select>
@@ -210,6 +334,16 @@ export default function Playground({ initialLang = 'python', initialCode = '' })
           )}
         </div>
 
+        {isFrame ? (
+        <div className="pg-output pg-frame">
+          <div className="pg-api" role="group" aria-label="假 API">
+            <span className="kicker">假 API</span>
+            <label>延遲 <input type="range" min="0" max="3000" step="100" value={latency} onChange={(e) => setLatency(Number(e.target.value))} /> <span className="mono">{latency} ms</span></label>
+            <label>錯誤率 <input type="range" min="0" max="100" step="10" value={errorRate} onChange={(e) => setErrorRate(Number(e.target.value))} /> <span className="mono">{errorRate}%</span></label>
+          </div>
+          <FramePreview kind={lang} code={preview.code} runKey={preview.key} setup={`api.latency = ${latency}; api.errorRate = ${errorRate / 100};`} height={360} />
+        </div>
+        ) : (
         <div className="pg-output">
           <p className="kicker">輸出</p>
           {!out && !plan && <p className="out-empty">按「執行」看結果。{lang === 'python' ? '第一次會下載 Python 執行環境（約 13 MB）。' : lang === 'sql' ? '第一次會下載 PostgreSQL 執行環境（約 16 MB）。' : ''}</p>}
@@ -224,6 +358,7 @@ export default function Playground({ initialLang = 'python', initialCode = '' })
           )}
           {plan && (plan.ok ? <><p className="kicker" style={{ marginTop: 12 }}>查詢計畫</p><PlanTree plan={plan.plan} /></> : <pre className="out-pre out-err">{plan.error}</pre>)}
         </div>
+        )}
       </div>
     </div>
   )

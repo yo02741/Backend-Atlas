@@ -2,14 +2,15 @@ import React, { useEffect, useRef } from 'react'
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection, highlightSpecialChars, placeholder as cmPlaceholder } from '@codemirror/view'
 import { EditorState, Compartment } from '@codemirror/state'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { syntaxHighlighting, HighlightStyle, bracketMatching, indentOnInput, indentUnit } from '@codemirror/language'
+import { syntaxHighlighting, HighlightStyle, bracketMatching, indentOnInput, indentUnit, StreamLanguage } from '@codemirror/language'
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { tags as t } from '@lezer/highlight'
 import { python } from '@codemirror/lang-python'
 import { sql, PostgreSQL } from '@codemirror/lang-sql'
 import { javascript } from '@codemirror/lang-javascript'
 
-/* CodeMirror 6 編輯器：主題全走 CSS token（亮暗自動），語言 python / sql / js。
+/* CodeMirror 6 編輯器：主題全走 CSS token（亮暗自動），語言 python / sql / js / vue（JS）/ html / css。
+   html 與 css 用下面的小型 StreamLanguage 上色（沒有 @codemirror/lang-html、lang-css 依賴）。
    props: value, onChange, lang, onRun(Ctrl/Cmd+Enter), readOnly, minHeight */
 
 const theme = EditorView.theme({
@@ -37,13 +38,82 @@ const highlight = HighlightStyle.define([
   { tag: [t.typeName, t.className, t.namespace], color: 'var(--c-aqua)' },
   { tag: [t.propertyName, t.attributeName], color: 'var(--c-aqua)' },
   { tag: [t.operator, t.punctuation], color: 'var(--ink-2)' },
+  { tag: t.tagName, color: 'var(--c-red)' },
+  { tag: [t.bracket, t.angleBracket, t.meta], color: 'var(--ink-3)' },
   { tag: t.invalid, color: 'var(--critical)' },
 ])
+
+/* HTML：標籤、屬性、字串、註解；<script>、<style> 的內容不上色 */
+const htmlLang = StreamLanguage.define({
+  name: 'html',
+  startState: () => ({ tag: null, name: '', comment: false, quote: null, raw: null }),
+  token(stream, s) {
+    if (s.comment) { if (stream.skipTo('-->')) { stream.match('-->'); s.comment = false } else stream.skipToEnd(); return 'comment' }
+    if (s.quote) { while (!stream.eol()) { if (stream.next() === s.quote) { s.quote = null; break } } return 'string' }
+    if (s.raw) {
+      if (stream.match(new RegExp(`^</(?=${s.raw})`, 'i'))) { s.raw = null; s.tag = 'name'; return 'bracket' }
+      stream.next(); while (!stream.eol() && stream.peek() !== '<') stream.next()
+      return null
+    }
+    if (!s.tag) {
+      if (stream.match('<!--')) { s.comment = true; return 'comment' }
+      if (stream.match(/^<!\w[^>]*>?/)) return 'meta'
+      if (stream.match(/^<\/?(?=[A-Za-z])/)) { s.tag = 'name'; return 'bracket' }
+      stream.next(); while (!stream.eol() && stream.peek() !== '<') stream.next()
+      return null
+    }
+    if (stream.eatSpace()) return null
+    if (s.tag === 'name') {
+      s.tag = 'attrs'
+      const m = stream.match(/^[\w-]+/)
+      if (m) { s.name = m[0].toLowerCase(); return 'tag' }
+    }
+    if (stream.match(/^\/?>/)) { s.raw = s.name === 'script' || s.name === 'style' ? s.name : null; s.tag = null; s.name = ''; return 'bracket' }
+    if (stream.match(/^[^\s=>"'/]+/)) return 'attribute'
+    const q = stream.peek()
+    if (q === '"' || q === "'") { stream.next(); s.quote = q; while (!stream.eol()) { if (stream.next() === q) { s.quote = null; break } } return 'string' }
+    stream.next()
+    return null
+  },
+})
+
+/* CSS：選擇器、屬性、數值與單位、at-rule、註解 */
+const cssLang = StreamLanguage.define({
+  name: 'css',
+  startState: () => ({ depth: 0, comment: false, value: false }),
+  token(stream, s) {
+    if (s.comment) { if (stream.skipTo('*/')) { stream.match('*/'); s.comment = false } else stream.skipToEnd(); return 'comment' }
+    if (stream.eatSpace()) return null
+    if (stream.match('/*')) { s.comment = true; return 'comment' }
+    const ch = stream.peek()
+    if (ch === '"' || ch === "'") { stream.next(); let c; while ((c = stream.next()) != null) { if (c === '\\') stream.next(); else if (c === ch) break } return 'string' }
+    if (ch === '{') { stream.next(); s.depth++; s.value = false; return 'bracket' }
+    if (ch === '}') { stream.next(); s.depth = Math.max(0, s.depth - 1); s.value = false; return 'bracket' }
+    if (ch === ';') { stream.next(); s.value = false; return null }
+    if (stream.match(/^@[\w-]+/) || stream.match(/^!important/i)) return 'keyword'
+    if (s.value && stream.match(/^#[0-9a-fA-F]{3,8}\b/)) return 'atom'
+    if (stream.match(/^-?(\d+\.?\d*|\.\d+)(px|rem|em|%|vh|vw|dvh|svh|fr|ch|s|ms|deg)?/)) return 'number'
+    if (s.depth > 0 && !s.value) {
+      if (stream.match(/^[\w-]+(?=\s*:)/)) return 'property'
+      if (ch === ':') { stream.next(); s.value = true; return null }
+    }
+    if (s.value) { if (stream.match(/^[\w-]+/)) return 'atom' }
+    else {
+      if (stream.match(/^[.#][\w-]+/)) return 'qualifier'
+      if (stream.match(/^::?[\w-]+/)) return 'meta'
+      if (stream.match(/^[\w-]+/)) return 'tag'
+    }
+    stream.next()
+    return null
+  },
+})
 
 function langExt(lang) {
   if (lang === 'python') return python()
   if (lang === 'sql') return sql({ dialect: PostgreSQL, upperCaseKeywords: true })
-  if (lang === 'js' || lang === 'javascript') return javascript()
+  if (lang === 'js' || lang === 'javascript' || lang === 'vue') return javascript()
+  if (lang === 'html') return htmlLang
+  if (lang === 'css') return cssLang
   return []
 }
 

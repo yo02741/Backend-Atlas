@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
+// FramePreview 放在 CodeEditor 前面：兩者在同一個共用 chunk，Rollup 用最後執行的模組命名，chunk 才維持 CodeEditor-*.js
+import FramePreview from './FramePreview.jsx'
 import CodeEditor from './CodeEditor.jsx'
 import Md from './Md.jsx'
 import { ConsoleOut, ResultTable, PlanTree, TestResults, RuntimeStatus } from './Output.jsx'
-import { grade, runOnly } from '../runtime/check.js'
+import { grade, runOnly, FRAME_KINDS } from '../runtime/check.js'
 import { explain, resetSchema } from '../runtime/sql.js'
 import { ensurePython } from '../runtime/py.js'
 import { ensureSql } from '../runtime/sql.js'
@@ -11,7 +13,8 @@ import { KINDS } from '../content/exercises/index.js'
 import { LEVELS } from '../content/roadmap.js'
 
 /* 單一程式題：編輯器 + 執行 / 交卷 / 提示 / 解答。
-   通過與否寫進 progress（通過後不會被之後的失敗覆蓋）。 */
+   通過與否寫進 progress（通過後不會被之後的失敗覆蓋）。
+   html、css、vue 題多一個預覽窗格：「執行」重建預覽的 iframe，「交卷」在看不見的 iframe 裡逐一跑測試。 */
 function loadDraft(id) { try { return localStorage.getItem(`atlas-ex-${id}`) } catch { return null } }
 function saveDraft(id, code) { try { localStorage.setItem(`atlas-ex-${id}`, code) } catch { /* ignore */ } }
 
@@ -26,6 +29,8 @@ export default function ExerciseRunner({ exercise: ex, compact = false, showStat
   const [showSolution, setShowSolution] = useState(false)
   const [plan, setPlan] = useState(null)
   const lang = ex.kind === 'js' ? 'js' : ex.kind === 'config' ? 'text' : ex.kind
+  const isFrame = FRAME_KINDS.includes(ex.kind)
+  const [preview, setPreview] = useState({ key: 0, code: '' })  // 前端題：按「執行」時的程式碼
 
   useEffect(() => { saveDraft(ex.id, code) }, [ex.id, code])
   // 編輯器一出現就預載執行環境
@@ -33,9 +38,10 @@ export default function ExerciseRunner({ exercise: ex, compact = false, showStat
 
   const run = useCallback(async () => {
     if (busy) return
+    if (isFrame) { setGraded(null); setPreview((p) => ({ key: p.key + 1, code })); return }
     setBusy(true); setGraded(null); setPlan(null)
     try { setOut(await runOnly(ex, code)) } finally { setBusy(false) }
-  }, [busy, ex, code])
+  }, [busy, ex, code, isFrame])
 
   const submit = useCallback(async () => {
     if (busy) return
@@ -90,6 +96,7 @@ export default function ExerciseRunner({ exercise: ex, compact = false, showStat
       </div>
 
       <CodeEditor value={code} onChange={setCode} lang={lang} onRun={run} minHeight={compact ? 200 : 260} />
+      {isFrame && <FramePreview kind={ex.kind} code={preview.code} ex={ex} runKey={preview.key} height={compact ? 260 : 320} />}
 
       {hints > 0 && (
         <ol className="ex-hints">

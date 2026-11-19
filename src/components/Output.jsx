@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { cellText } from '../runtime/sql.js'
 import { onPyStatus, pyStatus } from '../runtime/py.js'
 import { onSqlStatus, sqlStatus } from '../runtime/sql.js'
+import { onFrameStatus, frameStatus } from '../runtime/frameStatus.js'
+import { VERSIONS } from '../runtime/versions.js'
 
 /* 執行結果的共用呈現：主控台輸出、SQL 結果表、EXPLAIN 計畫樹、測試結果、執行環境狀態 */
 
@@ -88,14 +90,17 @@ export function TestResults({ results }) {
   )
 }
 
-/* 執行環境載入狀態（Python / PostgreSQL） */
+/* 執行環境載入狀態（Python / PostgreSQL / 沙箱 iframe 的 Vue） */
+const NOOP_SUB = () => () => {}
+const READY = () => 'ready'
 export function RuntimeStatus({ kind }) {
-  const get = kind === 'python' ? pyStatus : kind === 'sql' ? sqlStatus : () => 'ready'
-  const sub = kind === 'python' ? onPyStatus : kind === 'sql' ? onSqlStatus : () => () => {}
+  // html、css 題不需要下載任何東西；vue 題第一次執行時下載自架的 Vue
+  const get = kind === 'python' ? pyStatus : kind === 'sql' ? sqlStatus : kind === 'vue' ? frameStatus : READY
+  const sub = kind === 'python' ? onPyStatus : kind === 'sql' ? onSqlStatus : kind === 'vue' ? onFrameStatus : NOOP_SUB
   const [s, setS] = useState(get())
   useEffect(() => sub(setS), [sub])
-  const label = { python: 'Python（Pyodide）', sql: 'PostgreSQL（PGlite）', js: 'JavaScript' }[kind]
-  const size = { python: '約 13 MB', sql: '約 16 MB', js: '' }[kind]
+  const label = { python: 'Python（Pyodide）', sql: 'PostgreSQL（PGlite）', js: 'JavaScript', html: 'HTML（沙箱 iframe）', css: 'CSS（沙箱 iframe）', vue: `Vue ${VERSIONS.vue}（沙箱 iframe）` }[kind]
+  const size = { python: '約 13 MB', sql: '約 16 MB', js: '', vue: '約 0.6 MB' }[kind] || ''
   const text = s === 'ready' ? '就緒' : s === 'loading' ? `下載中 ${size}，只需一次` : s === 'error' ? '載入失敗' : (kind === 'js' ? '就緒' : '第一次執行時載入')
   return (
     <span className={`rt-status ${s}`} title={`${label}：${text}`}>

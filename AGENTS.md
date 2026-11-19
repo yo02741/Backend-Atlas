@@ -16,6 +16,7 @@ E2E_BASE=http://localhost:4173/ npm run e2e   # 全部 e2e（Playwright）
 LAB=XxxLab npm run e2e:labs                  # 單一實驗室；加 SMOKE_MOBILE=1 再跑 390px
 SHOTS=1 node e2e/ui-metro.mjs               # 各路線首頁的路線圖（手機與桌機），順便存截圖
 ONLY=id1,id2 npm run e2e:deep                # 只驗某幾課的 run 區塊
+npm run e2e:frame           # 前端沙箱 iframe 的自我測試
 npm run check:links         # 外部連結（要連外網；CI 每月跑）
 ```
 
@@ -56,7 +57,7 @@ CI 的 `docs-sync` workflow 會補上忘記同步的 commit，部署前也會先
 ## 改內容時
 
 - **技能**：索引在 `src/content/dN-*.js`（列表與卡片用的欄位，領域要有 `track`），內文在 `src/content/body/dN-*.js` 或 `body/parts/`（`points` / `checklist` / `refs`，以技能 id 為 key，技能頁才懶載入），深入內容在 `src/content/deep/<id>.md`（格式見 `docs/CONTRIBUTING-lessons.md`）。id 全站唯一，`lab` 對應 `src/labs/index.js` 的 key。`roadmap.js` 與 `dN-*.js` 要能被 Node 直接 import（校驗與 `docs:sync` 用），不放 `import.meta.glob`。**改完必跑** `npm run validate:content`，有 run 區塊再跑 `npm run e2e:deep`。
-- **程式題**：`src/content/exercises/`；**改完必跑** `npm run e2e:verify`（解答必須通過、起始碼應該不通過）。
+- **程式題**：`src/content/exercises/`；**改完必跑** `npm run e2e:verify`（解答必須通過、起始碼應該不通過）。html、css、vue 題在沙箱 iframe 評分，每題要在 10 秒內評完；`ONLY=` 一樣可用。改了 `src/runtime/frame*`、`fakeApi.js`、`loopGuard.js` 必跑 `npm run test:unit` 與 `npm run e2e:frame`。
 - **選擇題**：`src/content/quizzes/`，格式見 `docs/CONTRIBUTING-quizzes.md`；**改完必跑** `npm run validate:quizzes`。
 - **實驗室**：照 `docs/CONTRIBUTING-labs.md`；`src/labs/index.js` 的 `LAB_META` 每筆寫成一行 `{ title, blurb, skill }`（`docs:sync` 靠這個格式解析）；用 `?lab=XxxLab` 單獨預覽；**改完必跑** `LAB=XxxLab npm run e2e:labs`（改 `src/labs/ui.jsx` 則跑全部）。
 - **設計情境**：`src/content/scenarios/` + `src/labs/scenarios/`，照 `docs/CONTRIBUTING-scenarios.md`；**改完必跑** `npm run validate:scenarios`。
@@ -64,7 +65,7 @@ CI 的 `docs-sync` workflow 會補上忘記同步的 commit，部署前也會先
 ## 程式與樣式
 
 - **顏色只用 CSS token**（`var(--c-*)`、`var(--ink-*)`…），不寫死 hex；亮暗主題、390px 手機都要檢查（`npm run e2e:mobile`）。
-- 不新增 npm 依賴，除非有明確理由（目前：react、codemirror、pglite、pyodide、firebase、兩個 @fontsource 字體；firebase 只在 `src/cloud/firebase.js` import，懶載入）。
+- 不新增 npm 依賴，除非有明確理由（目前：react、codemirror、pglite、pyodide、firebase、兩個 @fontsource 字體、vue 3.5.45（精確版本，只把 dist 檔複製到 `public/vendor/` 給沙箱用，外殼不 import）；firebase 只在 `src/cloud/firebase.js` import，懶載入）。
 - **視覺風格是貼紙風**：奶油底、黑框（`--line`、`--bw`）、位移陰影（`--shade`）、平塗色（`--st-*`，色塊上的字用 `--on-sticker`）。新元件沿用這些 token，不加漸層、模糊、發光。
 - **字體**：標題用 `--serif`（Bricolage Grotesque 800＋昭源甜圓體 800），內文用 `--sans`（系統字）。字體檔自架：`src/fonts.css` 由 `npm run fonts:gen`（`scripts/gen-fonts.mjs`）從 @fontsource 產生，只帶 woff2，不要手改；要加字重或字體就改那支腳本。標誌是 `src/components/BrandMark.jsx` 與 `public/favicon.svg`（貼紙底上的紅色打勾），兩者要一致。
 

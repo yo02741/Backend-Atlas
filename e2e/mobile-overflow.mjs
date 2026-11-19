@@ -10,7 +10,7 @@ const { ALL_DOMAINS } = await import(src('content/roadmap.js'))
 const { STAGES } = await import(src('content/project/stages.js'))
 const exIds = (await import(src('content/exercises/index.js').replace(/^/, 'file://')).catch(() => null))?.EXERCISES?.map((e) => e.id) || []
 const groups = {
-  page: ['#/', '#/track/frontend', '#/track/backend', '#/track/ai', '#/roadmap', '#/roadmap?track=ai', '#/labs', '#/scenarios', '#/exercises', '#/curriculum', '#/playground', '#/playground?lang=sql', '#/project', '#/review'],
+  page: ['#/', '#/track/frontend', '#/track/backend', '#/track/ai', '#/roadmap', '#/roadmap?track=ai', '#/labs', '#/scenarios', '#/exercises', '#/curriculum', '#/playground', '#/playground?lang=sql', '#/playground?lang=html', '#/playground?lang=vue', '#/project', '#/review'],
   skill: ALL_DOMAINS.flatMap((d) => d.skills.map((s) => `#/skill/${s.id}`)),
   scenario: readdirSync(src('content/scenarios')).filter((f) => f.endsWith('.js') && f !== 'index.js').map((f) => `#/scenario/${f.replace('.js', '')}`),
   lab: readdirSync(src('labs')).filter((f) => /Lab\.jsx$/.test(f)).map((f) => `#/lab/${f.replace('.jsx', '')}`),

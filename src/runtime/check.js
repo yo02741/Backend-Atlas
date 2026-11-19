@@ -1,5 +1,6 @@
-/* 練習題的評分邏輯：SQL 比對結果表、Python / JS 跑測試。
-   ExerciseRunner 與 verify harness 共用，確保「解答」與「介面」用同一套規則。 */
+/* 練習題的評分邏輯：SQL 比對結果表、Python / JS 跑測試、html / css / vue 在沙箱 iframe 跑測試。
+   ExerciseRunner 與 verify harness 共用，確保「解答」與「介面」用同一套規則。
+   沙箱執行環境（frame.js）只在評分前端題時以 import() 載入，後端題的頁面不會下載。 */
 import { runSql, resetSchema, cellText, ensureSql } from './sql.js'
 import { runPython } from './py.js'
 import { runJs } from './js.js'
@@ -93,7 +94,18 @@ export async function gradeConfig(ex, text) {
   return { pass, message: pass ? '全部檢查通過。' : '有檢查沒通過。', results: res.results }
 }
 
+/* 前端題：每個測試一個看不見的沙箱 iframe（frame.js）；回傳欄位和 gradeJs 相同 */
+export const FRAME_KINDS = ['html', 'css', 'vue']
+async function gradeFrameKind(ex, code) {
+  const { gradeFrame } = await import('./frame.js')
+  return gradeFrame(ex, code)
+}
+export const gradeHtml = gradeFrameKind
+export const gradeCss = gradeFrameKind
+export const gradeVue = gradeFrameKind
+
 export function grade(ex, code) {
+  if (FRAME_KINDS.includes(ex.kind)) return gradeFrameKind(ex, code)
   if (ex.kind === 'sql') return gradeSql(ex, code)
   if (ex.kind === 'python') return gradePython(ex, code)
   if (ex.kind === 'js') return gradeJs(ex, code)

@@ -22,6 +22,7 @@ const LIVE = TRACKS.filter((t) => DOMAINS.some((d) => d.track === t.id))
 const domainsOf = (t) => DOMAINS.filter((d) => d.track === t.id)
 const pathCount = LIVE.reduce((n, t) => n + (PATHS[t.id] || []).length, 0)
 const { EXERCISES } = await imp('src/content/exercises/index.js')
+const { VERSIONS } = await imp('src/runtime/versions.js')
 const { STAGES, PROJECTS } = await imp('src/content/project/stages.js')
 const skills = DOMAINS.flatMap((d) => d.skills.map((s) => ({ ...s, domain: d })))
 const skillById = new Map(skills.map((s) => [s.id, s]))
@@ -71,7 +72,7 @@ const blocks = {
     ...LIVE.map((t) => `| ${t.title}的領域 | ${domainsOf(t).length}（${domainsOf(t).map((d) => short(d.title)).join('；')}） |`),
     `| 技能（課） | ${skills.length}，每課有重點卡（摘要、重點、自我檢核、官方文件）與**深入內容**（從一個具體問題開始 → 運作原理 → 實際程式 → 常見錯誤與錯誤訊息 → 動手；範例可一鍵在 Playground 執行） |`,
     `| 互動實驗室 | ${labs.length}，依領域列在下方 |`,
-    `| 程式題 | ${EXERCISES.length}（Python ${kinds.python || 0} / SQL ${kinds.sql || 0} / config ${kinds.config || 0} / JS ${kinds.js || 0}），含實作路線的 ${projEx} 道驗收題；解答全部經真實執行環境驗證 |`,
+    `| 程式題 | ${EXERCISES.length}（Python ${kinds.python || 0} / SQL ${kinds.sql || 0} / config ${kinds.config || 0} / JS ${kinds.js || 0} / HTML ${kinds.html || 0} / CSS ${kinds.css || 0} / Vue ${kinds.vue || 0}），含實作路線的 ${projEx} 道驗收題；解答全部經真實執行環境驗證 |`,
     `| 選擇題 | ${quizCount}（每課 3 題，含程式碼判讀與情境題） |`,
     `| 設計情境 | ${scenarios.length}（${groupCounts}） |`,
     ...LIVE.filter((t) => STAGES.some((s) => s.track === t.id)).map((t) => `| ${t.title}的實作路線 | ${PROJECTS[t.id].title}：${STAGES.filter((s) => s.track === t.id).length} 個階段，每階段有說明與在瀏覽器裡跑的驗收題 |`),
@@ -137,7 +138,7 @@ const blocks = {
   practice: () => [
     '### 練習題',
     '',
-    `- **程式題 ${EXERCISES.length} 道**（Python ${kinds.python || 0}、SQL ${kinds.sql || 0}、config ${kinds.config || 0}、JavaScript ${kinds.js || 0}）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、\`.gitlab-ci.yml\`、GitHub Actions）由 JS 檢查器逐條驗證。`,
+    `- **程式題 ${EXERCISES.length} 道**（Python ${kinds.python || 0}、SQL ${kinds.sql || 0}、config ${kinds.config || 0}、JavaScript ${kinds.js || 0}、HTML ${kinds.html || 0}、CSS ${kinds.css || 0}、Vue ${kinds.vue || 0}）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、\`.gitlab-ci.yml\`、GitHub Actions）由 JS 檢查器逐條驗證；HTML、CSS、Vue 題在沙箱 iframe 裡執行（自架的 Vue ${VERSIONS.vue}，\`fetch\` 由假的門診 API 回應），測試透過 DOM 檢查畫面與行為，CSS 題在 390、768、1280 等寬度下各檢查一次。`,
     `- **選擇題 ${quizCount} 道**：每課 3 題，含程式碼判讀與情境題。`,
     '- **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。',
   ].join('\n'),

@@ -5,7 +5,7 @@ import { withTrack } from '../components/TrackFilter.jsx'
 import { readSkillBody } from '../content/skillBody.js'
 import { readSkillDeep, preloadSkillDeep, hasDeep } from '../content/skillDeep.js'
 import Markdown from '../components/Markdown.jsx'
-import { playgroundHref, PLAYGROUND_LANGS } from '../playgroundLink.js'
+import { playgroundHref, runLangOf } from '../playgroundLink.js'
 import { useProgress } from '../progress.js'
 import { Level, DomainPill, LabEmbed, labTitle } from '../components/bits.jsx'
 import { Callout } from '../labs/ui.jsx'
@@ -163,8 +163,8 @@ export default function Skill({ id }) {
 function Deep({ id }) {
   const text = readSkillDeep(id)
   if (!text) return null
-  const action = (b) => (b.flags.includes('run') && PLAYGROUND_LANGS[b.rawLang]
-    ? <a className="btn ghost small" href={playgroundHref(b.rawLang, b.text)}>在 Playground 開啟 ↗</a>
+  const action = (b) => (runLangOf(b)
+    ? <a className="btn ghost small" href={playgroundHref(runLangOf(b), b.text)}>在 Playground 開啟 ↗</a>
     : null)
   return (
     <section className="deep">

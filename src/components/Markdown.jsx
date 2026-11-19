@@ -6,7 +6,7 @@ import { Code } from '../labs/ui.jsx'
 
 const LANG_MAP = { dockerfile: 'bash', toml: 'yaml', shell: 'bash', sh: 'bash', text: '', txt: '', javascript: 'js', typescript: 'js', ts: 'js' }
 
-const LANG_LABEL = { python: 'Python', sql: 'SQL', js: 'JavaScript', javascript: 'JavaScript', bash: 'Shell', sh: 'Shell', shell: 'Shell', dockerfile: 'Dockerfile', yaml: 'YAML', yml: 'YAML', nginx: 'nginx', http: 'HTTP', json: 'JSON', toml: 'TOML', text: '', txt: '', '': '' }
+const LANG_LABEL = { python: 'Python', sql: 'SQL', js: 'JavaScript', javascript: 'JavaScript', html: 'HTML', css: 'CSS', vue: 'Vue', bash: 'Shell', sh: 'Shell', shell: 'Shell', dockerfile: 'Dockerfile', yaml: 'YAML', yml: 'YAML', nginx: 'nginx', http: 'HTTP', json: 'JSON', toml: 'TOML', text: '', txt: '', '': '' }
 
 function slug(text) {
   return text.toLowerCase().replace(/[`*_]/g, '').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '')

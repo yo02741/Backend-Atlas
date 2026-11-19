@@ -95,7 +95,8 @@ for (const t of TRACKS) {
 }
 
 // 深入內容（src/content/deep/<skill-id>.md）：檔名對得到技能、至少三個 ## 段落、篇幅足夠、
-// 不用禁用措辭、連結是 https、程式碼區塊有收尾、標 run 的區塊只能是 python / sql / js
+// 不用禁用措辭、連結是 https、程式碼區塊有收尾、標 run 的區塊只能是 python / sql / js，
+// 或在沙箱 iframe 跑的 html（```html run）與 Vue module（```js run vue）
 const BANNED = ['為什麼要學', '給前端工程師', '你工作上', '你已經會', '身為前端']
 const deepDir = resolve(content, 'deep')
 const deepFiles = existsSync(deepDir) ? readdirSync(deepDir).filter((f) => f.endsWith('.md')) : []
@@ -108,7 +109,9 @@ for (const f of deepFiles) {
   if (fences.length % 2) errors.push(`${tag}: 程式碼區塊沒有收尾（\`\`\` 數量是奇數）`)
   for (let i = 0; i < fences.length; i += 2) {
     const [, lang, rest] = /^```\s*(\S*)\s*(.*)$/.exec(fences[i])
-    if (/\brun\b/.test(rest) && !['python', 'sql', 'js', 'javascript'].includes(lang)) errors.push(`${tag}: 標 run 的程式碼區塊只能是 python / sql / js（這裡是 "${lang}"）`)
+    const flags = rest.split(/\s+/).filter(Boolean)
+    if (flags.includes('run') && !['python', 'sql', 'js', 'javascript', 'html'].includes(lang)) errors.push(`${tag}: 標 run 的程式碼區塊只能是 python / sql / js / html，Vue 寫成 \`\`\`js run vue（這裡是 "${lang}"）`)
+    if (flags.includes('vue') && !['js', 'javascript'].includes(lang)) errors.push(`${tag}: vue 旗標只能加在 js 區塊（\`\`\`js run vue），這裡是 "${lang}"`)
   }
   const prose = md.replace(/^```[\s\S]*?^```/gm, '')
   if (/^# /m.test(prose)) errors.push(`${tag}: 不要用 # 一級標題（技能頁已有標題），段落用 ##`)
@@ -163,6 +166,33 @@ for (const e of EXERCISES) {
   if (!Array.isArray(e.hints)) errors.push(`${tag}: hints 要是陣列（可以是空陣列）`)
   if (![1, 2, 3].includes(e.level)) errors.push(`${tag}: level 要是 1 / 2 / 3`)
   if (e.kind === 'sql' ? !e.expect : !(Array.isArray(e.tests) && e.tests.length)) errors.push(`${tag}: ${e.kind === 'sql' ? '缺 expect' : 'tests 至少一個'}`)
+  // 前端題（沙箱 iframe）：css 題要有固定的 html；api、html、css 是字串；測試的 viewport 是數字、api 是字串
+  if (KINDS[e.kind]?.runtime === 'frame') {
+    if (e.kind === 'css' && (typeof e.html !== 'string' || !e.html.trim())) errors.push(`${tag}: css 題要有 html（測試套用的固定標記）`)
+    for (const k of ['api', 'html', 'css']) if (e[k] !== undefined && typeof e[k] !== 'string') errors.push(`${tag}: ${k} 要是字串`)
+    if (e.viewport !== undefined && !(Number.isInteger(e.viewport) && e.viewport >= 280)) errors.push(`${tag}: viewport 要是 280 以上的整數（px）`)
+    for (const t of e.tests || []) {
+      if (typeof t.name !== 'string' || typeof t.code !== 'string') errors.push(`${tag}: 測試要有 name 與 code（字串）`)
+      if (t.viewport !== undefined && !(Number.isInteger(t.viewport) && t.viewport >= 280)) errors.push(`${tag} 測試「${t.name}」: viewport 要是 280 以上的整數（px）`)
+      if (t.api !== undefined && typeof t.api !== 'string') errors.push(`${tag} 測試「${t.name}」: api 要是字串（在 iframe 裡執行的假 API 設定）`)
+    }
+  } else {
+    for (const k of ['api', 'html', 'css', 'viewport']) if (e[k] !== undefined) errors.push(`${tag}: ${k} 只用在 html / css / vue 題`)
+  }
+}
+
+// 前端沙箱的 vendor 版本：src/runtime/versions.js 要和 node_modules 一致；package.json 有列的話要寫精確版本
+const { VERSIONS } = await import(pathToFileURL(resolve(here, '../src/runtime/versions.js')).href)
+const pkg = JSON.parse(readFileSync(resolve(here, '../package.json'), 'utf8'))
+for (const [name, version] of Object.entries(VERSIONS)) {
+  const declared = pkg.dependencies?.[name] ?? pkg.devDependencies?.[name]
+  if (declared === undefined) console.warn(`! package.json 沒有列 ${name}（src/runtime/versions.js 用 ${version}）：加上 "${name}": "${version}"`)
+  else if (declared !== version) errors.push(`package.json 的 ${name} 是 "${declared}"，src/runtime/versions.js 是 ${version}：寫精確版本（不加 ^），兩邊一致`)
+  const installed = resolve(here, '../node_modules', name, 'package.json')
+  if (existsSync(installed)) {
+    const v = JSON.parse(readFileSync(installed, 'utf8')).version
+    if (v !== version) errors.push(`node_modules/${name} 是 ${v}，src/runtime/versions.js 是 ${version}：npm ci 或改 versions.js`)
+  }
 }
 
 console.log(`領域 ${DOMAINS.length} 個，技能 ${skills} 個，深入內容 ${deepFiles.length} / ${skills} 課，實作路線 ${STAGES.length} 個階段，程式題 ${EXERCISES.length} 道`)

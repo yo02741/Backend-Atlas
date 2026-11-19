@@ -914,3 +914,41 @@ h1.display, h2.section-title, .domain-block-head h2, .lesson-head h1, .lesson-bo
 /* 大標題用甜圓體（--display） */
 h1.display, h2.section-title, .lesson-head h1, .domain-block-head h2, .track-tab, .brand-name,
 .stk-said, .stk-q, .home-three span, .track-card-n, .track-card h2, .track-card-tag { font-family: var(--display); }
+
+/* ============ 沙箱預覽（前端題、Playground 的 HTML 與 Vue） ============ */
+/* iframe 裡是一張獨立的網頁：底色固定白色（iframe 的內容不跟著站的亮暗主題） */
+:root { --sbx-canvas: #ffffff; }
+.fp { margin-top: 12px; display: grid; gap: 8px; min-width: 0; }
+.fp-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fp-bar .kicker { margin: 0; }
+.fp-widths { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.fp-widths .chip { padding: 1px 9px; font-size: 0.76rem; font-family: var(--mono); }
+.fp-size { font-size: 0.74rem; color: var(--ink-3); }
+.fp-stage { position: relative; border: var(--bw) solid var(--line); border-radius: 12px; background: var(--surface-2); box-shadow: 4px 4px 0 var(--shade); overflow: hidden; min-width: 0; }
+.fp-host { position: relative; overflow: hidden; background: var(--sbx-canvas); }
+.fp-host .sbx-frame { position: absolute; top: 0; left: 0; border: 0; background: var(--sbx-canvas); transform: scale(var(--fp-scale, 1)); transform-origin: 0 0; }
+.fp-empty { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; font-size: 0.85rem; color: var(--ink-3); background: var(--surface-2); }
+.fp-panels { border: 2px solid var(--line); border-radius: 12px; background: var(--surface-1); padding: 4px 12px 10px; min-width: 0; }
+.fp-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--hairline); margin-bottom: 8px; }
+.fp-tabs button { background: none; border: none; cursor: pointer; padding: 6px 10px; font-family: var(--serif); font-weight: 700; font-size: 0.84rem; color: var(--ink-3); position: relative; display: inline-flex; align-items: center; gap: 6px; }
+.fp-tabs button:hover { color: var(--ink-1); }
+.fp-tabs button.on { color: var(--ink-1); }
+.fp-tabs button.on::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; border-bottom: 3px solid var(--ink-1); }
+.fp-badge { font-family: var(--sans); font-size: 0.68rem; font-weight: 700; padding: 0 7px; border: 1.5px solid var(--line); border-radius: 999px; color: var(--on-sticker); }
+.fp-badge.err { background: var(--st-red); }
+.fp-badge.warn { background: var(--st-yellow); }
+.fp-console { list-style: none; margin: 0; display: grid; gap: 2px; max-height: 240px; overflow: auto; font-family: var(--mono); font-size: 0.78rem; line-height: 1.5; }
+.fp-console li { padding: 3px 8px; border-left: 3px solid var(--hairline); white-space: pre-wrap; word-break: break-word; color: var(--ink-1); }
+.fp-console li.warn { border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+.fp-console li.error { border-left-color: var(--critical); color: var(--critical); background: color-mix(in srgb, var(--critical) 8%, transparent); }
+.fp-net { border-collapse: collapse; width: 100%; font-size: 0.78rem; }
+.fp-net th { text-align: left; font-size: 0.7rem; color: var(--ink-3); padding: 4px 8px; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+.fp-net td { padding: 4px 8px; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+.fp-net td.fp-url { white-space: normal; word-break: break-all; }
+.fp-net tr.bad td { color: var(--critical); }
+.pg-frame { padding: 12px; }
+.pg-api { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-size: 0.82rem; color: var(--ink-2); margin-bottom: 4px; }
+.pg-api .kicker { margin: 0; }
+.pg-api label { display: inline-flex; align-items: center; gap: 6px; }
+.pg-api input[type=range] { width: 110px; accent-color: var(--ink-1); }
+.pg-api .mono { min-width: 4.5em; color: var(--ink-1); }

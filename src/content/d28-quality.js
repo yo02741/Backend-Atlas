@@ -43,6 +43,18 @@ export default {
       related: ['testing', 'test-quality', 'ai-spec-to-tests'],
     },
     {
+      id: 'unit-tests',
+      title: '單元測試：Vitest',
+      en: 'Unit tests with Vitest',
+      level: 1,
+      summary: '一個測試只驗一件事：準備資料、呼叫一次、斷言結果。toBe 比同一個值、toEqual 比內容、toThrow 要包成函式、非同步斷言要 await；時間用 vi.useFakeTimers 與 vi.setSystemTime 固定，依賴用 vi.fn、vi.spyOn、vi.mock 替換。測試名稱寫成規格，故意改壞程式要有測試變紅。',
+      example: { primary: 'Vitest 5.1（describe、it、expect、vi）', alts: ['test.each 寫邊界表', '@vitest/coverage-v8 看覆蓋率', 'Stryker（@stryker-mutator/vitest-runner）跑突變測試'] },
+      keywords: ['JavaScript', 'Vue'],
+      lab: null,
+      reviewed: '2026-11',
+      related: ['testing', 'test-quality'],
+    },
+    {
       id: 'component-tests',
       title: '元件測試的寫法',
       en: 'Component tests',

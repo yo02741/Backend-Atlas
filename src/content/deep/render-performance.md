@@ -103,10 +103,31 @@ function markArrived(id) {
 | | debounce | throttle |
 |---|---|---|
 | 行為 | 停止觸發 N 毫秒後才執行一次 | N 毫秒內最多執行一次 |
-| 適合 | 搜尋框送請求、輸入完才驗證、視窗縮放結束後重算 | 捲動時更新位置、拖曳、無限捲動的觸底判斷 |
+| 適合 | 搜尋框送請求、輸入完才驗證 | 拖曳時存位置、連續觸發的事件要定時回報 |
 | 連續觸發 5 秒的結果 | 只在最後執行一次 | 每 N 毫秒執行一次 |
 
-和畫面同步的工作（例如捲動時移動一個元素）用 `requestAnimationFrame`，每一格畫面最多做一次。一定要在主執行緒跑完的大量計算（排序、統計），每做 50 毫秒就 `await` 讓出一次主執行緒，寫法見 [Core Web Vitals](#/skill/web-vitals) 的 INP 一節。
+和畫面同步的工作（例如拖曳時移動一個元素）用 `requestAnimationFrame`，每一格畫面最多做一次。
+
+### 進出畫面與尺寸改變：交給 observer
+
+AI 產出的「回到頂端」按鈕、無限捲動、圖表重繪，常寫成 `window.addEventListener('scroll', throttle(…))` 或 `resize` 監聽，每次觸發都呼叫 `getBoundingClientRect()` 算位置。這些需求瀏覽器有現成的 API，判斷交給瀏覽器、只在狀態改變時呼叫回呼：
+
+| 需求 | 舊寫法 | 現在的寫法 | 支援 |
+|---|---|---|---|
+| 捲到底再載入下一頁、「回到頂端」何時出現 | throttle 的 `scroll` 監聽加 `getBoundingClientRect()` | `IntersectionObserver` 觀察清單尾端或頂端的標記元素 | Baseline Widely available（2019-03 起） |
+| 容器變寬變窄時重排圖表 | `window` 的 `resize` 監聽 | `ResizeObserver` 觀察容器本身（側欄收合時視窗沒變，容器變了） | Baseline Widely available（2020-07 起） |
+| 捲動停下來才做事 | `scroll` 加 debounce | `scrollend` 事件 | Baseline 2025（2025-12 起），舊瀏覽器退回 debounce |
+
+```js
+// 清單尾端放一個空的 <li class="sentinel">，它進入畫面時才載入下一頁
+const io = new IntersectionObserver(([entry]) => {
+  if (entry.isIntersecting) loadNextPage()
+}, { rootMargin: '200px' })          // 離畫面還有 200px 就先載入
+io.observe(document.querySelector('.sentinel'))
+// 元件卸載時 io.disconnect()；VueUse 的 useIntersectionObserver 會自動處理
+```
+
+Chrome 團隊的 Modern Web Guidance 對「回到頂端」更進一步建議 CSS 的 scroll-state container query（`container-type: scroll-state`），完全不用 JavaScript；這個功能目前只有 Chrome、Edge 144 起支援（Limited availability），要先寫好「一直顯示」或 `IntersectionObserver` 的退路，不能當成唯一寫法。一定要在主執行緒跑完的大量計算（排序、統計），每做 50 毫秒就 `await` 讓出一次主執行緒，寫法見 [Core Web Vitals](#/skill/web-vitals) 的 INP 一節。
 
 ## 實際程式
 
@@ -230,6 +251,7 @@ setTimeout(() => console.log(`輸入 ${word.length} 次`), 900)
 | 虛擬捲動的清單捲動時跳動、出現空白 | `item-size` 和實際列高不同，或容器沒有高度 | 讓 CSS 的列高等於 `item-size`；容器設高度 |
 | 用 Ctrl+F 找不到某位病患 | 虛擬捲動沒渲染視窗外的列 | 提供自己的搜尋框；這是虛擬捲動的已知限制 |
 | 改了 `shallowRef` 陣列裡的欄位，畫面沒更新 | `shallowRef` 只追蹤 `.value` 被換掉 | 建立新陣列再指定給 `.value` |
+| Performance 分頁錄一段捲動，Main 軌道上滿是 `Scroll` 事件的處理函式 | 用捲動事件判斷元素是否進入畫面 | 換成 `IntersectionObserver` 觀察標記元素 |
 | 離開頁面後 Console 還有 debounce 的輸出 | 卸載時沒有取消還在等的計時器 | 在 `onUnmounted` 呼叫 `cancel()`；用套件時確認它在卸載時會不會自動取消 |
 | 開了 `app.config.performance` 看不到標記 | 它只在開發版有作用 | 用 `npm run dev` 的頁面錄製 |
 

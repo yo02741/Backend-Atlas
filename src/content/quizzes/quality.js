@@ -181,6 +181,53 @@ it('取消預約', async () => {
     ],
   },
   {
+    skill: 'unit-tests',
+    questions: [
+      {
+        q: '`parseQueueNo(\'A012\')` 回傳 `{ prefix: \'A\', n: 12 }`。測試寫成 `expect(parseQueueNo(\'A012\')).toBe({ prefix: \'A\', n: 12 })`，結果是什麼？',
+        options: [
+          '通過：兩個物件的內容一樣',
+          '通過：Vitest 遇到物件會自動改成深度比較',
+          '失敗：`toBe` 用 `Object.is`，兩個不同的物件不相等，要改 `toEqual`',
+          '失敗：`toBe` 只能比數字，物件要用 `toMatch`',
+        ],
+        answer: 2,
+        explain: '`toBe` 用 `Object.is`，比的是不是同一個值；函式回傳的新物件和測試裡寫的物件是兩個不同的物件。Vitest 不會自動改成深度比較，只在訊息裡提示 `Compared values have no visual difference` 與改用 `toStrictEqual`。`toBe` 也能比字串、布林；`toMatch` 是比字串與正規表示式。',
+      },
+      {
+        q: '搜尋框的 debounce 是 300ms。下面的測試哪裡會出問題？',
+        code: `it('停止輸入 300ms 後搜尋一次', () => {
+  vi.useFakeTimers()
+  const search = vi.fn()
+  const onInput = debounce(search, 300)
+  onInput('王')
+  onInput('王小')
+  expect(search).toHaveBeenCalledTimes(1)
+})`,
+        lang: 'js',
+        options: [
+          '會失敗：fake timers 下計時器不會自己觸發，要先 `vi.advanceTimersByTime(300)`',
+          '會通過：`vi.fn()` 會記錄 debounce 排好的呼叫',
+          '會失敗：fake timers 只能在 `async` 測試裡用',
+          '會通過，但要在最後呼叫 `vi.useRealTimers()` 才會把呼叫送出去',
+        ],
+        answer: 0,
+        explain: '`vi.useFakeTimers()` 之後，`setTimeout` 只排進假時鐘，時間不推就不會執行，所以呼叫次數是 0，訊息是 `expected "vi.fn()" to be called 1 times, but got 0 times`。`vi.fn()` 只記錄已經發生的呼叫；fake timers 在同步測試就能用；`useRealTimers()` 是換回真的計時器，不會補跑排好的計時器，它該放在 `afterEach`。',
+      },
+      {
+        q: '`estimateWait` 的測試覆蓋率四欄都是 100%，有人把 `Math.ceil` 改成 `Math.round`，測試還是全綠。下一步做什麼最有效？',
+        options: [
+          '把覆蓋率門檻提高到 100%，讓 CI 擋下這種改動',
+          '加一張 `test.each` 邊界表，含「前面 1 位、每位 6 分鐘，預期 10 分鐘」這種進位與捨去結果不同的值，再故意改壞一次確認會變紅',
+          '在函式裡加 `console.log`，讓測試輸出看得到計算過程',
+          '把受測函式用 `vi.mock` 換掉，測試它有被呼叫',
+        ],
+        answer: 1,
+        explain: '覆蓋率只說每一行跑過，不說結果有沒有被檢查；門檻已經是 100% 還是抓不到。要加一個「改了就會得到不同答案」的輸入：6 分鐘無條件進位是 10，四捨五入是 5。改壞一次看有沒有變紅，就是突變測試的做法。`console.log` 不會讓測試失敗；mock 掉受測函式之後，測到的是替身，不是規則。',
+      },
+    ],
+  },
+  {
     skill: 'component-tests',
     questions: [
       {

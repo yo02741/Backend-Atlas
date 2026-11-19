@@ -9,6 +9,7 @@ import { explain, resetSchema } from '../runtime/sql.js'
 import { ensurePython } from '../runtime/py.js'
 import { ensureSql } from '../runtime/sql.js'
 import { useProgress } from '../progress.js'
+import { ELEMENT_PLUS_RE } from '../runtime/frameStatus.js'
 import { KINDS } from '../content/exercises/index.js'
 import { LEVELS } from '../content/roadmap.js'
 
@@ -92,7 +93,7 @@ export default function ExerciseRunner({ exercise: ex, compact = false, showStat
         <span className="spacer" />
         {hints < ex.hints.length && <button className="btn ghost small" onClick={() => setHints((h) => h + 1)}>提示 {hints}/{ex.hints.length}</button>}
         <button className="btn ghost small" onClick={() => setShowSolution((s) => !s)}>{showSolution ? '隱藏解答' : '看解答'}</button>
-        <RuntimeStatus kind={ex.kind} />
+        <RuntimeStatus kind={ex.kind} tailwind={ex.tailwind === true} elementPlus={ELEMENT_PLUS_RE.test(ex.starter || '')} />
       </div>
 
       <CodeEditor value={code} onChange={setCode} lang={lang} onRun={run} minHeight={compact ? 200 : 260} />

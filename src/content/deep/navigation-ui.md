@@ -78,6 +78,8 @@ APG 的 Tabs 模式：
 
 只有目前的 Tab 是 `tabindex="0"`，其他是 `tabindex="-1"`，焦點移動時跟著換，這個做法叫 roving tabindex。APG 建議 tabpanel 的內容能立刻顯示時用自動切換（焦點移到哪個 Tab 就顯示哪個）；內容要等 API 才出得來時，自動切換會讓方向鍵每移一格就送一個請求，改用手動切換。
 
+AI 有時會產生 `focusgroup="tablist"` 屬性，由瀏覽器處理方向鍵與 roving tabindex。依 2026-11 的 web-features 資料它只有 Chrome 150、Edge 150 起支援，Firefox 與 Safari 都沒有，用了就要載入 polyfill 或保留自己寫的方向鍵處理，不能當成唯一的寫法。
+
 tabpanel 裡沒有可聚焦的元素時，tabpanel 本身加 `tabindex="0"`，按 Tab 才進得去。
 
 ### 分頁、載入更多、無限捲動

@@ -142,7 +142,7 @@ input, button { font: inherit; padding: 6px 10px; }`,
   {
     id: 'rwd-1', skill: 'rwd', kind: 'css', level: 2,
     title: '今日門診頁：mobile-first 的斷點',
-    prompt: '「今日門診」頁只為桌機寫過 CSS：卡片永遠三欄，圖片與表格在手機上撐出橫向捲軸。改成 mobile-first（HTML 不能改）：\n\n- 預設（390px）卡片一欄；`@media (min-width: 768px)` 起兩欄；`@media (min-width: 1280px)` 起三欄。斷點只用 `min-width`\n- 橫幅圖片 `.banner` 不超出畫面，等比例縮小\n- 表格維持原本的寬度，在 `.table-wrap` 裡左右捲動，頁面本身不能左右捲動',
+    prompt: '「今日門診」頁只為桌機寫過 CSS：卡片永遠三欄，圖片與表格在手機上撐出橫向捲軸。改成 mobile-first（HTML 不能改）：\n\n- 預設（390px）卡片一欄；`@media (min-width: 768px)` 起兩欄；`@media (min-width: 1280px)` 起三欄。斷點只往寬的方向加：用 `min-width`，或範圍語法 `(width >= 768px)`，不用 `max-width`\n- 橫幅圖片 `.banner` 不超出畫面，等比例縮小\n- 表格維持原本的寬度，在 `.table-wrap` 裡左右捲動，頁面本身不能左右捲動',
     html: `<main class="page">
   <h1>今日門診</h1>
   <img class="banner" alt="院區外觀" width="1200" height="200" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='200'%3E%3Crect width='1200' height='200' fill='%23cfe0f5'/%3E%3C/svg%3E">
@@ -200,7 +200,7 @@ input, button { font: inherit; padding: 6px 10px; }`,
       { name: '1280px：卡片三欄', viewport: 1280, code: "const tops = $$('.card').map((x) => Math.round(box(x).top))\nassert(tops[0] === tops[1] && tops[1] === tops[2] && tops[3] > tops[2], '1280px 時應該三張一列（top：' + tops.join(', ') + '）')" },
       { name: '390px：圖片等比例縮小，頁面不用左右捲動', viewport: 390, code: "const img = box('.banner')\nassert(img.right <= innerWidth, '圖片超出畫面（右邊在 ' + Math.round(img.right) + 'px）')\nassert(Math.abs(img.height / img.width - 200 / 1200) < 0.01, '圖片被壓扁或拉長了：要等比例縮小')\nassert(document.documentElement.scrollWidth <= innerWidth, '頁面出現橫向捲軸（寬 ' + document.documentElement.scrollWidth + 'px）')" },
       { name: '390px：表格在自己的容器裡捲動', viewport: 390, code: "const wrap = $('.table-wrap')\nassert(['auto', 'scroll'].includes(css('.table-wrap', 'overflow-x')), '.table-wrap 要能左右捲動')\nassert(wrap.scrollWidth > wrap.clientWidth, '表格要維持原本的寬度，在容器裡捲動')\nassert(box('.table-wrap').right <= innerWidth, '.table-wrap 超出畫面')" },
-      { name: '斷點只用 min-width（mobile-first）', code: "const media = [...document.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => r.media).map((r) => r.media.mediaText)\nassert(media.some((t) => t.includes('min-width')), '找不到 min-width 的 media query')\nassert(!media.some((t) => t.includes('max-width')), 'mobile-first 只往寬的方向加規則，不用 max-width')" },
+      { name: '斷點只往寬的方向加（mobile-first）', code: "const media = [...document.styleSheets].flatMap((s) => [...s.cssRules]).filter((r) => r.media).map((r) => r.media.mediaText)\nassert(media.some((t) => /min-width|width\\s*>|<=?\\s*width/.test(t)), '找不到 min-width（或 width >= …）的 media query')\nassert(!media.some((t) => /max-width|width\\s*<|>=?\\s*width/.test(t)), 'mobile-first 只往寬的方向加規則，不用 max-width（或 width <= …）')" },
     ],
     hints: ['先寫手機（沒有 media query 的部分），再用 `@media (min-width: …)` 往寬的螢幕加規則。', '圖片寫了 `width`、`height` 屬性時，`max-width: 100%` 要搭配 `height: auto` 才會等比例。', '寬表格包一層 `overflow-x: auto` 的容器。'],
   },

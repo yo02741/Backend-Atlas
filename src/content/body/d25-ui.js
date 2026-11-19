@@ -71,6 +71,7 @@ export default {
         { c: '訊息停得夠久', t: 'Toast 出現後按 Tab 移到「復原」，倒數要暫停；還沒移到就消失，代表時間太短或沒有暫停。' },
         { c: '空與錯分開', t: 'Network 分頁在清單 API 上按右鍵選 `Block request URL` 再重新整理，畫面要是錯誤訊息加重試，不能是「這天沒有預約」。' },
         { c: '錯誤文案', t: '讓 API 回 500，畫面上不該出現 `Internal Server Error`、`TypeError` 或 JSON 原文。' },
+        { c: 'Dialog 開著時不出 Toast', t: '在 modal Dialog 裡做一個會出 Toast 的操作：Dialog 外的內容是 inert，Toast 點不到、螢幕閱讀器也念不到。Toast 要等 Dialog 關閉再顯示，或改成 Dialog 裡的訊息。' },
       ],
     },
     points: [
@@ -201,7 +202,7 @@ export default {
         { n: 'Tooltip', t: 'hover 或 focus 時出現的一句說明，`role="tooltip"`，觸發元素用 `aria-describedby` 指向它；裡面不放按鈕與連結，需要互動就改用 Popover。' },
         { n: '`inert` 與焦點陷阱', t: '`inert` 讓一塊內容不能點、不能聚焦、輔助科技也讀不到（Baseline 2023）；`showModal()` 自動讓 Dialog 以外的內容進入這個狀態，自己用 `div` 做就要自己處理。' },
         { n: 'top layer', t: '`showModal()` 與 popover 開出的元素放在 top layer，蓋在整個頁面上面，不受祖先的 `z-index` 與 `overflow` 影響；Elements 分頁會出現 `#top-layer`。' },
-        { n: '`::backdrop` 與背景捲動', t: '`::backdrop` 是 modal Dialog 後面那層遮罩的樣式；Dialog 開著時背景頁面不該跟著捲，常見做法是 `body:has(dialog[open]) { overflow: hidden }`。' },
+        { n: '`::backdrop` 與背景捲動', t: '`::backdrop` 是 modal Dialog 後面那層遮罩的樣式；背景不跟著捲的寫法是在 `dialog:modal` 與 `::backdrop` 加 `overscroll-behavior: contain`（`::backdrop` 另加 `overflow: hidden`），2026-11 只有 Chrome 144、Firefox 150 起完整支援，Safari 背景仍可能捲動。舊寫法 `body { overflow: hidden }` 會讓捲軸消失、版面左右跳。' },
       ],
       ask: [
         '這個浮層擋不擋其他操作：modal Dialog、Drawer，還是不擋的 Popover、Tooltip',
@@ -218,6 +219,7 @@ export default {
         { c: '名稱與角色', t: 'Elements 分頁選取 Dialog，Accessibility 窗格的 Role 是 `dialog`（或 `alertdialog`），Name 是標題文字；Name 空白代表沒有 `aria-labelledby`。' },
         { c: 'Tooltip 跟得上滑鼠與鍵盤', t: '滑鼠從觸發元素移到 Tooltip 上，Tooltip 要留著；Tab 到觸發元素也要出現，按 Esc 能關（WCAG 1.4.13）。只在 hover 出現，鍵盤使用者看不到。' },
         { c: '背景不跟著捲', t: '在 Dialog 裡捲到底再繼續捲，後面的頁面不該移動；手機寬度下關掉 Dialog 後，頁面要停在開啟前的位置。' },
+        { c: '沒有過時的手工補丁', t: '用了原生 `<dialog>` 卻還加 `role="dialog"`、`aria-modal`、自己寫的焦點陷阱、`keydown` 的 Esc 處理或開啟時把 `body` 設成 `overflow: hidden`，都是 `showModal()` 普及前的做法，刪掉；Esc 處理留著還可能讓 Dialog 關兩次。' },
       ],
     },
     points: [
@@ -386,6 +388,58 @@ export default {
       { label: 'MDN：prefers-color-scheme', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme' },
       { label: 'Design Tokens Technical Reports 2025.10', url: 'https://www.designtokens.org/tr/2025.10/' },
       { label: 'W3C：Understanding SC 1.4.3 Contrast (Minimum)', url: 'https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html' },
+    ],
+  },
+  'element-plus': {
+    map: {
+      names: [
+        { n: '全量引入與按需引入', t: '全量是 `app.use(ElementPlus)` 加 `import \'element-plus/dist/index.css\'`，所有元件與整份樣式都進 bundle；按需用 unplugin-vue-components 的 `ElementPlusResolver`，模板用到哪個 `<el-*>` 才 import 哪個元件與它的 CSS。' },
+        { n: '`ElementPlusResolver`', t: '從 `unplugin-vue-components/resolvers` 匯入，同時給 `Components()` 與 `unplugin-auto-import` 的 `AutoImport()` 用：前者處理模板裡的元件與 `v-loading` 這類指令，後者處理 script 裡直接呼叫的 `ElMessage`、`ElMessageBox`。' },
+        { n: '`el-config-provider` 與語系', t: '包在根元件外層，`:locale="zhTw"`（`import zhTw from \'element-plus/es/locale/lang/zh-tw\'`）讓表格的「暫無資料」、分頁、對話框按鈕變成繁體中文；也能用 `app.use(ElementPlus, { locale: zhTw })` 設定。預設是英文。' },
+        { n: '主題的 CSS 變數', t: 'Element Plus 的顏色、圓角、字級都是 `:root` 上的 CSS 變數：`--el-color-primary`、`--el-color-primary-light-3` 到 `-light-9`、`--el-color-primary-dark-2`、`--el-border-radius-base`、`--el-font-size-base`；元件內部再引用它們，例如按鈕的 `--el-button-hover-bg-color`。' },
+        { n: '`el-form` 的 `rules` 與 `validate()`', t: '`rules` 以欄位為 key 寫規則（`required`、`pattern`、`validator`、`trigger: \'blur\'`），規則格式來自 async-validator；`formRef.value.validate()` 全部通過時 resolve `true`，有欄位沒過時 reject，帶著每個欄位的錯誤。' },
+        { n: '`el-form-item` 的 `prop` 與 `error`', t: '`prop` 對到 `model` 的欄位，`validate()` 與 `resetFields()` 靠它；`error` 傳一段字串，欄位立刻進入錯誤狀態並顯示這段字，用來放後端 422 的訊息。' },
+        { n: '`el-table` 的欄位、排序與空狀態', t: '`<el-table-column prop label>` 定義欄位；`sortable` 只排目前傳進去的資料，`sortable="custom"` 加 `@sort-change` 交給後端排；沒資料時顯示 `empty-text` 或 `#empty` 插槽。' },
+        { n: '`el-dialog`、`ElMessage`、`v-loading`', t: '`el-dialog` 用 `v-model` 開關，`role="dialog"`、`aria-modal`、焦點鎖在裡面、關閉後焦點回到原處；`ElMessage.success()` 跳出短暫提示（`role="alert"`）；`v-loading="loading"` 在元素上蓋一層載入遮罩。' },
+      ],
+      ask: [
+        '引入方式：按需（unplugin-vue-components 與 unplugin-auto-import 都要裝）還是全量，以及 Element Plus 的精確版本',
+        '語系與日期：`el-config-provider` 用 `zh-tw`，日期元件另外 import dayjs 的語系',
+        '主題：要改哪些 `--el-*` 變數、對應到專案的哪個 token，`light-3` 到 `light-9`、`dark-2` 由誰產生，暗色主題用不用 `html.dark`',
+        '表單：每個欄位的規則與訊息、觸發時機，後端欄位名怎麼對到 `prop`，422 的訊息放進哪個 `el-form-item` 的 `error`',
+        '表格：哪些欄位能排序、排序在前端還是後端、空狀態與讀取失敗各顯示什麼',
+        '元件庫沒給、要自己補的：表單錯誤與輸入框的關聯（`aria-describedby`）、鍵盤操作的驗收、設計稿與元件庫外觀不同的地方',
+      ],
+      prompt: '櫃台掛號表單用 Element Plus 2.14.8，`vite.config.js` 用 unplugin-vue-components 與 unplugin-auto-import，兩者都傳 `ElementPlusResolver()`，不寫 `app.use(ElementPlus)`。`App.vue` 外層包 `<el-config-provider :locale="zhTw">`。主題在 `src/styles/element.css` 把 `--el-color-primary` 與 `light-3`、`light-5`、`light-7`、`light-8`、`light-9`、`dark-2` 都對到院方色票的 token，不覆寫 `.el-button` 這類內部 class。表單用 `rules`：病歷號必填、手機 `^09\\d{8}$`，送出時 `await formRef.value.validate().catch(() => false)`，沒過就不送；`POST /api/registrations` 回 422 時，把 `errors[].field`（`patient_no`）對照成 `patientNo`，訊息放進那個 `el-form-item` 的 `error`，每次送出前先清空；201 時 `ElMessage.success(\'已完成掛號，號碼 A012\')`。',
+      verify: [
+        { c: '真的是按需引入', t: '`npx vite build` 後看輸出的 JS 與 CSS 大小：全量引入時 CSS 是整份的 363 KB 左右；按需時只有用到的元件。專案裡出現 `app.use(ElementPlus)` 或 `element-plus/dist/index.css`，就不是按需。' },
+        { c: '元件有註冊', t: 'Console 出現 `[Vue warn]: Failed to resolve component: el-button` 或 `Failed to resolve directive: loading`，代表元件或指令沒有被 resolver 或 `app.use` 註冊；畫面上那裡會是一個空的 `<el-button>` 標籤。' },
+        { c: 'ElMessage 有樣式', t: '按需引入時只裝 unplugin-vue-components、在 script 裡手動 `import { ElMessage }`，提示會沒有樣式：接在頁面最下面、沒有底色，勾勾圖示撐滿整個寬度；Elements 分頁選取 `.el-message`，Styles 窗格沒有它的規則。改用 unplugin-auto-import，或手動 import 它的樣式檔。' },
+        { c: '主題變數改齊了', t: 'Elements 分頁選取 primary 按鈕，Computed 看 `background-color`；再強制 `:hover` 狀態看 `--el-button-hover-bg-color`。只改了 `--el-color-primary` 時，hover 還是預設的藍色 `#79bbff`。' },
+        { c: '後端錯誤顯示在欄位下', t: 'Network 分頁確認 422 的 body，欄位下方要出現 `.el-form-item__error`（`role="alert"`）；同一個錯誤第二次回來沒顯示，代表送出前沒清掉 `error`。驗證沒過時 Console 出現 `Uncaught (in promise)`，代表 `validate()` 沒接住。' },
+        { c: '鍵盤與語系', t: '只用 Tab、Enter、Esc 操作一遍：Dialog 開啟後焦點在對話框裡、Esc 關閉、焦點回到開啟它的按鈕。Accessibility 分頁看表格排序按鈕的名稱，`zh-tw` 語系下仍是英文的 `Sort by 號碼`。' },
+      ],
+    },
+    points: [
+      { b: '按需引入要兩個外掛', t: '`Components({ resolvers: [ElementPlusResolver()] })` 處理模板裡的 `<el-*>` 與 `v-loading`，`AutoImport({ resolvers: [ElementPlusResolver()] })` 處理 script 裡的 `ElMessage`；兩者都會帶入對應的 CSS。只裝前者又手動 import `ElMessage`，提示會沒有樣式。' },
+      { b: '主題改變數，不改內部 class', t: '在 `:root`（或某個容器）覆寫 `--el-color-primary` 這類變數，不寫 `.el-button--primary { … }`；內部 class 與結構在升級時可能改名。`light-3` 到 `light-9`、`dark-2` 是預先算好的固定色，只改主色時 hover 與停用狀態還是預設的藍；要一起改，或用 SCSS 變數讓它重新產生。' },
+      { b: '422 放進 `error`，送出前先清空', t: '`el-form-item` 監看 `error` 的值，改變時才顯示。使用者改了欄位、前端驗證通過後再送，後端回同一則訊息，值沒變就不會再出現；每次送出前把 `error` 設成空字串。`validate()` 沒過時會 reject，要接住。' },
+      { b: '元件庫給的無障礙不完整', t: '2.14.8 的 `el-dialog` 有 `role="dialog"`、`aria-modal`、焦點鎖定與歸還；欄位錯誤有 `role="alert"`，但輸入框沒有 `aria-invalid`，也沒有用 `aria-describedby` 連到錯誤。`zh-tw` 語系裡排序按鈕、全選這類 `aria-label` 仍是英文。這些要自己驗、自己補。' },
+      { b: '升級前讀 CHANGELOG', t: 'Element Plus 的 minor 版也標過 Breaking changes（2.7.0、2.9.0），棄用的寫法在 Console 印 `ElementPlusError: … is about to be deprecated in version 3.0.0`。`package.json` 寫精確版本，升級時先讀 CHANGELOG、跑過元件測試與截圖比對。' },
+    ],
+    checklist: [
+      '能寫出按需引入的 `vite.config.js`，並用 `vite build` 的輸出確認沒有整包載入',
+      '能把後端 422 的欄位錯誤對回 `el-form-item`，第二次回同一則訊息時也會顯示',
+      '能列出元件庫在某個元件上沒做到、要自己補的鍵盤或 ARIA 行為',
+    ],
+    refs: [
+      { label: 'Element Plus：Quick Start', url: 'https://element-plus.org/en-US/guide/quickstart.html' },
+      { label: 'Element Plus：Theming', url: 'https://element-plus.org/en-US/guide/theming.html' },
+      { label: 'Element Plus：Internationalization', url: 'https://element-plus.org/en-US/guide/i18n.html' },
+      { label: 'Element Plus：Form', url: 'https://element-plus.org/en-US/component/form.html' },
+      { label: 'Element Plus：Table', url: 'https://element-plus.org/en-US/component/table.html' },
+      { label: 'Element Plus：CHANGELOG', url: 'https://github.com/element-plus/element-plus/blob/dev/CHANGELOG.en-US.md' },
+      { label: 'unplugin-vue-components', url: 'https://github.com/unplugin/unplugin-vue-components' },
     ],
   },
   'layout-patterns': {

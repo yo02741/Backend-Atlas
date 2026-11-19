@@ -93,7 +93,7 @@ function label({ dept, room }) { /* … */ }     // 參數直接解構
 
 `sort()` 還有一個陷阱：不給比較函式時，元素先轉成字串再比。`[10, 9, 1, 100].sort()` 的結果是 `[1, 10, 100, 9]`。數字一定要給 `(a, b) => a - b`。
 
-`Object.groupBy(list, fn)`（ES2024，Baseline 2024）把陣列依回呼的結果分組，取代以前用 `reduce` 手寫的分組。目標瀏覽器較舊的專案，用之前先確認 build target。
+`Object.groupBy(list, fn)`（ES2024，Baseline 2024，2026 年 9 月起 Widely available）把陣列依回呼的結果分組，取代以前用 `reduce` 手寫的分組。目標瀏覽器較舊的專案，用之前先確認 build target。它回傳的物件沒有原型：`byDept.hasOwnProperty('內科')` 丟出 `TypeError`，改用 `Object.hasOwn(byDept, '內科')` 或 `byDept['內科'] ?? []`。沒有任何資料的科別不會出現，讀到的是 `undefined`，不是空陣列。分組時要同時加總或轉換（例如每組只留 id、算人數），照樣用 `reduce`。
 
 ### `===` 與 `==`
 

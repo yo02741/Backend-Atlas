@@ -101,6 +101,17 @@ export default {
       reviewed: '2026-11',
     },
     {
+      id: 'element-plus',
+      title: '使用元件庫：Element Plus',
+      en: 'Using a component library: Element Plus',
+      level: 2,
+      summary: '元件庫給現成的外觀、行為與一部分無障礙：用 unplugin-vue-components 按需引入，el-config-provider 換成繁體中文，主題改 --el-color-* 這類 CSS 變數；表單用 rules 加 validate()，後端的 422 放進 el-form-item 的 error。鍵盤與 ARIA 照樣要自己驗，升級前讀 CHANGELOG 的 Breaking changes。',
+      example: { primary: 'Element Plus 2.14（Vue 3）加 unplugin-vue-components 32 的 ElementPlusResolver', alts: ['全量引入：app.use(ElementPlus) 與 element-plus/dist/index.css', 'Vuetify、PrimeVue、Naive UI', 'headless 元件：Reka UI'] },
+      keywords: ['Vue', 'Vite', 'CSS', '無障礙'],
+      lab: null,
+      reviewed: '2026-11',
+    },
+    {
       id: 'layout-patterns',
       title: '版面模式與斷點表',
       en: 'Layout patterns & breakpoints',

@@ -11,10 +11,22 @@
    解析到同一個 data: URL，三者共用一份 Vue。程式碼（使用者的程式與測試）有 import 哪個套件才下載哪個：vue 題一定有 Vue，
    import 'pinia' 或 'vue-router' 時另外加上那個套件；html、css 題沒有 import 就什麼都不下載。
 
+   Element Plus：import 'element-plus'（或 'element-plus/…' 子路徑）時才下載。主檔 dist/index.full.min.mjs 只 import vue，
+   和 Pinia、Vue Router 一樣經同一個 import map 解析到同一份 Vue；versions.js 的 VENDOR_SUBMODULES 列的語系檔
+   （'element-plus/es/locale/lang/zh-tw'）一起放進 import map。樣式檔（VENDOR_STYLES）用 <link rel="stylesheet"> 指到站內網址：
+   樣式表不受 CORS 限制，opaque origin 的 iframe 也載得到；放在題目與使用者的 CSS 前面，後者可以覆蓋 --el-* 變數。
+
    Vue Router 在 srcdoc 裡用 createMemoryHistory()：srcdoc 文件的網址是 about:srcdoc，但相對網址以外殼的網址為基準。
    createWebHashHistory() 一開始呼叫 history.replaceState(…, '#/')，'#/' 解析成外殼的網址，跨來源而丟 SecurityError，
    router 接著改用 location.replace() 讓 iframe 換頁到外殼的網址，畫面就不見了。prelude 在 beforeunload 送出 navigate，
    測試馬上以「iframe 要換頁」結束，不必等 8 秒逾時（e2e/frame.mjs 有實測）。
+
+   Tailwind CSS：@tailwindcss/browser（versions.js 的 CLASSIC_VENDORS）是 IIFE，不能放進 import map。題目設 tailwind: true，
+   或沒有題目設定時（Playground、深入內容的 html run）html 程式碼裡有 <style type="text/tailwindcss">，才下載它，
+   和 Vue 一樣轉成 data: URL，以 <script src="data:…"> 插在 prelude 之後（opaque origin 下 data: 的 classic script 可以執行，
+   e2e/frame.mjs 有實測）。它在瀏覽器裡掃 DOM 的 class 產生 CSS，是非同步的：每次產生都留下 performance 的
+   mark「Build #n (full|incremental) (start)」與同名的 measure，prelude 的 twReady() 等兩者數量相同、再過一個 task 仍相同，
+   測試開始前先等它（cfg.tailwind）。沒用到的題目不下載。
 
    每個測試一個新的 iframe（測試之間互不影響）；每個測試 8 秒逾時，逾時就移除 iframe。
    使用者 JS 的迴圈先經 loopGuard.js 插入 __lp()，主執行緒被連續占用 1.5 秒就在 iframe 裡丟錯：
@@ -22,8 +34,8 @@
 import { createFakeApi } from './fakeApi.js'
 import { framePrelude } from './framePrelude.js'
 import { guardLoops, guardHtml } from './loopGuard.js'
-import { VERSIONS, vendorPath, vendorBuild } from './versions.js'
-import { setFrameStatus } from './frameStatus.js'
+import { MODULE_VENDORS, VENDOR_SUBMODULES, VENDOR_STYLES, vendorPath, vendorBuild, vendorFilePath } from './versions.js'
+import { setFrameStatus, TAILWIND_STYLE_RE, ELEMENT_PLUS_RE } from './frameStatus.js'
 
 export const TEST_TIMEOUT_MS = 8000
 export const LOOP_LIMIT_MS = 1500
@@ -40,11 +52,15 @@ function siteUrl(path) {
 const vendor = {}
 let pending = 0
 export function vendorDataUrl(pkg = 'vue', build = 'dev') {
-  const key = `${pkg}@${vendorBuild(pkg, build)}`
+  return dataUrlOf(vendorPath(pkg, build))
+}
+/* 站內的一個 vendor 檔 → data: URL（每個路徑只讀一次） */
+function dataUrlOf(path) {
+  const key = path
   if (!vendor[key]) {
     pending++
     setFrameStatus('loading')
-    vendor[key] = fetch(siteUrl(vendorPath(pkg, build)))
+    vendor[key] = fetch(siteUrl(path))
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob() })
       .then((b) => new Promise((resolve, reject) => {
         const fr = new FileReader()
@@ -61,14 +77,16 @@ export function vendorDataUrl(pkg = 'vue', build = 'dev') {
 export function vendorFileUrl(build = 'dev', pkg = 'vue') { return siteUrl(vendorPath(pkg, build)) }
 
 const importRe = {}
-for (const pkg of Object.keys(VERSIONS)) {
+for (const pkg of MODULE_VENDORS) {
   // from 'pinia'、import 'pinia'、import('pinia')；'vue' 不會對到 'vue-router'（引號要緊接在名稱後面）
   importRe[pkg] = new RegExp(`\\bfrom\\s*['"]${pkg}['"]|\\bimport\\s*\\(?\\s*['"]${pkg}['"]`)
 }
+// 有子路徑 module 的套件（element-plus/es/locale/lang/zh-tw）：子路徑也算用到這個套件
+importRe['element-plus'] = ELEMENT_PLUS_RE
 /* 程式碼 import 了哪些 vendor 套件（versions.js 的 key 順序）。vue 題一定有 vue；pinia、vue-router 本身 import vue，有它們就加上 vue */
 export function vendorsFor(kind, code) {
   const src = String(code || '')
-  const pkgs = Object.keys(VERSIONS).filter((p) => (p === 'vue' && kind === 'vue') || importRe[p].test(src))
+  const pkgs = MODULE_VENDORS.filter((p) => (p === 'vue' && kind === 'vue') || importRe[p].test(src))
   if (pkgs.length && !pkgs.includes('vue')) pkgs.unshift('vue')
   return pkgs
 }
@@ -102,10 +120,28 @@ const ROUTER_SHIM_URL = 'data:text/javascript;base64,' + btoa(String.fromCharCod
 export async function importMapFor(kind, code, build = 'dev') {
   const pkgs = vendorsFor(kind, code)
   if (!pkgs.length) return null
-  const urls = await Promise.all(pkgs.map((p) => vendorDataUrl(p, build)))
-  const map = Object.fromEntries(pkgs.map((p, i) => [p, urls[i]]))
+  // 主檔，加上這些套件的其他 module 檔（VENDOR_SUBMODULES）
+  const entries = pkgs.flatMap((p) => [[p, vendorPath(p, build)], ...Object.entries(VENDOR_SUBMODULES[p] || {}).map(([name, file]) => [name, vendorFilePath(p, file)])])
+  const urls = await Promise.all(entries.map(([, path]) => dataUrlOf(path)))
+  const map = Object.fromEntries(entries.map(([name], i) => [name, urls[i]]))
   if (map['vue-router']) { map[ROUTER_REAL] = map['vue-router']; map['vue-router'] = ROUTER_SHIM_URL }
   return map
+}
+/* 用到的套件的樣式檔（VENDOR_STYLES）：站內網址的陣列，buildSrcdoc 以 <link> 插入；不必先下載 */
+export function stylesFor(kind, code) {
+  return vendorsFor(kind, code).filter((p) => VENDOR_STYLES[p]).map((p) => siteUrl(vendorFilePath(p, VENDOR_STYLES[p])))
+}
+/* 要不要載入 Tailwind：題目有 tailwind 欄位就照它（只用在 html、vue 題）；沒有題目設定時（Playground、深入內容），
+   html 程式碼裡有 <style type="text/tailwindcss"> 才載入 */
+export const TAILWIND = '@tailwindcss/browser'
+export function usesTailwind(kind, code, ex = {}) {
+  if (kind !== 'html' && kind !== 'vue') return false
+  if (ex.tailwind !== undefined) return ex.tailwind === true
+  return kind === 'html' && TAILWIND_STYLE_RE.test(String(code || ''))
+}
+/* Tailwind 的 data: URL；用不到時回傳 null（不下載） */
+export function tailwindUrlFor(kind, code, ex = {}) {
+  return usesTailwind(kind, code, ex) ? vendorDataUrl(TAILWIND, 'prod') : Promise.resolve(null)
 }
 // 判斷用的程式碼：使用者的程式加上測試（測試可以 await import('pinia')）
 const codeOf = (code, tests = []) => [code, ...tests.map((t) => t && t.code)].filter(Boolean).join('\n')
@@ -119,13 +155,18 @@ const newRunId = () => `run-${Date.now().toString(36)}-${++seq}`
 
 /* kind：html（code 是 body 內容，可含 <style>、<script>）、css（code 是 CSS，套在 ex.html 上）、vue（code 是一個 module）
    ex：題目（html、css、api 欄位）；test：{ name, code, api?, viewport? } 或 null（預覽）；setup：在 ex.api 之前執行的假 API 設定
-   imports：import map 的 { 名稱: 網址 }（importMapFor 的結果）；只給 vueUrl 時等於 { vue: vueUrl } */
-export function buildSrcdoc({ kind, code = '', ex = {}, test = null, runId, mode = 'test', vueUrl = null, imports = null, setup = '', loopLimit = LOOP_LIMIT_MS }) {
+   imports：import map 的 { 名稱: 網址 }（importMapFor 的結果）；只給 vueUrl 時等於 { vue: vueUrl }
+   tailwindUrl：@tailwindcss/browser 的網址（tailwindUrlFor 的結果），有值才插入，測試開始前等它產生完 CSS
+   styles：套件樣式檔的網址（stylesFor 的結果），以 <link rel="stylesheet"> 放在題目與使用者的 CSS 前面 */
+export function buildSrcdoc({ kind, code = '', ex = {}, test = null, runId, mode = 'test', vueUrl = null, imports = null, tailwindUrl = null, styles = [], setup = '', loopLimit = LOOP_LIMIT_MS }) {
   const map = imports || (vueUrl ? { vue: vueUrl } : null)
   let pre = '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
   if (map && Object.keys(map).length) pre += `<script type="importmap">${JSON.stringify({ imports: map })}</script>`
   pre += `<script>(${js(framePrelude)})(__CFG__, ${js(createFakeApi)});</script>`
+  // prelude 之後：Tailwind 的警告也進站上的 Console 面板；在 <body> 之前：解析 body 時它已經在觀察 DOM
+  if (tailwindUrl) pre += `<script src="${tailwindUrl}"></script>`
   for (const s of [setup, ex.api, test?.api]) if (s) pre += `<script>try {\n${js(s)}\n} catch (e) { __frame.setupError(e) }</script>`
+  for (const href of styles || []) pre += `<link rel="stylesheet" href="${String(href).replace(/[&"<>]/g, (c) => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;', '>': '&gt;' })[c])}">`
   if (ex.css) pre += `<style>${style(ex.css)}</style>`
   if (kind === 'css') pre += `<style>\n${style(code)}\n</style>`
   pre += '</head><body>'
@@ -140,7 +181,8 @@ export function buildSrcdoc({ kind, code = '', ex = {}, test = null, runId, mode
   const userEnd = user ? userStart + lines(user) : 0
   // stack 裡的 vendor 是整段 data: URL，prelude 用開頭認出是哪個套件
   const vendors = map ? Object.entries(map).map(([name, url]) => [String(url).slice(0, 120), name.replace(/^@sandbox\//, '')]) : []
-  const cfg = JSON.stringify({ runId, mode, userStart, userEnd, loopLimit, vendors })
+  if (tailwindUrl) vendors.push([String(tailwindUrl).slice(0, 120), TAILWIND])
+  const cfg = JSON.stringify({ runId, mode, userStart, userEnd, loopLimit, vendors, tailwind: !!tailwindUrl })
   return { html: pre.replace('__CFG__', () => cfg) + user + post, userStart, userEnd }
 }
 
@@ -193,10 +235,12 @@ export function createFrame({ host, html, runId, width, height, onMessage = () =
 }
 
 /* 一個測試：看不見的 iframe，等 done 或逾時。回傳 { test: { name, pass, error }, logs, network, errors, timeout? } */
-export async function runTest({ kind, code, ex = {}, test, setup = '', timeout = TEST_TIMEOUT_MS, imports, width }) {
+export async function runTest({ kind, code, ex = {}, test, setup = '', timeout = TEST_TIMEOUT_MS, imports, tailwindUrl, styles, width }) {
   const map = imports !== undefined ? imports : await importMapFor(kind, codeOf(code, [test]), ex.vueBuild)
+  const tw = tailwindUrl !== undefined ? tailwindUrl : await tailwindUrlFor(kind, code, ex)
+  const css = styles !== undefined ? styles : stylesFor(kind, codeOf(code, [test]))
   const runId = newRunId()
-  const { html } = buildSrcdoc({ kind, code, ex, test, runId, mode: 'test', imports: map, setup })
+  const { html } = buildSrcdoc({ kind, code, ex, test, runId, mode: 'test', imports: map, tailwindUrl: tw, styles: css, setup })
   return new Promise((resolve) => {
     const logs = [], network = [], errors = []
     let frame = null, done = false
@@ -229,11 +273,13 @@ const fmtLog = (l) => (l.level === 'log' ? l.text : `[${l.level}] ${l.text}`)
    同時只有一個 iframe 拿得到焦點，並排跑時別的 iframe 會把焦點搶走（觸發 blur、activeElement 不如預期） */
 export async function gradeFrame(ex, code, { concurrency = ex.serial ? 1 : 3 } = {}) {
   const tests = ex.tests || []
-  let map = null
+  let map = null, tw = null
   try { map = await importMapFor(ex.kind, codeOf(code, tests), ex.vueBuild) } catch (err) { return { pass: false, message: 'Vue 執行環境載入失敗（可能是網路問題，重新整理再試）。', error: String(err && err.message || err) } }
+  const css = stylesFor(ex.kind, codeOf(code, tests))
+  try { tw = await tailwindUrlFor(ex.kind, code, ex) } catch (err) { return { pass: false, message: 'Tailwind 執行環境載入失敗（可能是網路問題，重新整理再試）。', error: String(err && err.message || err) } }
   const runs = new Array(tests.length)
   let next = 0
-  const lane = async () => { while (next < tests.length) { const i = next++; runs[i] = await runTest({ kind: ex.kind, code, ex, test: tests[i], imports: map }) } }
+  const lane = async () => { while (next < tests.length) { const i = next++; runs[i] = await runTest({ kind: ex.kind, code, ex, test: tests[i], imports: map, tailwindUrl: tw, styles: css }) } }
   await Promise.all(Array.from({ length: Math.min(concurrency, tests.length) }, lane))
   const results = runs.map((r) => ({ name: r.test.name, pass: r.test.pass, ...(r.test.pass ? {} : { error: r.test.error }) }))
   const pass = results.length > 0 && results.every((r) => r.pass)
@@ -245,17 +291,17 @@ export async function gradeFrame(ex, code, { concurrency = ex.serial ? 1 : 3 } =
 
 /* 預覽：看得見的 iframe，事件（console、error、network、ready）交給 onEvent。回傳 { iframe, resize, destroy } */
 export async function mountPreview(host, { kind, code, ex = {}, setup = '', width, height, onEvent = () => {} }) {
-  const map = await importMapFor(kind, code, ex.vueBuild)
+  const [map, tw] = await Promise.all([importMapFor(kind, code, ex.vueBuild), tailwindUrlFor(kind, code, ex)])
   const runId = newRunId()
-  const { html } = buildSrcdoc({ kind, code, ex, runId, mode: 'preview', imports: map, setup })
+  const { html } = buildSrcdoc({ kind, code, ex, runId, mode: 'preview', imports: map, tailwindUrl: tw, styles: stylesFor(kind, code), setup })
   return createFrame({ host, html, runId, width, height, onMessage: onEvent })
 }
 
 /* 只執行、不測試（深入內容的 run 區塊）：載入完成後再等 settle 毫秒，期間沒有未處理的錯誤就算成功 */
 export async function runOnce({ kind, code, ex = {}, setup = '', settle = 600, timeout = TEST_TIMEOUT_MS, width = DEFAULT_VIEWPORT }) {
-  const map = await importMapFor(kind, code, ex.vueBuild)
+  const [map, tw] = await Promise.all([importMapFor(kind, code, ex.vueBuild), tailwindUrlFor(kind, code, ex)])
   const runId = newRunId()
-  const { html } = buildSrcdoc({ kind, code, ex, runId, mode: 'once', imports: map, setup })
+  const { html } = buildSrcdoc({ kind, code, ex, runId, mode: 'once', imports: map, tailwindUrl: tw, styles: stylesFor(kind, code), setup })
   return new Promise((resolve) => {
     const logs = [], network = [], errors = []
     let frame = null, done = false, settleTimer = null

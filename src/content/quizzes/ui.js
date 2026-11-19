@@ -359,6 +359,55 @@ export default [
     ],
   },
   {
+    skill: 'element-plus',
+    questions: [
+      {
+        q: '院方主色是深綠。在 `:root` 寫了 `--el-color-primary: #0b6e4f`，主按鈕變綠了，滑鼠移上去卻是淺藍。原因是什麼？',
+        options: [
+          '`:root` 的權重比 Element Plus 的規則低，hover 時被元件庫的樣式蓋掉',
+          'hover 用的 `--el-color-primary-light-3` 是預先算好的固定色，不會跟著主色重算',
+          'Element Plus 的 hover 顏色寫死在 `.el-button:hover` 裡，不能用 CSS 變數改',
+          '瀏覽器快取了舊的 `index.css`，重新整理就會變綠',
+        ],
+        answer: 1,
+        explain: '按鈕的 `--el-button-hover-bg-color` 引用 `--el-color-primary-light-3`，這個值是 SCSS 編譯時算好的色碼（預設 `#79bbff`），只改 `--el-color-primary` 不會讓它重算。要把 `light-3` 到 `light-9`、`dark-2` 一起覆寫，或用 SCSS 變數重新產生。主色有變綠，代表變數已經生效，不是權重或快取問題；hover 色也是變數，不是寫死的。',
+      },
+      {
+        q: '使用者第一次送出後，病歷號欄位顯示後端的「查無此病歷號」。他改了病歷號再送，後端回了同一則訊息，這次欄位下沒有字。下面的程式缺了什麼？',
+        code: `async function onSubmit() {
+  const ok = await formRef.value.validate().catch(() => false)
+  if (!ok) return
+  const res = await fetch('/api/registrations', { method: 'POST', body: JSON.stringify(payload()) })
+  if (res.status === 422) {
+    const body = await res.json()
+    for (const e of body.errors) serverErrors[FIELD_MAP[e.field]] = e.message
+  }
+}
+// <el-form-item prop="patientNo" :error="serverErrors.patientNo">`,
+        lang: 'js',
+        options: [
+          '`validate()` 之後要呼叫 `formRef.value.clearValidate()`，否則前端驗證會蓋掉後端錯誤',
+          '`error` 只能在 `el-form` 的 `rules` 裡設定，不能從 prop 傳入',
+          '送出前沒有把 `serverErrors` 清成空字串：`error` 的值沒變，`el-form-item` 不會重新顯示',
+          '要用 `nextTick` 包住指定 `serverErrors` 的那一行，畫面才會更新',
+        ],
+        answer: 2,
+        explain: '`el-form-item` 用 `watch` 監看 `error`，值改變時才進入錯誤狀態。第二次送出時 `validate()` 通過、欄位變成 success，紅字消失；後端再回同一則訊息，`error` 從「查無此病歷號」設成「查無此病歷號」，值沒變，`watch` 不觸發。送出前先清空就好。`clearValidate()` 清的是驗證狀態，不會讓同一個值重新觸發；`error` 是 `el-form-item` 的 prop；`nextTick` 不改變「值沒有改變」這件事。',
+      },
+      {
+        q: '櫃台的舊電腦開掛號頁很慢。`vite build` 的輸出有一支 1 MB 的 JS 與 363 KB 的 CSS，頁面只用到表單、按鈕、表格與 Dialog。`main.js` 裡有 `app.use(ElementPlus)` 與 `import \'element-plus/dist/index.css\'`。先做哪件事？',
+        options: [
+          '改成按需引入：拿掉這兩行，用 unplugin-vue-components 與 unplugin-auto-import 加 `ElementPlusResolver`',
+          '保留全量引入，把 Element Plus 切成獨立的 vendor chunk，第二次進頁就有快取',
+          '換成 CDN 的 `index.full.min.js`，讓瀏覽器從 CDN 下載比較快',
+          '把 `index.css` 改成 `<link rel="preload">`，讓它和 JS 平行下載',
+        ],
+        answer: 0,
+        explain: '全量引入把所有元件與整份樣式放進 bundle；按需引入只帶入模板與 script 用到的元件和它們的 CSS，同一個畫面實測 JS 約 368 KB、CSS 約 93 KB。切 vendor chunk 只改善第二次之後的快取，第一次仍然下載全部；CDN 的完整版一樣是全部元件；preload 改的是下載順序，不改大小。',
+      },
+    ],
+  },
+  {
     skill: 'layout-patterns',
     questions: [
       {

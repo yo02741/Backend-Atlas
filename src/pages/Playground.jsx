@@ -3,13 +3,15 @@ import { decodePlaygroundCode } from '../playgroundLink.js'
 import FramePreview from '../components/FramePreview.jsx'
 import CodeEditor from '../components/CodeEditor.jsx'
 import { ConsoleOut, ResultTable, PlanTree, RuntimeStatus } from '../components/Output.jsx'
+import { TAILWIND_STYLE_RE, ELEMENT_PLUS_RE } from '../runtime/frameStatus.js'
 import { runPython, ensurePython } from '../runtime/py.js'
 import { runSql, resetSchema, explain, ensureSql, invalidateSchema } from '../runtime/sql.js'
 import { runJs } from '../runtime/js.js'
 import { SHOP_SCHEMA, SHOP_TABLES } from '../content/schemas.js'
 
 /* Playground：像 CodePen 一樣自由打程式，Python / PostgreSQL / JavaScript 都在瀏覽器裡跑。
-   HTML 與 Vue 在沙箱 iframe 裡跑（src/runtime/frame.js，第一次執行時才載入），fetch 由假 API 回應，可以調延遲與錯誤率。 */
+   HTML 與 Vue 在沙箱 iframe 裡跑（src/runtime/frame.js，第一次執行時才載入），fetch 由假 API 回應，可以調延遲與錯誤率。
+   HTML 裡有 <style type="text/tailwindcss"> 時，沙箱另外載入 Tailwind CSS（@tailwindcss/browser）。 */
 
 const SAMPLES = {
   python: [
@@ -177,6 +179,36 @@ SAMPLES.html = [
   .card { flex: 1 1 200px; padding: 16px; border: 2px solid #333; border-radius: 8px; }
   @media (max-width: 480px) { .card { flex-basis: 100%; } }
 </style>
+` },
+  { label: 'Tailwind CSS：叫號卡片', code: `<!-- 有 <style type="text/tailwindcss"> 時，沙箱載入 Tailwind CSS（@tailwindcss/browser），在瀏覽器裡掃 class 產生 CSS -->
+<style type="text/tailwindcss">
+  @theme {
+    --color-clinic: #2f6fd6;
+    --color-clinic-strong: #1f4fa8;
+  }
+  /* dark: 改成看 data-theme，不看系統設定 */
+  @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+</style>
+
+<main class="mx-auto max-w-4xl p-4 dark:bg-gray-900 dark:text-white" id="page">
+  <header class="mb-4 flex items-center justify-between">
+    <h1 class="text-xl font-bold">今日叫號</h1>
+    <button id="theme" type="button" class="rounded-md border px-3 py-1">切換暗色</button>
+  </header>
+  <!-- 手機一欄，md:（48rem）起兩欄 -->
+  <ul class="grid gap-3 md:grid-cols-2">
+    <li class="rounded-lg border p-4"><b>101 診</b> 家醫科・目前 12 號</li>
+    <li class="rounded-lg border p-4"><b>102 診</b> 小兒科・目前 8 號</li>
+  </ul>
+  <button type="button" class="mt-4 h-11 rounded-md bg-clinic px-4 text-white hover:bg-clinic-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clinic disabled:opacity-50">叫下一號</button>
+</main>
+
+<script>
+  document.getElementById('theme').addEventListener('click', () => {
+    const page = document.getElementById('page')
+    page.dataset.theme = page.dataset.theme === 'dark' ? 'light' : 'dark'
+  })
+</script>
 ` },
 ]
 SAMPLES.vue = [
@@ -353,7 +385,7 @@ export default function Playground({ initialLang = 'python', initialCode = '' })
           <button key={l.id} role="tab" aria-selected={lang === l.id} className={lang === l.id ? 'on' : ''} onClick={() => setLang(l.id)}>{l.label}</button>
         ))}
         <span className="spacer" />
-        <RuntimeStatus kind={lang} />
+        <RuntimeStatus kind={lang} tailwind={lang === 'html' && TAILWIND_STYLE_RE.test(code)} elementPlus={ELEMENT_PLUS_RE.test(code)} />
       </div>
 
       <div className="pg-layout">

@@ -444,6 +444,54 @@ const props = defineProps({ level: String })   // 'warn' 或 'danger'
     ],
   },
   {
+    skill: 'tailwind-css',
+    questions: [
+      {
+        q: '在 Tailwind CSS 4 預設設定下，`class="hidden md:block"` 的元素在哪些寬度看得到？',
+        options: [
+          '小於 768px 看得到，768px 以上隱藏',
+          '768px（48rem）以上看得到，更窄時隱藏',
+          '只在 768px 到 1023px 之間看得到',
+          '一律看不到，`hidden` 的優先順序比斷點高',
+        ],
+        answer: 1,
+        explain: 'Tailwind 的斷點前綴都是 `min-width`：`md:block` 產生 `@media (width >= 48rem)`，在預設字級下是 768px。沒有前綴的 `hidden` 是最窄的版本，768px 以上被 `md:block` 蓋過。只在某個區間生效要寫 `md:max-lg:block`；兩條規則都在 `utilities` 層，有 media query 的那條排在後面，所以不是一律隱藏。',
+      },
+      {
+        q: '這個徽章在 `npm run build` 後，哪些狀態會有背景色？',
+        code: `<script setup>
+const props = defineProps({ status: String })
+const tone = { booked: 'blue', missed: 'amber' }
+const other = 'bg-blue-100'
+</script>
+
+<template>
+  <span :class="\`bg-\${tone[props.status]}-100\`">{{ status }}</span>
+</template>`,
+        lang: 'vue',
+        options: [
+          '兩種都有：Tailwind 會在建置時算出 `bg-blue-100` 與 `bg-amber-100`',
+          '兩種都沒有：模板裡的 class 綁定一律不會被掃描',
+          '只有 booked：原始碼裡只有 `bg-blue-100` 是完整出現的字串',
+          '只有 missed：`other` 變數沒有被使用，Tailwind 會跳過它',
+        ],
+        answer: 2,
+        explain: 'Tailwind 不執行程式，只把原始碼當文字找完整的 class 字串。`bg-amber-100` 從沒完整出現，不會產生；`bg-blue-100` 剛好寫在 `other` 這個沒用到的變數裡，掃描時照樣被找到，所以 booked 有顏色。這種「碰巧有」最難發現，改成完整字串的對照表，或用 `@source inline()` 列出。',
+      },
+      {
+        q: '按鈕元件根元素是 `class="px-4 bg-clinic"`，元件的 `<style scoped>` 又寫了 `button { background: var(--color-primary) }`。呼叫端傳 `class="bg-danger px-2"`，背景色沒變，左右內距有時有效有時沒效。怎麼改最直接？',
+        options: [
+          '把 `bg-danger` 改成 `bg-danger!`，`px-2` 改成 `px-2!`，用 important 一次解決',
+          '把呼叫端的 class 寫在根元素 class 的前面，讓它先套用',
+          '把 scoped 那條放進 `@layer components`（或刪掉），根元素的 class 用 `cn()` 和傳入的 class 合併',
+          '把 Tailwind 換成 CSS Modules，避免兩種寫法衝突',
+        ],
+        answer: 2,
+        explain: 'scoped CSS 沒有放進任何層，勝過 `@layer utilities` 裡的 `bg-danger`；`px-4` 與 `px-2` 同時在元素上時，勝出看 CSS 檔裡的順序，和 class 屬性的順序無關，所以把呼叫端的 class 移到前面沒有用。把 scoped 規則放進 `components` 層、再用 `cn()`（tailwind-merge）拿掉被取代的 `px-4`，兩個問題都解決。`!` 會讓之後要覆寫更難；換掉整套做法成本太高。',
+      },
+    ],
+  },
+  {
     skill: 'css-motion',
     questions: [
       {
@@ -487,6 +535,51 @@ const props = defineProps({ level: String })   // 'warn' 或 'danger'
         ],
         answer: 0,
         explain: '作業系統的設定會讓 `prefers-reduced-motion: reduce` 成立，使用者不必再找網站的開關。縮短時間仍然是大範圍的移動；網站自己的開關可以額外提供，但預設要先尊重系統設定；`element.animate()` 不會自動減少動態，JavaScript 要用 `matchMedia(\'(prefers-reduced-motion: reduce)\')` 自己判斷。',
+      },
+    ],
+  },
+  {
+    skill: 'design-to-code',
+    questions: [
+      {
+        q: 'Figma 裡一個水平 Auto layout 的列，左邊是標題、右邊是按鈕；標題設成 Fill container，按鈕是 Hug contents。對應的 CSS 是哪一組？',
+        options: [
+          '標題 `width: 100%`，按鈕寫 Dev Mode 顯示的寬度，例如 `width: 88px`',
+          '標題 `flex: 1` 加 `min-width: 0`，按鈕不寫寬度',
+          '標題不寫寬度，按鈕 `flex: 1`',
+          '兩者都寫 `width: fit-content`，容器加 `justify-content: space-between`',
+        ],
+        answer: 1,
+        explain: 'Fill container 在父層的主軸上是吃掉剩下的空間，就是 `flex: 1`；加 `min-width: 0` 讓長標題縮得下去、不把按鈕擠出去。Hug 是跟著內容，flex 子項預設就是這樣，不必寫寬度。`width: 100%` 加上旁邊的按鈕會超出容器；寫死 88px 換一段文字就錯；兩者都 hug 時標題不會延伸。',
+      },
+      {
+        q: '在 390px 寬的畫面上量到卡片寬 358px、左邊 16px。這段 CSS 換到 430px 寬的手機時會怎樣？',
+        code: `.slots { padding: 16px; }
+.slot-card {
+  width: 358px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+}`,
+        lang: 'css',
+        options: [
+          '卡片自動變成 398px，`width` 在 block 版面裡只是最小寬度',
+          '卡片維持 358px，右邊多出 40px 的空白',
+          '卡片超出畫面，出現橫向捲軸',
+          '卡片寬度變成 430px，填滿整個視窗',
+        ],
+        answer: 1,
+        explain: '`width: 358px` 是固定值，視窗變寬時卡片不變，右邊多出 430 − 16 − 358 − 16 = 40px。設計稿在 390 量到的 358 是「填滿父層」的結果，應該不寫寬度（block 元素預設填滿），需要上限時用 `max-inline-size`。視窗變寬不會讓固定寬的元素溢出；`width` 也不是最小寬度。',
+      },
+      {
+        q: '設計稿只畫了 390 與 1280 兩個 frame、每張卡片都是短名字與「可預約」狀態。開始切版前，最該先做的事是什麼？',
+        options: [
+          '先照 Dev Mode 把兩個 frame 的 CSS 全部貼進專案，demo 時再看缺什麼',
+          '自己決定中間寬度與其他狀態的樣子，做完再請設計師確認',
+          '列出沒畫的寬度（例如 768）、狀態（hover、focus、載入中、空資料、錯誤）與極端內容（長名字、候補人數），一次問設計師，答案寫進畫面規格',
+          '只做 390 與 1280 兩個寬度，其他寬度不在驗收範圍',
+        ],
+        answer: 2,
+        explain: '設計稿通常只畫一個寬度、一種資料、一種狀態，沒畫的部分如果不問，就由實作的人或 AI 自己決定。先列清單一次問完，答案寫進畫面規格的狀態表與斷點表，驗收時才有依據。照抄 Dev Mode 只得到兩張靜態畫面；自己決定再確認會重工；使用者的裝置寬度不只兩種。',
       },
     ],
   },

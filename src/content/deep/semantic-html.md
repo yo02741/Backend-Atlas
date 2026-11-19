@@ -38,8 +38,12 @@
 | `<input type="checkbox">` | checkbox | Space 切換 | `role="checkbox"`、`aria-checked`、按鍵處理 |
 | `<input type="radio">` 一組 | radio | 方向鍵在同組內移動 | `role="radiogroup"`、焦點管理、方向鍵處理 |
 | `<select>` | combobox（加了 `multiple` 是 listbox） | 方向鍵選、輸入字母跳選 | 整套鍵盤互動 |
+| `<details>` 加 `<summary>` | group（`summary` 會念出展開或收合） | `summary` 可以 Tab 聚焦，Enter、Space 展開收合 | `aria-expanded`、`aria-controls`、按鍵處理、顯示與隱藏 |
+| `<dialog>` 用 `showModal()` 打開 | dialog | Esc 關閉，背景不能操作，關閉後焦點回到原本的元素 | `role="dialog"`、`aria-modal`、focus trap、Esc 處理、背景的 `inert` |
 
 ARIA 屬性（`role`、`aria-*`）只改無障礙樹上的角色與狀態，不會幫元素加上鍵盤行為。有原生元素可以用時，就用原生元素；ARIA 留給原生元素做不到的元件，例如 Tabs、Combobox。
+
+`<details>` 與 `<dialog>` 都是 Baseline（前者 2020，後者 2022），展開收合與對話框不必再用 `div` 自己做。`<dialog>` 本身就是 dialog 角色，不用再加 `role="dialog"`；Dialog 的完整做法見 [浮層：Dialog、Drawer、Popover、Tooltip](#/skill/overlays)。
 
 ### 地標與標題
 
@@ -51,6 +55,7 @@ ARIA 屬性（`role`、`aria-*`）只改無障礙樹上的角色與狀態，不�
 | `<aside>` | complementary | 和主內容相關、但可以拿掉的區塊 |
 | `<footer>` | contentinfo | 條件同 `header` |
 | `<section>` | region | 有名稱（例如 `aria-labelledby` 指到它的標題）時才算 |
+| `<search>` | search | 包住搜尋或篩選的表單，取代 `<div role="search">`；Baseline 2023，2026 年 4 月起 Widely available，更舊的瀏覽器把它當成不認得的元素（沒有地標語意，預設是 inline） |
 
 螢幕閱讀器可以列出頁面的地標直接跳過去，也可以列出所有標題。標題 `h1`–`h6` 是內容的大綱：一頁通常一個 `h1`，`h2` 底下的小節用 `h3`。要讓字變小就用 CSS，不要為了字級選 `h4`。
 

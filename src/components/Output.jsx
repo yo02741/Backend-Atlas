@@ -93,14 +93,20 @@ export function TestResults({ results }) {
 /* 執行環境載入狀態（Python / PostgreSQL / 沙箱 iframe 的 Vue） */
 const NOOP_SUB = () => () => {}
 const READY = () => 'ready'
-export function RuntimeStatus({ kind }) {
-  // html、css 題不需要下載任何東西；vue 題第一次執行時下載自架的 Vue（import pinia、vue-router 時另外下載，各幾十 KB）
-  const get = kind === 'python' ? pyStatus : kind === 'sql' ? sqlStatus : kind === 'vue' ? frameStatus : READY
-  const sub = kind === 'python' ? onPyStatus : kind === 'sql' ? onSqlStatus : kind === 'vue' ? onFrameStatus : NOOP_SUB
+export function RuntimeStatus({ kind, tailwind = false, elementPlus = false }) {
+  // html、css 題不需要下載任何東西；vue 題第一次執行時下載自架的 Vue（import pinia、vue-router 時另外下載，各幾十 KB）；
+  // 用到 Tailwind 的 html、vue 題（tailwind）第一次執行時下載 @tailwindcss/browser（約 0.3 MB）；
+  // import element-plus 的 vue 題另外下載 Element Plus（JS 約 0.9 MB，樣式約 0.36 MB）
+  const tw = tailwind && (kind === 'html' || kind === 'vue')
+  const frameKind = kind === 'vue' || tw
+  const get = kind === 'python' ? pyStatus : kind === 'sql' ? sqlStatus : frameKind ? frameStatus : READY
+  const sub = kind === 'python' ? onPyStatus : kind === 'sql' ? onSqlStatus : frameKind ? onFrameStatus : NOOP_SUB
   const [s, setS] = useState(get())
-  useEffect(() => sub(setS), [sub])
-  const label = { python: 'Python（Pyodide）', sql: 'PostgreSQL（PGlite）', js: 'JavaScript', html: 'HTML（沙箱 iframe）', css: 'CSS（沙箱 iframe）', vue: `Vue ${VERSIONS.vue}、Pinia ${VERSIONS.pinia}、Vue Router ${VERSIONS['vue-router']}（沙箱 iframe）` }[kind]
-  const size = { python: '約 13 MB', sql: '約 16 MB', js: '', vue: '約 0.6 MB' }[kind] || ''
+  useEffect(() => { setS(get()); return sub(setS) }, [get, sub])
+  const twLabel = `Tailwind CSS ${VERSIONS['@tailwindcss/browser']}`
+  const ep = elementPlus && kind === 'vue'
+  const label = { python: 'Python（Pyodide）', sql: 'PostgreSQL（PGlite）', js: 'JavaScript', html: tw ? `HTML、${twLabel}（沙箱 iframe）` : 'HTML（沙箱 iframe）', css: 'CSS（沙箱 iframe）', vue: `Vue ${VERSIONS.vue}、Pinia ${VERSIONS.pinia}、Vue Router ${VERSIONS['vue-router']}${ep ? `、Element Plus ${VERSIONS['element-plus']}` : ''}${tw ? `、${twLabel}` : ''}（沙箱 iframe）` }[kind]
+  const size = { python: '約 13 MB', sql: '約 16 MB', js: '', vue: ep ? (tw ? '約 2.2 MB' : '約 1.9 MB') : tw ? '約 0.9 MB' : '約 0.6 MB', html: tw ? '約 0.3 MB' : '' }[kind] || ''
   const text = s === 'ready' ? '就緒' : s === 'loading' ? `下載中 ${size}，只需一次` : s === 'error' ? '載入失敗' : (kind === 'js' ? '就緒' : '第一次執行時載入')
   return (
     <span className={`rt-status ${s}`} title={`${label}：${text}`}>

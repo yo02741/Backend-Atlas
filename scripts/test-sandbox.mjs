@@ -1,12 +1,13 @@
 // 前端沙箱的純函式單元測試：假 API（src/runtime/fakeApi.js）的路由、延遲、序列回應、abort、404、網路錯誤、內建門診路由；
 // 迴圈保護（src/runtime/loopGuard.js）的改寫；srcdoc 組成（src/runtime/frame.js 的 buildSrcdoc）的行號與跳脫；
-// vendor 套件的判斷（vendorsFor）與 import map（versions.js 的檔名、vue-router 的包裝模組）。
+// vendor 套件的判斷（vendorsFor）與 import map（versions.js 的檔名、vue-router 的包裝模組）；Element Plus 的語系 module 與樣式檔；
+// Tailwind 的載入判斷與 classic script。
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createFakeApi } from '../src/runtime/fakeApi.js'
 import { guardLoops, guardHtml } from '../src/runtime/loopGuard.js'
-import { buildSrcdoc, vendorsFor, importMapFor, ROUTER_REDIRECT_LIMIT } from '../src/runtime/frame.js'
-import { VERSIONS, VENDOR_FILES, vendorPath } from '../src/runtime/versions.js'
+import { buildSrcdoc, vendorsFor, importMapFor, stylesFor, usesTailwind, tailwindUrlFor, ROUTER_REDIRECT_LIMIT } from '../src/runtime/frame.js'
+import { VERSIONS, VENDOR_FILES, VENDOR_SUBMODULES, VENDOR_STYLES, MODULE_VENDORS, CLASSIC_VENDORS, vendorPath, vendorFilePath } from '../src/runtime/versions.js'
 
 let n = 0
 const test = async (name, fn) => { await fn(); n++; console.log('ok  ' + name) }
@@ -297,11 +298,12 @@ await test('versions.js：pinia、vue-router 只有 prod 檔，dev 退回 prod�
   assert.equal(vendorPath('vue'), `vendor/vue@${VERSIONS.vue}/vue.esm-browser.js`)
   assert.equal(vendorPath('pinia'), `vendor/pinia@${VERSIONS.pinia}/pinia.esm-browser.prod.js`)
   assert.equal(vendorPath('vue-router', 'dev'), `vendor/vue-router@${VERSIONS['vue-router']}/vue-router.esm-browser.prod.js`)
-  for (const [pkg, files] of Object.entries(VENDOR_FILES)) {
-    for (const file of Object.values(files)) {
+  const names = new Set([...MODULE_VENDORS, ...Object.values(VENDOR_SUBMODULES).flatMap((m) => Object.keys(m))])
+  for (const pkg of MODULE_VENDORS) {
+    for (const file of [...Object.values(VENDOR_FILES[pkg]), ...Object.values(VENDOR_SUBMODULES[pkg] || {})]) {
       const src = readFileSync(new URL(`../node_modules/${pkg}/${file}`, import.meta.url), 'utf8')
       const specs = [...src.matchAll(/(?:\bfrom|\bimport)\s*\(?\s*["']([^"'./][^"']*)["']/g)].map((m) => m[1])
-      for (const spec of specs) assert.ok(spec in VERSIONS, `${pkg}/${file} import 了 ${spec}，import map 裡沒有`)
+      for (const spec of specs) assert.ok(names.has(spec), `${pkg}/${file} import 了 ${spec}，import map 裡沒有`)
     }
   }
 })
@@ -327,6 +329,130 @@ await test('buildSrcdoc（imports）：import map 列出每個套件；vue-route
     assert.deepEqual(Object.keys(im.imports), ['vue', 'pinia', 'vue-router', '@sandbox/vue-router'])
     const cfg = JSON.parse(/"runId":"r9"[^\n]*?\}/.exec(html)[0].replace(/^/, '{'))
     assert.deepEqual(cfg.vendors.map((v) => v[1]), ['vue', 'pinia', 'vue-router', 'vue-router'])   // stack 裡的 data: URL 換成套件名稱
+  } finally {
+    globalThis.fetch = realFetch
+    delete globalThis.window
+    delete globalThis.FileReader
+  }
+})
+
+// ── Element Plus（module 主檔、語系 module、樣式檔） ──
+await test('versions.js：element-plus 是 module 套件，有 zh-tw 語系 module 與樣式檔；主檔只 import vue、語系檔不 import 任何東西', () => {
+  assert.ok(MODULE_VENDORS.includes('element-plus'))
+  assert.equal(vendorPath('element-plus', 'dev'), `vendor/element-plus@${VERSIONS['element-plus']}/index.full.min.mjs`)   // 沒有 dev，退回 prod
+  assert.deepEqual(Object.keys(VENDOR_SUBMODULES['element-plus']), ['element-plus/es/locale/lang/zh-tw'])
+  assert.equal(vendorFilePath('element-plus', VENDOR_STYLES['element-plus']), `vendor/element-plus@${VERSIONS['element-plus']}/index.css`)
+  const spec = (file) => [...readFileSync(new URL(`../node_modules/element-plus/${file}`, import.meta.url), 'utf8').matchAll(/(?:\bfrom|\bimport)\s*\(?\s*["']([^"']+)["']/g)].map((m) => m[1])
+  assert.deepEqual([...new Set(spec(VENDOR_FILES['element-plus'].prod))], ['vue'])
+  assert.deepEqual(spec(VENDOR_SUBMODULES['element-plus']['element-plus/es/locale/lang/zh-tw']), [])
+  for (const f of [VENDOR_FILES['element-plus'].prod, ...Object.values(VENDOR_SUBMODULES['element-plus']), VENDOR_STYLES['element-plus']]) {
+    assert.ok(readFileSync(new URL(`../node_modules/element-plus/${f}`, import.meta.url)).length > 0, f)
+  }
+})
+
+await test('vendorsFor／stylesFor：import element-plus（或它的子路徑）才加上 element-plus 與 vue；只有樣式檔的網址，不用下載', () => {
+  globalThis.window = { location: { href: 'http://localhost/' } }
+  try {
+    assert.deepEqual(vendorsFor('vue', "import ElementPlus, { ElMessage } from 'element-plus'"), ['vue', 'element-plus'])
+    assert.deepEqual(vendorsFor('html', "import zhTw from 'element-plus/es/locale/lang/zh-tw'"), ['vue', 'element-plus'])
+    assert.deepEqual(vendorsFor('vue', "const { ElButton } = await import('element-plus')"), ['vue', 'element-plus'])
+    assert.deepEqual(vendorsFor('vue', "import { defineStore } from 'pinia'\nimport ElementPlus from 'element-plus'"), ['vue', 'pinia', 'element-plus'])
+    assert.deepEqual(vendorsFor('vue', "// 文字裡提到 element-plus 不算\nconst s = 'element-plus'"), ['vue'])
+    assert.deepEqual(vendorsFor('vue', "import x from 'element-plus-extra'"), ['vue'])
+    assert.deepEqual(stylesFor('vue', "import ElementPlus from 'element-plus'"), [`http://localhost/vendor/element-plus@${VERSIONS['element-plus']}/index.css`])
+    assert.deepEqual(stylesFor('vue', "import { ref } from 'vue'"), [])
+    assert.deepEqual(stylesFor('html', '<p>x</p>'), [])
+  } finally {
+    delete globalThis.window
+  }
+})
+
+await test('importMapFor（element-plus）：主檔與 zh-tw 語系都進 import map；只用 vue 時不下載 element-plus', async () => {
+  globalThis.window = { location: { href: 'http://localhost/' } }
+  globalThis.FileReader = class { readAsDataURL(blob) { blob.arrayBuffer().then((b) => { this.result = `data:${blob.type};base64,` + Buffer.from(b).toString('base64'); this.onload() }) } }
+  const realFetch = globalThis.fetch
+  const urls = []
+  globalThis.fetch = async (url) => { urls.push(String(url)); return new Response('/* ' + String(url).split('/').pop() + ' */') }
+  try {
+    await importMapFor('vue', "import { ref } from 'vue'")
+    assert.ok(!urls.some((u) => u.includes('element-plus')), '只用 vue 不該下載 element-plus：' + urls.join(', '))
+    const map = await importMapFor('vue', "import ElementPlus from 'element-plus'\nimport zhTw from 'element-plus/es/locale/lang/zh-tw'")
+    assert.deepEqual(Object.keys(map), ['vue', 'element-plus', 'element-plus/es/locale/lang/zh-tw'])
+    assert.equal(Buffer.from(map['element-plus'].split(',')[1], 'base64').toString(), '/* index.full.min.mjs */')
+    assert.equal(Buffer.from(map['element-plus/es/locale/lang/zh-tw'].split(',')[1], 'base64').toString(), '/* zh-tw.min.mjs */')
+    assert.equal(urls.filter((u) => u.includes('element-plus')).length, 2)
+    await importMapFor('vue', "import ElementPlus from 'element-plus'")
+    assert.equal(urls.filter((u) => u.includes('element-plus')).length, 2, '每個檔只下載一次')
+  } finally {
+    globalThis.fetch = realFetch
+    delete globalThis.window
+    delete globalThis.FileReader
+  }
+})
+
+await test('buildSrcdoc（styles）：樣式檔以 <link> 放在 <head>，在題目的 CSS 之前；網址會跳脫', () => {
+  const href = 'http://localhost/vendor/element-plus@2.14.8/index.css'
+  const { html } = buildSrcdoc({ kind: 'vue', code: 'x', ex: { css: '.a { color: red }' }, runId: 'r12', imports: { vue: 'data:text/javascript;base64,AA==' }, styles: [href] })
+  const at = html.indexOf(`<link rel="stylesheet" href="${href}">`)
+  assert.ok(at > 0 && at < html.indexOf('<style>.a { color: red }') && at < html.indexOf('<body>'))
+  assert.ok(buildSrcdoc({ kind: 'vue', code: 'x', runId: 'r13', styles: ['http://x/"><script>'] }).html.includes('href="http://x/&quot;&gt;&lt;script&gt;"'))
+  assert.ok(!buildSrcdoc({ kind: 'vue', code: 'x', runId: 'r14' }).html.includes('<link rel="stylesheet"'))
+})
+
+// ── Tailwind（@tailwindcss/browser，classic script） ──
+await test('versions.js：@tailwindcss/browser 是 classic script，不進 import map；dev、prod 是同一個檔', () => {
+  assert.deepEqual(CLASSIC_VENDORS, ['@tailwindcss/browser'])
+  assert.ok(!MODULE_VENDORS.includes('@tailwindcss/browser'))
+  assert.equal(vendorPath('@tailwindcss/browser', 'dev'), `vendor/@tailwindcss/browser@${VERSIONS['@tailwindcss/browser']}/index.global.js`)
+  assert.equal(vendorPath('@tailwindcss/browser', 'prod'), vendorPath('@tailwindcss/browser', 'dev'))
+  const src = readFileSync(new URL('../node_modules/@tailwindcss/browser/dist/index.global.js', import.meta.url), 'utf8')
+  assert.ok(!/^\s*(import|export)\s/m.test(src.slice(0, 200)), 'index.global.js 應該是 IIFE，不是 ES module')
+  assert.deepEqual(vendorsFor('html', "import '@tailwindcss/browser'"), [])   // 不會被當成 import map 的套件
+})
+
+await test('usesTailwind：題目的 tailwind 欄位優先；沒有題目設定時看 html 有沒有 <style type="text/tailwindcss">', () => {
+  assert.equal(usesTailwind('html', '<p class="p-4">', { tailwind: true }), true)
+  assert.equal(usesTailwind('vue', "import { ref } from 'vue'", { tailwind: true }), true)
+  assert.equal(usesTailwind('html', '<style type="text/tailwindcss"></style>', { tailwind: false }), false)
+  assert.equal(usesTailwind('html', '<style type="text/tailwindcss">@theme { --color-x: red; }</style>'), true)
+  assert.equal(usesTailwind('html', "<style type='text/tailwindcss' id=a></style>"), true)
+  assert.equal(usesTailwind('html', '<STYLE TYPE=text/tailwindcss></STYLE>'), true)
+  assert.equal(usesTailwind('html', '<p class="p-4 md:flex">只有 class 不算</p><style>.a{}</style>'), false)
+  assert.equal(usesTailwind('html', '<!-- text/tailwindcss -->'), false)
+  assert.equal(usesTailwind('css', '<style type="text/tailwindcss">', { tailwind: true }), false)  // css 題不經 Tailwind
+  assert.equal(usesTailwind('vue', '<style type="text/tailwindcss">'), false)                     // vue 題要設 tailwind: true
+})
+
+await test('buildSrcdoc（tailwindUrl）：classic script 在 prelude 之後、<body> 之前；cfg.tailwind 讓測試先等它', () => {
+  const url = 'data:text/javascript;base64,VFc='
+  const { html } = buildSrcdoc({ kind: 'html', code: '<p class="p-4">x</p>', test: { name: 't', code: 'assert(1)' }, runId: 'r10', tailwindUrl: url })
+  const at = html.indexOf(`<script src="${url}"></script>`)
+  assert.ok(at > 0)
+  assert.ok(at > html.indexOf('"runId":"r10"') && at < html.indexOf('<body>'))
+  assert.ok(!html.includes('importmap'))
+  assert.match(html, /"tailwind":true/)
+  assert.match(html, /\["data:text\/javascript;base64,VFc=","@tailwindcss\/browser"\]/)
+  const plain = buildSrcdoc({ kind: 'html', code: '<p class="p-4">x</p>', runId: 'r11' }).html
+  assert.match(plain, /"tailwind":false/)
+  assert.ok(!plain.includes('<script src='))
+})
+
+await test('tailwindUrlFor：用不到時不發請求；用到時只下載一次', async () => {
+  globalThis.window = { location: { href: 'http://localhost/' } }
+  globalThis.FileReader = class { readAsDataURL(blob) { blob.arrayBuffer().then((b) => { this.result = `data:${blob.type};base64,` + Buffer.from(b).toString('base64'); this.onload() }) } }
+  const realFetch = globalThis.fetch
+  const urls = []
+  globalThis.fetch = async (url) => { urls.push(String(url)); return new Response('/* tw */') }
+  try {
+    assert.equal(await tailwindUrlFor('html', '<p class="p-4">x</p>'), null)
+    assert.equal(await tailwindUrlFor('css', '.a{}', { tailwind: true }), null)
+    assert.equal(urls.length, 0)
+    const a = await tailwindUrlFor('html', '<p>x</p>', { tailwind: true })
+    const b = await tailwindUrlFor('html', '<style type="text/tailwindcss"></style>')
+    assert.equal(a, b)
+    assert.match(a, /^data:text\/javascript;base64,/)
+    assert.equal(urls.length, 1)
+    assert.ok(urls[0].endsWith(`/vendor/@tailwindcss/browser@${VERSIONS['@tailwindcss/browser']}/index.global.js`))
   } finally {
     globalThis.fetch = realFetch
     delete globalThis.window

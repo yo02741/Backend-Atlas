@@ -6,7 +6,7 @@ export default {
   title: '用 AI 寫前端',
   en: 'FRONTEND WITH AI',
   color: 'red',
-  tagline: '把畫面寫成文字、給截圖與線框、先拆元件、AI 產出的常見錯誤與驗收，以及專案規範、API 契約與審查改動。',
+  tagline: '把畫面寫成文字、給截圖與線框、先拆元件、AI 產出的常見錯誤、過時寫法與驗收，以及專案規範、API 契約與審查改動。',
   skills: [
     {
       id: 'describe-ui',
@@ -31,6 +31,18 @@ export default {
       lab: null,
       reviewed: '2026-11',
       related: ['ai-quality-gates', 'context-engineering'],
+    },
+    {
+      id: 'outdated-patterns',
+      title: 'AI 給的過時寫法',
+      en: 'Outdated patterns from AI',
+      level: 2,
+      summary: '模型的訓練資料以舊寫法為主，常給出能動、但瀏覽器早有原生替代的程式：自己寫 focus trap 的 modal、`JSON.parse(JSON.stringify())` 深拷貝、監聽 `scroll` 判斷元素進入畫面。專案規範寫明瀏覽器目標（Baseline 年份），讓 agent 先查 Modern Web Guidance 這類指南再寫，審查時逐項問「有沒有原生替代、在不在支援範圍內」。',
+      example: { primary: 'Modern Web Guidance（npm 的 modern-web-guidance 1.0.1）加 web-features 的 Baseline 資料', alts: ['MDN 的 Baseline 標示與相容性表', 'Can I use', 'AGENTS.md 寫明 Baseline 年份'] },
+      keywords: ['HTML', 'CSS', 'JavaScript'],
+      lab: null,
+      reviewed: '2026-11',
+      related: ['context-engineering', 'ai-quality-gates'],
     },
     {
       id: 'wireframes-screenshots',

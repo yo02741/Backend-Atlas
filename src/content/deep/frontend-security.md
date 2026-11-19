@@ -63,7 +63,7 @@
 
 預設會保留 `style` 屬性與 `<form>`、`<input>`，也會拿掉 `target`。文章不需要的東西用 `ALLOWED_TAGS`、`ALLOWED_ATTR` 收窄，只留用得到的。不要自己用正規表示式過濾：上面的 `<img onerror>` 不含 `<script>`，HTML 的解析規則還有很多寫法能繞過字串比對。
 
-瀏覽器內建的 Sanitizer API（`element.setHTML()`）在 2026 年 11 月只有 Chrome 146 與 Firefox 148 以上支援，Safari 還沒有，不是 Baseline，目前仍用函式庫。
+瀏覽器內建的 Sanitizer API（`element.setHTML()`）在 2026 年 11 月只有 Chrome 146 與 Firefox 148 以上支援，Safari 還沒有，不是 Baseline，目前仍用函式庫。想在支援的瀏覽器先用內建的，就做功能偵測：`'setHTML' in Element.prototype` 成立時呼叫 `el.setHTML(html, { sanitizer: { elements: [...] } })`，不成立時才用 `import('dompurify')` 動態載入函式庫，支援的瀏覽器不必下載它。兩者的行為不同：內建的給了 `elements` 之後，清單以外的元素連同內容一起移除，也會拿掉 `aria-*` 與 `data-*`；DOMPurify 預設保留這些屬性與被移除元素的文字，要對齊得加 `KEEP_CONTENT: false`、`ALLOW_ARIA_ATTR: false`、`ALLOW_DATA_ATTR: false`。
 
 過濾放在哪一邊：後端存檔時過濾，保護所有讀這份資料的地方（App、Email、匯出）；前端在 `v-html` 之前再過濾一次，因為放進頁面的是前端。兩者不衝突。
 
@@ -111,7 +111,7 @@ CSP（Content-Security-Policy）是伺服器隨 HTML 送出的回應標頭，告
 
 導入 CSP 時先送 `Content-Security-Policy-Report-Only`：瀏覽器照樣回報違規、但不阻擋，觀察一段時間確定沒有誤擋，再換成正式的標頭。主機不能設定回應標頭時（例如某些靜態網站服務），可以在 `index.html` 寫 `<meta http-equiv="Content-Security-Policy" content="…">`，但 `frame-ancestors` 與回報功能在 meta 裡無效。
 
-更進一步的是 Trusted Types：CSP 加上 `require-trusted-types-for 'script'` 之後，`innerHTML` 這類地方只接受經過自訂 policy 產生的物件，直接給字串會丟出錯誤。Chrome 83、Safari 26、Firefox 148 支援，2026 年 2 月成為 Baseline，舊瀏覽器還沒有，先當成額外的一層。
+更進一步的是 Trusted Types：CSP 加上 `require-trusted-types-for 'script'` 之後，`innerHTML` 這類地方只接受經過自訂 policy 產生的物件，直接給字串會丟出錯誤。Chrome 83、Safari 26、Firefox 148 支援，2026 年 2 月成為 Baseline，舊瀏覽器還沒有，先當成額外的一層：程式照樣透過 policy 寫入，不支援的瀏覽器只是不強制檢查。過濾仍要自己做，不支援的瀏覽器不會替你擋。
 
 ### 第三方 script
 

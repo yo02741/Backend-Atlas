@@ -220,42 +220,54 @@ click(ul)                                    // 點清單的空白處：closest 
 
 ```vue
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, useTemplateRef, onMounted, onUnmounted } from 'vue'
 
 const keyword = ref('')
 const detailId = ref(null)
 const appointments = ref([])
+const searchBox = useTemplateRef('search-box')
+const drawer = useTemplateRef('drawer')
 
 function search() { /* 呼叫 fetch，不換頁 */ }
 function cancel(id) { /* POST /api/appointments/{id}/cancel */ }
+function openDetail(id) {
+  detailId.value = id
+  drawer.value.showModal()          // Esc 關閉、背景不能操作，都由瀏覽器處理
+}
 
-// Drawer 打開時才監聽 Esc：用 AbortController 一次移除
-let controller = null
-watch(detailId, (id) => {
-  controller?.abort()
-  if (id == null) return
-  controller = new AbortController()
+// 整頁的快捷鍵：按 / 聚焦搜尋框。掛在 document 上，卸載時用 AbortController 一次移除
+const controller = new AbortController()
+onMounted(() => {
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') detailId.value = null
+    if (e.key !== '/' || e.target.closest('input, textarea, [contenteditable]')) return
+    e.preventDefault()              // 不把 / 打進輸入框
+    searchBox.value.focus()
   }, { signal: controller.signal })
 })
-onUnmounted(() => controller?.abort())
+onUnmounted(() => controller.abort())
 </script>
 
 <template>
   <!-- @submit.prevent：取消瀏覽器送出表單的預設動作 -->
   <form @submit.prevent="search">
-    <input v-model="keyword" placeholder="搜尋病患姓名">
+    <input ref="search-box" v-model="keyword" placeholder="搜尋病患姓名" aria-label="搜尋病患姓名">
     <ul>
-      <li v-for="a in appointments" :key="a.id" @click="detailId = a.id">
+      <li v-for="a in appointments" :key="a.id" @click="openDetail(a.id)">
         <span>{{ a.time }} {{ a.patientName }}</span>
         <!-- type="button"：不是送出鈕；.stop：不再冒泡到 li -->
         <button type="button" @click.stop="cancel(a.id)">取消</button>
       </li>
     </ul>
   </form>
+  <!-- 原生 dialog 關閉後，焦點回到打開它之前的元素 -->
+  <dialog ref="drawer" class="drawer" @close="detailId = null">
+    <form method="dialog"><button>關閉</button></form>
+    <AppointmentDetail v-if="detailId" :id="detailId" />
+  </dialog>
 </template>
 ```
+
+Drawer 的 Esc 不必自己監聽：`showModal()` 打開的 `<dialog>` 按 Esc 會觸發 `cancel` 與 `close` 事件，背景變成 inert，Tab 不會移到背景的元素（`<dialog>` 是 Baseline 2022）。在 `document` 上自己判斷 `Escape`、攔 Tab 鍵做 focus trap，是 `<dialog>` 普及之前的寫法。浮層的完整做法見 [浮層：Dialog、Drawer、Popover、Tooltip](#/skill/overlays)。
 
 Vue 的修飾符對應的原生寫法：
 

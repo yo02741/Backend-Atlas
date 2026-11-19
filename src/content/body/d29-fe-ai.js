@@ -94,6 +94,52 @@ export default {
       { label: 'Vue：Style Guide', url: 'https://vuejs.org/style-guide/' },
     ],
   },
+  'outdated-patterns': {
+    map: {
+      names: [
+        { n: '過時寫法', t: '能動、測試也過，但瀏覽器已經內建同樣功能的程式：`div` 加 `position: fixed` 的 modal 配自己寫的 focus trap、`JSON.parse(JSON.stringify())` 深拷貝、`scroll` 事件判斷元素有沒有進入畫面。模型的訓練資料裡舊寫法多，所以 AI 常給這些。' },
+        { n: '原生替代', t: '瀏覽器提供的元素、屬性、CSS 與 API：`<dialog>` 的 `showModal()`、`popover`、`inert`、`:has()`、container query、`structuredClone()`、`IntersectionObserver`。行為、無障礙與焦點由瀏覽器處理，程式少、出錯的地方也少。' },
+        { n: 'Baseline 狀態', t: 'web-features 的標示：Widely available（主要瀏覽器都支援滿 30 個月）可以直接用；Newly available 標年份，舊瀏覽器要退路；Limited availability 只有部分瀏覽器支援，只能當加分寫法。' },
+        { n: '瀏覽器目標', t: '專案寫明要支援到哪裡，例如「Baseline Widely available」「Baseline 2024」或「Chrome 109、Safari 16.4 以上」；AI 依它決定能不能用新功能、要不要寫退路。' },
+        { n: 'Modern Web Guidance', t: 'Chrome 團隊給 coding agent 的 skill（npm 的 `modern-web-guidance`，1.0.1，Apache-2.0），兩百多份指南；agent 用 `search` 找指南、`retrieve` 讀全文，每份指南附 Baseline 狀態與退路。執行時要連網，指南是 Chrome 團隊的建議，不等於標準。' },
+        { n: '退路（fallback）', t: '新功能不支援時的做法：功能偵測後載入 polyfill、`@supports` 包住只是加分的樣式、或保留舊寫法。退路寫在同一份程式裡，不支援的瀏覽器照樣能用。' },
+      ],
+      ask: [
+        '瀏覽器目標：Baseline 年份或最低版本，以及依據',
+        '先查再寫：用到 Dialog、Popover、表單驗證、深拷貝、捲動效果、日期時區這類功能前，先查 Modern Web Guidance 或 MDN',
+        '每個新功能的 Baseline 狀態與退路，不在目標內的功能不能是唯一寫法',
+        '禁止的舊寫法：自己寫 focus trap 與 Esc 監聽、`body { overflow: hidden }` 鎖捲動、在 `<dialog>` 上加 `role="dialog"`',
+        '交付時列出用到的原生功能、各自的 Baseline 狀態與出處',
+      ],
+      prompt: '瀏覽器目標是 Baseline Widely available；Newly available 的功能可以用，但要功能偵測並附退路，Limited availability 只能當加分寫法。實作「看診須知」的確認視窗前，先用 Modern Web Guidance 查 `modal dialog` 與 `prevent page scroll under modal`：用原生 `<dialog>` 加 `showModal()`，不寫 `role="dialog"`、`aria-modal`、focus trap 與 Esc 監聽，不改 `body` 的 `overflow`。交付時附一張表：用到的功能、Baseline 狀態與年份、出處指南的 id。',
+      verify: [
+        { c: '搜尋舊寫法', t: '在 diff 裡搜尋 `JSON.parse(JSON.stringify`、`role="dialog"`、`aria-modal`、`overflow = \'hidden\'`、`addEventListener(\'scroll\'`、`keydown` 裡判斷 `Tab` 的 focus trap；每一處都問一次有沒有原生替代。' },
+        { c: 'Dialog 是原生的', t: 'Elements 分頁選取 Dialog：標籤是 `<dialog>`、開著時符合 `:modal`（Console 執行 `$0.matches(\':modal\')` 得到 `true`）；背景的連結按 Tab 走不到，關閉後焦點回到開啟它的按鈕。' },
+        { c: '新功能在支援範圍內', t: '對每個用到的新功能查 MDN 頁首的 Baseline 標示或 web-features：Limited availability 卻沒有退路，或 Newly available 的年份晚於專案的目標，就退回。' },
+        { c: '退路真的能用', t: '在目標裡最舊的瀏覽器開一次，走過用到新功能的那幾步：畫面要照樣能用，Console 沒有 `is not a function` 或 `undefined`；沒有實機時，先確認功能偵測的寫法和指南一致（例如 `Object.hasOwn(HTMLElement.prototype, \'popover\')`）。' },
+        { c: '出處對得上', t: '交付的表裡每個指南 id 都要查得到（`npx modern-web-guidance retrieve <id>` 或官方頁），寫的做法和指南一致；AI 自己編的指南名稱或年份，查不到就不算。' },
+      ],
+    },
+    points: [
+      { b: '能動不代表不過時', t: 'AI 給的舊寫法多半能跑、測試也過，問題在程式多、無障礙與焦點要自己顧：自己寫的 focus trap 漏掉 Shift+Tab、`overflow: hidden` 鎖捲動讓頁面跳動。原生的 `<dialog>` 這些都內建。' },
+      { b: '先定瀏覽器目標', t: '「Baseline Widely available」或「Baseline 2024」寫進專案規範，AI 才知道 `:has()`、`popover`、`light-dark()` 能不能直接用，Limited availability 的功能要附退路。' },
+      { b: '讓 agent 先查再寫', t: '裝 Modern Web Guidance 這類 skill，agent 寫 Dialog、表單驗證、深拷貝、捲動效果前先 `search`、`retrieve` 對應的指南；它要連網，沙箱環境要先放行。' },
+      { b: '指南不等於標準', t: '指南是 Chrome 團隊的建議，有些推薦的功能只有 Chromium 支援（例如 `fetchLater()`、`focusgroup`）。用之前查 web-features 的 Baseline 狀態；和 WHATWG、WAI-ARIA APG 衝突時以規範為準。' },
+      { b: '審查清單加一條', t: '每個 PR 問「這段有沒有原生替代、在不在支援範圍內」：搜尋 `JSON.parse(JSON.stringify`、`role="dialog"`、`scroll` 監聽這幾個訊號，比逐行讀快。' },
+    ],
+    checklist: [
+      '能在一段 AI 產出的程式裡指出至少三種過時寫法，並說出原生替代與它的 Baseline 狀態',
+      '能在專案規範裡寫明瀏覽器目標，並依 Baseline 狀態決定直接用、加退路或不用',
+      '能說出 Modern Web Guidance 是什麼、怎麼查，以及它的建議和標準不同時以誰為準',
+    ],
+    refs: [
+      { label: 'Chrome for Developers：Modern Web Guidance', url: 'https://developer.chrome.com/docs/modern-web-guidance' },
+      { label: 'Chrome for Developers：Modern Web Guidance 1.0', url: 'https://developer.chrome.com/blog/modern-web-guidance-v1' },
+      { label: 'web.dev：Baseline', url: 'https://web.dev/baseline' },
+      { label: 'MDN：Baseline (compatibility)', url: 'https://developer.mozilla.org/en-US/docs/Glossary/Baseline/Compatibility' },
+      { label: 'GitHub：web-platform-dx/web-features', url: 'https://github.com/web-platform-dx/web-features' },
+    ],
+  },
   'wireframes-screenshots': {
     map: {
       names: [

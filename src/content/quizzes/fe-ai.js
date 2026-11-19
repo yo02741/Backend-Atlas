@@ -85,6 +85,56 @@ export default [
     ],
   },
   {
+    skill: 'outdated-patterns',
+    questions: [
+      {
+        q: '專案規範寫「瀏覽器目標：Baseline Widely available」。AI 在同一個 PR 用了下面四個功能，哪一個沒有退路就不能合併？',
+        options: [
+          '用 `structuredClone()` 複製表單的初始值',
+          '用 `<dialog>` 的 `showModal()` 開確認視窗',
+          '在長迴圈裡直接 `await scheduler.yield()`，沒有功能偵測',
+          '用 `:has()` 替有錯誤欄位的外框加粗',
+        ],
+        answer: 2,
+        explain: '`scheduler.yield()` 是 Limited availability（Safari 還沒有），沒有功能偵測時在 Safari 會丟 `TypeError`，要退回 `setTimeout`。`structuredClone()`、`<dialog>`、`:has()` 依 web-features 都已經是 Widely available，在這個目標下可以直接用。',
+      },
+      {
+        q: 'AI 產出的確認視窗如下。依 Modern Web Guidance 的 `dialog` 指南與 HTML 規範，該怎麼改？',
+        code: `<dialog id="confirm" role="dialog" aria-modal="true" aria-labelledby="t">
+  <h2 id="t">取消這筆預約？</h2>
+  …
+</dialog>
+<script>
+  openBtn.onclick = () => {
+    document.body.style.overflow = 'hidden'
+    confirm.showModal()
+    document.addEventListener('keydown', trapTabAndEsc)
+  }
+</script>`,
+        lang: 'html',
+        options: [
+          '保留全部，再補 `inert` 到背景的每個區塊，三層保護比較保險',
+          '把 `<dialog>` 換回 `div`，因為 `role="dialog"` 已經提供同樣的語意',
+          '拿掉 `aria-labelledby`，`showModal()` 會自動用標題當名稱',
+          '拿掉 `role`、`aria-modal`、`overflow` 與 `keydown` 監聽，保留 `showModal()` 與 `aria-labelledby`',
+        ],
+        answer: 3,
+        explain: '`showModal()` 開的 `<dialog>` 本身就是 modal 的 dialog：背景 inert、Esc 關閉、焦點回到開啟前的元素都由瀏覽器處理，自己的 focus trap 與 `overflow: hidden` 只會多出錯的地方（例如捲軸消失讓頁面跳動）。`aria-labelledby` 要留著，Dialog 需要名稱。換回 `div` 要自己補回全部行為；再加 `inert` 是重複的工作。',
+      },
+      {
+        q: '團隊想讓 coding agent 寫前端時少用舊寫法，打算導入 Modern Web Guidance。下列做法哪一個最妥當？',
+        options: [
+          '裝好 skill，並在規範檔寫明瀏覽器目標；agent 寫 Dialog、表單驗證前先 `search`、`retrieve` 指南，交付時列出用到的功能、Baseline 狀態與指南 id，審查時再查證',
+          '裝好之後指南推薦什麼就用什麼，它由瀏覽器廠商維護，等於標準',
+          '在 CI 每次都跑 `legacy-scan`，結果是 0 就代表沒有任何過時寫法',
+          '不必寫瀏覽器目標，agent 會自己判斷使用者用什麼瀏覽器',
+        ],
+        answer: 0,
+        explain: '指南是建議，部分推薦的功能只有 Chromium 支援（例如 `fetchLater()`、`focusgroup`），要對照專案寫明的瀏覽器目標決定直接用、加退路或不用；和 WHATWG、APG 衝突時以規範為準。`legacy-scan` 只涵蓋一部分指南，0 筆不代表沒有舊寫法。沒寫目標時，skill 只把 Widely available 當成可以直接用，agent 不知道院內有沒有舊電腦。',
+      },
+    ],
+  },
+  {
     skill: 'wireframes-screenshots',
     questions: [
       {

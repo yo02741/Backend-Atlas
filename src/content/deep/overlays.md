@@ -70,7 +70,8 @@ showModal()
 | 功能 | 做什麼 | 狀態 |
 |---|---|---|
 | `closedby="any"` | 點背景也能關閉 Dialog | 還不是 Baseline（Chrome 134、Firefox 141 起，Safari 尚未支援） |
-| `command="show-modal"`、`commandfor` | 按鈕不寫 JavaScript 就能開關 Dialog 或 popover | Baseline 2025（2025 年 12 月） |
+| `command="show-modal"`、`commandfor` | 按鈕不寫 JavaScript 就能開關 Dialog 或 popover | Baseline 2025（2025 年 12 月），舊瀏覽器要退路 |
+| `requestClose()`、`command="request-close"` | 和按 Esc 一樣先觸發 `cancel`，可以在這裡擋下「表單還沒存」 | Baseline 2025（2025 年 5 月），舊瀏覽器要退路 |
 
 ### Popover
 
@@ -105,20 +106,27 @@ WCAG 2.1 的 1.4.13 Content on Hover or Focus（AA）對 hover 或 focus 才出�
 
 瀏覽器內建的 `title` 提示是這條的例外，但它多半只在滑鼠停留時出現，鍵盤與觸控使用者看不到，重要的說明不要只放在 `title`。
 
+AI 有時會產生 `interestfor` 屬性（滑鼠停留或聚焦就開啟目標的 interest invokers）搭配 `popover="hint"` 的 Tooltip。依 2026-11 的 web-features 資料，`interestfor` 只有 Chrome 149 起支援，`popover="hint"` 也還不是 Baseline。用它就要另外寫 `mouseenter`、`focus`、`Esc` 的處理當退路，不能當成唯一的寫法。
+
 ### Drawer 與手機
 
 Drawer 是位置不同的 Dialog：從側邊或底部滑出，擋住頁面時規則和 modal Dialog 完全一樣。手機上常把置中的 Dialog 改成從底部滑出的 Sheet，只改 CSS，不改行為。
 
 ### 背景捲動與 top layer
 
-`showModal()` 讓背景不能點、不能聚焦，但滾輪與觸控捲動仍可能捲到後面的頁面。常見的做法：
+`showModal()` 讓背景不能點、不能聚焦，但滾輪與觸控捲動仍可能捲到後面的頁面：滑鼠停在 `::backdrop` 上捲動，或 Dialog 自己捲到底之後繼續捲。用 CSS 擋：
 
 ```css
-body:has(dialog[open]) { overflow: hidden; }    /* Dialog 開著時，頁面不捲動 */
-dialog { overscroll-behavior: contain; }         /* Dialog 自己捲到底時，不把捲動傳給頁面 */
+dialog:modal { overscroll-behavior: contain; }   /* Dialog 裡的捲動不傳給頁面 */
+dialog::backdrop {
+  overflow: hidden;                              /* 讓 ::backdrop 成為捲動容器，overscroll-behavior 才有作用 */
+  overscroll-behavior: contain;
+}
 ```
 
-`:has()` 是 Baseline 2023。
+`overscroll-behavior` 本身早就各瀏覽器都支援，但「內容沒有溢出的捲動容器也套用」是較新的行為。依 2026-11 的 web-features 資料只有 Chrome 144、Firefox 150 起支援，Safari 還不支援，也沒辦法用 `@supports` 偵測。沒支援的瀏覽器裡，Dialog 內容比畫面高時照樣不會把捲動傳出去，滑鼠在背景上捲動則仍會捲到頁面，背景照樣不能點、不能聚焦。
+
+舊做法是開 Dialog 時把 `html` 或 `body` 設成 `overflow: hidden`（或 `body:has(dialog[open]) { overflow: hidden }`）、`position: fixed`。捲軸消失會讓整頁左右跳，`position: fixed` 的版本還要自己記住並還原捲動位置。規格要求 Safari 也絕對不能捲時才考慮它，並在驗收時檢查版面有沒有跳動。
 
 用 `position: fixed` 加 `z-index` 做的浮層，只要某個祖先建立了 stacking context（`transform`、`filter`、`opacity` 小於 1、有 `z-index` 的定位元素…），它的 `z-index` 就只在那個祖先裡比較，蓋不過祖先外面的 sticky 導覽列。祖先有 `transform` 或 `filter` 時，`position: fixed` 還會改成以那個祖先定位，祖先的 `overflow: hidden` 也會把它切掉。top layer 的元素不受祖先的 stacking context、`transform` 與 `overflow` 影響，這些問題都不會發生。
 
@@ -164,7 +172,8 @@ async function onClose() {
 
 <style scoped>
 dialog { border: 0; border-radius: var(--radius-md); padding: var(--space-6); max-inline-size: min(28rem, 100vw - 2rem); }
-dialog::backdrop { background: rgb(0 0 0 / 0.5); }
+dialog:modal { overscroll-behavior: contain; }
+dialog::backdrop { background: rgb(0 0 0 / 0.5); overflow: hidden; overscroll-behavior: contain; }
 @media (max-width: 600px) {                         /* 手機：從底部滑出的 Sheet，行為不變 */
   dialog { margin: auto 0 0; inline-size: 100%; max-inline-size: 100%; border-radius: var(--radius-md) var(--radius-md) 0 0; }
 }
@@ -186,7 +195,8 @@ dialog::backdrop { background: rgb(0 0 0 / 0.5); }
 - **Tooltip 裡放連結**：滑鼠移過去 Tooltip 就消失，鍵盤也到不了。改用 Popover。
 - **Tooltip 只聽 `mouseenter`**：Tab 到觸發元素時不出現，鍵盤使用者看不到說明。
 - **`z-index: 9999` 還是被蓋住**：浮層在一個建立了 stacking context 的祖先裡。改用 top layer，或把浮層用 `<Teleport to="body">` 搬到 `body` 底下。
-- **點背景關閉，填到一半的表單不見了**：有輸入內容的 Dialog，點背景不要關閉，或關閉前確認。
+- **點背景關閉，填到一半的表單不見了**：有輸入內容的 Dialog，點背景不要關閉，或關閉前確認。確認寫在 `cancel` 事件裡（Esc 與 `requestClose()` 都會先觸發它），「取消」按鈕呼叫 `requestClose()` 走同一條路；`closedby` 不是每個瀏覽器都有，不能只靠它擋。沒有 `requestClose()` 的瀏覽器，退路是自己發一個可取消的 `cancel` 事件：`if (dialog.dispatchEvent(new Event('cancel', { cancelable: true }))) dialog.close()`。
+- **用了 `<dialog>` 又補上舊的手工處理**：`role="dialog"`、`aria-modal="true"`、自己寫的焦點陷阱、開啟時把 `body` 設成 `overflow: hidden`。`showModal()` 已經提供角色、modal 狀態與焦點範圍，這些都刪掉。要使用者確認的視窗可以寫 `role="alertdialog"`，那是另一個角色，不算重複。
 
 AI 產生的 Dialog 最常見的是 `div` 加 `v-if` 加 `z-index`：沒有焦點移動、沒有 Esc、背景沒有 inert。描述需求時指定「用原生 `<dialog>` 的 `showModal()`」，並寫出開啟與關閉時焦點的位置。
 

@@ -1,9 +1,10 @@
 /* 沙箱 iframe 的 prelude：srcdoc 裡第一個執行的 classic script。frame.js 用 Function.prototype.toString 塞進去，
    所以 framePrelude 必須自給自足（不引用模組裡的其他東西）。
    做的事：console 與錯誤攔截後轉給外殼、localStorage / sessionStorage 的記憶體替身、假 API（window.api 與 window.fetch）、
-   迴圈保護 __lp、測試 helper（含模擬分頁切到背景的 setVisibility）、測試 runner。
+   迴圈保護 __lp、測試 helper（含模擬分頁切到背景的 setVisibility、等 Tailwind 產生 CSS 的 twReady、
+   讀互動狀態樣式的 cssWhen）、測試 runner。
 
-   cfg = { runId, mode: 'test' | 'preview' | 'once', userStart, userEnd, loopLimit, vendors: [[data: URL 的開頭, 套件名稱]] }
+   cfg = { runId, mode: 'test' | 'preview' | 'once', userStart, userEnd, loopLimit, vendors: [[data: URL 的開頭, 套件名稱]], tailwind }
    傳給外殼的訊息（parent.postMessage(msg, '*')，外殼只收 source 是這個 iframe 且 runId 相符的）：
      { ns: 'frame', runId, type: 'console', level: 'log' | 'warn' | 'error', text }
      { ns: 'frame', runId, type: 'network', method, url, status, ms, aborted, network }
@@ -192,6 +193,70 @@ export function framePrelude(cfg, createFakeApi) {
   W.box = (t) => need(t).getBoundingClientRect()
   W.focus = (t) => { need(t).focus() }
   W.activeElement = () => document.activeElement
+
+  // ── Tailwind（cfg.tailwind）：@tailwindcss/browser 每次產生 CSS 都留下 performance 的 mark「Build #n (full) (start)」
+  // 與 measure「Build #n (full)」（incremental 同理）。開始數與完成數相同、過一個 task 後仍相同，就是產生完了；
+  // 編譯失敗時它留下 mark「(error)」，不再等。沒載入 Tailwind 時立刻 resolve。
+  const twCount = () => {
+    let started = 0, ended = 0
+    for (const m of performance.getEntriesByType('mark')) if (/^Build #\d+ \(\w+\) \(start\)$/.test(m.name)) started++
+    for (const m of performance.getEntriesByType('measure')) if (/^Build #\d+ \(\w+\)$/.test(m.name)) ended++
+    return { started, ended, failed: performance.getEntriesByName('(error)').length }
+  }
+  W.twReady = async (timeout = 3000) => {
+    if (!cfg.tailwind) return true
+    const start = performance.now()
+    for (;;) {
+      const a = twCount()
+      if (a.failed) return false
+      if (a.ended > 0 && a.started === a.ended) {
+        await new Promise((r) => setTimeout(r, 0))
+        const b = twCount()
+        if (b.started === a.started && b.ended === a.ended) return true
+        continue
+      }
+      if (performance.now() - start > timeout) throw new Error(`Tailwind 在 ${timeout} ms 內沒有產生完 CSS`)
+      await new Promise((r) => setTimeout(r, 16))
+    }
+  }
+  /* 互動狀態（:hover、:focus-visible、:active…）下某個屬性的值：腳本沒辦法讓元素真的進入 :hover，
+     改成找樣式表裡含這個偽類、拿掉偽類之後選得到元素的規則（@media 不成立的略過，(hover: hover) 當成成立），
+     取文件順序最後一條的值，放到同類的探針元素上讓瀏覽器算出計算值（var() 也解開）。沒有規則時回傳 null。 */
+  W.cssWhen = (t, pseudo, prop) => {
+    const e = need(t)
+    let value = null
+    // 偽類前面是反斜線時是跳脫過的 class 名稱（.hover\:bg-x），不是偽類
+    const pseudoRe = new RegExp('(?<!\\\\)' + pseudo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')
+    const walk = (rules, ok) => {
+      for (const r of rules) {
+        let on = ok
+        if (r.media && r.conditionText !== undefined && !/hover/.test(r.conditionText)) on = ok && W.matchMedia(r.conditionText).matches
+        if (r.selectorText && on && (pseudoRe.lastIndex = 0, pseudoRe.test(r.selectorText))) {
+          const v = r.style.getPropertyValue(prop)
+          if (v) {
+            for (const sel of r.selectorText.split(/,(?![^()]*\))/)) {
+              pseudoRe.lastIndex = 0
+              if (!pseudoRe.test(sel)) continue
+              let hit = false
+              try { hit = e.matches(sel.replace(pseudoRe, '') || '*') } catch (err) { hit = false }
+              if (hit) { value = v.trim(); break }
+            }
+          }
+        }
+        if (r.cssRules) walk(r.cssRules, on)
+      }
+    }
+    for (const sh of document.styleSheets) { let rules = null; try { rules = sh.cssRules } catch (err) { rules = null } if (rules) walk(rules, true) }
+    if (value === null) return null
+    const probe = document.createElement(e.tagName)
+    probe.className = e.className
+    probe.style.setProperty(prop, value)
+    probe.setAttribute('aria-hidden', 'true')
+    e.parentNode.insertBefore(probe, e)
+    const out = getComputedStyle(probe).getPropertyValue(prop).trim()
+    probe.remove()
+    return out
+  }
   // 分頁切到背景／回到前景（Page Visibility API）：改 document.visibilityState 與 document.hidden，再發出 visibilitychange
   W.setVisibility = (state) => {
     const hidden = state === 'hidden'
@@ -207,6 +272,8 @@ export function framePrelude(cfg, createFakeApi) {
     async runTest(name, fn) {
       if (document.readyState === 'loading') await new Promise((r) => document.addEventListener('DOMContentLoaded', r, { once: true }))
       await W.tick()
+      // Tailwind 非同步產生 CSS：等它產生完再開始量
+      if (cfg.tailwind) { try { await W.twReady() } catch (e) { report(e.message) } }
       let pass = true, error = null
       try { await fn() } catch (e) { pass = false; error = e && e.message ? e.message : String(e) }
       // 有未處理的錯誤時先報它：通常是測試失敗的原因（例如模組載入失敗，畫面根本沒出來）

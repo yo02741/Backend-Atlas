@@ -172,13 +172,15 @@ for (const e of EXERCISES) {
     for (const k of ['api', 'html', 'css']) if (e[k] !== undefined && typeof e[k] !== 'string') errors.push(`${tag}: ${k} 要是字串`)
     if (e.viewport !== undefined && !(Number.isInteger(e.viewport) && e.viewport >= 280)) errors.push(`${tag}: viewport 要是 280 以上的整數（px）`)
     if (e.serial !== undefined && typeof e.serial !== 'boolean') errors.push(`${tag}: serial 要是 true / false（測試會移動焦點時設 true，一次只跑一個 iframe）`)
+    if (e.tailwind !== undefined && typeof e.tailwind !== 'boolean') errors.push(`${tag}: tailwind 要是 true / false（true 時沙箱載入 @tailwindcss/browser）`)
+    if (e.tailwind === true && !['html', 'vue'].includes(e.kind)) errors.push(`${tag}: tailwind 只用在 html / vue 題（css 題的 CSS 不經 Tailwind 處理）`)
     for (const t of e.tests || []) {
       if (typeof t.name !== 'string' || typeof t.code !== 'string') errors.push(`${tag}: 測試要有 name 與 code（字串）`)
       if (t.viewport !== undefined && !(Number.isInteger(t.viewport) && t.viewport >= 280)) errors.push(`${tag} 測試「${t.name}」: viewport 要是 280 以上的整數（px）`)
       if (t.api !== undefined && typeof t.api !== 'string') errors.push(`${tag} 測試「${t.name}」: api 要是字串（在 iframe 裡執行的假 API 設定）`)
     }
   } else {
-    for (const k of ['api', 'html', 'css', 'viewport', 'serial']) if (e[k] !== undefined) errors.push(`${tag}: ${k} 只用在 html / css / vue 題`)
+    for (const k of ['api', 'html', 'css', 'viewport', 'serial', 'tailwind']) if (e[k] !== undefined) errors.push(`${tag}: ${k} 只用在 html / css / vue 題`)
   }
 }
 

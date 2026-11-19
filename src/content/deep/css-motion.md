@@ -156,12 +156,14 @@ WCAG 2.2 相關的條文：2.2.2 Pause, Stop, Hide（A）要求自動開始、�
 | 功能 | 用途 | 支援狀況（2026 年 11 月） |
 |---|---|---|
 | `@starting-style` | 元素第一次出現（或從 `display: none` 出現）時的起始樣式，不用 JavaScript 就能進場 | Baseline 2024 |
-| `transition-behavior: allow-discrete` | 讓 `display`、`overlay` 這類不能補間的屬性等轉場結束才切換，用來做離場 | Baseline 2024，但 Firefox 還不支援轉場 `display` |
+| `transition-behavior: allow-discrete` | 讓 `display`、`overlay` 這類不能補間的屬性等轉場結束才切換，用來做離場 | Baseline 2024；但轉場 `display` 只有 Chromium 與 Safari 18 支援，`overlay` 屬性只有 Chromium 支援 |
 | View Transitions（`document.startViewTransition()`） | 整個畫面切換時，新舊畫面之間做過場 | 同一份文件內是 Baseline 2025；跨頁面的還不是 |
 | `interpolate-size: allow-keywords` | 讓 `height: auto` 可以補間 | 只有 Chromium 129 以上 |
-| Scroll-driven animations | 動畫進度跟著捲動位置 | 2026 年 10 月才成為 Baseline |
+| Scroll-driven animations（`animation-timeline: scroll()`、`view()`） | 動畫進度跟著捲動位置，不必監聽 `scroll` 事件 | 2026 年 10 月才成為 Baseline，舊瀏覽器要退路 |
 
 在 Vue 專案裡，元件的進出場用 `<Transition>` 最穩；`@starting-style` 適合原生 `<dialog>` 與 `popover` 這類不經過 Vue 的進場。
+
+跟著捲動變化的效果（閱讀進度條、捲到時淡入），以前的寫法是監聽 `scroll` 事件、每次讀 `scrollY` 再改 `style`：每次捲動都在主執行緒跑程式，還常順手讀版面尺寸，捲動跟著卡。Scroll-driven animations 讓 CSS 動畫的進度直接對到捲動位置。它在 2026 年 10 月才成為 Baseline，規則包在 `@supports (animation-timeline: scroll())` 裡，不支援的瀏覽器就沒有這個效果、內容照常顯示；不要為了舊瀏覽器再補一套 `scroll` 監聽。效果只是裝飾時，在 `prefers-reduced-motion: no-preference` 裡才加上。
 
 ## 實際程式
 
@@ -245,7 +247,7 @@ dialog[open] {
 }
 ```
 
-這段只有進場。離場要讓 `display` 與 `overlay` 也加進 transition 並寫 `allow-discrete`，Firefox 還不支援，那裡的 Dialog 會直接關掉。
+這段只有進場。離場要讓 `display` 與 `overlay` 也加進 transition 並寫 `allow-discrete`：轉場 `display` 在 Firefox 還不支援，`overlay` 只有 Chromium 支援，其他瀏覽器的 Dialog 會直接關掉或提早離開 top layer。離場動畫是加分，關閉本身不受影響。
 
 ## 常見錯誤與錯誤訊息
 
@@ -260,7 +262,8 @@ dialog[open] {
 | 清單排序時直接跳位置 | 沒有 `v-move` 的 transition，或 `key` 用了 index | 加 `.xxx-move { transition: transform … }`，`key` 用 id |
 | `height: auto` 的展開沒有動畫 | `auto` 不能補間 | Grid 的 `0fr` 到 `1fr`，或只在 Chromium 用 `interpolate-size` |
 | `animation` 播完跳回原樣 | 預設不保留最後一格 | `animation-fill-mode: forwards` |
-| 等 `transitionend` 的程式沒執行 | 值沒變、`duration` 是 0，或轉場被中斷 | 檢查值與時間；一併處理 `transitioncancel` |
+| 等 `transitionend` 的程式沒執行 | 值沒變、`duration` 是 0（減少動態時拿掉了轉場），或轉場被中斷 | 檢查值與時間；一併處理 `transitioncancel`；`el.getAnimations()` 是空陣列時直接往下做 |
+| 減少動態時寫了一條全域規則，把所有 `animation-duration`、`transition-duration` 設成 `0.01ms !important` | 舊的 CSS reset 常見的寫法：淡入淡出與顏色變化也一起消失，有些動畫直接跳到終點反而更突兀 | 逐個元件處理：在 media query 裡拿掉位移與縮放，保留淡入淡出 |
 | 切換主題時整頁慢慢變色 | `transition: all` | 只列出要動的屬性 |
 | 開了「減少動態效果」畫面還在滑動 | 沒寫 `prefers-reduced-motion` | 加 media query，拿掉位移與縮放 |
 

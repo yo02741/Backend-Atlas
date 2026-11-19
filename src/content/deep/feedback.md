@@ -38,6 +38,8 @@ Skeleton 用灰色區塊畫出接近最終版面的輪廓：列數、列高、�
 - 停留時間依文字長度定，帶「復原」這類操作的要讓人來得及按；滑鼠移上去或焦點移進去時暫停倒數。
 - 不搶焦點：Toast 出現時焦點留在原處，使用者要按「復原」時再 Tab 過去。
 - 整個 app 只有一個 Toast 容器，同時出現好幾則時排隊或堆疊，設上限。
+- modal Dialog 開著時不顯示 Toast：Dialog 以外的內容都是 inert，Toast 的「復原」按不到，螢幕閱讀器也念不到。先排著，等 Dialog 關閉再顯示。
+- 容器加 `popover="manual"`，頁面載入時就呼叫 `showPopover()` 打開（空的時候不畫外框與內距），Toast 就在 top layer，不會被 sticky 頁首或其他浮層蓋住；`manual` 不會因為點了頁面其他地方就關掉。等到第一則訊息才打開，等於訊息出現時才插入 live region，部分螢幕閱讀器不會念。Popover 是 Baseline 2025（Newly available），沒有 `popover` 的舊瀏覽器裡容器仍是一般的 `position: fixed` 元素，所以 `z-index` 照樣要設。
 
 ### live region：讓螢幕閱讀器念出來
 
@@ -47,6 +49,8 @@ Skeleton 用灰色區塊畫出接近最終版面的輪廓：列數、列高、�
 - `role="alert"`：立刻打斷正在念的內容（assertive）。只給錯誤與需要馬上注意的訊息。
 
 live region 的容器要在內容改變之前就在 DOM 裡，之後只換裡面的文字或子元素。訊息出現時才把整個 `<div role="status">` 插進去，部分螢幕閱讀器不會念。WCAG 2.1 起的 4.1.3 Status Messages（AA）要求狀態訊息不搶焦點也能被輔助科技讀到。
+
+`document.ariaNotify('已取消 11/20 09:30 的預約')` 不需要 live region，直接請螢幕閱讀器念一段文字。它在 2026 年 9 月才成為 Baseline（Newly available），舊瀏覽器沒有這個方法：用 `if ('ariaNotify' in document)` 判斷，沒有時照樣寫進事先放好的 live region。
 
 ### Empty state 的三種情況
 

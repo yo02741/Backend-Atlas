@@ -3,7 +3,7 @@ export default {
   'semantic-html': {
     map: {
       names: [
-        { n: '地標元素（landmark）', t: '`header`、`nav`、`main`、`aside`、`footer` 標出頁面的區塊，螢幕閱讀器可以列出區塊並直接跳過去。一頁只有一個 `main`。' },
+        { n: '地標元素（landmark）', t: '`header`、`nav`、`main`、`aside`、`footer` 標出頁面的區塊，螢幕閱讀器可以列出區塊並直接跳過去；搜尋與篩選表單包在 `search` 裡（Baseline 2023）。一頁只有一個 `main`。' },
         { n: '標題層級 `h1`–`h6`', t: '描述內容的大綱，不拿來調字級；層級依序往下（`h2` 底下接 `h3`，不直接跳到 `h4`），字的大小交給 CSS。' },
         { n: '`button` 與 `a`', t: '`button` 做動作（送出、開 Dialog、切換），`a href` 換頁。兩者都能用 Tab 聚焦、Enter 觸發（`button` 還能用 Space）；`div` 加 `@click` 做的按鈕這些都沒有。' },
         { n: '`button` 的 `type`', t: '`form` 裡沒寫 `type` 的 `button` 預設是 `submit`，按下去就送出表單。只做動作的按鈕要寫 `type="button"`。' },
@@ -26,6 +26,7 @@ export default {
         { c: '按鈕不會誤送出', t: '按「清除」後看 Network 分頁與網址：多出一筆送出表單的請求或頁面重新整理，代表這顆按鈕沒寫 `type="button"`，用了預設的 `submit`。' },
         { c: '手機鍵盤', t: '用實體手機打開頁面，點手機欄位應該出現撥號鍵盤；桌機上病歷號欄位右邊出現上下調整的箭頭，代表用了 `type="number"`。' },
         { c: 'Lighthouse 無障礙', t: 'Lighthouse 只勾 Accessibility 跑一次：`Form elements do not have associated labels`、`Buttons do not have an accessible name`、`Heading elements are not in a sequentially-descending order` 都不該出現。' },
+        { c: '原生元素做得到的不自己做', t: '看到 `div` 加 `role="dialog"` 再自己寫 focus trap 與 Esc 處理、原生 `<dialog>` 上又加 `role="dialog"`，或 `div` 加點擊做展開收合，代表寫法過時：改用 `<dialog>` 的 `showModal()` 與 `<details>`、`<summary>`。' },
       ],
     },
     points: [
@@ -490,6 +491,57 @@ export default {
       { label: 'BEM：Naming', url: 'https://getbem.com/naming/' },
     ],
   },
+  'tailwind-css': {
+    map: {
+      names: [
+        { n: '`@tailwindcss/vite` 與 `@import "tailwindcss"`', t: 'Tailwind CSS 4 在 Vite 專案的安裝方式：`vite.config.js` 的 `plugins` 加 `tailwindcss()`，CSS 入口寫一行 `@import "tailwindcss";`。v4 不需要 `tailwind.config.js`，也不用設定要掃描哪些檔案。' },
+        { n: 'utility class', t: '一個 class 只做一件事：`p-4` 是 `padding: calc(var(--spacing) * 4)`（預設 1rem）、`gap-3`、`text-sm`、`rounded-md`。數字是間距刻度的倍數，`--spacing` 預設 0.25rem。' },
+        { n: '斷點前綴 `sm:`、`md:`、`lg:`', t: '都是 `min-width`：`md:grid-cols-2` 產生 `@media (width >= 48rem)`。沒有前綴的 class 是手機版，前綴往寬的方向加；`max-md:` 才是「小於 48rem」。' },
+        { n: '狀態變體', t: '`hover:`、`focus-visible:`、`disabled:`、`aria-expanded:`、`data-[state=open]:` 分別對應 `:hover`、`:focus-visible`、`:disabled`、`[aria-expanded="true"]`、`[data-state="open"]`。v4 的 `hover:` 包在 `@media (hover: hover)` 裡，觸控裝置不會黏住 hover 樣式。' },
+        { n: '`dark:`', t: '預設跟著 `@media (prefers-color-scheme: dark)`；要用 `data-theme` 或 class 手動切換時，用 `@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));` 改寫。' },
+        { n: '`@theme`', t: '在 CSS 裡定義 token：`--color-clinic: oklch(…)` 會產生 `bg-clinic`、`text-clinic`、`border-clinic` 這組 class，也同時是 `:root` 上的 CSS 變數。命名空間（`--color-*`、`--spacing-*`、`--breakpoint-*`）決定產生哪一類 class。' },
+        { n: '原始碼掃描與 `@source inline()`', t: 'Tailwind 把原始碼當純文字找 class，只產生完整出現的字串；`` `bg-${color}-100` `` 組出來的 class 不會出現在 CSS 裡，畫面沒有顏色也沒有錯誤。原始碼以外決定的 class 用 `@source inline("bg-{red,green}-100");` 列出。' },
+        { n: '`@layer utilities` 與 `cn()`', t: 'Tailwind 的輸出放在 `@layer theme, base, components, utilities`，沒放進任何層的 CSS（Vue scoped、自己寫的 `.btn`）一律蓋過工具類別。`cn()` 是 `clsx` 加 `tailwind-merge` 的慣用函式，合併 class 時讓後面的 `px-4` 取代前面的 `px-2`。' },
+      ],
+      ask: [
+        'Tailwind 的版本與安裝方式（v4 用 `@tailwindcss/vite`、CSS 入口 `@import "tailwindcss"`），不產生 v3 的 `tailwind.config.js`',
+        'token 寫在哪個 CSS 的 `@theme`、名稱對應設計稿的哪組 token，元件只用這些 class，任意值 `[…]` 只在哪些情況允許',
+        '依狀態切換的 class 寫成完整字串的對照表，或列在 `@source inline()`，不用字串組 class 名稱',
+        '互動狀態要用哪些變體：`hover:`、`focus-visible:`、`disabled:`、`aria-*`、`data-*`，以及暗色主題是跟隨系統還是手動切換',
+        '重複出現的 class 組合抽成 Vue 元件還是 `@apply`，外部傳進來的 class 用 `cn()` 合併',
+        '和 scoped CSS、元件庫的樣式混用時，誰放在哪一層、誰要能蓋過誰',
+      ],
+      prompt: '門診系統的 Vue 3 專案改用 Tailwind CSS 4.3：`vite.config.js` 加 `@tailwindcss/vite`，`src/styles/main.css` 只有 `@import "tailwindcss";` 與 `@theme`，`@theme` 定義 `--color-clinic`、`--color-danger`、`--radius-card` 三個 token。`StatusBadge.vue` 依掛號狀態（booked、checked-in、missed）切換顏色，class 寫成完整字串的對照表，未知狀態用灰色。按鈕元件用 `hover:`、`focus-visible:outline-2`、`disabled:opacity-50`；`defineOptions({ inheritAttrs: false })` 後把 `useAttrs().class` 用 `cn()`（clsx + tailwind-merge）合併在預設 class 的後面。暗色主題跟著 `[data-theme=dark]`，用 `@custom-variant` 定義。不寫 `@apply`，不寫任意值，元件裡不另寫 `<style scoped>`。',
+      verify: [
+        { c: 'class 有產生', t: 'Elements 分頁選取元素，Styles 窗格要看得到 `.bg-clinic` 這條規則，而且在 `@layer utilities` 底下；class 寫在元素上但 Styles 沒有對應規則，代表 Tailwind 沒產生它，多半是用字串組出來的。' },
+        { c: '建置的 CSS 裡找得到', t: '`npm run build` 後在 `dist/assets/*.css` 搜尋狀態對照表裡的每個 class；少了哪一個，就是原始碼裡沒有完整寫出那個字串。' },
+        { c: '誰蓋過誰', t: 'Styles 窗格裡工具類別被劃掉，而勝出的規則來自 `[data-v-…]` 或自己寫的 `.btn`，代表沒放進層的 CSS 蓋過了 `@layer utilities`；把元件樣式放進 `@layer components`，或拿掉重複的宣告。' },
+        { c: '斷點方向', t: '裝置模式切到 390 與 1280：`md:` 開頭的 class 只在 768px（48rem）以上生效。AI 常把 `sm:` 當成「手機」，寫出 `sm:hidden` 想在手機隱藏，結果在 640px 以上才隱藏。' },
+        { c: '狀態變體', t: 'Elements 分頁的 `:hov` 勾選 `:hover`、`:focus-visible`，看對應的規則有沒有套上；`aria-expanded:` 要在元素真的有 `aria-expanded="true"` 時才成立，只改 Vue 的狀態沒改屬性就不會變。' },
+        { c: '合併的結果', t: '在元件傳入 `class="px-2"` 覆寫預設的 `px-4`，Elements 裡元素上只該剩一個 `px-*`；兩個都在時，勝出的是 CSS 裡排在後面的那個，和 class 屬性裡的順序無關。' },
+      ],
+    },
+    points: [
+      { b: 'v4 的設定在 CSS 裡', t: '`@import "tailwindcss"` 載入預設主題與工具類別，`@theme` 加 token，`@custom-variant` 定義變體，`@utility` 定義自己的工具類別，`@source` 補掃描範圍。看到 `tailwind.config.js` 與 `@tailwind base;`，那是 v3 的寫法。' },
+      { b: '前綴是 min-width 與選擇器', t: '`md:` 是 `width >= 48rem`，`hover:` 是 `:hover`（包在 `@media (hover: hover)` 裡），`aria-expanded:` 是 `[aria-expanded="true"]`。讀一串 class 時從左到右拆成「條件 + 一個屬性」，就能對回 CSS。' },
+      { b: '只產生原始碼裡完整的字串', t: 'Tailwind 不執行程式，只把檔案當文字掃描。依狀態切換的 class 寫成完整字串的對照表；值來自後端或 CMS 時，用 `@source inline()` 列出可能的值，或改用 CSS 變數加 `style` 綁定。' },
+      { b: '層決定誰勝出', t: '工具類別在 `@layer utilities`，沒放進層的 CSS 一律勝出，和選擇器權重無關。Vue scoped CSS 與自己寫的 class 放進 `@layer components`，工具類別才蓋得過它們。同一個屬性的兩個工具類別同時出現時，CSS 裡排在後面的勝出，所以用 `cn()` 先合併。' },
+      { b: '抽元件比 `@apply` 好', t: '重複的 class 組合抽成 Vue 元件，props 決定變化；`@apply` 只適合沒辦法改 HTML 的地方（例如 `v-html` 的內容、第三方元件的 class）。任意值 `w-[37px]` 每出現一次，就多一個偏離刻度的值。' },
+    ],
+    checklist: [
+      '能讀懂一串 Tailwind class，說出每個 class 在哪個條件下設定了哪個 CSS 屬性',
+      '能把依狀態切換的 class 寫成 Tailwind 產生得出來的形式，並在 build 出的 CSS 裡確認',
+      '能說出 Tailwind 與 scoped CSS、`@apply` 寫的樣式衝突時誰勝出，以及怎麼用 `@layer` 與 `cn()` 處理',
+    ],
+    refs: [
+      { label: 'Tailwind CSS：Installing with Vite', url: 'https://tailwindcss.com/docs/installation/using-vite' },
+      { label: 'Tailwind CSS：Hover, focus, and other states', url: 'https://tailwindcss.com/docs/hover-focus-and-other-states' },
+      { label: 'Tailwind CSS：Responsive design', url: 'https://tailwindcss.com/docs/responsive-design' },
+      { label: 'Tailwind CSS：Theme variables', url: 'https://tailwindcss.com/docs/theme' },
+      { label: 'Tailwind CSS：Detecting classes in source files', url: 'https://tailwindcss.com/docs/detecting-classes-in-source-files' },
+      { label: 'MDN：@layer', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@layer' },
+    ],
+  },
   'css-motion': {
     map: {
       names: [
@@ -516,6 +568,7 @@ export default {
         { c: '減少動態', t: 'Rendering 分頁的 `Emulate CSS media feature prefers-reduced-motion` 選 `prefers-reduced-motion: reduce`：位移與縮放都不見，只剩淡入淡出或直接切換；畫面和沒模擬時一模一樣，代表沒寫這個 media query。' },
         { c: 'Vue 的警告', t: 'Console 出現 `[Vue warn]: <transition> can only be used on a single element or component. Use <transition-group> for lists.`，代表 `<Transition>` 裡放了好幾個元素；`<TransitionGroup> children must be keyed.` 代表清單少了 `key`。' },
         { c: '動畫結束後', t: '`animation` 播完元素跳回原樣，代表少了 `animation-fill-mode: forwards`；等 `transitionend` 才執行的程式沒有執行，多半是屬性值沒有變化，或轉場被中斷（這時觸發的是 `transitioncancel`）。' },
+        { c: '過時的動畫寫法', t: '看到監聽 `scroll` 事件、每次改 `style` 做的捲動效果，或減少動態時用一條全域規則把所有時間設成 `0.01ms`，代表寫法過時：捲動效果改用 Scroll-driven animations 並包在 `@supports (animation-timeline: scroll())` 裡（2026 年 10 月才成為 Baseline），減少動態逐個元件處理。' },
       ],
     },
     points: [
@@ -538,6 +591,57 @@ export default {
       { label: 'Vue：Transition', url: 'https://vuejs.org/guide/built-ins/transition.html' },
       { label: 'Vue：TransitionGroup', url: 'https://vuejs.org/guide/built-ins/transition-group.html' },
       { label: 'W3C：Understanding WCAG 2.2 — Animation from Interactions', url: 'https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html' },
+    ],
+  },
+  'design-to-code': {
+    map: {
+      names: [
+        { n: 'Dev Mode（Figma）', t: '設計稿給開發者看的模式：選取圖層看尺寸、間距、字型、顏色與對應的 variable 名稱，按住 Option（Windows 是 Alt）移到另一個圖層量兩者的距離。面板產生的 CSS 是參考，數值要對，結構要自己寫。' },
+        { n: 'Auto layout', t: 'Figma 裡會自動排列子圖層的 frame，設定就是 flex 的參數：方向（水平是 `row`、垂直是 `column`）、項目間距（`gap`）、內距（`padding`）、對齊（`justify-content`、`align-items`），開了 wrap 就是 `flex-wrap: wrap`。' },
+        { n: 'Hug、Fill、Fixed', t: '每個圖層在寬、高兩個方向的尺寸規則。Hug contents 是跟著內容（不寫寬度，或 `fit-content`）；Fill container 是吃掉父層剩下的空間（主軸 `flex: 1`，交叉軸 `align-self: stretch`）；Fixed 是固定值。' },
+        { n: '區塊（section）切分', t: '動手寫元素前，先把畫面框成幾個大區塊（頁首、篩選列、清單、底部操作列），每個區塊再切成列與欄，決定各用 flex 還是 grid；切完再寫元素與 class。' },
+        { n: 'token 抽取', t: '把設計稿用到的顏色、字級與行高、間距、圓角整理成一張表，對到專案的 CSS custom properties；Figma 的 variables 與 styles 有名字時沿用它的名字。出現刻度以外的值（13px、#3a7bd4）要先問是不是故意的。' },
+        { n: '素材匯出', t: '圖示匯出 SVG，顏色改成 `currentColor` 跟著文字；照片匯出 1x 與 2x（或多個寬度）給 `srcset`；裝飾用的底圖可以改用 CSS 做。匯出的檔名照專案慣例，不用圖層名稱。' },
+        { n: '固定寬與流動寬', t: '設計稿只畫了 390 與 1280 兩個寬度，中間的寬度要自己決定：哪些區塊跟著視窗伸縮（`%`、`fr`、`flex: 1`）、哪些有最大寬度（`max-inline-size`）、哪些維持固定（側欄 240px、按鈕高 44px）。' },
+        { n: '疊圖比對與誤差容忍', t: '把設計稿匯出的圖半透明疊在畫面上，或用截圖比對工具（Playwright 的 `toHaveScreenshot`）找差異；事先講好誤差，例如位置與尺寸差 1px 內、字型渲染的差異不算。' },
+      ],
+      ask: [
+        '設計稿的連結與要切的 frame 名稱，以及驗收用的寬度（至少 390 與 1280），中間寬度怎麼伸縮',
+        '每個區塊的排法：Auto layout 的方向、gap、padding、對齊，以及每個子項是 hug、fill 還是固定寬',
+        '色、字級與行高、間距、圓角各用哪個 token，設計稿裡刻度以外的值是不是故意的',
+        '設計稿沒畫的狀態：hover、focus、disabled、loading、空資料、錯誤、文字過長、名字兩行',
+        '素材的格式與來源：圖示用 SVG 還是 icon 元件，照片要哪幾個寬度、有沒有 2x',
+        '驗收方式與誤差：DevTools 量哪些值、疊圖或截圖比對、容許幾 px 的差',
+      ],
+      prompt: '照 Figma「門診時段卡片」frame 切版，驗收寬度 390 與 1280。卡片是垂直 Auto layout：padding 16px、項目間距 12px、圓角 `--radius-lg`、1px `--color-border` 邊框；第一列是水平 Auto layout，時段文字靠左、狀態徽章 hug 靠右、垂直置中。390 時卡片一欄、左右邊距 16px、卡片間距 12px，「預約」按鈕高 44px 並填滿卡片寬；1280 時三欄等寬、欄距 24px、內容寬 1080px 置中，按鈕改成 hug 並靠右。顏色、字級、間距只用 `tokens.css` 的變數，不寫 hex。設計稿沒畫 hover、focus-visible 與醫師名字過長的情況：按鈕 hover 用 `--color-primary-strong`，名字超過一行時換行、不截斷。',
+      verify: [
+        { c: '尺寸與間距', t: 'Elements 分頁選取卡片，看 Computed 的盒模型圖：padding 是 16、border 是 1；點卡片旁的 `flex` 徽章打開 overlay，項目之間的斜線區塊就是 `gap`。和 Dev Mode 標的值差超過 1px，先查 `box-sizing` 與行高。' },
+        { c: '值來自 token', t: 'Styles 窗格裡的顏色與間距要是 `var(--…)`，點下去跳到 `tokens.css`；看到 `#3a7bd4`、`13px` 這種寫死的值，代表 AI 從 Dev Mode 直接抄了數值。' },
+        { c: 'hug 與 fill', t: '在 Elements 把卡片裡的文字改長或改短：hug 的徽章跟著變寬變窄，fill 的按鈕維持填滿；兩者都沒變，代表寫成了固定寬度。' },
+        { c: '兩個寬度與中間', t: '裝置模式切到 390 與 1280 各對一次設計稿，再拖到 600、1000 看中間寬度：沒有橫向捲軸（Console 執行 `document.documentElement.scrollWidth > innerWidth` 應該是 `false`），卡片沒有被撐破或擠成細條。' },
+        { c: '疊圖比對', t: '把設計稿匯出成同寬的 PNG，半透明疊在頁面上（或跑 `toHaveScreenshot`）：邊緣差超過約定的 1–2px，先看是哪個區塊開始偏，通常是上方某個元素的行高或 margin。' },
+        { c: '沒畫的狀態', t: '用 `:hov` 強制 `:hover`、`:focus-visible`，再把資料改成空陣列、超長名字：每個情況都要有畫面。只做出設計稿那一張靜態畫面，是 AI 切版最常見的缺口。' },
+      ],
+    },
+    points: [
+      { b: '先切區塊再寫元素', t: '把畫面框成頁首、內容、操作列這些大區塊，每塊再切成列與欄，決定 flex 或 grid，最後才寫元素與 class。從左上角一個元素一個元素往下寫，結構會跟著設計稿的圖層亂掉。' },
+      { b: 'Auto layout 就是 flex', t: '方向對 `flex-direction`、項目間距對 `gap`、內距對 `padding`、對齊對 `justify-content` 與 `align-items`；子項的 hug 是內容寬、fill 是 `flex: 1` 或 `align-self: stretch`、fixed 是固定值。沒有 Auto layout 的 frame（絕對位置擺放）要先問設計的意圖。' },
+      { b: 'token 先於數值', t: '先把色、字級、間距、圓角整理成表，對到專案的 CSS 變數，再開始切；Dev Mode 顯示的 hex 與 px 只拿來對照。刻度以外的值多半是設計稿的誤差，問過再決定要不要加 token。' },
+      { b: '沒畫的要問', t: '設計稿通常只畫一個寬度、一種資料、一種狀態。中間寬度、hover 與 focus、loading、空資料、錯誤、文字過長，都要在動手前列出來問，或寫進畫面規格的「待決事項」。' },
+      { b: '驗收要量、要比', t: '用 Elements 的盒模型與 Computed 量值，用裝置模式切 390 與 1280，再疊圖或截圖比對；事先講好誤差（例如 1px），字型渲染造成的差異不算。' },
+    ],
+    checklist: [
+      '能把一個 Auto layout frame 對成 flex 的方向、gap、padding、對齊，並說出每個子項的 hug、fill、fixed 怎麼寫',
+      '能從設計稿整理出 token 表，指出刻度以外的值，並列出設計稿沒畫、需要問的狀態與寬度',
+      '能在 390 與 1280 用 DevTools 量出尺寸與間距，說出和設計稿差在哪個區塊',
+    ],
+    refs: [
+      { label: 'MDN：flex', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex' },
+      { label: 'MDN：Using CSS custom properties', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties' },
+      { label: 'MDN：Responsive images', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Responsive_images' },
+      { label: 'Chrome DevTools：View and change CSS', url: 'https://developer.chrome.com/docs/devtools/css' },
+      { label: 'Chrome DevTools：Device mode', url: 'https://developer.chrome.com/docs/devtools/device-mode' },
+      { label: 'Playwright：Visual comparisons', url: 'https://playwright.dev/docs/test-snapshots' },
     ],
   },
 }

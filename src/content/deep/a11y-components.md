@@ -118,6 +118,8 @@ APG 特別區分 focus 與 selection。焦點是目前操作的位置，同一�
 
 Disclosure 是最簡單也最常被做壞的一個：一顆按鈕控制一塊內容顯示與否，按鈕有 `aria-expanded`，選用的 `aria-controls` 指向那塊內容。Accordion 是一組 disclosure，APG 要求每顆標題按鈕包在一個標題元素裡（例如 `<h3><button aria-expanded="false">看診須知</button></h3>`），而且按鈕是標題裡唯一的元素。AI 常見的寫法是 `<div class="accordion-header" @click>`：不在 Tab 順序裡，也沒有 `aria-expanded`。
 
+不需要客製行為時，Disclosure 與 Accordion 直接用原生的 `<details>` 與 `<summary>`：`<summary>` 本身可以聚焦、Enter 與 Space 會切換、展開狀態由瀏覽器提供給輔助科技，不必寫 `aria-expanded` 與按鍵處理（Baseline Widely available）。同一組只能開一個時，每個 `<details>` 寫同樣的 `name="faq"`，這是 Baseline 2024（2024-09 起），舊瀏覽器上退化成可以同時展開幾個，內容照樣看得到。要驗的只剩 `<summary>` 的文字念不念得懂，以及標題層級合不合理。
+
 ### 每種工具抓得到什麼
 
 | 工具 | 抓得到 | 抓不到 |
@@ -197,6 +199,8 @@ function choose(i) {
 ```
 
 Enter 與 Space 在原生 `<button>` 上本來就會觸發 `click`，所以按鈕只需要另外處理 ↓ 與 ↑。`aria-expanded` 寫成 `'true'`、`'false'` 字串。Vue 3 綁定 `false` 到 `aria-*` 這類非布林屬性時，會輸出成 `aria-expanded="false"`（要移除屬性得綁 `null`），寫成字串讀起來比較不會誤會。
+
+這個版本用 `v-show` 藏選單，點選單外面不會關閉，選單也可能被外層的 `overflow: hidden` 裁掉。選單容器改成 `<ul popover>`（Popover API，Baseline 2025-01 起），瀏覽器提供點外面關閉（light dismiss）與 top layer；開關改呼叫 `showPopover()`、`hidePopover()`，在 `toggle` 事件裡更新 `aria-expanded` 並把焦點移進選單。方向鍵、Home、End 仍然要自己寫：Chrome 團隊的 Modern Web Guidance 建議的 `focusgroup` 屬性目前只有 Chrome、Edge 150 起支援（Limited availability），不支援的瀏覽器要照上面的方式補 `role="menu"` 與按鍵處理。Popover 到 2025-01 才在 iOS Safari 18.3 補齊，要支援更舊的瀏覽器時也要退路（例如 `@oddbird/popover-polyfill`，只在 `HTMLElement.prototype` 沒有 `popover` 時載入），或維持上面的 `v-show` 寫法。
 
 `choose()` 裡兩行的順序是開頭第二個問題的修法。原本先 `emit` 再 `closeMenu()`：父元件收到事件立刻呼叫 `showModal()`，瀏覽器把當時有焦點的選單項目記成「開啟前的元素」；接著選單被 `v-show` 藏起來，`button.focus()` 也因為 Dialog 讓背景 inert 而沒有作用。關閉 Dialog 時，瀏覽器想把焦點還給那個已經隱藏的選單項目，焦點就掉到了 `body`。
 

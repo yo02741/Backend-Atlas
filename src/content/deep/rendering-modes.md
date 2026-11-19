@@ -82,7 +82,7 @@ const ClinicMap = defineAsyncComponent({
 
 - **不合法的 HTML 巢狀**：`<p><div>…</div></p>`。伺服器送出這段字串，瀏覽器的 HTML 解析器在遇到 `<div>` 時就把 `<p>` 關掉，實際的 DOM 和 Vue 預期的不同。
 - **每次渲染結果不同的值**：亂數、`Date.now()`、「現在時間」。
-- **伺服器與瀏覽器的時區不同**：`toLocaleString()` 在伺服器（常是 UTC）與使用者的瀏覽器（台北）印出不同的時間。
+- **伺服器與瀏覽器的時區不同**：`toLocaleString()` 沒指定時區時用執行環境的時區，在伺服器（常是 UTC）與使用者的瀏覽器（台北）印出不同的時間。門診時間屬於院區所在地，格式化時寫明 `timeZone: 'Asia/Taipei'`（`Intl.DateTimeFormat` 或 `toLocaleString` 的選項），兩邊就印出同一個字串。
 
 另外，在渲染時讀 `window.innerWidth`、`localStorage` 決定要顯示什麼，伺服器上沒有這些值，也會不一致。
 
@@ -149,6 +149,20 @@ onUnmounted(() => clearInterval(timer))
 ```html
 <span data-allow-mismatch="text">{{ updatedAt.toLocaleString() }}</span>
 ```
+
+固定的日期時間不該靠 `data-allow-mismatch` 遮掉，指定時區就能讓兩邊一致：
+
+```js run
+// 同一個時刻，在 UTC 的伺服器與台北的瀏覽器都印出院區時間
+const at = new Date('2026-11-20T01:30:00Z')
+const fmt = new Intl.DateTimeFormat('zh-TW', {
+  timeZone: 'Asia/Taipei', dateStyle: 'medium', timeStyle: 'short',
+})
+console.log(fmt.format(at))
+console.log(at.toLocaleString('zh-TW', { timeZone: 'UTC' }))   // 沒寫時區時，伺服器會印出這種結果
+```
+
+日期與時區的計算（跨日、夏令時間）Chrome 團隊的 Modern Web Guidance 建議用 `Temporal`，它目前是 Limited availability（Chrome、Edge 144 與 Firefox 139 起，Safari 還沒有），要用 `temporal-polyfill` 當退路；只是顯示的話，`Intl.DateTimeFormat` 加 `timeZone` 已經夠用。
 
 元素需要不重複的 `id`（例如 `<label for>` 對應的欄位）時，用 Vue 3.5 的 `useId()`，伺服器與瀏覽器產生同一個值；用亂數產生 `id` 就是一個 mismatch。
 

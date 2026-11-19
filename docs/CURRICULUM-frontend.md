@@ -100,15 +100,16 @@
 
 ### 第 9 週｜UI 元件詞彙（二）：浮層、導覽與資料
 
-- **對應技能**：`overlays`、`navigation-ui`、`data-display`、`design-tokens`、`a11y-components`
+- **對應技能**：`overlays`、`navigation-ui`、`data-display`、`design-tokens`、`a11y-components`、`design-to-code`
 - **學習目標**
   1. 能說出 Dialog、Drawer、Popover、Tooltip 擋不擋操作，以及焦點怎麼進、怎麼回來
   2. 能把 Tabs、Breadcrumb、Pagination 的狀態寫進網址，並標出 `aria-current`
   3. 能為表格與清單寫出排序、篩選、全選的規格，並用 design token 寫出亮暗主題
   4. 能用 WAI-ARIA APG 的鍵盤表與屬性表驗收自己做的 Tabs、Menu Button、Combobox
+  5. 能從設計稿量出尺寸、間距與 token，對應到 flex 與 grid，並列出設計稿沒畫、要回頭問的狀態與寬度
 - **動手作業**：用 UiStatesLab 的 Dialog 練習焦點移入、Esc 關閉、焦點回到觸發按鈕；在 OverlayLab 疊開 Dialog 與 Toast，說明誰在上面、Esc 關掉哪一個；為「我的掛號」表格寫一份元件規格。
-- **驗收標準**：五課的選擇題全對；規格涵蓋鍵盤操作與手機上的呈現。
-- **預估時數**：9 小時
+- **驗收標準**：六課的選擇題全對；規格涵蓋鍵盤操作與手機上的呈現。
+- **預估時數**：11 小時
 
 ### 第 10 週｜呼叫後端
 
@@ -157,28 +158,30 @@
 - **驗收標準**：六課的選擇題全對；能從建置產物指出哪個 chunk 最大、為什麼。
 - **預估時數**：9 小時
 
-### 第 14 週｜CSS 的組織、動態與支援範圍
+### 第 14 週｜CSS 的組織、元件庫、動態與支援範圍
 
-- **對應技能**：`css-architecture`、`css-motion`、`browser-support`
+- **對應技能**：`css-architecture`、`tailwind-css`、`element-plus`、`css-motion`、`browser-support`
 - **學習目標**
   1. 能說出 BEM、scoped CSS、CSS Modules、Tailwind 各自怎麼避免樣式衝突，並用 `@layer` 與 design token 接起來
-  2. 能寫只動 `transform` 與 `opacity` 的轉場，用 Vue 的 `<Transition>` 做進出場，並尊重 `prefers-reduced-motion`
-  3. 能分辨 `build.target` 只轉語法、不補 API，用 Baseline 判斷一個功能能不能直接用
+  2. 能讀寫 Tailwind v4 的 utility class 與變體，用 `@theme` 定義 token，避開字串組出來的 class
+  3. 能用 Element Plus 按需引入元件、設定繁體中文語系與 `--el-*` 主題變數，把後端 422 對回 `el-form-item`，並驗收元件庫沒做好的鍵盤與 ARIA
+  4. 能寫只動 `transform` 與 `opacity` 的轉場，用 Vue 的 `<Transition>` 做進出場，並尊重 `prefers-reduced-motion`
+  5. 能分辨 `build.target` 只轉語法、不補 API，用 Baseline 判斷一個功能能不能直接用
 - **動手作業**：為門診前端寫一份支援範圍（Baseline 年份與要留退路的功能），並把一個 Dialog 的開關加上轉場，在減少動態的設定下確認只剩淡入淡出。
-- **驗收標準**：三課的選擇題全對；DevTools 的 Rendering 分頁模擬 `prefers-reduced-motion: reduce` 時沒有位移動畫。
-- **預估時數**：6 小時
+- **驗收標準**：五課的選擇題全對；DevTools 的 Rendering 分頁模擬 `prefers-reduced-motion: reduce` 時沒有位移動畫。
+- **預估時數**：10 小時
 
 ### 第 15 週｜品質：靜態檢查與測試
 
-- **對應技能**：`lint-typecheck`、`test-layers`、`component-tests`、`e2e-playwright`、`frontend-ci`
+- **對應技能**：`lint-typecheck`、`test-layers`、`unit-tests`、`component-tests`、`e2e-playwright`、`frontend-ci`
 - **學習目標**
   1. 能設定 ESLint、Prettier 與 `vue-tsc`，說出 `tsc` 為什麼看不到 `.vue` 的錯
-  2. 能把驗收條件分到單元、元件、E2E 三層，說出 jsdom 沒有的行為要到真瀏覽器測
+  2. 能把驗收條件分到單元、元件、E2E 三層，說出 jsdom 沒有的行為要到真瀏覽器測；單元測試用 `test.each` 寫邊界表、fake timers 測 debounce，改壞程式要有測試變紅
   3. 能用角色與名稱找元素、在網路層 mock API，寫出改壞會變紅的元件測試與 Playwright 測試
   4. 能在每個 PR 跑 `npm ci`、lint、型別檢查、測試、建置與 E2E，並部署預覽網址
 - **動手作業**：替掛號表單寫一個元件測試（422 的欄位錯誤顯示在欄位旁）與一個 Playwright 測試（掛號到「我的掛號」看得到），故意改壞一行確認兩者都會失敗。
-- **驗收標準**：五課的選擇題全對；CI 的每一步都有對應的 npm script，本機跑得出同樣的結果。
-- **預估時數**：10 小時
+- **驗收標準**：六課的選擇題全對；CI 的每一步都有對應的 npm script，本機跑得出同樣的結果。
+- **預估時數**：12 小時
 
 ### 第 16 週｜效能、錯誤監控與資安
 
@@ -194,13 +197,13 @@
 
 ### 第 17 週｜用 AI 寫前端（一）：描述畫面
 
-- **對應技能**：`describe-ui`、`wireframes-screenshots`、`component-breakdown`、`screen-spec`、`ai-common-mistakes`
+- **對應技能**：`describe-ui`、`wireframes-screenshots`、`component-breakdown`、`screen-spec`、`ai-common-mistakes`、`outdated-patterns`
 - **學習目標**
   1. 能把一個畫面寫成文字：版面、元件、狀態、資料、互動五段，加上斷點與文案，必要時附截圖或線框
   2. 能先拆元件與 props／emits 表，再把整個畫面寫成一頁規格：狀態表、文案表、斷點表與驗收條件
-  3. 能用工具抓 AI 產出的固定幾類錯
+  3. 能用工具抓 AI 產出的固定幾類錯，並指出有原生替代的過時寫法與它的 Baseline 狀態
 - **動手作業**：把第 10–12 週的預約清單寫成一頁畫面規格，交給 AI 產生元件，記下它錯在哪幾類。
-- **驗收標準**：五課的選擇題全對；規格的每一格都具體到能拿來驗收。
+- **驗收標準**：六課的選擇題全對；規格的每一格都具體到能拿來驗收；交給 AI 的規範寫明瀏覽器目標。
 - **預估時數**：8 小時
 
 ### 第 18 週｜用 AI 寫前端（二）：規範、契約與審查

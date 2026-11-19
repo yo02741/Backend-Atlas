@@ -93,7 +93,7 @@ type="module"  和 defer 相同；加上 async 就和 async 相同
 | `<link rel="preload" href as>` | 提早下載晚才會被發現的資源 | CSS 裡指定的字型、JS 才會插入的主圖 |
 | `<link rel="modulepreload">` | 提早下載並解析 module | 入口依賴的 chunk（Vite 自動加） |
 
-`fetchpriority` 在 2024 年 10 月成為 Baseline（Chrome 103、Firefox 132、Safari 17.2 起支援）。字型的 preload 要加 `crossorigin`：字型一律用 CORS 模式下載，preload 沒加 `crossorigin` 時兩個請求的模式不同，瀏覽器用不到預先下載的那一份，同一個字型會下載兩次。
+`fetchpriority` 在 2024 年 10 月成為 Baseline（Chrome 103、Firefox 132、Safari 17.2 起支援）。它只是提示，更舊的瀏覽器忽略這個屬性、照預設的優先順序下載，不必另外寫退路。字型的 preload 要加 `crossorigin`：字型一律用 CORS 模式下載，preload 沒加 `crossorigin` 時兩個請求的模式不同，瀏覽器用不到預先下載的那一份，同一個字型會下載兩次。
 
 ### SPA 的首屏
 

@@ -566,7 +566,7 @@ createApp(AppointmentList).mount('#app')
   {
     id: 'overlays-1', skill: 'overlays', kind: 'html', serial: true, level: 2,
     title: '取消預約的確認視窗改用 <dialog>',
-    prompt: '「取消預約」的確認視窗是 `div` 加 `position: fixed` 與 `z-index`：開啟後焦點留在後面那一列，背景還能操作；按 Esc 沒反應；關閉後焦點掉到 `body`。改用原生 `<dialog>`，用 `showModal()` 開啟（或按鈕的 `command="show-modal"` 與 `commandfor`）：\n\n- 開啟時是 modal：背景的連結與按鈕不能聚焦；Dialog 用 `aria-labelledby` 指向標題「取消 11/20 <時間> 的預約？」\n- 開啟時焦點在比較安全的「保留預約」\n- 「保留預約」與 Esc 都關閉 Dialog、不取消預約，焦點回到那一列的「取消預約」\n- 「確定取消」關閉 Dialog、移除那一列，焦點移到清單標題 `#appt-list-title`（它已經有 `tabindex="-1"`）\n\n`<form method="dialog">` 可以用。清單的標記（`.appts`、`li`、`.time`、`.cancel`、`#help-link`）不要改。',
+    prompt: '「取消預約」的確認視窗是 `div` 加 `position: fixed` 與 `z-index`：開啟後焦點留在後面那一列，背景還能操作；按 Esc 沒反應；關閉後焦點掉到 `body`。改用原生 `<dialog>`，用 `showModal()` 開啟（或按鈕的 `command="show-modal"` 與 `commandfor`）：\n\n- 開啟時是 modal：背景的連結與按鈕不能聚焦；Dialog 用 `aria-labelledby` 指向標題「取消 11/20 <時間> 的預約？」\n- 開啟時焦點在比較安全的「保留預約」\n- 「保留預約」與 Esc 都關閉 Dialog、不取消預約，焦點回到那一列的「取消預約」\n- 「確定取消」關閉 Dialog、移除那一列，焦點移到清單標題 `#appt-list-title`（它已經有 `tabindex="-1"`）\n- 不寫 `role="dialog"`、`aria-modal`、自己的焦點陷阱或 Esc 的 `keydown`：`showModal()` 都提供了\n\n`<form method="dialog">` 可以用。清單的標記（`.appts`、`li`、`.time`、`.cancel`、`#help-link`）不要改。',
     starter: `<h2 id="appt-list-title" tabindex="-1">11/20 的預約</h2>
 <ul class="appts">
   <li><span class="time">09:30</span> 王小明 <button type="button" class="cancel">取消預約</button></li>
@@ -623,7 +623,8 @@ createApp(AppointmentList).mount('#app')
 <style>
   body { font: 16px/1.5 system-ui, sans-serif; }
   dialog { border: 2px solid #222; border-radius: 8px; padding: 16px; }
-  dialog::backdrop { background: rgb(0 0 0 / 0.5); }
+  dialog:modal { overscroll-behavior: contain; }   /* 背景不跟著捲；不在 body 加 overflow: hidden */
+  dialog::backdrop { background: rgb(0 0 0 / 0.5); overflow: hidden; overscroll-behavior: contain; }
 </style>
 <script type="module">
   const dialog = document.querySelector('#confirm')
@@ -646,7 +647,7 @@ createApp(AppointmentList).mount('#app')
 </script>
 `,
     tests: [
-      { name: '開啟的是 modal 的 dialog，焦點在「保留預約」', code: "const opener = $$('.cancel')[1]\nfocus(opener)\nclick(opener)\nawait tick()\nconst d = $('dialog')\nassert(d && d.open, '找不到開著的 <dialog>')\nassert(d.matches(':modal'), '<dialog> 要用 showModal() 開啟（show() 與 open 屬性開的不是 modal：背景能操作、Esc 不會關）')\nconst title = document.getElementById(d.getAttribute('aria-labelledby') || '')\nassert(title && d.contains(title), 'aria-labelledby 要指向 Dialog 裡的標題')\nassertEqual(text(title), '取消 11/20 10:00 的預約？', '標題的文字')\nassertEqual(document.activeElement && document.activeElement.textContent.trim(), '保留預約', '開啟後焦點所在的元素')" },
+      { name: '開啟的是 modal 的 dialog，焦點在「保留預約」', code: "const opener = $$('.cancel')[1]\nfocus(opener)\nclick(opener)\nawait tick()\nconst d = $('dialog')\nassert(d && d.open, '找不到開著的 <dialog>')\nassert(d.matches(':modal'), '<dialog> 要用 showModal() 開啟（show() 與 open 屬性開的不是 modal：背景能操作、Esc 不會關）')\nassert(d.getAttribute('role') !== 'dialog' && !d.hasAttribute('aria-modal'), '原生 <dialog> 不用再寫 role=\"dialog\" 與 aria-modal：showModal() 已經提供角色與 modal 狀態')\nconst title = document.getElementById(d.getAttribute('aria-labelledby') || '')\nassert(title && d.contains(title), 'aria-labelledby 要指向 Dialog 裡的標題')\nassertEqual(text(title), '取消 11/20 10:00 的預約？', '標題的文字')\nassertEqual(document.activeElement && document.activeElement.textContent.trim(), '保留預約', '開啟後焦點所在的元素')" },
       { name: '開著的時候背景不能操作', code: "focus($$('.cancel')[0])\nclick($$('.cancel')[0])\nawait tick()\nconst d = $('dialog')\nassert(d && d.open, '找不到開著的 <dialog>')\nfor (const sel of ['#help-link', '.appts .cancel']) {\n  $(sel).focus()\n  assert(d.contains(document.activeElement), '背景的 ' + sel + ' 還拿得到焦點：Dialog 開著時其他內容要 inert')\n}" },
       { name: '按「保留預約」關閉，焦點回到那一列的「取消預約」', code: "const opener = $$('.cancel')[1]\nfocus(opener)\nclick(opener)\nawait tick()\nconst d = $('dialog')\nassert(d && d.open, '找不到開著的 <dialog>')\nclick($$('dialog button').find((b) => b.textContent.trim() === '保留預約'))\nawait waitFor(() => !d.open)\nassertEqual($$('.appts li').length, 2, '保留預約之後的列數')\nassertEqual(document.activeElement, opener, '關閉後焦點要回到「取消預約」（現在在 ' + (document.activeElement && document.activeElement.tagName.toLowerCase()) + '）')" },
       { name: 'Esc 關閉，焦點回到觸發按鈕', code: "const opener = $$('.cancel')[0]\nfocus(opener)\nclick(opener)\nawait tick()\nconst d = $('dialog')\nassert(d && d.open && d.matches(':modal'), '找不到用 showModal() 開著的 <dialog>')\nd.requestClose()   // 和按 Esc 相同的 close request：先觸發 cancel，再關閉\nawait waitFor(() => !d.open)\nassertEqual($$('.appts li').length, 2, 'Esc 之後的列數（不能取消預約）')\nassertEqual(document.activeElement, opener, 'Esc 關閉後焦點要回到「取消預約」')" },

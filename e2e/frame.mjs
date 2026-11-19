@@ -1,5 +1,6 @@
 // 前端沙箱執行環境（src/runtime/frame.js）的自我測試：隔離、無窮迴圈、Console 與錯誤、假 API、viewport、表單送出、
-// 舊 runId 的訊息、Pinia 與 Vue Router 的懶載入、iframe 換頁、守衛的無窮導向、390px 的預覽窗格。
+// 舊 runId 的訊息、Pinia 與 Vue Router 的懶載入、Element Plus 的懶載入（語系與樣式、共用同一份 Vue）、Tailwind（@tailwindcss/browser）的懶載入與產生完成的等待、
+// iframe 換頁、守衛的無窮導向、390px 的預覽窗格。
 // 用 ?verify=frame harness 直接呼叫 window.__frame。
 // 前置：npm run build && npm run preview。BROWSERS=chromium,firefox,webkit 依序跑（預設 chromium；要先 npx playwright install 對應的瀏覽器）
 import { chromium, firefox, webkit } from 'playwright'
@@ -211,6 +212,107 @@ createApp(App).use(createPinia()).use(router).mount('#app')`, test: { code: "awa
     const vis = await lrun({ kind: 'html', code: "<p>x</p><script>window.seen = []; document.addEventListener('visibilitychange', () => seen.push(document.visibilityState + ':' + document.hidden))</script>", test: { code: "setVisibility('hidden')\nsetVisibility('visible')\nassertEqual(seen, ['hidden:true', 'visible:false'])\nassertEqual(document.visibilityState, 'visible')" } })
     t('setVisibility() fires visibilitychange with the new visibilityState', vis.test.pass, vis.test.error)
     await lp.close()
+  }
+
+  // ── Element Plus：import 'element-plus' 才下載主檔、zh-tw 語系與樣式；和 Pinia、Vue Router 共用同一份 Vue ──
+  {
+    const ep = await ctx.newPage()   // 新分頁：vendor 的記憶體快取是空的
+    ep.on('pageerror', (e) => errs.push('PAGEERROR(element-plus) ' + e.message))
+    ep.on('console', (m) => { if (m.type() === 'error') errs.push('CONSOLE(element-plus) ' + m.text().slice(0, 200)) })
+    const reqs = []
+    ep.on('request', (r) => { const m = /\/vendor\/([^/]+@[^/]+\/[^/?]+)/.exec(r.url()); if (m) reqs.push(m[1]) })
+    await ep.goto(base + '?verify=frame', { waitUntil: 'networkidle' })
+    await ep.waitForFunction(() => window.__frameReady, null, { timeout: 30000 })
+    const erun = (o) => ep.evaluate(async (o) => {
+      const t0 = performance.now()
+      const r = await window.__frame.runTest({ ex: {}, ...o, test: { name: 't', ...o.test } })
+      return { ...r, ms: Math.round(performance.now() - t0) }
+    }, o)
+    const epReqs = () => reqs.filter((u) => u.startsWith('element-plus@'))
+    const vueOnly = await erun({ kind: 'vue', code: vue("createApp({ template: '<p id=x>{{ 1 + 1 }}</p>' }).mount('#app')"), test: { code: "await waitFor(() => text('#x') === '2')" } })
+    t('a vue-only exercise does not download element-plus', vueOnly.test.pass && epReqs().length === 0, JSON.stringify(reqs))
+    const zh = await erun({ kind: 'vue', ex: { css: ':root { --el-color-primary: rgb(11, 110, 79); }' }, code: `import { createApp, ref } from 'vue'
+import ElementPlus from 'element-plus'
+import zhTw from 'element-plus/es/locale/lang/zh-tw'
+createApp({ setup: () => ({ zhTw, rows: ref([]) }), template: '<el-config-provider :locale="zhTw"><el-button id=b type="primary">送出</el-button><el-table :data="rows"><el-table-column prop="no" label="號碼" /></el-table></el-config-provider>' }).use(ElementPlus).mount('#app')`, test: { code: `await waitFor(() => $('.el-table__empty-text'))
+assertEqual(text('.el-table__empty-text'), '暫無資料', 'zh-tw 的空表格文字')
+assertEqual(css('#b', 'display'), 'inline-flex', 'Element Plus 的樣式有載入')
+assertEqual(css('#b', 'background-color'), 'rgb(11, 110, 79)', '題目的 CSS 蓋過 --el-color-primary')` } })
+    t('import element-plus: zh-tw locale applies, the stylesheet loads, exercise CSS overrides --el-* variables', zh.test.pass, zh.test.error)
+    t('element-plus downloads the module, the zh-tw locale and the stylesheet once each', JSON.stringify(epReqs().map((u) => u.split('/').pop()).sort()) === JSON.stringify(['index.css', 'index.full.min.mjs', 'zh-tw.min.mjs']), JSON.stringify(epReqs()))
+    const noLocale = await erun({ kind: 'vue', code: `import { createApp, ref } from 'vue'
+import ElementPlus from 'element-plus'
+createApp({ setup: () => ({ rows: ref([]) }), template: '<el-table :data="rows"><el-table-column prop="no" label="號碼" /></el-table>' }).use(ElementPlus).mount('#app')`, test: { code: "await waitFor(() => $('.el-table__empty-text'))\nassertEqual(text('.el-table__empty-text'), 'No Data')" } })
+    t('without el-config-provider the locale is English (No Data)', noLocale.test.pass, noLocale.test.error)
+    const shared = await erun({ kind: 'vue', code: `import { createApp, ref, inject } from 'vue'
+import { createPinia, defineStore } from 'pinia'
+import { createRouter, createMemoryHistory, RouterView } from 'vue-router'
+import ElementPlus from 'element-plus'
+const useQueue = defineStore('queue', () => { const current = ref(12); return { current, next: () => current.value++ } })
+const Board = { setup() { const q = useQueue(); return { q } }, template: '<el-button id=next @click="q.next()">{{ q.current }}</el-button>' }
+const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: Board }] })
+createApp({ template: '<el-card><RouterView /></el-card>' }).use(createPinia()).use(router).use(ElementPlus).mount('#app')`, test: { code: "await waitFor(() => $('#next'))\nclick('#next')\nawait waitFor(() => text('#next') === '13')\nassert($('.el-card #next'), 'RouterView 渲染在 el-card 裡')" } })
+    const vueFiles = reqs.filter((u) => u.startsWith('vue@'))
+    t('element-plus + pinia + vue-router share one Vue: store, RouterView and el-* components work together', shared.test.pass && shared.errors.length === 0 && new Set(vueFiles).size === 1, `${shared.test.error} / ${JSON.stringify(shared.errors)} / ${JSON.stringify(vueFiles)}`)
+    await ep.close()
+  }
+
+  // ── Tailwind（@tailwindcss/browser）：tailwind: true 或 html 裡有 <style type="text/tailwindcss"> 才下載；測試開始前等它產生完 CSS ──
+  {
+    const tp = await ctx.newPage()   // 新分頁：vendor 的記憶體快取是空的
+    tp.on('pageerror', (e) => errs.push('PAGEERROR(tailwind) ' + e.message))
+    tp.on('console', (m) => { if (m.type() === 'error') errs.push('CONSOLE(tailwind) ' + m.text().slice(0, 200)) })
+    const twReqs = []
+    tp.on('request', (r) => { if (/\/vendor\/@tailwindcss\/browser@[^/]+\/index\.global\.js$/.test(r.url())) twReqs.push(r.url()) })
+    await tp.goto(base + '?verify=frame', { waitUntil: 'networkidle' })
+    await tp.waitForFunction(() => window.__frameReady, null, { timeout: 30000 })
+    const trun = (o) => tp.evaluate(async (o) => {
+      const t0 = performance.now()
+      const r = await window.__frame.runTest({ ex: {}, ...o, test: { name: 't', ...o.test } })
+      return { ...r, ms: Math.round(performance.now() - t0) }
+    }, o)
+    const plain = await trun({ kind: 'html', code: '<p id=x class="p-4 bg-red-500">x</p>', test: { code: "assertEqual(css('#x', 'padding-top'), '0px')\nassertEqual(await twReady(), true)" } })
+    t('html with utility classes but no tailwind flag or style: Tailwind is not downloaded, classes do nothing', plain.test.pass && twReqs.length === 0, `${plain.test.error} / ${twReqs.length}`)
+    const off = await trun({ kind: 'html', ex: { tailwind: false }, code: '<style type="text/tailwindcss"></style><p id=x class="p-4">x</p>', test: { code: "assertEqual(css('#x', 'padding-top'), '0px')" } })
+    t('tailwind: false wins over the <style type="text/tailwindcss"> detection', off.test.pass && twReqs.length === 0, `${off.test.error} / ${twReqs.length}`)
+    const cssKind = await trun({ kind: 'css', ex: { html: '<p id=x class="p-4">x</p>' }, code: '#x { color: red }', test: { code: "assertEqual(css('#x', 'padding-top'), '0px')" } })
+    t('css exercises never load Tailwind', cssKind.test.pass && twReqs.length === 0, `${cssKind.test.error} / ${twReqs.length}`)
+
+    const theme = `<style type="text/tailwindcss">
+  @theme { --color-clinic: #2f6fd6; --color-clinic-strong: #1f4fa8; }
+  @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+</style>`
+    const gen = await trun({ kind: 'html', ex: { tailwind: true }, code: theme + `
+<main id=m class="p-4 md:grid md:grid-cols-2">
+  <button id=b type="button" aria-expanded="false" class="h-11 bg-clinic text-white hover:bg-clinic-strong aria-expanded:rotate-180 dark:bg-black">x</button>
+  <p id=late>late</p>
+</main>`, test: { code: `assertEqual(css('#m', 'padding-top'), '16px', 'p-4')
+assertEqual(css('#b', 'background-color'), 'rgb(47, 111, 214)', '@theme 的 bg-clinic')
+assertEqual(css('#b', 'height'), '44px', 'h-11')
+assertEqual(css('#m', 'display'), 'block', '390px 時 md: 不成立')
+assertEqual(cssWhen('#b', ':hover', 'background-color'), 'rgb(31, 79, 168)', 'cssWhen 讀 hover 的規則')
+assertEqual(cssWhen('#b', ':focus-visible', 'outline-width'), null, '沒有 focus-visible 規則時是 null')
+$('#b').setAttribute('aria-expanded', 'true')
+await twReady()
+assertEqual(css('#b', 'rotate'), '180deg', 'aria-expanded:')
+$('#m').dataset.theme = 'dark'
+assertEqual(css('#b', 'background-color'), 'rgb(0, 0, 0)', '@custom-variant dark')
+$('#late').className = 'mt-[13px] text-clinic'
+await twReady()
+assertEqual(css('#late', 'margin-top'), '13px', '之後才加上的 class 也會產生')
+assertEqual(css('#late', 'color'), 'rgb(47, 111, 214)')`, viewport: 390 } })
+    t('tailwind: true: utilities, @theme, hover (cssWhen), aria-*, @custom-variant and classes added later are generated', gen.test.pass && twReqs.length === 1, `${gen.test.error} / ${twReqs.length}`)
+    t('the Tailwind test finishes quickly (no fixed sleep)', gen.ms < 3000, `${gen.ms}ms`)
+    const wide = await trun({ kind: 'html', ex: { tailwind: true }, code: theme + '<main id=m class="md:grid md:grid-cols-2"><p>a</p><p>b</p></main>', test: { viewport: 1280, code: "assertEqual(css('#m', 'display'), 'grid')" } })
+    t('md: applies at 1280px (min-width breakpoints)', wide.test.pass, wide.test.error)
+    const detected = await trun({ kind: 'html', code: '<style type="text/tailwindcss">@theme { --color-clinic: #2f6fd6; }</style><p id=x class="text-clinic">x</p>', test: { code: "assertEqual(css('#x', 'color'), 'rgb(47, 111, 214)')" } })
+    t('without an exercise setting, <style type="text/tailwindcss"> loads Tailwind (Playground, deep blocks)', detected.test.pass, detected.test.error)
+    t('Tailwind is downloaded once per page', twReqs.length === 1, String(twReqs.length))
+    const bad = await trun({ kind: 'html', ex: { tailwind: true }, code: '<style type="text/tailwindcss">.x { @apply nope-nope; }</style><p class="x">x</p>', test: { code: 'assert(true)' } })
+    t('a Tailwind compile error fails the test instead of waiting for the timeout', !bad.test.pass && !bad.timeout && bad.ms < 4000 && /nope-nope/.test(bad.test.error || ''), `${bad.ms}ms ${bad.test.error}`)
+    const once = await tp.evaluate(() => window.__frame.runOnce({ kind: 'html', code: '<style type="text/tailwindcss"></style><p id=x class="p-4">x</p><script>setTimeout(() => console.log(getComputedStyle(document.getElementById("x")).paddingTop), 300)</script>' }))
+    t('runOnce (deep html run blocks) runs Tailwind too', once.ok && once.output === '16px', JSON.stringify(once.output) + ' ' + once.error)
+    await tp.close()
   }
 
   // ── 390px：題目頁的預覽窗格不溢出；切到 1280 時縮小顯示 ──

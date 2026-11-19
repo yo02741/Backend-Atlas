@@ -161,12 +161,14 @@ async function toggleSms() {
 .hint { color: var(--color-text-muted); }
 .error:empty { display: none; }
 [role="switch"][aria-checked="true"] { background: var(--color-primary); color: var(--color-on-primary); }
+textarea { min-block-size: 4.5rem; max-block-size: 12rem; field-sizing: content; }   /* 隨內容長高；不支援的瀏覽器維持最小高度 */
 </style>
 ```
 
 幾個細節：
 
 - `aria-describedby` 同時指向說明與錯誤兩個元素，錯誤是空的時候用 CSS 藏起來，元素本身一直在。
+- 「主訴」用 `field-sizing: content` 隨內容長高，`max-block-size` 之後改成捲動。`field-sizing` 在 2026 年 6 月才成為 Baseline（Newly available），舊瀏覽器忽略這行、維持 `min-block-size` 的高度，使用者仍可以拖右下角調整。以前的做法是監聽 `input` 事件、把 `height` 設成 `scrollHeight`。
 - 「病歷號」用 `readonly`，值會送出、也能 Tab 到並被念出來。
 - 開關是 `type="button"` 的按鈕，放在表單裡也不會送出表單。
 

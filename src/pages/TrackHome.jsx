@@ -47,9 +47,9 @@ export default function TrackHome({ id }) {
           <div className="hero-stats">
             <div className="stat"><b>{domains.length}</b><span>領域</span></div>
             <div className="stat"><b>{skills.length}</b><span>課</span></div>
-            <div className="stat"><b>{labCount}</b><span>互動實驗室</span></div>
-            <div className="stat"><b>{exCount}</b><span>程式題</span></div>
-            <div className="stat"><b>{scenarios.length}</b><span>設計情境</span></div>
+            {labCount > 0 && <div className="stat"><b>{labCount}</b><span>互動實驗室</span></div>}
+            {exCount > 0 && <div className="stat"><b>{exCount}</b><span>程式題</span></div>}
+            {scenarios.length > 0 && <div className="stat"><b>{scenarios.length}</b><span>設計情境</span></div>}
             <div className="stat"><b>{doneHere}</b><span>已完成</span></div>
           </div>
         </div>

@@ -64,7 +64,9 @@ CI 的 `docs-sync` workflow 會補上忘記同步的 commit，部署前也會先
 ## 程式與樣式
 
 - **顏色只用 CSS token**（`var(--c-*)`、`var(--ink-*)`…），不寫死 hex；亮暗主題、390px 手機都要檢查（`npm run e2e:mobile`）。
-- 不新增 npm 依賴，除非有明確理由（目前：react、codemirror、pglite、pyodide、firebase，firebase 只在 `src/cloud/firebase.js` import，懶載入）。
+- 不新增 npm 依賴，除非有明確理由（目前：react、codemirror、pglite、pyodide、firebase、兩個 @fontsource 字體；firebase 只在 `src/cloud/firebase.js` import，懶載入）。
+- **視覺風格是貼紙風**：奶油底、黑框（`--line`、`--bw`）、位移陰影（`--shade`）、平塗色（`--st-*`，色塊上的字用 `--on-sticker`）。新元件沿用這些 token，不加漸層、模糊、發光。
+- **字體**：標題用 `--serif`（Bricolage Grotesque 800＋昭源甜圓體 800），內文用 `--sans`（系統字）。字體檔自架：`src/fonts.css` 由 `npm run fonts:gen`（`scripts/gen-fonts.mjs`）從 @fontsource 產生，只帶 woff2，不要手改；要加字重或字體就改那支腳本。標誌是 `src/components/BrandMark.jsx` 與 `public/favicon.svg`（貼紙底上的紅色打勾），兩者要一致。
 
 ## 改登入同步時
 

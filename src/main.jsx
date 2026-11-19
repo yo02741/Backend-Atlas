@@ -5,6 +5,7 @@ import LabHarness from './harness.jsx'
 import { initCloud } from './cloud/sync.js'
 const VerifyHarness = lazy(() => import('./verify.jsx'))   // 開發用，不進正式站的主 chunk
 const DeepVerify = lazy(() => import('./verify.jsx').then((m) => ({ default: m.DeepVerify })))
+import './fonts.css'
 import './styles.css'
 import './labs/lab.css'
 

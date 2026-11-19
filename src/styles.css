@@ -1,16 +1,27 @@
 /* ============================================================
    u kinda should know — 前端、後端、AI
-   tokens 與每日熱點站同源（dataviz 參考 palette），雜誌排版層自定。
+   貼紙風格：奶油底、黑框、平塗色、位移陰影。標題用 Bricolage Grotesque（英文）＋昭源甜圓體（中文），內文用系統字。
+   categorical 色（--c-*）沿用 dataviz 參考 palette，給圖表、路線圖與領域標記用。
    ============================================================ */
 :root {
-  --page: #f9f9f7;
-  --surface-1: #fcfcfb;
-  --surface-2: #f1f0eb;
-  --ink-1: #0b0b0b;
-  --ink-2: #52514e;
-  --ink-3: #898781;
-  --hairline: #e1e0d9;
-  --border: rgba(11, 11, 11, 0.10);
+  --page: #fff4dc;
+  --surface-1: #fffaf0;
+  --surface-2: #fbecc8;
+  --ink-1: #111111;
+  --ink-2: #4a4538;
+  --ink-3: #7d7563;
+  --hairline: #e9dcbb;
+  --border: rgba(17, 17, 17, 0.16);
+  /* 貼紙：外框、位移陰影、平塗色（色塊上的字一律用 --on-sticker） */
+  --line: #111111;
+  --shade: #111111;
+  --bw: 2.5px;
+  --st-yellow: #ffd23f;
+  --st-mint: #7ee0b0;
+  --st-blue: #8fb8ff;
+  --st-violet: #c7a6ff;
+  --st-red: #ff5a4e;
+  --on-sticker: #111111;
   --accent: #2a78d6;
   --good: #0ca30c;
   --warning: #fab219;
@@ -30,54 +41,58 @@
   --c-brown: #9b6b3c;
   /* sequential blue（幅度用） */
   --seq-100: #cde2fb; --seq-250: #86b6ef; --seq-400: #3987e5; --seq-550: #1c5cab; --seq-700: #0d366b;
-  --serif: Georgia, "Times New Roman", "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  /* 標題字：--serif 是一般標題（英文 Bricolage，中文系統字，名稱沿用舊的）；
+     --display 只給大標題（首頁、路線卡、課名、區段標題、路線分頁），中文用昭源甜圓體。
+     甜圓體依字分片下載，只給大標題用，第一次進站下載的字體量才不會太大。 */
+  --serif: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
+  --display: "Bricolage Grotesque", "Chiron GoRound TC", system-ui, -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
   --sans: system-ui, -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Noto Sans Mono", monospace;
   --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.06);
   --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.12);
   --radius: 4px;
-  /* 站的標誌（BrandMark、favicon）：深色底、綠色打勾、黃色問號，亮暗主題同一組 */
-  --brand-tile: #15171a;
-  --brand-check: #22c55e;
-  --brand-ask: #f5b324;
-  /* 首頁「u kinda should know」字樣：亮色用深一點的琥珀色才有足夠對比 */
-  --ask-ink: #a35f00;
+  /* 站的標誌（BrandMark、favicon）：奶油色貼紙、黑框、紅色打勾，亮暗主題同一組 */
+  --brand-tile: #fff4dc;
+  --brand-line: #111111;
+  --brand-check: #ff5a4e;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --page: #0d0d0d;
-    --surface-1: #1a1a19;
-    --surface-2: #232321;
-    --ink-1: #ffffff;
-    --ink-2: #c3c2b7;
-    --ink-3: #898781;
-    --hairline: #2c2c2a;
-    --border: rgba(255, 255, 255, 0.10);
+    --page: #17150f;
+    --surface-1: #221f17;
+    --surface-2: #2c281e;
+    --ink-1: #fbf3e0;
+    --ink-2: #d4cab1;
+    --ink-3: #a0957c;
+    --hairline: #3a3427;
+    --border: rgba(251, 243, 224, 0.16);
+    --line: #fbf3e0;
+    --shade: #000000;
     --accent: #3987e5;
     --c-blue: #3987e5; --c-orange: #d95926; --c-aqua: #199e70; --c-yellow: #c98500;
-    --c-magenta: #d55181; --c-green: #008300; --c-violet: #9085e9; --c-red: #e66767;
+    --c-magenta: #d55181; --c-green: #3aa856; --c-violet: #9085e9; --c-red: #e66767;
     --c-slate: #93a4bd; --c-teal: #2bb0b5; --c-brown: #c99560;
     --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.35);
     --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
-    --ask-ink: #f5b324;
   }
 }
 :root[data-theme="dark"] {
-  --page: #0d0d0d;
-  --surface-1: #1a1a19;
-  --surface-2: #232321;
-  --ink-1: #ffffff;
-  --ink-2: #c3c2b7;
-  --ink-3: #898781;
-  --hairline: #2c2c2a;
-  --border: rgba(255, 255, 255, 0.10);
+  --page: #17150f;
+  --surface-1: #221f17;
+  --surface-2: #2c281e;
+  --ink-1: #fbf3e0;
+  --ink-2: #d4cab1;
+  --ink-3: #a0957c;
+  --hairline: #3a3427;
+  --border: rgba(251, 243, 224, 0.16);
+  --line: #fbf3e0;
+  --shade: #000000;
   --accent: #3987e5;
   --c-blue: #3987e5; --c-orange: #d95926; --c-aqua: #199e70; --c-yellow: #c98500;
-  --c-magenta: #d55181; --c-green: #008300; --c-violet: #9085e9; --c-red: #e66767;
+  --c-magenta: #d55181; --c-green: #3aa856; --c-violet: #9085e9; --c-red: #e66767;
     --c-slate: #93a4bd; --c-teal: #2bb0b5; --c-brown: #c99560;
   --shadow-1: 0 2px 12px rgba(0, 0, 0, 0.35);
   --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.5);
-  --ask-ink: #f5b324;
 }
 
 /* ============ 基底 ============ */
@@ -319,35 +334,57 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .lcard .pill { align-self: flex-start; margin-top: 4px; }
 
 /* ============ 首頁：開場與三條路線 ============ */
-.home-hero { padding: 72px 0 36px; max-width: 900px; }
-.ai-said {
-  display: inline-flex; align-items: center; gap: 10px; margin-bottom: 22px;
-  font-family: var(--mono); font-size: clamp(0.95rem, 2.2vw, 1.1rem); color: var(--ink-2);
-  padding: 6px 14px 6px 10px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface-1);
+.home-hero { position: relative; padding: 64px 0 34px; max-width: 980px; }
+/* 貼紙「AI said all good.」：微微旋轉，旁邊壓一個紅色問號章 */
+.stk-said {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 10px 20px 10px 14px; transform: rotate(-3deg); transform-origin: left center;
+  background: var(--st-mint); color: var(--on-sticker);
+  border: var(--bw) solid var(--line); border-radius: 14px; box-shadow: 5px 5px 0 var(--shade);
+  font-family: var(--serif); font-weight: 800; font-size: clamp(1.5rem, 4vw, 2.6rem); letter-spacing: -0.03em; line-height: 1.15;
 }
-.ai-said-ok { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--brand-tile); color: var(--brand-check); font-size: 0.8rem; font-weight: 700; }
-.home-hero h1.display { font-size: clamp(2.4rem, 7vw, 4.4rem); line-height: 1.12; }
-.home-hero .uksk { font-family: var(--mono); font-weight: 700; letter-spacing: -0.03em; color: var(--ask-ink); }
-.home-hero .home-three { margin-top: 20px; font-size: clamp(1.05rem, 2.4vw, 1.25rem); color: var(--ink-1); }
-.track-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 8px 0 24px; }
+.stk-ok { display: inline-grid; place-items: center; width: 1.05em; height: 1.05em; border-radius: 50%; background: var(--on-sticker); color: var(--st-mint); font-size: 0.68em; }
+.stk-q {
+  position: absolute; left: clamp(250px, 46vw, 500px); top: 26px;
+  display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%;
+  background: var(--st-red); color: #fff; border: var(--bw) solid var(--line); box-shadow: 4px 4px 0 var(--shade);
+  font-family: var(--serif); font-weight: 800; font-size: 56px; line-height: 1; transform: rotate(12deg);
+}
+.home-hero h1.display { margin-top: 34px; font-size: clamp(2.5rem, 7.4vw, 5.2rem); line-height: 1.12; font-weight: 800; }
+.home-hero h1 em { font-style: normal; letter-spacing: -0.04em; background: linear-gradient(transparent 58%, var(--st-yellow) 58%); color: var(--ink-1); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+:root[data-theme="dark"] .home-hero h1 em { background: linear-gradient(transparent 62%, color-mix(in srgb, var(--st-yellow) 55%, transparent) 62%); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .home-hero h1 em { background: linear-gradient(transparent 62%, color-mix(in srgb, var(--st-yellow) 55%, transparent) 62%); } }
+.home-three { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.home-three span { font-family: var(--serif); font-weight: 800; font-size: clamp(1rem, 2.4vw, 1.3rem); padding: 3px 14px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface-1); }
+@media (max-width: 640px) { .stk-q { left: auto; right: 10px; top: 30px; width: 60px; height: 60px; font-size: 40px; } }
+
+.track-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; padding: 26px 0 30px; }
 @media (max-width: 900px) { .track-cards { grid-template-columns: minmax(0, 1fr); } }
 .track-card {
-  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 20px 20px 18px;
-  background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius);
+  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 22px 22px 20px;
+  color: var(--on-sticker); border: var(--bw) solid var(--line); border-radius: 18px; box-shadow: 7px 7px 0 var(--shade);
 }
-.track-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--tint); border-radius: var(--radius) var(--radius) 0 0; }
-.track-card.last { border-color: color-mix(in srgb, var(--tint) 55%, var(--hairline)); box-shadow: var(--shadow-1); }
-.track-card.soon { background: transparent; border-style: dashed; }
-.track-card.soon::before { opacity: 0.45; }
-.track-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.track-card-last { margin-left: 10px; letter-spacing: 0.04em; color: var(--ink-2); text-transform: none; font-weight: 500; }
-.track-card h2 { font-family: var(--serif); font-size: 1.9rem; line-height: 1.15; }
-.track-card h2 a { color: var(--ink-1); text-decoration: none; }
-.track-card h2 a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--tint); }
-.track-card-tag { color: var(--ink-2); font-size: 0.9rem; line-height: 1.65; }
-.track-card-meta { color: var(--ink-3); font-size: 0.8rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.track-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px; }
+.track-card.st-mint { background: var(--st-mint); } .track-card.st-blue { background: var(--st-blue); } .track-card.st-violet { background: var(--st-violet); }
+.track-card.soon { background: var(--surface-1); color: var(--ink-1); border-style: dashed; }
+.track-card-n { font-family: var(--serif); font-weight: 800; font-size: clamp(3.4rem, 7vw, 4.8rem); line-height: 0.9; letter-spacing: -0.05em; }
+.track-card-n small { font-size: 1.3rem; letter-spacing: 0; margin-left: 6px; }
+.track-card.soon .track-card-n small { font-size: 1rem; }
+.track-card h2 { font-family: var(--serif); font-weight: 800; font-size: 2.2rem; line-height: 1.05; }
+.track-card h2 a { color: inherit; text-decoration: none; }
+.track-card h2 a:hover { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 5px; }
+.track-card p { font-size: 0.92rem; line-height: 1.7; }
+.track-card-meta { font-size: 0.8rem !important; opacity: 0.85; }
+.track-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 8px; }
 .track-card-actions .btn { max-width: 100%; white-space: normal; text-align: left; }
+.track-card .btn.ghost { background: #fff; color: var(--on-sticker); border-color: var(--on-sticker); box-shadow: 3px 3px 0 var(--on-sticker); }
+.track-card.soon .btn.ghost { background: var(--surface-1); color: var(--ink-1); border-color: var(--line); box-shadow: 3px 3px 0 var(--shade); }
+.track-card-tag {
+  position: absolute; right: 16px; top: 16px; transform: rotate(7deg);
+  background: var(--st-yellow); color: var(--on-sticker); border: 2px solid var(--on-sticker); border-radius: 8px;
+  padding: 1px 10px; font-family: var(--serif); font-weight: 800; font-size: 0.95rem;
+}
+.track-card.soon .track-card-tag { border-color: var(--line); }
+
 /* 路線首頁沒有 hero 圖時單欄 */
 .hero.hero-solo { grid-template-columns: minmax(0, 1fr); }
 .hero .crumbs { margin-bottom: 10px; }
@@ -817,3 +854,63 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
   .rv-result { grid-template-columns: minmax(0, 1fr); padding: 14px; }
   .rv-domains li { grid-template-columns: minmax(0, 10.5em) minmax(30px, 1fr) 3.6em; }
 }
+
+/* ============ 貼紙風格（P13）：外框、位移陰影、平塗色 ============ */
+.bg-aurora { display: none; }
+body { -webkit-font-smoothing: antialiased; }
+h1.display, h2.section-title, .domain-block-head h2, .lesson-head h1, .lesson-body h2 { font-weight: 800; letter-spacing: -0.01em; }
+
+/* 頂欄 */
+.topnav { background: var(--page); -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: var(--bw) solid var(--line); }
+.brand-mark { width: 30px; height: 30px; }
+.brand-name { font-family: var(--serif); font-weight: 800; font-size: 1.1rem; letter-spacing: -0.03em; }
+.track-tab { border: 2px solid var(--line); background: var(--surface-1); color: var(--ink-1); padding: 3px 13px; font-family: var(--serif); font-weight: 800; }
+.track-tab:hover { background: var(--surface-2); }
+.track-tab.on { background: var(--ink-1); color: var(--page); }
+.track-tab.on::after { display: none; }
+.track-tab.soon { border-style: dashed; color: var(--ink-2); }
+.topnav-links a { font-weight: 600; color: var(--ink-2); }
+.topnav-links a.active::after { border-bottom: 3px solid var(--ink-1); }
+.theme-btn, .account-btn, .nav-toggle { border: 2px solid var(--line); color: var(--ink-1); }
+.topnav-links.open { border-bottom: var(--bw) solid var(--line); }
+
+/* 按鈕、標籤、輸入框 */
+.btn { border: var(--bw) solid var(--line); border-radius: 10px; background: var(--st-yellow); color: var(--on-sticker); font-weight: 700; box-shadow: 3px 3px 0 var(--shade); transition: transform 0.12s ease, box-shadow 0.12s ease; }
+.btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--shade); }
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--shade); }
+.btn.ghost { background: var(--surface-1); color: var(--ink-1); border-color: var(--line); }
+.btn.ghost:hover { border-color: var(--line); }
+.chip { border: 2px solid var(--line); background: var(--surface-1); color: var(--ink-1); font-weight: 600; }
+.chip:hover { border-color: var(--line); background: var(--surface-2); }
+.chip.on { background: var(--ink-1); color: var(--page); border-color: var(--ink-1); }
+.pill { border: 1.5px solid var(--line); color: var(--ink-1); }
+.pill.tint { border-color: var(--line); }
+.toolbar .search { border: 2px solid var(--line); border-radius: 10px; background: var(--surface-1); }
+.refs a { border: 1.5px solid var(--line); color: var(--ink-1); }
+
+/* 卡片 */
+.dcard, .lcard, .scen-card, .rv-entry { border: var(--bw) solid var(--line); border-radius: 16px; box-shadow: 5px 5px 0 var(--shade); background: var(--surface-1); overflow: visible; }
+.dcard:hover, .lcard:hover, .scen-card:hover, .rv-entry:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--shade); border-color: var(--line); }
+.dcard { background: color-mix(in srgb, var(--tint) 16%, var(--surface-1)); }
+.dcard::before, .scen-card::before { display: none; }
+.dcard-no { color: var(--ink-1); }
+.dcard-tags span { border-color: var(--line); color: var(--ink-2); }
+.lcard-icon { border: 2px solid var(--line); border-radius: 10px; }
+.rv-entry { border-left-width: var(--bw); }
+.stat b { font-family: var(--serif); font-weight: 800; letter-spacing: -0.03em; }
+.hero h1.display { font-size: clamp(2.6rem, 7vw, 4.4rem); }
+
+/* 課頁：地圖層一塊一張卡 */
+.map-block { border: 2px solid var(--line); border-radius: 14px; background: var(--surface-1); box-shadow: 4px 4px 0 var(--shade); padding: 4px 16px 12px; margin-top: 16px; }
+.map-block h3 { font-family: var(--serif); font-size: 1rem; font-weight: 800; letter-spacing: 0; color: var(--ink-1); }
+/* 手機：頂欄只留標誌、三個路線分頁與右側按鈕，間距收小才放得下 */
+@media (max-width: 440px) {
+  .topnav { gap: 8px; }
+  .track-tabs { gap: 3px; }
+  .track-tab { padding: 2px 8px; font-size: 0.88rem; }
+  .topnav-right { gap: 6px; }
+  .brand-mark { width: 28px; height: 28px; }
+}
+/* 大標題用甜圓體（--display） */
+h1.display, h2.section-title, .lesson-head h1, .domain-block-head h2, .track-tab, .brand-name,
+.stk-said, .stk-q, .home-three span, .track-card-n, .track-card h2, .track-card-tag { font-family: var(--display); }

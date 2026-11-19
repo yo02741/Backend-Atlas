@@ -3,19 +3,19 @@ import { TRACKS } from '../content/tracks.js'
 import { skillsOf, stationsOf, plannedDomainsOf } from '../content/roadmap.js'
 import { EXERCISES } from '../content/exercises/index.js'
 import { useProgress } from '../progress.js'
-import { ProgressRing } from '../components/bits.jsx'
 import { lastTrack } from '../track.js'
 
-/* 首頁 #/：一句開場，下面三條路線。每張卡：課數、進度、下一站。 */
+/* 首頁 #/：開場（貼紙「AI said all good.」、問號章、標題），下面三條路線的卡片：課數、下一站、進度。 */
 export default function Home() {
   const { isDone } = useProgress()
   const last = lastTrack()
   return (
     <div className="fade-swap">
       <section className="home-hero">
-        <p className="ai-said"><span className="ai-said-ok" aria-hidden="true">✓</span>AI said all good.</p>
-        <h1 className="display">但這些，<br /><span className="uksk">u kinda should know</span>。</h1>
-        <p className="lede home-three">叫得出名字、說得出要求、驗得出對錯。</p>
+        <p className="stk-said"><span className="stk-ok" aria-hidden="true">✓</span>AI said all good.</p>
+        <span className="stk-q" aria-hidden="true">?</span>
+        <h1 className="display">但這些，<br /><em>u kinda should know.</em></h1>
+        <p className="home-three"><span>叫得出名字</span><span>說得出要求</span><span>驗得出對錯</span></p>
       </section>
 
       <section className="track-cards" aria-label="路線">
@@ -27,14 +27,14 @@ export default function Home() {
 
 function TrackCard({ t, isDone, last }) {
   const skills = skillsOf(t.id)
-  const color = `var(--c-${t.color})`
+  const cls = `track-card st-${t.sticker}`
   if (!skills.length) {
     return (
-      <article className="track-card soon" style={{ '--tint': color }}>
-        <p className="kicker tinted">{t.en}</p>
+      <article className={`${cls} soon`}>
+        <span className="track-card-tag">撰寫中</span>
+        <span className="track-card-n">{plannedDomainsOf(t.id).length}<small>個領域規劃中</small></span>
         <h2><a href={`#/track/${t.id}`}>{t.title}</a></h2>
-        <p className="track-card-tag">{t.tagline}</p>
-        <p className="track-card-meta"><span className="pill">撰寫中</span>規劃 {plannedDomainsOf(t.id).length} 個領域</p>
+        <p>{t.tagline}</p>
         <div className="track-card-actions"><a className="btn ghost small" href={`#/track/${t.id}`}>看規劃 →</a></div>
       </article>
     )
@@ -45,16 +45,14 @@ function TrackCard({ t, isDone, last }) {
   const labs = skills.filter((s) => s.lab).length
   const ex = EXERCISES.filter((e) => !e.project && skills.some((s) => s.id === e.skill)).length
   return (
-    <article className={`track-card${last ? ' last' : ''}`} style={{ '--tint': color }}>
-      <div className="track-card-head">
-        <p className="kicker tinted">{t.en}{last && <span className="track-card-last">上次在看</span>}</p>
-        <ProgressRing value={doneN} total={skills.length} color={color} />
-      </div>
+    <article className={cls}>
+      {last && <span className="track-card-tag">上次在看</span>}
+      <span className="track-card-n">{skills.length}<small>課</small></span>
       <h2><a href={`#/track/${t.id}`}>{t.title}</a></h2>
-      <p className="track-card-tag">{t.tagline}</p>
-      <p className="track-card-meta">{skills.length} 課 · {labs} 實驗室 · {ex} 程式題{stations.length > 0 && ` · 路線 ${stations.length} 站`}</p>
+      <p>{t.tagline}</p>
+      <p className="track-card-meta">{[labs && `${labs} 實驗室`, ex && `${ex} 程式題`, stations.length && `路線 ${stations.length} 站`, doneN && `已完成 ${doneN}`].filter(Boolean).join(' · ')}</p>
       <div className="track-card-actions">
-        <a className="btn small" href={`#/skill/${next.id}`}>{doneN ? '繼續' : '第一站'}：{next.label || next.title} →</a>
+        <a className="btn ghost small" href={`#/skill/${next.id}`}>{doneN ? '繼續' : '第一站'}：{next.label || next.title} →</a>
         <a className="btn ghost small" href={`#/track/${t.id}`}>路線首頁</a>
       </div>
     </article>

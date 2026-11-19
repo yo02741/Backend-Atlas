@@ -19,7 +19,8 @@
 - 導覽列一直顯示三個路線分頁，目前的路線會標出來；技能盤點、課綱、實驗室、設計情境、練習題的連結帶上目前的路線（`?track=`），列表頁上方可以切換「全部、前端、後端、AI」。
 - 課頁的麵包屑是「首頁 / 路線 / 領域」；在路線圖上的課標「學習路線 第 N / M 站」。
 - 還沒有課的路線，首頁卡片標「撰寫中」，路線首頁列出規劃中的領域。
-- 站的標誌是打勾加問號（`public/favicon.svg`，元件 `src/components/BrandMark.jsx`），另有 `favicon-32.png`、`apple-touch-icon.png`（180）、`icon-512.png`。
+- 視覺是貼紙風：奶油底、黑框、平塗色、位移陰影。標題字是 Bricolage Grotesque（英文）＋昭源甜圓體 Chiron GoRound TC（中文），都是 SIL OFL，自架在站上（`src/fonts.css` 由 `npm run fonts:gen` 產生，中文依 unicode-range 分片，只下載頁面上用到的字）；內文用系統字。
+- 站的標誌是貼紙底上的紅色打勾（`public/favicon.svg`，元件 `src/components/BrandMark.jsx`），另有 `favicon-32.png`、`apple-touch-icon.png`（180）、`icon-512.png`。
 
 <!-- sync:stats -->
 | 內容 | 數量 |

@@ -39,7 +39,7 @@ export const PATH = [
   { skill: 'injection', label: 'SQL 注入', note: 'SQL 注入的原理與參數化查詢。' },
   { skill: 'docker-basics', label: 'Docker 的層', note: 'image、container、layer 與 build 快取。' },
   { skill: 'container-operations', label: '容器的日常維運', note: '日誌輪替、記憶體上限、SIGTERM 與執行環境。' },
-  { skill: 'ci-pipeline', label: 'CI 管線', note: 'GitHub Actions 與 GitLab CI 對照著學。' },
+  { skill: 'ci-pipeline', label: 'CI 管線', note: 'lint、test、build 三段，GitHub Actions 與 GitLab CI 對照。' },
   { skill: 'load-testing', label: '量測與壓測', note: '量 p95、找飽和點、定位瓶頸。' },
   { skill: 'network-troubleshooting', label: '網路通不通', note: '連不上時，從 DNS 一層一層往下查。' },
   { skill: 'https-certificates', label: 'HTTPS 憑證', note: '憑證鏈、憑證種類與自動續約。' },

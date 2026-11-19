@@ -41,7 +41,7 @@
 | 10 | 注入攻擊：SQL 與它的親戚★ | 資安 | SQL 注入的原理與參數化查詢。 |
 | 11 | Docker：image、container、layer★ | 容器與部署 | image、container、layer 與 build 快取。 |
 | 12 | 容器的日常維運：日誌、資源上限、訊號與執行環境 | 容器與部署 | 日誌輪替、記憶體上限、SIGTERM 與執行環境。 |
-| 13 | CI 管線：lint、test、build★ | CI/CD 與交付 | GitHub Actions 與 GitLab CI 對照著學。 |
+| 13 | CI 管線：lint、test、build★ | CI/CD 與交付 | lint、test、build 三段，GitHub Actions 與 GitLab CI 對照。 |
 | 14 | 效能量測與壓測：p95、飽和點、找瓶頸★ | 演算法與系統設計 | 量 p95、找飽和點、定位瓶頸。 |
 | 15 | 網路通不通：從 DNS 到防火牆★ | DevOps 與基礎建設 | 連不上時，從 DNS 一層一層往下查。 |
 | 16 | HTTPS 憑證：要買哪種、怎麼續★ | DevOps 與基礎建設 | 憑證鏈、憑證種類與自動續約。 |

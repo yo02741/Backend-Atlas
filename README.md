@@ -4,7 +4,7 @@
 
 學習網站，三條路線：**前端**、**後端**、**AI**。每課的基底是一張「地圖」：叫得出名字（名詞與一句說明）、說得出要求（描述需求要講清楚的事，附一段描述範例）、驗得出對錯（怎麼檢查產出）；深入內容、互動實驗室與練習題是選讀。程式題在瀏覽器裡執行（PostgreSQL、Python、JavaScript；HTML、CSS、Vue 在沙箱 iframe），不需要後端伺服器。
 
-- **線上**：[backend-atlas.web.app](https://backend-atlas.web.app/)（Firebase Hosting）、[yo02741.github.io/Backend-Atlas](https://yo02741.github.io/Backend-Atlas/)（GitHub Pages），每次 push 到 `main` 兩邊同時更新。repo 與 Firebase 專案改名後，這兩個網址、`src/content/tracks.js` 的 `SITE.repo`、`.firebaserc`、`.env.production` 與 `deploy.yml` 的 `projectId` 要一起改。
+- **線上**：[backend-atlas.web.app](https://backend-atlas.web.app/)（Firebase Hosting）、[yo02741.github.io/u-kinda-should-know](https://yo02741.github.io/u-kinda-should-know/)（GitHub Pages），每次 push 到 `main` 兩邊同時更新。repo 與 Firebase 專案改名後，這兩個網址、`src/content/tracks.js` 的 `SITE.repo`、`.firebaserc`、`.env.production` 與 `deploy.yml` 的 `projectId` 要一起改。
 - **本機**：`npm install && npm run dev`（第一次會把 Pyodide 複製到 `public/pyodide/`）
 
 ### 網頁流程
@@ -428,7 +428,7 @@ npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Em
 
 ### 測試
 
-`npm run e2e:cloud` 以 `--mode e2e` build（讀 `.env.e2e`，指向 Firebase Emulator 的 `demo-backend-atlas`，不連任何真實服務），用 `firebase-tools` 起 Auth 與 Firestore emulator，跑 `e2e/cloud-sync.mjs`：規則的越權與壞資料拒絕、兩台裝置首次合併、取消完成的傳遞、離線補傳、關分頁前的改動補傳、兩台同時編輯、登出 / 清除 / 刪除雲端、session 還原、沒登入不下載 SDK、手機版面。emulator build 的瀏覽器登入走假 id token（這個沙箱連不到 `apis.google.com`），真正的 Google 彈出視窗要在正式站上試。
+`npm run e2e:cloud` 以 `--mode e2e` build（讀 `.env.e2e`，指向 Firebase Emulator 的 `demo-u-kinda-should-know`，不連任何真實服務），用 `firebase-tools` 起 Auth 與 Firestore emulator，跑 `e2e/cloud-sync.mjs`：規則的越權與壞資料拒絕、兩台裝置首次合併、取消完成的傳遞、離線補傳、關分頁前的改動補傳、兩台同時編輯、登出 / 清除 / 刪除雲端、session 還原、沒登入不下載 SDK、手機版面。emulator build 的瀏覽器登入走假 id token（這個沙箱連不到 `apis.google.com`），真正的 Google 彈出視窗要在正式站上試。
 
 ## 部署
 

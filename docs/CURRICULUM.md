@@ -661,7 +661,7 @@
 
 給準備導入 Kubernetes 的團隊用的順序，可以直接排成讀書會。前 3 週補容器與映像，後 7 週從本機叢集一路做到權限與維運。每週約 6–8 小時，以地端自建叢集為主。
 
-- **動手的地方**：本機叢集用參考專案的 [本機 Kubernetes 實作指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)（kind），每週的作業都在同一座叢集上做；瀏覽器裡的模擬、實驗室與程式題當課前練習。
+- **動手的地方**：本機叢集用參考專案的 [本機 Kubernetes 實作指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)（kind），每週的作業都在同一座叢集上做；瀏覽器裡的模擬、實驗室與程式題當課前練習。
 - **每週的格式**：對應課程 / 學習目標 / 動手作業 / 驗收標準。驗收由讀書會的另一位成員照著做一次。
 - **和主線的關係**：K1–K3 與主線第 11–12 週重疊，主線走過的人可以只做作業；第 18 週的 K8s 部分由 K4–K10 取代。
 

@@ -1,4 +1,4 @@
-// 登入與進度同步：跑在 Firebase Emulator（demo-backend-atlas，不連任何真實 Google 服務）。
+// 登入與進度同步：跑在 Firebase Emulator（demo-u-kinda-should-know，不連任何真實 Google 服務）。
 //   ① firestore.rules：本人才能讀寫、文件形狀不對就拒絕
 //   ② 兩台「裝置」（兩個獨立的瀏覽器 context）登入同一帳號：首次登入合併不丟資料、取消勾選會傳到另一台、
 //      離線改動連線後補傳、關分頁前的改動下次開站補傳、登出 / 登出並清除 / 刪除雲端進度、session 還原、沒登入不下載 SDK
@@ -12,7 +12,7 @@ import { getAuth, connectAuthEmulator, signInWithCredential, GoogleAuthProvider 
 import { getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, deleteDoc, serverTimestamp, setLogLevel } from 'firebase/firestore/lite'
 setLogLevel('silent')   // 被規則拒絕是預期結果，不要讓 SDK 把每次拒絕都印出來
 
-const PROJECT = 'demo-backend-atlas'
+const PROJECT = 'demo-u-kinda-should-know'
 const FS = 'http://127.0.0.1:8080'
 const AUTH = 'http://127.0.0.1:9099'
 let failed = 0

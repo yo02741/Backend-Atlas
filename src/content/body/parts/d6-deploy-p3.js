@@ -43,7 +43,7 @@ export default {
       '能比較「保留 nginx 當入口」與「HTTPRoute 依路徑分流」，寫出各自的 manifest，並說出換了前面那一層之後，要調哪個閒置逾時才能避免偶發的 502 或 503',
     ],
     challenge: {
-      task: '照本課的三個停靠點分三段交付，每一段都能單獨驗收：(1) 靜態檔：用多階段 Dockerfile 建出前端映像，`index.html`、`/assets/` 與 SPA fallback 的快取標頭正確；(2) 執行期設定：同一個映像搭兩份 ConfigMap，跑出兩個環境；(3) API 轉發：用 HTTPRoute 把 `/api` 送到後端。叢集用 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 的 kind。',
+      task: '照本課的三個停靠點分三段交付，每一段都能單獨驗收：(1) 靜態檔：用多階段 Dockerfile 建出前端映像，`index.html`、`/assets/` 與 SPA fallback 的快取標頭正確；(2) 執行期設定：同一個映像搭兩份 ConfigMap，跑出兩個環境；(3) API 轉發：用 HTTPRoute 把 `/api` 送到後端。叢集用 [本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md) 的 kind。',
       deliver: '三段各一份可以重跑的驗收腳本（`curl` 指令加預期輸出），以及一次實際執行的結果',
       check: [
         '第一段：`/patients/123`、`/assets/<檔名>`、`/assets/not-exist.js` 分別得到 `no-cache`、`immutable` 與 404',

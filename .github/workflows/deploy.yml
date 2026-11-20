@@ -1,6 +1,6 @@
 name: Deploy（GitHub Pages + Firebase Hosting）
 
-# 同一份 build 部署到兩個地方：GitHub Pages（yo02741.github.io/Backend-Atlas/）與 Firebase Hosting（backend-atlas.web.app）。
+# 同一份 build 部署到兩個地方：GitHub Pages（yo02741.github.io/u-kinda-should-know/）與 Firebase Hosting（backend-atlas.web.app）。
 # Firebase 那一段需要 repo secret FIREBASE_SERVICE_ACCOUNT（服務帳戶 JSON 金鑰），沒設定就跳過，不會讓整個 workflow 失敗。
 
 on:

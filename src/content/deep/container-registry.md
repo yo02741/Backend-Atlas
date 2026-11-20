@@ -613,6 +613,6 @@ Kubernetes 升級前，新版本的控制平面映像、相容版本的 CNI、CS
 1. 執行保留規則的模擬。把 `PATTERNS` 改成 `("release-1.[34]*",)`，看垃圾回收多釋放哪一層；再把 `REFERENCED_ELSEWHERE` 改成空集合（假設 `base` 專案也清掉了 2024 年的基底），先預測再執行。
 2. 執行映像清單的程式，把 `busybox` 改成 `busybox:1.37`、把報表的 tag 改成 commit SHA，看標記怎麼變；再貼一份 `helm template` 的輸出進去。
 3. 做本課的程式題：實作保留規則；把 Dockerfile 的外部映像改寫成代理快取的位址。
-4. 依 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 建好 kind 叢集，照 kind 文件的 local registry 做法起一個 `registry:2`。用 `crane copy` 把 `postgres:16` 複製到 `mirror-a/postgres:16`、用不加 `--all` 的 `skopeo copy` 複製到 `mirror-b/postgres:16`，三邊各跑 `crane digest`。再把 overlay 的 `postgres:16` 改成本機 registry 加上游的 digest，分別指向兩邊，看哪一個拉得起來。
+4. 依 [本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md) 建好 kind 叢集，照 kind 文件的 local registry 做法起一個 `registry:2`。用 `crane copy` 把 `postgres:16` 複製到 `mirror-a/postgres:16`、用不加 `--all` 的 `skopeo copy` 複製到 `mirror-b/postgres:16`，三邊各跑 `crane digest`。再把 overlay 的 `postgres:16` 改成本機 registry 加上游的 digest，分別指向兩邊，看哪一個拉得起來。
 5. 有測試用的 Harbor 時：建一個只能拉取的機器人帳號，在 kind 的節點（`docker exec` 進節點容器）放院內 CA 與 `hosts.toml`，建 pull secret 掛到 `clinic` 的 ServiceAccount 並部署。把 Secret 的密碼改錯、刪掉 Pod，看 Events 的訊息。
 6. 替院內 Harbor 寫一張盤點表：每個專案的成員與角色、機器人帳號（用途、權限、到期日、憑證放哪）、保留規則、垃圾回收排程與配額。

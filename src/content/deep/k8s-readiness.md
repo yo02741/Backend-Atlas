@@ -280,6 +280,6 @@ Kubernetes 不會解決應用程式既有的問題，只會把它們放大。下
 ## 動手
 
 1. 拿一個現有系統，對照「導入前要具備的能力」那張表逐項打勾，沒做到的項目就是導入前的工作清單。
-2. 照[本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)用 kind 在自己的電腦上建一個測試叢集，套用上面的 Deployment 與 Service（image 換成任何一個公開的 web image），然後故意把 readiness probe 的路徑改錯，更新一次，觀察 `kubectl rollout status` 停住、舊版 Pod 仍在服務。
+2. 照[本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)用 kind 在自己的電腦上建一個測試叢集，套用上面的 Deployment 與 Service（image 換成任何一個公開的 web image），然後故意把 readiness probe 的路徑改錯，更新一次，觀察 `kubectl rollout status` 停住、舊版 Pod 仍在服務。
 3. 在同一個測試叢集裡建一個 `type: LoadBalancer` 的 Service，觀察 `EXTERNAL-IP` 停在 `<pending>`：地端叢集沒有內建的負載平衡元件，要自己補。
 4. 把 [硬體資源與容量規劃](#/skill/capacity-planning) 裡的估算結果，換算成這個 Deployment 的 `replicas` 與 `resources`。

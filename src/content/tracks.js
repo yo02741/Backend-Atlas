@@ -8,7 +8,7 @@
 //   domainNote    路線首頁領域區塊的一句說明
 export const SITE = {
   name: 'u kinda should know',
-  repo: 'https://github.com/yo02741/Backend-Atlas',
+  repo: 'https://github.com/yo02741/u-kinda-should-know',
 }
 
 export const TRACKS = [

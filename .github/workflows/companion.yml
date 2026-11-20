@@ -90,7 +90,7 @@ jobs:
   # 前端的最小接線版本：建置，接著在 compose 起的 clinic-api 上跑 Playwright 的接線測試
   # （登入 → 掛號 → 看板更新；中途 docker compose stop api 一次，核對看板與掛號表單怎麼恢復）
   clinic-web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # Playwright 1.56 還不支援 ubuntu-latest（26.04）的 Chromium
     timeout-minutes: 20
     env:
       SEED_PASSWORD: ci-only-password           # 只存在於這個 job 的測試帳號密碼

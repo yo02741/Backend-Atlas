@@ -43,7 +43,7 @@ export default {
       '套用後能用 kubectl 確認 Service 後面有 Pod，並在新版出錯時回退',
     ],
     challenge: {
-      task: '照 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 建好 kind 叢集，把服務分三步套用：只有 Deployment → 加上 Service → 加上 Gateway 與 HTTPRoute（kind 沒有 Ingress controller，照指南「選讀：接上 Gateway API」一節）。每加一個資源只驗收一個行為：Pod ready、Service 後面有 Pod、從叢集外經過 Gateway 的 `curl` 拿到 200。三步都通過後，把 Service 的 `targetPort` 改錯一次。',
+      task: '照 [本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md) 建好 kind 叢集，把服務分三步套用：只有 Deployment → 加上 Service → 加上 Gateway 與 HTTPRoute（kind 沒有 Ingress controller，照指南「選讀：接上 Gateway API」一節）。每加一個資源只驗收一個行為：Pod ready、Service 後面有 Pod、從叢集外經過 Gateway 的 `curl` 拿到 200。三步都通過後，把 Service 的 `targetPort` 改錯一次。',
       deliver: '三步各一段：套用的資源、驗收的指令與輸出，外加 targetPort 改錯時的輸出',
       check: [
         '第一步以 `kubectl rollout status` 成功結束當作驗收，不是 `apply` 印出 created',
@@ -75,7 +75,7 @@ export default {
       '能把寫死在 manifest 裡的密碼改成從 Secret 讀取，並說明 Secret 為什麼不能直接進 Git',
     ],
     challenge: {
-      task: '照 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 部署 clinic-api，副本數 2，開一個迴圈每 0.5 秒打一次 Service（`port-forward` 或叢集內的 Pod 都可以），記下每次的狀態碼。做兩次實驗：照指南的練習 5 讓新版的 readiness 路徑打錯；還原後，把 liveness 改成打一個不存在的路徑。',
+      task: '照 [本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md) 部署 clinic-api，副本數 2，開一個迴圈每 0.5 秒打一次 Service（`port-forward` 或叢集內的 Pod 都可以），記下每次的狀態碼。做兩次實驗：照指南的練習 5 讓新版的 readiness 路徑打錯；還原後，把 liveness 改成打一個不存在的路徑。',
       deliver: '兩次實驗的時間線：READY、RESTARTS 的變化，以及迴圈裡失敗請求的數量',
       check: [
         'readiness 那次：RESTARTS 不變、新 Pod 不出現在 EndpointSlice，滾動更新停住，舊 Pod 繼續回 200',

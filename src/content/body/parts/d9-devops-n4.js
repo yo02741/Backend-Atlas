@@ -14,7 +14,7 @@ export default {
       '能寫出 etcd 快照與 kubeadm 憑證檢查、更新的步驟，並說明還原演練要驗證什麼、哪些東西不在 etcd 快照裡',
     ],
     challenge: {
-      task: '在 kind 叢集（[本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)）練一次「備份 → 弄壞 → 還原」：部署 clinic-api 與資料庫並 seed 資料，記下一筆查得到的資料；匯出 namespace 的資源定義、另外 dump 資料庫；刪掉整個 namespace；照你寫的步驟還原。演練的完成條件是用 API 查回那筆資料。最後做 [這次 drain 會不會被 PDB 擋住](#/exercise/k8s-operations-1)。',
+      task: '在 kind 叢集（[本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)）練一次「備份 → 弄壞 → 還原」：部署 clinic-api 與資料庫並 seed 資料，記下一筆查得到的資料；匯出 namespace 的資源定義、另外 dump 資料庫；刪掉整個 namespace；照你寫的步驟還原。演練的完成條件是用 API 查回那筆資料。最後做 [這次 drain 會不會被 PDB 擋住](#/exercise/k8s-operations-1)。',
       deliver: '一份演練紀錄：備份了什麼、還原的步驟與耗時、還原後用 API 查回那筆資料的輸出',
       check: [
         '完成的證據是 API 查回刪除前記下的那筆資料，不是還原指令沒有報錯',

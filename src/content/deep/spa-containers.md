@@ -807,7 +807,7 @@ Vite 把每個路由頁面拆成獨立的 chunk，點到才載入。滾動更新
 1. 執行快取那段模擬。把 `FIXED` 裡 `/assets/` 那一行的 `NOSNIFF` 刪掉再跑，看 assets 的回應少了 nosniff（server 層還有，但那一層有自己的 `add_header`）；再把 `/index.html` 的值改成 `public, max-age=86400`，看部署 v2 之後下載了多少、拿到的是不是新版。
 2. 執行分流那段模擬，把 `FLASK` 改成 `{"/patients", "/health"}`（後端路由沒有 `/api` 前綴），看第三組與第四組的結果怎麼對調。
 3. 做本課的程式題：修一份前端的多階段 Dockerfile；修一份 nginx 設定的快取標頭，同時保留 SPA fallback 與 `/api` 轉發。
-4. 在本機叢集上做（建叢集與安裝 Gateway API 實作的方式見 [clinic-api 的本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)）：用第二條路那份只送靜態檔的 `default.conf` 建好前端映像（nginx 啟動時不必解析 `clinic-api`），`kind load docker-image` 載進叢集，套用本課的 ConfigMap、Deployment 與 Service，然後：
+4. 在本機叢集上做（建叢集與安裝 Gateway API 實作的方式見 [clinic-api 的本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)）：用第二條路那份只送靜態檔的 `default.conf` 建好前端映像（nginx 啟動時不必解析 `clinic-api`），`kind load docker-image` 載進叢集，套用本課的 ConfigMap、Deployment 與 Service，然後：
 
 ```bash
 kubectl port-forward -n clinic service/clinic-web 8080:80

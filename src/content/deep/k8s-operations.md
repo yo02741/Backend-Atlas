@@ -561,6 +561,6 @@ Pod 被刪除時 log 跟著消失，Events 預設也只留一小時左右，所�
 1. 執行升級規劃器，把 `today` 改成 `date(2027, 3, 1)`：1.35 也已經停止修補。再把 `plan` 的目前版本改成 `"1.36"`，看要升幾次。
 2. 執行 drain 模擬，把 `clinic-api` 的 PDB 改成 `"min_available": 2`，先預測 B 會卡在哪裡再執行；再把 D 的 `free_mem` 調大，看 drain 何時完成。
 3. 做本課的程式題：判斷一次 drain 會不會被 PDB 擋住（含百分比的 `minAvailable`、`maxUnavailable`）；從 manifest 找出目標版本已經不提供的 apiVersion。
-4. 依 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 的「多個 worker 的叢集」一節，用 `k8s/kind-config-workers.yaml` 建一座有兩個以上 worker 的本機叢集，套用 kind overlay（PDB 在 `k8s/base/pdb.yaml`）。副本數改成 1 再 drain 它所在的 worker，看 drain 卡住與 `kubectl get pdb` 的輸出；改回 2 再 drain 一次，同時用迴圈打 Service，看有沒有失敗的請求。
+4. 依 [本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md) 的「多個 worker 的叢集」一節，用 `k8s/kind-config-workers.yaml` 建一座有兩個以上 worker 的本機叢集，套用 kind overlay（PDB 在 `k8s/base/pdb.yaml`）。副本數改成 1 再 drain 它所在的 worker，看 drain 卡住與 `kubectl get pdb` 的輸出；改回 2 再 drain 一次，同時用迴圈打 Service，看有沒有失敗的請求。
 5. 本機叢集若是 kind（內部用 kubeadm 建叢集），用 `docker exec` 進控制平面的容器，執行 `kubeadm certs check-expiration` 與 `crictl ps`。
 6. 替自己的叢集寫一份年度維運日曆：停止修補日、升級月份、憑證與 CA 到期日、還原演練日、作業系統修補時段。

@@ -581,7 +581,7 @@ Velero 是叢集層級的備份工具：把 Kubernetes 物件與 PV 的資料（
 1. 執行第一段模擬：把 `report-typo` 的 class 改成 `nfs-csi`；把 `longhorn` 的 `"default": True` 拿掉，看 `report-pdfs` 的訊息；在 `pvs` 加一個 `150Gi`、ROX、class 為 `""` 的 PV，預測 `report-archive` 改綁哪一個。
 2. 執行第二段模擬：E 的新 Pod 改排到 node-1。想想改成 `strategy: Recreate` 時兩個 Pod 的先後順序。
 3. 做本課的程式題：修好報表服務的 PVC 與 Deployment；把一個需要固定名稱與各自資料的服務改成 StatefulSet 加 headless Service。
-4. 在本機叢集練習（建立方式見 [clinic-api 的本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)）：
+4. 在本機叢集練習（建立方式見 [clinic-api 的本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)）：
    - `kubectl get storageclass` 看預設的 class 與 VOLUMEBINDINGMODE。建一個 PVC 先不建 Pod，看它的狀態與 Events；再建一個 Pod 同時掛 emptyDir 與這個 PVC，各寫一個檔案，刪掉 Pod 重建，看哪一個還在。
    - 套用本課的 `clinic-queue`：image 換成 `busybox:1.36`、`command` 改成 `["sh", "-c", "hostname >> /var/lib/queue/boot.log && sleep 3600"]`，刪掉 `storageClassName` 那一行改用預設的 class。縮到 1 個副本，確認三個 PVC 都還在；擴回 3 後執行 `kubectl exec clinic-queue-2 -n clinic -- cat /var/lib/queue/boot.log`，應該有兩行。再縮到 2、刪掉 `data-clinic-queue-2`，用 `kubectl get pv` 看 reclaimPolicy 的效果。
    - 本機叢集多半只有一個節點，重現不了 Multi-Attach，情況和模擬裡的 B 一樣。

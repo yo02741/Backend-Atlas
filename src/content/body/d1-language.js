@@ -4,7 +4,7 @@ import m1 from './parts/d1-language-m1.js'
 const base = {
   'python-backend': {
     challenge: {
-      task: '照[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的 README 起服務、用 `desk1` 登入，對 `POST /api/sessions/1/appointments` 送四個 body：`{"patient_id": "2"}`、`{"patient_id": 0}`、`{"patient_id": true}`，以及一個不是 JSON 的 `abc`。每送一個之前，先寫下你預測的狀態碼，以及前端表單該把錯誤標在哪個欄位。',
+      task: '照[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)的 README 起服務、用 `desk1` 登入，對 `POST /api/sessions/1/appointments` 送四個 body：`{"patient_id": "2"}`、`{"patient_id": 0}`、`{"patient_id": true}`，以及一個不是 JSON 的 `abc`。每送一個之前，先寫下你預測的狀態碼，以及前端表單該把錯誤標在哪個欄位。',
       deliver: '四次請求的對照表：預測、實際狀態碼、回應的 `errors` 內容，加一句前端依哪個欄位決定標紅哪個輸入框。',
       check: [
         '每一列都有送出前寫下的預測；和實際不同的列，指出是 `BookIn` 的哪個設定（`strict=True`、`gt=0`）造成的',
@@ -128,7 +128,7 @@ const base = {
   },
   'error-design': {
     challenge: {
-      task: '在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)製造三種錯誤：`patient1` 對同一個診次掛號兩次；`desk1` 替 `{"patient_id": 99999}` 掛號；停掉 postgres（`docker compose stop postgres`）後送 `GET /api/appointments`。每次記下狀態碼、`Content-Type`、`type`、`detail` 與回應標頭 `X-Request-ID`，再用 request id 在 `docker compose logs api` 找出對應的日誌行。',
+      task: '在[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)製造三種錯誤：`patient1` 對同一個診次掛號兩次；`desk1` 替 `{"patient_id": 99999}` 掛號；停掉 postgres（`docker compose stop postgres`）後送 `GET /api/appointments`。每次記下狀態碼、`Content-Type`、`type`、`detail` 與回應標頭 `X-Request-ID`，再用 request id 在 `docker compose logs api` 找出對應的日誌行。',
       deliver: '三個錯誤的對照表：回應裡的欄位 ↔ 日誌裡的欄位，加一欄前端該顯示的文字與依據的欄位。',
       check: [
         '三列都有 request id，而且在日誌裡找得到同一個 id 的那一行',
@@ -158,7 +158,7 @@ const base = {
   },
   'uv-packaging': {
     challenge: {
-      task: '把[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api) clone 到一個沒有 `.venv` 的目錄，依序做三件事：(1) `uv sync --locked`，用 `uv pip list` 記下 fastapi、pydantic 的版本，並和 `uv.lock` 裡的對照；(2) `uv lock --upgrade --dry-run`，記下如果升級會變的套件；(3) 在 `pyproject.toml` 加一個依賴但不更新 lock，分別跑 `uv sync --locked` 與 `uv sync --frozen`。',
+      task: '把[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api) clone 到一個沒有 `.venv` 的目錄，依序做三件事：(1) `uv sync --locked`，用 `uv pip list` 記下 fastapi、pydantic 的版本，並和 `uv.lock` 裡的對照；(2) `uv lock --upgrade --dry-run`，記下如果升級會變的套件；(3) 在 `pyproject.toml` 加一個依賴但不更新 lock，分別跑 `uv sync --locked` 與 `uv sync --frozen`。',
       deliver: '三步的指令輸出摘錄，加一段說明 lock、解析與安裝各在哪一步發生。',
       check: [
         '第 1 步裝出的版本與 `uv.lock` 一致，兩個套件都列出',
@@ -214,7 +214,7 @@ const base = {
   },
   'web-framework': {
     challenge: {
-      task: '在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的本機副本加上暫時的 log：`RequestContextMiddleware` 進入與結束、`clinic/api/deps.py` 的 `get_db` 在 `yield` 前後、`GET /appointments/{id}` 的 handler 開頭與結尾。帶 `X-Request-ID: trace-1` 送一次存在的掛號、帶 `X-Request-ID: trace-2` 送一次不存在的 id。送之前先寫下你預測的順序。',
+      task: '在[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)的本機副本加上暫時的 log：`RequestContextMiddleware` 進入與結束、`clinic/api/deps.py` 的 `get_db` 在 `yield` 前後、`GET /appointments/{id}` 的 handler 開頭與結尾。帶 `X-Request-ID: trace-1` 送一次存在的掛號、帶 `X-Request-ID: trace-2` 送一次不存在的 id。送之前先寫下你預測的順序。',
       deliver: '兩個請求的時序（每行帶 request_id）與預測對照，加一句說明兩者哪裡不同。',
       check: [
         '預測寫在送出之前；和實際不同的地方寫出原因（例如 yield 依賴的清理在回應送出前還是後）',
@@ -267,7 +267,7 @@ const base = {
   },
   'code-quality': {
     challenge: {
-      task: '在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的本機副本做三個改動：加一個沒用到的 import、對一個回傳 `X | None` 的值直接取屬性、把 `clinic/domain/rules.py` 裡一個比較符號寫反。分別跑 `uv run ruff check .`、`uv run ruff format --check .`、型別檢查（例如 `uvx pyright`）與 `uv run pytest tests/test_domain.py`，記錄每個工具抓到哪一個。跑之前先填一份預測表。',
+      task: '在[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)的本機副本做三個改動：加一個沒用到的 import、對一個回傳 `X | None` 的值直接取屬性、把 `clinic/domain/rules.py` 裡一個比較符號寫反。分別跑 `uv run ruff check .`、`uv run ruff format --check .`、型別檢查（例如 `uvx pyright`）與 `uv run pytest tests/test_domain.py`，記錄每個工具抓到哪一個。跑之前先填一份預測表。',
       deliver: '3 個改動 × 4 個工具的表：預測、實際（抓到或沒抓到、訊息原文），加上工具版本。',
       check: [
         '每格都有實際輸出，附 `ruff --version` 與型別檢查器的版本',
@@ -292,7 +292,7 @@ const base = {
   },
   'logging-config': {
     challenge: {
-      task: '用[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)做三次錯誤的啟動：`JWT_SECRET` 設成空字串、`DB_POOL_SIZE=abc`、`LOG_LEVEL=verbose`（例如 `docker compose run --rm -e LOG_LEVEL=verbose api`，或在主機上 `uv run uvicorn clinic.main:app`）。每次啟動前先預測：行程會不會起來、錯誤訊息會列出哪些變數。',
+      task: '用[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)做三次錯誤的啟動：`JWT_SECRET` 設成空字串、`DB_POOL_SIZE=abc`、`LOG_LEVEL=verbose`（例如 `docker compose run --rm -e LOG_LEVEL=verbose api`，或在主機上 `uv run uvicorn clinic.main:app`）。每次啟動前先預測：行程會不會起來、錯誤訊息會列出哪些變數。',
       deliver: '三次啟動的輸出摘錄與預測對照，加一段：這類錯誤在發版流程的哪一步最早被攔下。',
       check: [
         '輸出列出了出錯的變數名稱，而且沒有印出 secret 的值',

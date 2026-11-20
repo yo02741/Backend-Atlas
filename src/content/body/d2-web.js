@@ -2,7 +2,7 @@
 export default {
   'http-basics': {
     challenge: {
-      task: '用 `curl -o /dev/null -s -w` 印出 `time_namelookup`、`time_connect`、`time_appconnect`、`time_starttransfer`，量三組：`https://example.com/` 分兩次執行、同一個 curl 指令裡連續請求兩次 `https://example.com/`（會重用連線）、本機[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的 `GET /healthz`。再畫一張門診掛號請求的圖，標出客戶端、反向代理、API、資料庫，每一段寫上你量到或量不到的時間。',
+      task: '用 `curl -o /dev/null -s -w` 印出 `time_namelookup`、`time_connect`、`time_appconnect`、`time_starttransfer`，量三組：`https://example.com/` 分兩次執行、同一個 curl 指令裡連續請求兩次 `https://example.com/`（會重用連線）、本機[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)的 `GET /healthz`。再畫一張門診掛號請求的圖，標出客戶端、反向代理、API、資料庫，每一段寫上你量到或量不到的時間。',
       deliver: '三組 `-w` 輸出、相減後的各段時間，以及標了時間的請求圖。',
       check: [
         '各段時間是相減後的值，不是 curl 印出的累計值',
@@ -87,7 +87,7 @@ export default {
   },
   'rest-design': {
     challenge: {
-      task: '以[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api) README 的介面表為起點，替 `POST /api/sessions/{id}/appointments`、`POST /api/appointments/{id}/cancel`、`GET /api/appointments/{id}` 寫行為表，每個端點四種情況：正常、重複送出、資源不存在、別人的資源。先填預測，再用 `curl -i` 實測、填實際。',
+      task: '以[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api) README 的介面表為起點，替 `POST /api/sessions/{id}/appointments`、`POST /api/appointments/{id}/cancel`、`GET /api/appointments/{id}` 寫行為表，每個端點四種情況：正常、重複送出、資源不存在、別人的資源。先填預測，再用 `curl -i` 實測、填實際。',
       deliver: '行為表：每格有預測與實際的狀態碼，錯誤時加上 Problem Details 的 `type`。',
       check: [
         '每格都有實際 `curl -i` 的狀態碼',
@@ -139,7 +139,7 @@ export default {
   },
   'api-patterns': {
     challenge: {
-      task: '拆成兩次驗收。第一次（分頁）：在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)用 `desk1` 呼叫 `GET /api/appointments?limit=2`，照 `next_cursor` 一頁一頁翻；翻到第二頁後替另一位病患新增一筆掛號，再翻完剩下的頁。第二次（冪等）：做完練習題 [Idempotency-Key](#/exercise/api-patterns-2) 後，替倉儲的「庫存調撥」API `POST /transfers` 寫一段冪等鍵規格。',
+      task: '拆成兩次驗收。第一次（分頁）：在[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)用 `desk1` 呼叫 `GET /api/appointments?limit=2`，照 `next_cursor` 一頁一頁翻；翻到第二頁後替另一位病患新增一筆掛號，再翻完剩下的頁。第二次（冪等）：做完練習題 [Idempotency-Key](#/exercise/api-patterns-2) 後，替倉儲的「庫存調撥」API `POST /transfers` 寫一段冪等鍵規格。',
       deliver: '第一次：每頁的 id 與 `next_cursor` 紀錄。第二次：規格一段，加三個重送情境（同 key 同 body、同 key 不同 body、第一次還在處理中）各自的預期回應。',
       check: [
         '翻頁途中新增資料後，列出的 id 沒有重複；寫出新資料出現在哪一頁，或為什麼不會出現',
@@ -190,7 +190,7 @@ export default {
   },
   'openapi': {
     challenge: {
-      task: '從本機的[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)下載 `/openapi.json` 存成 `before.json`；接著在 `clinic/api/schemas.py` 的 `AppointmentOut` 把 `number` 改名成 `queue_no`、把 `status` 改成 `Literal["booked", "cancelled", "checked_in"]`，重啟後存成 `after.json`。用深入內容「一個簡化的相容性檢查」的程式比較兩份（裝得到 oasdiff 這類工具的話也跑一次）。比較之前先寫下你預測哪個變更會被判成破壞性。',
+      task: '從本機的[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)下載 `/openapi.json` 存成 `before.json`；接著在 `clinic/api/schemas.py` 的 `AppointmentOut` 把 `number` 改名成 `queue_no`、把 `status` 改成 `Literal["booked", "cancelled", "checked_in"]`，重啟後存成 `after.json`。用深入內容「一個簡化的相容性檢查」的程式比較兩份（裝得到 oasdiff 這類工具的話也跑一次）。比較之前先寫下你預測哪個變更會被判成破壞性。',
       deliver: '比較結果，標出哪個變更會讓既有前端壞掉、哪個不會，以及前端產生的型別會怎麼變。',
       check: [
         '兩份 JSON 都是實際下載的，`openapi` 欄位的值寫出來',

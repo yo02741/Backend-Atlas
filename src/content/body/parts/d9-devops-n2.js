@@ -14,7 +14,7 @@ export default {
       '能把需要固定名稱與各自資料的服務寫成 StatefulSet 加 headless Service，並說明縮減副本、節點故障時 PVC 與 Pod 會怎樣',
     ],
     challenge: {
-      task: '先做 [修好報表服務的 PVC 與 Deployment](#/exercise/k8s-storage-1)。再照 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 建 kind 叢集，用預設的 StorageClass 建一個 PVC 與單一副本的 Deployment，往 volume 寫一個帶時間戳的檔案，然後依序：刪 Pod、刪掉 Deployment 再重建、刪掉 PVC 再重建。每一步之後檢查檔案還在不在，並記下 `kubectl get pv` 的 STATUS 與 RECLAIM POLICY。',
+      task: '先做 [修好報表服務的 PVC 與 Deployment](#/exercise/k8s-storage-1)。再照 [本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md) 建 kind 叢集，用預設的 StorageClass 建一個 PVC 與單一副本的 Deployment，往 volume 寫一個帶時間戳的檔案，然後依序：刪 Pod、刪掉 Deployment 再重建、刪掉 PVC 再重建。每一步之後檢查檔案還在不在，並記下 `kubectl get pv` 的 STATUS 與 RECLAIM POLICY。',
       deliver: '三步各一列：操作、檔案在不在、PV 的 STATUS 與 RECLAIM POLICY',
       check: [
         '刪 Pod 與重建 Deployment 之後檔案都還在，並說明是因為 PVC 沒變',

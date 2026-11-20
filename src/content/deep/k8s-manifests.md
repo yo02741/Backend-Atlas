@@ -356,5 +356,5 @@ kubectl rollout undo deployment/booking-api -n booking --to-revision=4
 1. 執行上面兩段 Python。把第一段的 selector 改成各種寫法，看 endpoints 怎麼變；把第二段改成 `rolling_update(10, "25%", "25%")`，先自己算出 maxSurge 與 maxUnavailable 各是幾個再對答案。
 2. 到 [K8sLab 實驗室](#/lab/K8sLab) 調整 maxSurge 與 maxUnavailable，並讓新版的 readiness 失敗，觀察更新停住時舊版的數量。
 3. 做本課的程式題：一份有五個問題的 `deployment.yaml`，把副本數、image tag 與三條接線修好。
-4. 照[本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)建好 kind 叢集後，套用本課的 Deployment 與 Service（image 換成任何公開的 web 映像），然後故意把 Service 的 selector 改錯，用 `kubectl get endpointslices` 看後端變成空的。
+4. 照[本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)建好 kind 叢集後，套用本課的 Deployment 與 Service（image 換成任何公開的 web 映像），然後故意把 Service 的 selector 改錯，用 `kubectl get endpointslices` 看後端變成空的。
 5. 接著讀 [Kubernetes 實作：設定、探針與資源](#/skill/k8s-config-probes)，把這份 Deployment 補成可以上線的樣子。

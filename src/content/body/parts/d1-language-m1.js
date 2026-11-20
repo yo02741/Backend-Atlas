@@ -2,7 +2,7 @@
 export default {
   'debugging': {
     challenge: {
-      task: '從自己的專案或[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)挑一個錯誤（例如對 clinic-api 送 `GET /api/appointments?limit=1000` 或 `?cursor=abc`，看它回什麼），把它縮成不需要網路與資料庫的最小重現，寫成第三個人照做就看得到同樣結果的紀錄。',
+      task: '從自己的專案或[參考專案 clinic-api](https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api)挑一個錯誤（例如對 clinic-api 送 `GET /api/appointments?limit=1000` 或 `?cursor=abc`，看它回什麼），把它縮成不需要網路與資料庫的最小重現，寫成第三個人照做就看得到同樣結果的紀錄。',
       deliver: '一份最小重現紀錄：環境與版本、步驟、預期、實際、最小程式，加上你刪減過程的記錄。',
       check: [
         '請另一個人（或在乾淨的環境）只照紀錄做一次，附上他得到的結果',

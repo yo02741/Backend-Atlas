@@ -1,6 +1,6 @@
 # clinic-api：門診掛號後端（可以在本機跑起來的版本）
 
-Backend Atlas「實作路線：從零做完一個門診掛號後端」的參考實作。網站上每個階段的驗收題在瀏覽器裡跑（PGlite、Pyodide）；這個專案把同一套資料表、規則、介面接成一個真的服務：FastAPI + SQLAlchemy + Alembic + PostgreSQL 16 + Redis，用 uv 管理依賴。
+u kinda should know「實作路線：從零做完一個門診掛號後端」的參考實作。網站上每個階段的驗收題在瀏覽器裡跑（PGlite、Pyodide）；這個專案把同一套資料表、規則、介面接成一個真的服務：FastAPI + SQLAlchemy + Alembic + PostgreSQL 16 + Redis，用 uv 管理依賴。
 
 範例資料全部是虛構的。前端的最小接線版本在 [`../clinic-web/`](../clinic-web/)；兩邊的介面照同一份契約 [docs/contract.md](docs/contract.md)。
 

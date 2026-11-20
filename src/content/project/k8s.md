@@ -413,11 +413,11 @@ manifest 加 `runAsUser: 10001`，或 Dockerfile 改成 `USER 10001`。
 1. 執行滾動更新的模擬，把 A 改成 `replicas=1, max_surge=0, max_unavailable=1`，看可服務數掉到 0。
 2. 執行 manifest 檢查那段，把 Deployment 的 `matchLabels` 改成 `{"app": "clinic"}`，看多出哪一條。
 3. 做下面三道驗收題。
-4. 有 Docker 的話，照參考專案的 [在本機的 Kubernetes 叢集跑 clinic-api](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)，用 kind 把這一階段的 manifest 在真的叢集上套用一次、做一次滾動更新，再故意弄壞六次，照排錯課的順序查出原因。
+4. 有 Docker 的話，照參考專案的 [在本機的 Kubernetes 叢集跑 clinic-api](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)，用 kind 把這一階段的 manifest 在真的叢集上套用一次、做一次滾動更新，再故意弄壞六次，照排錯課的順序查出原因。
 
 ## 串接驗收
 
-**1. 準備一個在跑的版本。** 照後端參考專案的 [在本機的 Kubernetes 叢集跑 clinic-api](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)，用 `scripts/kind-up.sh` 建好叢集，`kubectl -n clinic port-forward service/clinic-api 8000:80` 之後跑 `scripts/smoke.sh`。另開一個終端機持續打 `/ready`，數失敗的次數：
+**1. 準備一個在跑的版本。** 照後端參考專案的 [在本機的 Kubernetes 叢集跑 clinic-api](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)，用 `scripts/kind-up.sh` 建好叢集，`kubectl -n clinic port-forward service/clinic-api 8000:80` 之後跑 `scripts/smoke.sh`。另開一個終端機持續打 `/ready`，數失敗的次數：
 
 ```bash
 fail=0; while true; do curl -sf -o /dev/null http://127.0.0.1:8000/ready || fail=$((fail+1)); echo "失敗 $fail"; sleep 0.5; done

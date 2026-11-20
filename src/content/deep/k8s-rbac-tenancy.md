@@ -697,7 +697,7 @@ for label, who in [("clinic 的部署帳號", deployer), ("wang.jiahao", wang), 
 
 1. 執行上面的評估器：把 `clinic` 的 `gitlab-deployer` 那筆 binding 改成 `"ClusterRoleBinding"`，看第 3 組的 `pharmacy` 那一行怎麼變；再把 `quick-fix` 改成只有 `configmaps` 的 `get`，看第 4 組還剩哪一行是 `✓`。
 2. 做本課的程式題：`k8s-rbac-tenancy-1` 替 `clinic-staging` 的部署帳號寫 ServiceAccount、Role 與 RoleBinding；`k8s-rbac-tenancy-2` 從一組 binding 找出危險的權限。
-3. 在本機的 kind 叢集上練習（建立叢集並部署 `clinic-api` 的方式見 [clinic-api 的本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)）：
+3. 在本機的 kind 叢集上練習（建立叢集並部署 `clinic-api` 的方式見 [clinic-api 的本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md)）：
    - 建立 `clinic-staging` namespace，套用程式題的解答，用 `kubectl auth can-i --list -n clinic-staging --as=system:serviceaccount:clinic-staging:gitlab-deployer` 列出權限，確認 `get secrets` 與 `create pods --subresource=exec` 都是 `no`。
    - 用 `kubectl create token gitlab-deployer -n clinic-staging --duration=10m` 產生 token，照上面的格式寫一份 kubeconfig（`server` 與 CA 從 `kubectl config view --minify --raw` 複製），執行 `KUBECONFIG=./deployer.yaml kubectl get secrets -n clinic-staging` 看 Forbidden；10 分鐘後再執行，看它變成 Unauthorized。
    - 執行 `kubectl label --dry-run=server --overwrite namespace clinic pod-security.kubernetes.io/enforce=restricted`，看 `clinic-api`、PostgreSQL、Redis 的 Pod 各違反了什麼（加了 dry-run，標籤不會真的改）；在 overlay 的補丁替 `clinic-api` 加上 `seccompProfile`，重新套用 `kubectl apply -k k8s/overlays/kind` 後再試一次，確認它不在清單裡。

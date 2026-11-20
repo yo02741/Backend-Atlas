@@ -7,7 +7,7 @@ export const PROJECTS = {
   summary: '一個階段接一個階段，把前面學過的課組成一個完整的系統：資料表、領域邏輯、API、權限、並行搶號、快取與限流、容器與 CI、可觀測性、給 agent 的唯讀查詢介面、部署到 Kubernetes。每階段都有在瀏覽器裡跑的驗收測試。',
   // 參考實作：同一個題目做成可以在本機跑起來的專案（repo 的 companion/clinic-api/）
   companion: {
-    url: 'https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api',
+    url: 'https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-api',
     note: '階段 1–8 與第 10 階段做成一個可以 clone 下來跑的專案：FastAPI、PostgreSQL、Redis，附測試、Dockerfile、compose 與 Kubernetes manifest。',
   },
   },
@@ -16,7 +16,7 @@ export const PROJECTS = {
     summary: '登入、診次清單、掛號表單、我的掛號、報到看板，接上假的門診 API，最後補上無障礙、RWD 與部署。',
     // 參考實作：五個畫面接上後端參考專案的最小版本（repo 的 companion/clinic-web/）
     companion: {
-      url: 'https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-web',
+      url: 'https://github.com/yo02741/u-kinda-should-know/tree/main/companion/clinic-web',
       note: '登入、診次清單、掛號、我的掛號、報到看板五個畫面接上 clinic-api：Vite + Vue 3.5，附 Playwright 的接線測試（登入 → 掛號 → 看板更新，中途停掉後端一次）。',
     },
   },

@@ -48,7 +48,7 @@ const D_OK = [
     code: { src: `→ CLI 呼叫 keyring：\n  service = "atlas-cli"\n  account = "alice@corp.example"\n  secret  = { access_token, refresh_token, expires_at }\n\n~/.config/atlas/config.toml 只寫：\n  sso_host = "sso.example.com"\n  account  = "alice@corp.example"\n  # 不寫任何 token`, hl: [4, 9] } },
   { from: 2, to: 3, label: 'Authorization: Bearer …', title: '⑨ 帶 Bearer token 呼叫 API',
     text: ['之後每個指令從 keyring 取出 access_token 放進 Authorization 標頭。過期就用 refresh_token 換新的，再寫回 keyring。', 'API 驗 token 的方式和其他流程一樣：簽章、iss、aud、exp、scope。它不在乎 token 是用哪種流程拿到的。'],
-    code: { src: `GET /v1/projects HTTP/1.1\nHost: api.example.com\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIs…\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n[{ "id": "p_17", "name": "backend-atlas" }]`, hl: [3] } },
+    code: { src: `GET /v1/projects HTTP/1.1\nHost: api.example.com\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIs…\n\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n[{ "id": "p_17", "name": "clinic-portal" }]`, hl: [3] } },
 ]
 const D_EXPIRED = [
   { from: 0, to: 1, kind: 'ghost', label: '（使用者一直沒去核准）', title: '⑥ 使用者沒有核准',

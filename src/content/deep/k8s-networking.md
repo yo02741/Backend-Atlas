@@ -615,7 +615,7 @@ requests.exceptions.SSLError: HTTPSConnectionPool(host='his-api.example.org', po
 1. 執行上面的模擬，自己加兩個情境：把 `ALLOW_DNS` 的 TCP 那一筆刪掉，測 `check("api", "dns", 53, …, proto="TCP")`；把 `DB_FROM_API` 的 `from` 改成 `[{"namespaceSelector": {}}]`（空的 selector 選到所有 namespace），看 `job → db` 的結果怎麼變（稽核那張單的情況）。先預測再執行。
 2. 做本課的程式題：補一組 NetworkPolicy，讓 api 只連得到 db 的 5432 與 DNS；選做的 Python 題是實作評估器裡比對來源與 namespace 的那一段。
 3. 到 [NetworkPolicy 實驗室](#/lab/NetworkPolicyLab) 加減 policy，播放「api 查 DNS」「可疑 Pod → db」「api → 舊系統」等連線，看每一條是哪一條規則決定的。
-4. 在本機叢集上看 SNAT。叢集照 [clinic-api 的本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 建好，在本機用 `python3 -m http.server 9000` 起一個伺服器，從 Pod 連過去（`wget -qO- http://<本機位址>:9000/`；kind 的本機位址可以用 `docker network inspect kind` 找閘道）。伺服器的 log 印出的來源位址是節點的位址，拿去和 `kubectl get pod -o wide` 列出的 Pod IP 對照。
+4. 在本機叢集上看 SNAT。叢集照 [clinic-api 的本機叢集指南](https://github.com/yo02741/u-kinda-should-know/blob/main/companion/clinic-api/docs/local-k8s.md) 建好，在本機用 `python3 -m http.server 9000` 起一個伺服器，從 Pod 連過去（`wget -qO- http://<本機位址>:9000/`；kind 的本機位址可以用 `docker network inspect kind` 找閘道）。伺服器的 log 印出的來源位址是節點的位址，拿去和 `kubectl get pod -o wide` 列出的 Pod IP 對照。
 5. 在同一個叢集驗證 CNI 有沒有執行 NetworkPolicy（`clinic` namespace 裡已經跑著 clinic-api）。本機叢集工具的預設 CNI 不一定實作 NetworkPolicy，依工具與版本而定：
 
 ```bash

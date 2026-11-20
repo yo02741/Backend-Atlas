@@ -5,17 +5,28 @@
 """
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
+from typing import Any
 
-from sqlalchemy import ColumnElement, Select, func, select, update
+from sqlalchemy import ColumnElement, Select, case, cast, delete, func, select, update
+from sqlalchemy import Text as SqlText
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DbSession
 
 from clinic.domain.errors import AlreadyBooked
-from clinic.domain.models import Appointment, Session
-from clinic.repository.tables import AppointmentRow, PatientRow, SessionRow, UserRow
+from clinic.domain.models import Appointment, BoardRow, Session
+from clinic.repository.tables import AppointmentRow, DoctorRow, IdempotencyKeyRow, PatientRow, SessionRow, UserRow
 
-A, S = AppointmentRow, SessionRow
+A, S, D, K = AppointmentRow, SessionRow, DoctorRow, IdempotencyKeyRow
+IDEMPOTENCY_TTL = timedelta(hours=24)  # 超過這段時間的鍵視為新的
+
+
+@dataclass(frozen=True)
+class StoredResponse:
+    fingerprint: str
+    status_code: int | None
+    response: dict[str, Any] | None
 
 
 @dataclass(frozen=True)
@@ -69,13 +80,60 @@ class ClinicRepository:
         return self._user(UserRow.id == user_id)
 
     # ---- 診次 ----
-    def list_sessions(self, doctor_id: int, day: date) -> list[Session]:
-        stmt = select(S).where(S.doctor_id == doctor_id, S.session_date == day).order_by(S.id)
+    def list_sessions(self, doctor_id: int | None, day: date | None) -> list[Session]:
+        """兩個條件都可以省略：省略的那個不篩選。"""
+        stmt = select(S).order_by(S.session_date, S.id)
+        if doctor_id is not None:
+            stmt = stmt.where(S.doctor_id == doctor_id)
+        if day is not None:
+            stmt = stmt.where(S.session_date == day)
         return [_session(r) for r in self.db.scalars(stmt)]
+
+    def board(self, day: date, period: str) -> list[BoardRow]:
+        """某一天某個時段每個診次一列：已報到的最大號碼、還沒報到的人數。"""
+        current_no = func.coalesce(func.max(case((A.status == "checked_in", A.number))), 0)
+        waiting = func.count(case((A.status == "booked", 1)))
+        room = func.coalesce(D.room, cast(D.id, SqlText))
+        stmt = (
+            select(room, D.name, current_no, waiting)
+            .select_from(S)
+            .join(D, D.id == S.doctor_id)
+            .outerjoin(A, A.session_id == S.id)
+            .where(S.session_date == day, S.period == period)
+            .group_by(S.id, D.id)
+            .order_by(room)
+        )
+        return [BoardRow(r, name, int(no), int(n)) for r, name, no, n in self.db.execute(stmt)]
 
     def find_session(self, session_id: int) -> Session | None:
         row = self.db.get(S, session_id)
         return _session(row) if row else None
+
+    # ---- 冪等鍵 ----
+    def claim_idempotency_key(self, user_id: int, key: str, fingerprint: str) -> bool:
+        """登記這個鍵；已經有人登記過（含另一個還沒 COMMIT 的交易）就回 False。
+
+        INSERT … ON CONFLICT DO NOTHING 遇到同一個鍵、還在進行中的交易時會等它結束：
+        對方 COMMIT 了就回 False（改讀對方存下的結果），對方 rollback 了就由這裡登記。
+        """
+        self.db.execute(
+            delete(K).where(K.user_id == user_id, K.key == key, K.created_at < func.now() - IDEMPOTENCY_TTL)
+        )
+        stmt = (
+            pg_insert(K)
+            .values(user_id=user_id, key=key, fingerprint=fingerprint)
+            .on_conflict_do_nothing(index_elements=[K.user_id, K.key])
+            .returning(K.key)
+        )
+        return self.db.scalar(stmt) is not None
+
+    def find_idempotency_key(self, user_id: int, key: str) -> StoredResponse | None:
+        row = self.db.get(K, (user_id, key), populate_existing=True)
+        return StoredResponse(row.fingerprint, row.status_code, row.response) if row else None
+
+    def save_idempotent_response(self, user_id: int, key: str, status_code: int, response: dict[str, Any]) -> None:
+        stmt = update(K).where(K.user_id == user_id, K.key == key).values(status_code=status_code, response=response)
+        self.db.execute(stmt)
 
     # ---- 掛號（寫入）----
     def lock_patient(self, patient_id: int) -> bool:
@@ -149,7 +207,7 @@ class ClinicRepository:
         return _appointment(*row) if row else None
 
     def list_appointments(
-        self, *, patient_id: int | None, doctor_id: int | None, after_id: int, limit: int
+        self, *, patient_id: int | None, doctor_id: int | None, status: str | None, after_id: int, limit: int
     ) -> list[Appointment]:
         """權限範圍是 WHERE 條件，由資料庫過濾；值一律走參數。cursor 分頁：id > after_id。"""
         stmt = _appointment_query().where(A.id > after_id).order_by(A.id).limit(limit)
@@ -157,4 +215,6 @@ class ClinicRepository:
             stmt = stmt.where(A.patient_id == patient_id)
         if doctor_id is not None:
             stmt = stmt.where(S.doctor_id == doctor_id)
+        if status is not None:
+            stmt = stmt.where(A.status == status)
         return [_appointment(*row) for row in self.db.execute(stmt)]

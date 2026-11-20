@@ -6,14 +6,14 @@
 2. **登入狀態**：一個 Pinia 的 setup store 存 token，所有 API 都經過同一個 `apiFetch` 帶上 `Authorization: Bearer <token>`。
 3. **換頁規則**：沒登入就導去登入頁並記下原本要去哪；登入成功回到原本的頁面；API 回 401（token 過期）時清掉登入狀態、回登入頁；403 留在原頁顯示沒有權限。
 
-後端參考專案（`companion/clinic-api`）與沙箱裡的假 API 都用同一組介面：
+後端參考專案（`companion/clinic-api`）與沙箱裡的假 API 照同一份契約（`companion/clinic-api/docs/contract.md`），路徑都在 `/api` 底下：
 
 | 請求 | 成功 | 失敗 |
 |---|---|---|
 | `POST /api/auth/login`，body `{ username, password }` | 200 `{ access_token, token_type: "Bearer", expires_in }` | 401：帳號或密碼錯誤；422：欄位格式錯誤 |
 | 其他 `/api/…`，帶 `Authorization: Bearer …` | 依各介面 | 401 並附 `WWW-Authenticate: Bearer`：沒帶 token 或 token 失效 |
 
-錯誤 body 是 Problem Details（`type`、`title`、`status`、`detail`）。`title` 是給開發者看的英文（`Unauthorized`），畫面要顯示的是 `detail` 或依 `type` 對應的中文。欄位錯誤放在 `errors`，這個欄位不在 RFC 9457 的標準裡，假 API 寫成 `{ 欄位: ['訊息'] }`，後端參考專案寫成 `[{ field, message }]`，第 3 階段會寫一個兩種都收的轉換函式。
+錯誤 body 是 Problem Details（`type`、`title`、`status`、`detail`）。`title` 是給開發者看的英文（`Unauthorized`），畫面要顯示的是 `detail` 或依 `type` 對應的中文。欄位錯誤放在 `errors`，格式是 `{ 欄位: ['訊息'] }`。這個欄位不在 RFC 9457 的標準裡，各家寫法不同，第 3 階段會寫一個連其他寫法也收的轉換函式。
 
 表單綁定與驗證時機在 [表單綁定與驗證](#/skill/forms)；送出之後的狀態碼怎麼對回畫面在 [表單送出與驗證錯誤](#/skill/form-submit)；token 放哪裡、401 與 403 的分工、路由守衛在 [登入狀態與 401](#/skill/auth-frontend)。
 
@@ -271,12 +271,14 @@ redirect 在題目裡只是頁面名稱的白名單，網址形式的 `safeRedir
 
 ## 串接驗收
 
-前端的串接驗收接在後端參考專案上（`companion/clinic-api`，照它的 README 啟動並 seed；密碼是 seed 時給的 `SEED_PASSWORD`）。參考專案的路徑沒有 `/api` 前綴，Vite 的 proxy 要去掉它：
+前端的串接驗收接在後端參考專案上（`companion/clinic-api`，照它的 README 啟動並 seed；密碼是 seed 時給的 `SEED_PASSWORD`）。參考專案的業務介面一樣在 `/api` 底下，Vite 的 proxy 原樣轉送、不改寫路徑：
 
 ```js
 // vite.config.js 的 server
-proxy: { '/api': { target: 'http://127.0.0.1:8000', rewrite: (p) => p.replace(/^\/api/, '') } },
+proxy: { '/api': 'http://127.0.0.1:8000' },
 ```
+
+五個畫面已經接好的版本在 `companion/clinic-web/`，對照用；它的接線測試走一遍「登入 → 掛號 → 看板更新」，中途停掉後端一次。
 
 **1. 接上真的後端。** 用 `patient1` 登入一次、用錯的密碼登入一次。預期：Network 裡 `POST /api/auth/login` 先回 200，body 有 `access_token`、`token_type` 是 `Bearer`；錯的密碼回 401，畫面顯示 `detail`、密碼清空、帳號保留。DevTools 的 Application 面板裡 Local Storage 與 Session Storage 都是空的。
 

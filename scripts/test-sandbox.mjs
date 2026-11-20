@@ -10,10 +10,11 @@ import { buildSrcdoc, vendorsFor, importMapFor, stylesFor, usesTailwind, tailwin
 import { VERSIONS, VENDOR_FILES, VENDOR_SUBMODULES, VENDOR_STYLES, MODULE_VENDORS, CLASSIC_VENDORS, vendorPath, vendorFilePath } from '../src/runtime/versions.js'
 
 let n = 0
+const NOW = Date.parse('2026-11-19T10:00:00+08:00')   // 假 API 的牆上時間：診次（11-26）的取消期限之前
 const test = async (name, fn) => { await fn(); n++; console.log('ok  ' + name) }
 const make = (extra = {}) => {
   const calls = [], warns = []
-  const api = createFakeApi({ baseURI: 'http://localhost:4173/app/', onCall: (c) => calls.push({ ...c }), warn: (m) => warns.push(m), today: '2026-11-26', ...extra })
+  const api = createFakeApi({ baseURI: 'http://localhost:4173/app/', onCall: (c) => calls.push({ ...c }), warn: (m) => warns.push(m), today: '2026-11-26', clock: () => NOW, ...extra })
   api.latency = 0
   return { api, fetch: api.fetch, calls, warns }
 }
@@ -247,6 +248,124 @@ await test('內建門診：登入、查門診、掛號、重複掛號、額滿�
   const again = await post('/api/appointments/1/cancel', {}, login.access_token)
   assert.equal(again.status, 409)
   assert.equal((await fetch('/api/appointments/999')).status, 404)
+})
+
+await test('內建門診照契約：doctor_id 與 date 選填、參數不合法回 422（errors 是 { 欄位: [訊息] }）', async () => {
+  const { fetch } = make()
+  const ids = async (q) => (await (await fetch('/api/sessions' + q)).json()).map((s) => s.id)
+  assert.deepEqual(await ids('?date=2026-11-26'), [1, 2, 3])   // 全部醫師
+  assert.deepEqual(await ids('?doctor_id=2'), [3])              // 全部日期
+  assert.deepEqual(await ids('?date=2026-11-27'), [])
+  for (const [q, field] of [['?doctor_id=abc', 'doctor_id'], ['?doctor_id=0', 'doctor_id'], ['?date=11/26', 'date']]) {
+    const r = await fetch('/api/sessions' + q)
+    assert.equal(r.status, 422, q)
+    const body = await r.json()
+    assert.equal(body.type, 'https://clinic.example/problems/validation-error')
+    assert.deepEqual(Object.keys(body.errors), [field])
+    assert.ok(Array.isArray(body.errors[field]))
+  }
+  assert.equal((await fetch('/api/sessions/1')).status, 404)
+})
+
+await test('內建門診照契約：角色、每日上限、body 檢查、我的掛號的 status 篩選', async () => {
+  const { fetch } = make()
+  const login = async (u) => (await (await fetch('/api/auth/login', { method: 'POST', body: JSON.stringify({ username: u, password: 'demo-password' }) })).json()).access_token
+  const [p1, desk, doc] = [await login('patient1'), await login('desk1'), await login('doctor1')]
+  const call = (url, token, init = {}) => fetch(url, { ...init, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...init.headers } })
+  const book = (sid, body, token, headers) => call(`/api/sessions/${sid}/appointments`, token, { method: 'POST', body: JSON.stringify(body), headers })
+  assert.equal((await book(1, { patient_id: 2 }, p1)).status, 403, '病患替別人掛')
+  assert.equal((await book(1, { patient_id: 1 }, p1)).status, 201, '病患帶自己的 patient_id')
+  assert.equal((await book(1, { patient_id: 2 }, doc)).status, 403, '醫師不能掛號')
+  assert.equal((await book(1, { patient_id: 99 }, desk)).status, 404, '病患不存在')
+  assert.equal((await book(9, { patient_id: 2 }, desk)).status, 404, '診次不存在')
+  const strict = await book(2, { patient_id: '2', note: 'x'.repeat(201) }, desk)
+  assert.equal(strict.status, 422)
+  assert.deepEqual(Object.keys((await strict.json()).errors).sort(), ['note', 'patient_id'])
+  assert.equal((await call('/api/sessions/2/appointments', desk, { method: 'POST', body: '[1]' })).status, 400)
+  assert.equal((await call('/api/sessions/2/appointments', desk, { method: 'POST' })).status, 400, '沒有 body')
+  for (const sid of [2, 3]) assert.equal((await book(sid, {}, p1)).status, 201)
+  assert.equal((await book(1, { patient_id: 3 }, desk)).status, 201, '櫃台替病患 3 掛診次 1')
+  const list = async (q, token) => (await (await call('/api/appointments' + q, token)).json()).items.map((a) => a.id)
+  assert.deepEqual(await list('', p1), [1, 2, 3])
+  assert.deepEqual(await list('', doc), [1, 2, 4], '醫師 1：自己診次的掛號（診次 1、2）')
+  assert.equal((await call('/api/appointments/3', doc)).status, 404, '醫師看不到別的醫師的掛號')
+  assert.equal((await call('/api/appointments/1/cancel', doc, { method: 'POST' })).status, 403)
+  assert.equal((await call('/api/appointments/2/cancel', p1, { method: 'POST' })).status, 200)
+  assert.equal((await call('/api/appointments/4/check-in', p1, { method: 'POST' })).status, 404, '病患看不到別人的')
+  assert.equal((await call('/api/appointments/1/check-in', p1, { method: 'POST' })).status, 403, '只有櫃台能報到')
+  assert.equal((await (await call('/api/appointments/1/check-in', desk, { method: 'POST' })).json()).status, 'checked_in')
+  assert.equal((await call('/api/appointments/1/check-in', desk, { method: 'POST' })).status, 409)
+  assert.deepEqual(await list('?status=booked', p1), [3])
+  assert.deepEqual(await list('?status=cancelled', p1), [2])
+  assert.deepEqual(await list('?status=checked_in', desk), [1])
+  const page = await (await call('/api/appointments?status=booked&limit=1', desk)).json()
+  assert.deepEqual([page.items.map((a) => a.id), page.next_cursor], [[3], 3])
+  for (const q of ['?status=done', '?limit=0', '?limit=101', '?cursor=-1']) assert.equal((await call('/api/appointments' + q, desk)).status, 422, q)
+})
+
+await test('內建門診照契約：同一天第 4 診回 daily-limit，順序是重複 → 名額 → 每日上限', async () => {
+  const { api, fetch } = make()
+  api.db.sessions.push({ id: 4, doctor_id: 2, session_date: '2026-11-26', period: 'afternoon', capacity: 30 }, { id: 5, doctor_id: 2, session_date: '2026-11-26', period: 'evening', capacity: 1 })
+  const book = (sid) => fetch(`/api/sessions/${sid}/appointments`, { method: 'POST', body: '{}' })   // api.auth = false：當成 patient1
+  for (const sid of [1, 2, 3]) assert.equal((await book(sid)).status, 201)
+  assert.equal((await (await book(4)).json()).type, 'https://clinic.example/problems/daily-limit')
+  assert.equal((await (await book(1)).json()).type, 'https://clinic.example/problems/already-booked', '已掛過先於每日上限')
+  api.db.appointments.push({ id: 9, session_id: 5, patient_id: 2, number: 1, status: 'booked' })
+  assert.equal((await (await book(5)).json()).type, 'https://clinic.example/problems/session-full', '名額先於每日上限')
+})
+
+await test('內建門診照契約：Idempotency-Key 同鍵同內容重播第一次的 201、不同內容 422、失敗不記住', async () => {
+  const { api, fetch } = make()
+  const book = (sid, body, key) => fetch(`/api/sessions/${sid}/appointments`, { method: 'POST', headers: key ? { 'Idempotency-Key': key } : {}, body: JSON.stringify(body) })
+  const first = await book(2, { patient_id: 1, note: '初診' }, 'k-1')
+  const again = await book(2, { note: '初診', patient_id: 1 }, 'k-1')
+  assert.deepEqual([first.status, again.status], [201, 201])
+  assert.deepEqual(await again.json(), await first.json())
+  assert.equal(again.headers.get('location'), first.headers.get('location'))
+  assert.equal(again.headers.get('idempotent-replayed'), 'true')
+  assert.equal(first.headers.get('idempotent-replayed'), null)
+  assert.equal(api.db.appointments.length, 1)
+  const reused = await book(3, { patient_id: 1 }, 'k-1')
+  assert.equal(reused.status, 422)
+  assert.equal((await reused.json()).type, 'https://clinic.example/problems/idempotency-key-reused')
+  assert.equal((await book(2, {}, 'k-2')).status, 409, '已掛過：沒有記住')
+  api.db.appointments[0].status = 'cancelled'
+  assert.equal((await book(2, {}, 'k-2')).status, 201, '同一個鍵重新執行')
+  const bad = await book(3, {}, 'a b')
+  assert.equal(bad.status, 422)
+  assert.deepEqual(Object.keys((await bad.json()).errors), ['Idempotency-Key'])
+})
+
+await test('內建門診照契約：取消期限是看診前一日 17:00（台北時間）', async () => {
+  const before = make({ clock: () => Date.parse('2026-11-25T16:59:59+08:00') })
+  await before.fetch('/api/sessions/2/appointments', { method: 'POST', body: '{}' })
+  assert.equal((await before.fetch('/api/appointments/1/cancel', { method: 'POST' })).status, 200)
+  const after = make({ clock: () => Date.parse('2026-11-25T09:00:00Z') })   // 台北 17:00
+  await after.fetch('/api/sessions/2/appointments', { method: 'POST', body: '{}' })
+  const r = await after.fetch('/api/appointments/1/cancel', { method: 'POST' })
+  assert.equal(r.status, 409)
+  assert.equal((await r.json()).type, 'https://clinic.example/problems/cancel-deadline-passed')
+})
+
+await test('內建門診照契約：GET /api/board 不需要登入，列出今天目前時段的診次', async () => {
+  const { api, fetch } = make({ today: '2026-11-19', clock: () => Date.parse('2026-11-19T14:00:00+08:00') })   // 下午
+  api.auth = true
+  api.db.sessions.push({ id: 4, doctor_id: 2, session_date: '2026-11-19', period: 'afternoon', capacity: 30 })
+  api.db.doctors[1].room = undefined
+  api.db.appointments.push(
+    { id: 1, session_id: 2, patient_id: 1, number: 1, status: 'checked_in' },
+    { id: 2, session_id: 2, patient_id: 2, number: 2, status: 'booked' },
+    { id: 3, session_id: 2, patient_id: 3, number: 3, status: 'cancelled' },
+  )
+  const r = await fetch('/api/board')
+  assert.equal(r.status, 200)
+  assert.deepEqual(await r.json(), [
+    { room: '101', doctor: '林醫師', current_no: 1, waiting: 1 },
+    { room: '2', doctor: '張醫師', current_no: 0, waiting: 0 },
+  ])
+  const evening = make({ today: '2026-11-19', clock: () => Date.parse('2026-11-19T18:00:00+08:00') })
+  assert.deepEqual(await (await evening.fetch('/api/board')).json(), [], '晚上：這天沒有晚上診')
+  assert.deepEqual(await (await make().fetch('/api/board')).json(), [], '內建資料沒有今天的診次')
 })
 
 await test('api.auth = true：內建路由沒帶 token 回 401 與 WWW-Authenticate', async () => {

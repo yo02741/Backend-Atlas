@@ -96,8 +96,15 @@ export default function ExerciseRunner({ exercise: ex, compact = false, showStat
         <RuntimeStatus kind={ex.kind} tailwind={ex.tailwind === true} elementPlus={ELEMENT_PLUS_RE.test(ex.starter || '')} />
       </div>
 
-      <CodeEditor value={code} onChange={setCode} lang={lang} onRun={run} minHeight={compact ? 200 : 260} />
-      {isFrame && <FramePreview kind={ex.kind} code={preview.code} ex={ex} runKey={preview.key} height={compact ? 260 : 320} />}
+      {isFrame ? (
+        // HTML、CSS、Vue 題：寬螢幕時程式碼在左、預覽在右，改了馬上看得到結果
+        <div className="ex-split">
+          <CodeEditor value={code} onChange={setCode} lang={lang} onRun={run} minHeight={compact ? 300 : 360} />
+          <FramePreview kind={ex.kind} code={preview.code} ex={ex} runKey={preview.key} height={compact ? 300 : 360} />
+        </div>
+      ) : (
+        <CodeEditor value={code} onChange={setCode} lang={lang} onRun={run} minHeight={compact ? 200 : 260} />
+      )}
 
       {hints > 0 && (
         <ol className="ex-hints">

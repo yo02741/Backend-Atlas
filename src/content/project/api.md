@@ -4,12 +4,14 @@
 
 | 方法與路徑 | 用途 | 成功 | 主要錯誤 |
 |---|---|---|---|
-| `GET /sessions?doctor_id=3&date=2026-11-02` | 查某醫師某天的診次與剩餘名額 | 200 | 422（參數格式錯） |
+| `GET /sessions?doctor_id=3&date=2026-11-02` | 查診次與剩餘名額（兩個條件都選填） | 200 | 422（參數格式錯） |
 | `POST /sessions/{id}/appointments` | 在某診次掛號 | 201 + `Location` | 400、422、404、409 |
 | `GET /appointments/{id}` | 查一筆掛號 | 200 | 404 |
-| `GET /appointments?patient_id=7&cursor=…` | 列出掛號（分頁） | 200 | 422 |
+| `GET /appointments?patient_id=7&status=booked&cursor=…` | 列出掛號（分頁、依狀態篩選） | 200 | 422 |
 | `POST /appointments/{id}/cancel` | 取消 | 200 | 404、409（已過期限、狀態不能取消） |
 | `POST /appointments/{id}/check-in` | 報到 | 200 | 404、409 |
+
+上線時這些路徑都放在 `/api` 底下（`POST /api/sessions/{id}/appointments`），和前端、反向代理用同一個前綴，轉送時不用改寫路徑；`/healthz`、`/metrics` 這類維運端點不放進去。這一頁與驗收題省略前綴。後端參考專案與前端課共用的完整契約在 `companion/clinic-api/docs/contract.md`。
 
 錯誤 body 一律用 Problem Details（[RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)，取代了 RFC 7807）的格式，`Content-Type` 是 `application/problem+json`：
 
@@ -53,7 +55,7 @@
 | 狀況 | 狀態碼 | `type` 結尾 |
 |---|---|---|
 | body 不是 JSON 物件（解析失敗、是陣列、是字串） | 400 | `about:blank` |
-| 欄位缺少或型別錯 | 422 | `validation-error`，另附 `errors` 陣列 |
+| 欄位缺少或型別錯 | 422 | `validation-error`，另附 `errors`：`{ 欄位: [訊息, …] }` |
 | 路徑上的資源不存在 | 404 | `about:blank` |
 | 路徑存在、方法不支援 | 405 | `about:blank` |
 | `AlreadyBooked` | 409 | `already-booked` |
@@ -72,7 +74,7 @@
 
 ### 重試與重複建立
 
-手機網路不穩時，客戶端送出 `POST` 後沒收到回應，常見的做法是重送。這個系統有 `UNIQUE (session_id, patient_id)`，所以重送不會產生兩筆掛號，但第二次會收到 409 `already-booked`，使用者會以為失敗。改善的做法是讓客戶端帶 `Idempotency-Key` 標頭（目前是 IETF 的草案），伺服器記住「這個 key 已經處理過、當時的回應是什麼」，重送時回同一個 201。冪等鍵的實作在 [分頁、篩選、版本與冪等鍵](#/skill/api-patterns)，這裡先把介面留好。
+手機網路不穩時，客戶端送出 `POST` 後沒收到回應，常見的做法是重送。這個系統有 `UNIQUE (session_id, patient_id)`，所以重送不會產生兩筆掛號，但第二次會收到 409 `already-booked`，使用者會以為失敗。改善的做法是讓客戶端帶 `Idempotency-Key` 標頭（目前是 IETF 的草案），伺服器記住「這個 key 已經處理過、當時的回應是什麼」，重送時回同一個 201；同一個 key 配上不同的內容回 422。冪等鍵的實作在 [分頁、篩選、版本與冪等鍵](#/skill/api-patterns)，這裡先把介面留好；後端參考專案把 key 和掛號寫在同一個交易裡（`idempotency_keys` 表）。
 
 ### 列表要分頁
 
@@ -121,7 +123,7 @@ for e in (AlreadyBooked("這個診次已經掛過了"), SessionFull("診次 12 �
     print(status, headers["Content-Type"], json.dumps(body, ensure_ascii=False))
 
 print(problem(422, "Unprocessable Content", "validation-error",
-              errors=[{"field": "patient_id", "message": "必填，且必須是整數"}])[2])
+              errors={"patient_id": ["必填，且必須是整數"]})[2])
 ```
 
 同樣的介面寫成 OpenAPI 片段（YAML，不能在瀏覽器執行），之後可以產生文件與客戶端，也能在 CI 裡檢查實作有沒有偏離契約：
@@ -173,7 +175,7 @@ paths:
 
 ## 驗收題在測什麼
 
-驗收題用一個 `handle(method, path, body, user)` 函式模擬路由，回傳 `(status, body)`，資料放在記憶體裡。測試涵蓋：
+驗收題用一個 `handle(method, path, body, user)` 函式模擬路由（路徑省略 `/api` 前綴），回傳 `(status, body)`，資料放在記憶體裡。測試涵蓋：
 
 - 建立掛號回 201，用回傳的 id 查得到同一筆
 - body 是 `None`、字串、陣列時回 400
@@ -189,6 +191,6 @@ paths:
 
 **1. 存一份錯誤回應當契約。** 在 Playground 執行「關鍵程式」，把 `session-full` 與 422 兩個 body 各存成一個 JSON 檔（例如 `contract/problems/session-full.json`、`validation-error.json`），放進前端專案的測試資料。預期：兩個檔都有 `type`、`title`、`status`，`status` 和狀態碼一致；422 多一個 `errors`。
 
-**2. 讓前端的轉換函式吃這份檔。** 把[掛號表單](#/project/fe-booking)的 `toFormErrors` 貼進 Playground 的 JavaScript 模式（拿掉 `export`），用存下的 422 body 呼叫 `toFormErrors(body, ['patient_id', 'note'])`。預期：`{ fields: { patient_id: '必填，且必須是整數' }, form: [] }`。把檔裡的 `field` 改成 `patientId` 再執行，預期訊息改落到 `form`，畫面會把它顯示在表單上方而不是欄位下。後端改欄位名稱時，這個測試會先失敗。
+**2. 讓前端的轉換函式吃這份檔。** 把[掛號表單](#/project/fe-booking)的 `toFormErrors` 貼進 Playground 的 JavaScript 模式（拿掉 `export`），用存下的 422 body 呼叫 `toFormErrors(body, ['patient_id', 'note'])`。預期：`{ fields: { patient_id: '必填，且必須是整數' }, form: [] }`。把檔裡 `errors` 的 key 改成 `patientId` 再執行，預期訊息改落到 `form`，畫面會把它顯示在表單上方而不是欄位下。後端改欄位名稱時，這個測試會先失敗。
 
-**3. 用真的服務核對。** 後端參考專案（`companion/clinic-api`，照它的 README 三步驟啟動並 seed）用 README 的 curl 範例重複掛號一次，把回應和步驟 1 的檔比對。預期：欄位名稱與 `type` 相同，`detail` 的文字可以不同。契約測試比欄位與 `type`，不比 `detail` 的措辭。下一階段讓同一個請求依角色得到不同的結果。
+**3. 用真的服務核對。** 後端參考專案（`companion/clinic-api`，照它的 README 三步驟啟動並 seed）用 README 的 curl 範例（路徑在 `/api` 底下）重複掛號一次，再用 `desk1` 送 `{"patient_id": "3"}` 拿一個 422，把兩個回應和步驟 1 的檔比對。預期：欄位名稱、`type` 與 `errors` 的形狀相同，`detail` 與訊息的文字可以不同。契約測試比欄位與 `type`，不比 `detail` 的措辭。下一階段讓同一個請求依角色得到不同的結果。

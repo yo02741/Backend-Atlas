@@ -4,7 +4,7 @@
 
 | 請求 | 回應 |
 |---|---|
-| `GET /api/appointments?limit=20&status=booked&cursor=…` | `{ items, next_cursor }`；`next_cursor` 是 `null` 代表沒有下一批 |
+| `GET /api/appointments?limit=20&status=booked&cursor=…` | `{ items, next_cursor }`；`next_cursor` 是 `null` 代表沒有下一批；`status` 選填，由後端篩選 |
 | `POST /api/appointments/{id}/cancel` | 200 與取消後的掛號；409：已過取消期限或狀態不能取消 |
 
 這一階段要做到：
@@ -246,6 +246,6 @@ async function cancel(a) {
 
 **1. 取消後列表與明細一致。** 用[登入](#/project/fe-login)串接驗收的接線，`patient1` 在診次 1、2 各掛一筆，在「我的掛號」取消第一筆。預期：那一列顯示已取消，Network 只有一個 `POST …/cancel`，沒有重抓清單；取消的回應 body 與重新整理之後清單裡那一列，`status` 都是 `cancelled`、`number` 相同。
 
-**2. 篩選條件和後端對不上。** 篩選選「已掛號」再取消一筆，先預測那一列會留著還是消失、重新整理之後呢。預期：取消後那一列留著、顯示已取消（只更新那一列）；重新整理後它還在清單裡，因為參考專案的 `GET /appointments` 不認得 `status` 參數，回傳全部狀態。決定由前端過濾還是請後端加 `status`，寫進契約。
+**2. 篩選條件和清單的關係。** 篩選選「已掛號」再取消一筆，先預測那一列會留著還是消失、重新整理之後呢。預期：取消後那一列留著、顯示已取消（只更新那一列，不重抓）；重新整理後它不見了，因為 `GET /api/appointments?status=booked` 由後端篩選（契約裡 `status` 是 `booked`、`cancelled`、`checked_in`，其他值回 422）。再選「已取消」，那一筆出現在這裡。
 
 **3. 診次清單跟著變。** 取消前後各看一次[診次清單](#/project/fe-sessions)那個診次的剩餘名額。預期：取消後馬上多 1，不用等 30 秒，因為取消成功後後端讓那一天的快取失效（[第 6 階段](#/project/cache-ratelimit)）。下一階段的報到看板不經過這份快取，資料由輪詢更新。

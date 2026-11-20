@@ -221,7 +221,7 @@ WHERE id = 1 AND booked < capacity RETURNING next_no - 1 AS number;
 
 ```bash
 for T in "$T1" "$T2"; do
-  curl -s -o /dev/null -w '%{http_code}\n' -X POST "$BASE/sessions/1/appointments" \
+  curl -s -o /dev/null -w '%{http_code}\n' -X POST "$BASE/api/sessions/1/appointments" \
     -H "Authorization: Bearer $T" -H 'Content-Type: application/json' -d '{}' &
 done; wait
 ```

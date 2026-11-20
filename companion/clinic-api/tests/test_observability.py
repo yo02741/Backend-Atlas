@@ -79,22 +79,22 @@ def test_request_id_is_echoed_and_attached_to_every_log_line(
     client: TestClient, auth: Auth, world: World, logs: list[dict]
 ) -> None:
     h = {**auth("patient1"), "X-Request-ID": "req-7f3a"}
-    r = client.post(f"/sessions/{world.s_small}/appointments", json={}, headers=h)
+    r = client.post(f"/api/sessions/{world.s_small}/appointments", json={}, headers=h)
     assert r.headers["X-Request-ID"] == "req-7f3a"
     mine = [e for e in logs if e["request_id"] == "req-7f3a"]
     assert [e["msg"] for e in mine] == ["appointment booked", "request"]
     assert mine[0]["patient_id"] == 1 and "王小明" not in json.dumps(mine, ensure_ascii=False)  # 記 id，不記姓名
-    assert mine[1]["route"] == "/sessions/{id}/appointments" and mine[1]["status"] == 201
+    assert mine[1]["route"] == "/api/sessions/{id}/appointments" and mine[1]["status"] == 201
 
     generated = client.get("/healthz").headers["X-Request-ID"]
     assert generated.startswith("req-") and generated != "req-7f3a"
     unsafe = client.get("/healthz", headers={"X-Request-ID": 'x" injected="1'}).headers["X-Request-ID"]
     assert unsafe.startswith("req-")  # 不合格式的外部值不採用
 
-    client.post(f"/sessions/{world.s_small}/appointments", json={}, headers=h)  # 重複掛號
+    client.post(f"/api/sessions/{world.s_small}/appointments", json={}, headers=h)  # 重複掛號
     rejected = [e for e in logs if e["msg"] == "request rejected"][-1]
     assert (rejected["level"], rejected["status"], rejected["reason"]) == ("INFO", 409, "already-booked")
-    client.post(f"/sessions/{world.s_small}/appointments", json={}, headers=auth("doctor1"))
+    client.post(f"/api/sessions/{world.s_small}/appointments", json={}, headers=auth("doctor1"))
     assert [e for e in logs if e["msg"] == "request rejected"][-1]["level"] == "WARNING"  # 授權拒絕
 
 
@@ -105,7 +105,7 @@ def test_unexpected_error_is_500_without_internals(
         raise RuntimeError("connection string postgresql://secret")
 
     monkeypatch.setattr(BookingService, "list_sessions", boom)
-    r = client.get("/sessions", params={"doctor_id": 1, "date": "2030-01-01"}, headers=auth("desk1"))
+    r = client.get("/api/sessions", params={"doctor_id": 1, "date": "2030-01-01"}, headers=auth("desk1"))
     assert r.status_code == 500 and r.headers["content-type"] == "application/problem+json"
     assert "secret" not in r.text and r.headers["X-Request-ID"] in r.json()["detail"]
     error = next(e for e in logs if e["msg"] == "unhandled error")
@@ -115,19 +115,19 @@ def test_unexpected_error_is_500_without_internals(
 
 def test_metrics_endpoint(client: TestClient, auth: Auth, world: World) -> None:
     desk = auth("desk1")
-    url = f"/sessions/{world.s_small}/appointments"
+    url = f"/api/sessions/{world.s_small}/appointments"
     for pid in (1, 1, 2, 3):  # ok、dup、ok、full
         client.post(url, json={"patient_id": pid}, headers=desk)
-    client.get("/sessions", params={"doctor_id": 1, "date": world.day.isoformat()}, headers=desk)
+    client.get("/api/sessions", params={"doctor_id": 1, "date": world.day.isoformat()}, headers=desk)
     r = client.get("/metrics")  # 不需要登入
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/plain")
     text = r.text
     assert "# TYPE appointments_booked_total counter" in text
     for result in ("ok", "dup", "full"):
         assert f'appointments_booked_total{{result="{result}"}}' in text
-    assert 'http_request_duration_seconds_bucket{le="0.1",route="/sessions/{id}/appointments"}' in text
+    assert 'http_request_duration_seconds_bucket{le="0.1",route="/api/sessions/{id}/appointments"}' in text
     assert 'cache_requests_total{result="miss"}' in text
-    assert f"/sessions/{world.s_small}/appointments" not in text  # 標籤是路由樣板，不是實際路徑
+    assert f"/api/sessions/{world.s_small}/appointments" not in text  # 標籤是路由樣板，不是實際路徑
 
 
 def test_healthz_and_ready(client: TestClient, app: FastAPI, settings: Settings) -> None:

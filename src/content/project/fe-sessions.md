@@ -11,7 +11,7 @@
 
 另外兩件事：已經有清單時按「重新整理」，清單留在畫面上、按鈕停用，失敗了也只多一行提示；篩選條件（`date`、`doctor_id`）放在網址的 query 裡，重新整理、按上一頁、把網址傳給同事都看得到同一份清單。
 
-API 是 `GET /api/sessions?date=2026-11-26&doctor_id=1`，回傳 `[{ id, doctor_id, session_date, period, capacity, remaining }]`。四種狀態與狀態轉換在 [API 的四種狀態：loading、success、empty、error](#/skill/api-states)；每種狀態用哪個元件在 [回饋：Toast、Alert、Skeleton、Empty state](#/skill/feedback)；條件放網址、push 與 replace 的選擇在 [分頁、篩選與網址](#/skill/pagination-filter) 與 [網址與瀏覽紀錄](#/skill/urls-history)。
+API 是 `GET /api/sessions?date=2026-11-26&doctor_id=1`（兩個參數都選填，「全部醫師」不帶 `doctor_id`），回傳 `[{ id, doctor_id, session_date, period, capacity, remaining }]`。四種狀態與狀態轉換在 [API 的四種狀態：loading、success、empty、error](#/skill/api-states)；每種狀態用哪個元件在 [回饋：Toast、Alert、Skeleton、Empty state](#/skill/feedback)；條件放網址、push 與 replace 的選擇在 [分頁、篩選與網址](#/skill/pagination-filter) 與 [網址與瀏覽紀錄](#/skill/urls-history)。
 
 ## 設計決策與取捨
 
@@ -238,6 +238,6 @@ api.get('/api/sessions', (req) => ({
 
 把範例改成有醫師選單、換選項時以 `fetch('/api/sessions?doctor_id=' + id)` 重新載入，從醫師 1 快速切到醫師 2。先預測最後畫面是哪一位醫師的診次。預期：沒有取消上一輪時，最後顯示醫師 1（晚到的舊回應蓋掉新的）；把這一階段「換條件時取消上一輪」的寫法搬進來之後顯示醫師 2，預覽下方的網路紀錄裡第一個請求標成「已取消」。
 
-**2. 接上參考專案，不帶醫師。** 照[登入](#/project/fe-login)串接驗收的接線，打開 `/sessions?date=<seed 印出的日期>`（不帶 `doctor_id`），先預測畫面是四種狀態的哪一種。預期：參考專案的 `doctor_id` 是必填，回 422，畫面是 error、沒有「重試」（4xx 重送結果一樣）；站上的假 API 對同一個網址回全部醫師的診次。兩邊的契約不一致，寫下你的決定：前端一定帶醫師，或請後端把 `doctor_id` 改成選填。
+**2. 接上參考專案，不帶醫師。** 照[登入](#/project/fe-login)串接驗收的接線，打開 `/sessions?date=<seed 印出的日期>`（不帶 `doctor_id`），先預測畫面是四種狀態的哪一種、有幾張卡片。預期：success，林醫師兩個診次加張醫師一個，共三張；站上的假 API 對同一個網址回一樣的三筆。再打開 `/sessions?date=<日期>&doctor_id=abc`，預期網址被改回不帶 `doctor_id`、請求裡也沒有它：`parseQuery` 先擋下了。沒有這一層時，後端與假 API 都回 422（`errors` 是 `{ doctor_id: [...] }`），畫面停在沒有「重試」的 error。
 
 **3. 網址就是狀態。** 把帶 `date` 與 `doctor_id` 的網址貼到新分頁、按重新整理、從別頁按上一頁回來。預期：三種情況都是同一份清單，第一個請求就帶網址上的條件。下一階段從卡片的「掛號」進到[掛號表單](#/project/fe-booking)，回上一頁時條件還在。

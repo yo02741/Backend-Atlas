@@ -14,6 +14,11 @@ export const PROJECTS = {
   frontend: {
     title: '從零做完一個門診掛號前端',
     summary: '登入、診次清單、掛號表單、我的掛號、報到看板，接上假的門診 API，最後補上無障礙、RWD 與部署。',
+    // 參考實作：五個畫面接上後端參考專案的最小版本（repo 的 companion/clinic-web/）
+    companion: {
+      url: 'https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-web',
+      note: '登入、診次清單、掛號、我的掛號、報到看板五個畫面接上 clinic-api：Vite + Vue 3.5，附 Playwright 的接線測試（登入 → 掛號 → 看板更新，中途停掉後端一次）。',
+    },
   },
 }
 export const PROJECT = PROJECTS.backend

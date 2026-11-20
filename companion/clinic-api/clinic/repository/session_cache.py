@@ -24,14 +24,22 @@ class SessionListCache:
         self.ttl = ttl
 
     @staticmethod
-    def key(doctor_id: int, day: date) -> str:
-        return f"sessions:v1:doctor:{doctor_id}:date:{day.isoformat()}"  # 格式改變時換 v2，舊 key 自然過期
+    def key(doctor_id: int | None, day: date | None) -> str:
+        # 條件可以省略：省略的那一段寫成 all。v1 → v2：key 的格式變了，舊 key 自然過期
+        doctor = "all" if doctor_id is None else str(doctor_id)
+        when = "all" if day is None else day.isoformat()
+        return f"sessions:v2:doctor:{doctor}:date:{when}"
+
+    @classmethod
+    def keys_covering(cls, doctor_id: int, day: date) -> list[str]:
+        """某位醫師某一天的診次變了：會包含它的四種清單都要失效。"""
+        return [cls.key(d, w) for d in (doctor_id, None) for w in (day, None)]
 
     def _degraded(self, op: str, exc: RedisError) -> None:
         REDIS_ERRORS.labels(component="cache").inc()
         log.warning("cache unavailable", extra={"fields": {"op": op, "error": type(exc).__name__}})
 
-    def get(self, doctor_id: int, day: date) -> list[Session] | None:
+    def get(self, doctor_id: int | None, day: date | None) -> list[Session] | None:
         try:
             raw = self.redis.get(self.key(doctor_id, day))
         except RedisError as exc:
@@ -44,7 +52,7 @@ class SessionListCache:
         CACHE_REQUESTS.labels(result="hit").inc()
         return [Session(**{**d, "session_date": date.fromisoformat(d["session_date"])}) for d in json.loads(raw)]
 
-    def set(self, doctor_id: int, day: date, sessions: list[Session]) -> None:
+    def set(self, doctor_id: int | None, day: date | None, sessions: list[Session]) -> None:
         try:
             payload = json.dumps([asdict(s) for s in sessions], default=str)  # date 存成 ISO 字串
             self.redis.set(self.key(doctor_id, day), payload, ex=self.ttl)
@@ -54,6 +62,6 @@ class SessionListCache:
     def invalidate(self, doctor_id: int, day: date) -> None:
         """失效用刪除而不是更新；呼叫端要在資料庫 COMMIT 之後才呼叫。"""
         try:
-            self.redis.delete(self.key(doctor_id, day))
+            self.redis.delete(*self.keys_covering(doctor_id, day))
         except RedisError as exc:
             self._degraded("invalidate", exc)  # 刪不掉：舊值最多留到 TTL 到期

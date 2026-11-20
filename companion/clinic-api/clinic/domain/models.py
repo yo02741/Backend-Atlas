@@ -41,3 +41,13 @@ class Principal:
     role: str
     patient_id: int | None = None
     doctor_id: int | None = None
+
+
+@dataclass(frozen=True)
+class BoardRow:
+    """報到看板的一列。只有診間與號碼，沒有病患資料，所以看板不需要登入。"""
+
+    room: str
+    doctor: str
+    current_no: int  # 已報到的最大號碼；還沒有人報到是 0
+    waiting: int  # 已掛號、還沒報到的人數

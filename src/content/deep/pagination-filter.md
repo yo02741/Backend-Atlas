@@ -30,7 +30,7 @@
 
 offset 的重複怎麼發生：清單依建立時間新到舊排列，第 1 頁是最新的 20 筆。使用者看第 1 頁時，櫃台新增了一筆掛號。這時要第 2 頁（`offset=20`），伺服器重新排序，原本的第 20 筆被擠到第 21 筆，於是出現在第 2 頁的第一列：同一筆在兩頁各出現一次。刪除資料時則反過來，會漏掉一筆。cursor 記的是「上一批最後一筆的位置」，下一批從那之後接著拿，不受前面新增或刪除影響。
 
-用哪一種由後端的 API 決定，前端跟著選元件。本站後端參考專案的 `GET /appointments` 是 cursor 分頁：回應 `{ items, next_cursor }`，`next_cursor` 為 `null` 代表沒有下一批。伺服器那一側怎麼設計 cursor，見 [分頁、篩選、版本與冪等鍵](#/skill/api-patterns)。
+用哪一種由後端的 API 決定，前端跟著選元件。本站後端參考專案的 `GET /api/appointments` 是 cursor 分頁：回應 `{ items, next_cursor }`，`next_cursor` 為 `null` 代表沒有下一批。伺服器那一側怎麼設計 cursor，見 [分頁、篩選、版本與冪等鍵](#/skill/api-patterns)。
 
 ### query 讀進來都是字串
 

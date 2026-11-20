@@ -26,7 +26,14 @@ class InvalidStatus(BookingError):
 
 
 class NotFound(Exception):
-    """資源不存在，或這位使用者看不到（兩者對外不區分）。"""
+    """資源不存在，或這位使用者看不到（兩者對外不區分）。
+
+    reason 只寫進日誌、不回給使用者：not-found 是真的不存在，not-visible 是存在但不在這位使用者的範圍內。
+    """
+
+    def __init__(self, message: str, reason: str = "not-found") -> None:
+        super().__init__(message)
+        self.reason = reason
 
 
 class PermissionDenied(Exception):
@@ -35,3 +42,7 @@ class PermissionDenied(Exception):
 
 class Unauthenticated(Exception):
     """沒有憑證、憑證無效或過期。"""
+
+
+class IdempotencyKeyReused(Exception):
+    """同一個 Idempotency-Key 配上不同的請求內容。"""

@@ -265,11 +265,12 @@ field() { python3 -c "import json,sys; print(json.load(sys.stdin)$1)"; }
 curl -s $BASE/healthz      # {"status":"ok"}
 curl -s $BASE/ready        # {"status":"ready"}
 
-TOKEN=$(curl -s $BASE/auth/login -H 'Content-Type: application/json' \
+# 業務介面在 /api 底下；探針打的 /healthz、/ready 與 /metrics 不在（docs/contract.md）
+TOKEN=$(curl -s $BASE/api/auth/login -H 'Content-Type: application/json' \
   -d '{"username":"patient1","password":"local-dev-only"}' | field "['access_token']")
 
 DAY=$(python3 -c "from datetime import *; print((datetime.now(timezone(timedelta(hours=8))) + timedelta(days=7)).date())")
-curl -s "$BASE/sessions?doctor_id=1&date=$DAY" -H "Authorization: Bearer $TOKEN"
+curl -s "$BASE/api/sessions?doctor_id=1&date=$DAY" -H "Authorization: Bearer $TOKEN"
 ```
 
 ```text
@@ -277,13 +278,13 @@ curl -s "$BASE/sessions?doctor_id=1&date=$DAY" -H "Authorization: Bearer $TOKEN"
 ```
 
 ```bash
-curl -si -X POST $BASE/sessions/1/appointments -H "Authorization: Bearer $TOKEN" \
+curl -si -X POST $BASE/api/sessions/1/appointments -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -d '{}'
 ```
 
 ```text
 HTTP/1.1 201 Created
-location: /appointments/1
+location: /api/appointments/1
 x-request-id: req-3d7c832c0ca2
 
 {"id":1,"session_id":1,"patient_id":1,"number":1,"status":"booked","created_at":"…"}
@@ -299,8 +300,8 @@ content-type: application/problem+json
 ```
 
 ```bash
-curl -s $BASE/appointments -H "Authorization: Bearer $TOKEN"
-curl -s -X POST $BASE/appointments/1/cancel -H "Authorization: Bearer $TOKEN"
+curl -s $BASE/api/appointments -H "Authorization: Bearer $TOKEN"
+curl -s -X POST $BASE/api/appointments/1/cancel -H "Authorization: Bearer $TOKEN"
 ```
 
 ```text
@@ -320,11 +321,15 @@ ok   GET /ready（200）
 ok   沒帶 token 查掛號（401）
 ok   patient1 登入（200）
 ok   查林醫師 2026-11-26 的診次（200）
-ok   掛號（201）
+ok   查 2026-11-26 全部醫師的診次（不帶 doctor_id）（200）
+ok   掛號（Idempotency-Key: smoke-1795141158-6540）（201）
      號碼 2，掛號 id 2
-ok   重複掛號（409）
+ok   同一個鍵重送：回第一次的結果（201）
+ok   不帶鍵再掛一次（409）
 ok   讀取自己的掛號（200）
+ok   只列已掛號的（200）
 ok   取消（200）
+ok   報到看板（不需要登入）（200）
 ok   GET /metrics（200）
 smoke test 通過
 ```
@@ -338,8 +343,8 @@ kubectl -n clinic logs -l app=clinic-api --prefix --tail=1      # 每個 Pod 各
 
 ```text
 Found 2 pods, using pod/clinic-api-5ff8f6894b-s4l4v
-{"ts": "…", "level": "INFO", "logger": "clinic.access", "msg": "request", "request_id": "req-440475d1a5c3", "method": "POST", "route": "/sessions/{id}/appointments", "status": 409, "duration_ms": 5.5}
-[pod/clinic-api-5ff8f6894b-s4l4v/api] {… "route": "/sessions/{id}/appointments", "status": 409 …}
+{"ts": "…", "level": "INFO", "logger": "clinic.access", "msg": "request", "request_id": "req-440475d1a5c3", "method": "POST", "route": "/api/sessions/{id}/appointments", "status": 409, "duration_ms": 5.5}
+[pod/clinic-api-5ff8f6894b-s4l4v/api] {… "route": "/api/sessions/{id}/appointments", "status": 409 …}
 [pod/clinic-api-5ff8f6894b-tndmb/api] {… "route": "/ready", "status": 200 …}
 ```
 

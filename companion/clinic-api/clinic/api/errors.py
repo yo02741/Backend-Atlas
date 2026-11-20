@@ -13,7 +13,7 @@ from clinic.domain import errors as e
 log = logging.getLogger(__name__)
 PROBLEM_BASE = "https://clinic.example/problems/"  # type 是識別碼，不一定要能打開
 
-# 業務錯誤一律 409，用 type 區分原因
+# 業務錯誤一律 409，用 type 區分原因（完整的對照在 docs/contract.md）
 BOOKING_PROBLEMS: dict[type[e.BookingError], tuple[str, str]] = {
     e.AlreadyBooked: ("already-booked", "Already booked"),
     e.SessionFull: ("session-full", "Session full"),
@@ -65,8 +65,15 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(e.NotFound)
     async def not_found(request: Request, exc: e.NotFound) -> JSONResponse:
-        _reject(request, 404, "not-found")
+        # 回應一樣是 404；日誌分得出「真的不存在」與「存在但看不到」，後者是授權拒絕，記 WARNING
+        level = logging.WARNING if exc.reason == "not-visible" else logging.INFO
+        _reject(request, 404, exc.reason, level)
         return problem(404, detail=str(exc))
+
+    @app.exception_handler(e.IdempotencyKeyReused)
+    async def idempotency_key_reused(request: Request, exc: e.IdempotencyKeyReused) -> JSONResponse:
+        _reject(request, 422, "idempotency-key-reused")
+        return problem(422, "Idempotency key reused", "idempotency-key-reused", detail=str(exc))
 
     @app.exception_handler(e.PermissionDenied)
     async def forbidden(request: Request, exc: e.PermissionDenied) -> JSONResponse:
@@ -94,8 +101,12 @@ def install_error_handlers(app: FastAPI) -> None:
             _reject(request, 400, "bad-request")  # 讀不懂：不是 JSON，或不是 JSON 物件
             return problem(400, detail="body 必須是 JSON 物件")
         _reject(request, 422, "validation-error")  # 讀得懂但內容不對
-        fields = [{"field": ".".join(str(p) for p in err["loc"][1:]), "message": err["msg"]} for err in errors]
-        return problem(422, code="validation-error", errors=fields)
+        # errors 不是 RFC 9457 的標準欄位；格式和前端課的假 API 相同：{ 欄位: [訊息, …] }
+        fields: dict[str, list[str]] = {}
+        for err in errors:
+            name = ".".join(str(p) for p in err["loc"][1:]) or str(err["loc"][0])
+            fields.setdefault(name, []).append(err["msg"])
+        return problem(422, code="validation-error", detail="欄位格式錯誤", errors=fields)
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:

@@ -201,7 +201,7 @@ curl -sI "$BASE/$ASSET" | grep -iE '^(HTTP|cache-control)'                # 200�
 
 ## 串接驗收
 
-**1. 用真的前綴跑起來。** `base: '/clinic/'` 建置之後，用 nginx 容器照正式環境的路徑擺放 `dist/`。本機測試時把上面 nginx 設定裡 `location /api/` 的 `proxy_pass` 換成 `http://api:8000/`：`api` 是後端參考專案 compose 的服務名稱，結尾的 `/` 讓 nginx 去掉 `/api/` 前綴（參考專案的路徑沒有這個前綴）。容器加入參考專案的網路：
+**1. 用真的前綴跑起來。** `base: '/clinic/'` 建置之後，用 nginx 容器照正式環境的路徑擺放 `dist/`。本機測試時把上面 nginx 設定裡 `location /api/` 的 `proxy_pass` 換成 `http://api:8000`：`api` 是後端參考專案 compose 的服務名稱；結尾不加 `/`，路徑原樣轉送（參考專案的業務介面本來就在 `/api` 底下）。容器加入參考專案的網路（`companion/clinic-web/nginx.conf` 是改好的版本）：
 
 ```bash
 docker run --rm -p 8080:8080 --network clinic_default \
@@ -209,7 +209,7 @@ docker run --rm -p 8080:8080 --network clinic_default \
   -v "$PWD/nginx.conf:/etc/nginx/conf.d/default.conf:ro" nginx:1.27
 ```
 
-預期：上面那組部署後的 `curl` 檢查（把 `BASE` 換成 `http://localhost:8080/clinic`）每一行都符合註解；`curl -s http://localhost:8080/api/healthz` 回 `{"status":"ok"}`。
+預期：上面那組部署後的 `curl` 檢查（把 `BASE` 換成 `http://localhost:8080/clinic`）每一行都符合註解；`curl -s http://localhost:8080/api/board` 回看板的 JSON（不用登入），`curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8080/api/appointments` 是 401。`/healthz`、`/metrics` 不在 `/api` 底下，從 8080 打不到：探針與 Prometheus 直接連 API，不經過前端的 nginx。
 
 **2. 在瀏覽器重新整理深層頁面。** 打開 `http://localhost:8080/clinic/appointments`，登入後按重新整理，Network 只看 JS、CSS 與 `config.js`。預期：頁面照常顯示；每個 asset 都在 `/clinic/assets/` 底下、狀態 200；`config.js` 的回應標頭是 `no-cache`。在 `vite preview` 上做同一件事也全部正常，所以它代替不了這一步。
 

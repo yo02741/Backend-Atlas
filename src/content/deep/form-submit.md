@@ -31,9 +31,10 @@ Content-Type: application/problem+json
   "type": "https://clinic.example/problems/validation-error",
   "title": "Unprocessable Content",
   "status": 422,
-  "errors": [
-    { "field": "patient_id", "message": "櫃台掛號必須指定 patient_id" }
-  ]
+  "detail": "欄位格式錯誤",
+  "errors": {
+    "patient_id": ["櫃台掛號必須指定 patient_id"]
+  }
 }
 ```
 
@@ -57,13 +58,13 @@ Content-Type: application/problem+json
 | `401`、`403` | 沒登入、沒權限 | 見 [登入狀態與 401](#/skill/auth-frontend) |
 | 網路錯誤、`5xx` | 沒送到，或伺服器出錯 | 表單上方顯示「再送一次」，保留內容 |
 
-`errors` 不是 RFC 9457 定義的標準欄位，是擴充欄位，各家 API 的寫法不同。本站後端用 `field` 與 `message`；RFC 9457 的範例用 `pointer`（JSON Pointer，例如 `#/age`）與 `detail`。前端要照自己後端的格式寫對應，下面的程式兩種都處理。
+`errors` 不是 RFC 9457 定義的標準欄位，是擴充欄位，各家 API 的寫法不同。本站的契約（後端參考專案與沙箱的假 API，見 `companion/clinic-api/docs/contract.md`）是 `{ 欄位: [訊息, …] }`；也常見 `[{ field, message }]` 的陣列；RFC 9457 的範例用 `pointer`（JSON Pointer，例如 `#/age`）與 `detail`。前端要照自己後端的格式寫對應，下面的程式三種都處理。
 
 `409` 的 `title` 是給開發者看的英文（`Session full`），`type` 才是穩定的識別碼。畫面依 `type` 對應中文文案，對不到的再退回通用訊息。後端怎麼設計這些錯誤，見 [錯誤設計](#/skill/error-design) 與 [輸入驗證與檔案上傳](#/skill/input-validation)。
 
 ### 欄位錯誤對回欄位
 
-1. 依 `field`（或 `pointer` 轉成的路徑）找到對應的輸入框。後端用 `patient_id`、前端用 `patientId` 時要有一張對照表，否則訊息永遠對不上。
+1. 依欄位名稱（`errors` 的 key、`field`，或 `pointer` 轉成的路徑）找到對應的輸入框。後端用 `patient_id`、前端用 `patientId` 時要有一張對照表，否則訊息永遠對不上。
 2. 訊息放在輸入框正下方，輸入框加 `aria-invalid="true"`，`aria-describedby` 指向訊息元素的 `id`，螢幕閱讀器讀到欄位時會一起唸出錯誤。
 3. 對不到任何欄位的錯誤（後端多驗了一個前端沒有的欄位、或沒有 `errors` 的 422）放在表單上方，不丟掉。
 4. 焦點移到第一個出錯的欄位，鍵盤使用者不用從頭找。
@@ -98,25 +99,31 @@ Content-Type: application/problem+json
 
 ```js run
 // 422 的 Problem Details → { fields: { 欄位: 訊息 }, form: [對不到欄位的訊息] }
-// 兩種常見寫法都處理：本站後端的 errors[].field，與 RFC 9457 範例的 errors[].pointer
+// 三種寫法都處理：本站契約的 { 欄位: [訊息] }、陣列的 errors[].field，與 RFC 9457 範例的 errors[].pointer
 function toFormErrors(problem, knownFields) {
+  const raw = problem.errors
+  const list = Array.isArray(raw)
+    ? raw.map((e) => ({ name: e.field ?? (e.pointer ? e.pointer.replace(/^#?\//, '').replaceAll('/', '.') : null), message: e.message ?? e.detail }))
+    : Object.entries(raw ?? {}).map(([name, messages]) => ({ name, message: [].concat(messages)[0] }))
   const fields = {}
   const form = []
-  for (const e of problem.errors ?? []) {
-    const name = e.field ?? (e.pointer ? e.pointer.replace(/^#?\//, '').replaceAll('/', '.') : null)
-    const message = e.message ?? e.detail ?? '格式不正確'
+  for (const { name, message = '格式不正確' } of list) {
     if (name && knownFields.includes(name)) fields[name] ??= message   // 同一欄位只顯示第一則
     else form.push(name ? `${name}：${message}` : message)
   }
-  if (!problem.errors?.length) form.push(problem.detail ?? problem.title ?? '送出失敗')
+  if (!list.length) form.push(problem.detail ?? problem.title ?? '送出失敗')
   return { fields, form }
 }
 
 const known = ['patient_id', 'note']
 const samples = {
-  '本站後端（field）': {
+  '本站契約（{ 欄位: [訊息] }）': {
     type: 'https://clinic.example/problems/validation-error', title: 'Unprocessable Content', status: 422,
-    errors: [{ field: 'patient_id', message: '櫃台掛號必須指定 patient_id' }],
+    errors: { patient_id: ['櫃台掛號必須指定 patient_id'] },
+  },
+  '陣列的寫法（field）': {
+    title: 'Unprocessable Content', status: 422,
+    errors: [{ field: 'note', message: '備註最多 200 字' }],
   },
   'RFC 9457 範例的寫法（pointer）': {
     title: 'Your request is not valid.', status: 422,
@@ -130,7 +137,7 @@ const samples = {
 for (const [name, p] of Object.entries(samples)) console.log(`${name}\n  ${JSON.stringify(toFormErrors(p, known))}`)
 ```
 
-第二個樣本的 `profile.color` 不在表單上，進了 `form`，畫面會在上方顯示它，不會消失。
+第三個樣本的 `profile.color` 不在表單上，進了 `form`，畫面會在上方顯示它，不會消失。
 
 ### 掛號表單
 
@@ -263,7 +270,7 @@ async function cancelAppointment(a) {
 
 ## 動手
 
-1. 按上面 `toFormErrors` 的「在 Playground 開啟」，加一個樣本：`errors` 裡有兩則都是 `patient_id`，確認畫面只顯示第一則；再加一則 `field` 為 `null` 的錯誤，看它進了 `form`。
+1. 按上面 `toFormErrors` 的「在 Playground 開啟」，加一個樣本：`errors` 是 `{ patient_id: ['必填', '必須是整數'] }`，確認畫面只顯示第一則；再在陣列寫法的樣本加一則 `field` 為 `null` 的錯誤，看它進了 `form`。
 2. 在自己的專案把 Network 分頁節流選 `3G`，連按送出三次再按 Enter，確認只有一筆 POST；再對 POST 按右鍵選 `Block request URL`，確認表單內容保留、按鈕恢復可按。
 3. 用 Elements 分頁檢查出錯的欄位有 `aria-invalid="true"`，`aria-describedby` 的值和錯誤訊息的 `id` 相同。
 4. 網路錯誤與 5xx 什麼時候自動重送、什麼時候交給使用者，見 [錯誤分類與重試](#/skill/api-errors-retry)。

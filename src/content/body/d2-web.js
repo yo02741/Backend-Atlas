@@ -87,7 +87,7 @@ export default {
   },
   'rest-design': {
     challenge: {
-      task: '以[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api) README 的介面表為起點，替 `POST /sessions/{id}/appointments`、`POST /appointments/{id}/cancel`、`GET /appointments/{id}` 寫行為表，每個端點四種情況：正常、重複送出、資源不存在、別人的資源。先填預測，再用 `curl -i` 實測、填實際。',
+      task: '以[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api) README 的介面表為起點，替 `POST /api/sessions/{id}/appointments`、`POST /api/appointments/{id}/cancel`、`GET /api/appointments/{id}` 寫行為表，每個端點四種情況：正常、重複送出、資源不存在、別人的資源。先填預測，再用 `curl -i` 實測、填實際。',
       deliver: '行為表：每格有預測與實際的狀態碼，錯誤時加上 Problem Details 的 `type`。',
       check: [
         '每格都有實際 `curl -i` 的狀態碼',
@@ -139,7 +139,7 @@ export default {
   },
   'api-patterns': {
     challenge: {
-      task: '拆成兩次驗收。第一次（分頁）：在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)用 `desk1` 呼叫 `GET /appointments?limit=2`，照 `next_cursor` 一頁一頁翻；翻到第二頁後替另一位病患新增一筆掛號，再翻完剩下的頁。第二次（冪等）：做完練習題 [Idempotency-Key](#/exercise/api-patterns-2) 後，替倉儲的「庫存調撥」API `POST /transfers` 寫一段冪等鍵規格。',
+      task: '拆成兩次驗收。第一次（分頁）：在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)用 `desk1` 呼叫 `GET /api/appointments?limit=2`，照 `next_cursor` 一頁一頁翻；翻到第二頁後替另一位病患新增一筆掛號，再翻完剩下的頁。第二次（冪等）：做完練習題 [Idempotency-Key](#/exercise/api-patterns-2) 後，替倉儲的「庫存調撥」API `POST /transfers` 寫一段冪等鍵規格。',
       deliver: '第一次：每頁的 id 與 `next_cursor` 紀錄。第二次：規格一段，加三個重送情境（同 key 同 body、同 key 不同 body、第一次還在處理中）各自的預期回應。',
       check: [
         '翻頁途中新增資料後，列出的 id 沒有重複；寫出新資料出現在哪一頁，或為什麼不會出現',

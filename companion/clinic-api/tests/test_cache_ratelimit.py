@@ -41,10 +41,10 @@ def test_session_list_is_cached_and_invalidated_after_booking(
 ) -> None:
     h = auth("patient1")
     params = {"doctor_id": 1, "date": world.day.isoformat()}
-    key = f"sessions:v1:doctor:1:date:{world.day.isoformat()}"
+    key = f"sessions:v2:doctor:1:date:{world.day.isoformat()}"
 
     def remaining() -> int:
-        return client.get("/sessions", params=params, headers=h).json()[0]["remaining"]
+        return client.get("/api/sessions", params=params, headers=h).json()[0]["remaining"]
 
     assert redis.get(key) is None
     assert remaining() == 2  # miss：查資料庫、寫進快取
@@ -52,11 +52,11 @@ def test_session_list_is_cached_and_invalidated_after_booking(
     db.execute(text("UPDATE sessions SET capacity = 10 WHERE id = :id"), {"id": world.s_small})
     db.commit()
     assert remaining() == 2  # hit：資料庫改了，TTL 內看到的還是舊值
-    assert client.post(f"/sessions/{world.s_small}/appointments", json={}, headers=h).status_code == 201
+    assert client.post(f"/api/sessions/{world.s_small}/appointments", json={}, headers=h).status_code == 201
     assert redis.get(key) is None  # 掛號 COMMIT 之後刪掉那位醫師那一天的 key
     assert remaining() == 9  # 重新載入
-    appt = client.get("/appointments", headers=h).json()["items"][0]
-    assert client.post(f"/appointments/{appt['id']}/cancel", headers=h).status_code == 200
+    appt = client.get("/api/appointments", headers=h).json()["items"][0]
+    assert client.post(f"/api/appointments/{appt['id']}/cancel", headers=h).status_code == 200
     assert remaining() == 10  # 取消也會失效
 
 
@@ -64,14 +64,14 @@ def test_empty_result_is_cached_too(client: TestClient, auth: Auth, world: World
     h = auth("patient1")
     before = REGISTRY.get_sample_value("cache_requests_total", {"result": "hit"}) or 0
     for _ in range(2):
-        assert client.get("/sessions", params={"doctor_id": 2, "date": "2031-01-01"}, headers=h).json() == []
-    assert redis.get("sessions:v1:doctor:2:date:2031-01-01") == "[]"
+        assert client.get("/api/sessions", params={"doctor_id": 2, "date": "2031-01-01"}, headers=h).json() == []
+    assert redis.get("sessions:v2:doctor:2:date:2031-01-01") == "[]"
     assert REGISTRY.get_sample_value("cache_requests_total", {"result": "hit"}) == before + 1  # 空清單也算命中
 
 
 def test_booking_is_rate_limited_per_user(client: TestClient, auth: Auth, world: World) -> None:
     p1, p2 = auth("patient1"), auth("patient2")
-    url = f"/sessions/{world.s_afternoon}/appointments"
+    url = f"/api/sessions/{world.s_afternoon}/appointments"
     statuses = [client.post(url, json={}, headers=p1).status_code for _ in range(6)]
     assert statuses == [201, 409, 409, 409, 409, 429]  # 容量 5：第 6 次被擋（不管前 5 次的業務結果）
     blocked = client.post(url, json={}, headers=p1)
@@ -87,14 +87,14 @@ def test_redis_down_degrades_instead_of_failing(settings: Settings, world: World
     before = REGISTRY.get_sample_value("redis_errors_total", {"component": "rate_limit"}) or 0
     with TestClient(create_app(broken)) as client:
         login = {"username": "patient1", "password": TEST_PASSWORD}
-        token = client.post("/auth/login", json=login).json()["access_token"]
+        token = client.post("/api/auth/login", json=login).json()["access_token"]
         h = {"Authorization": f"Bearer {token}"}
         params = {"doctor_id": 1, "date": world.day.isoformat()}
-        assert client.get("/sessions", params=params, headers=h).status_code == 200
-        url = f"/sessions/{world.s_small}/appointments"
+        assert client.get("/api/sessions", params=params, headers=h).status_code == 200
+        url = f"/api/sessions/{world.s_small}/appointments"
         assert [client.post(url, json={}, headers=h).status_code for _ in range(7)] == [201] + [409] * 6  # 沒有 429
-        assert client.get("/sessions", params=params, headers=h).json()[0]["remaining"] == 1
-        statuses = [client.post("/auth/login", json=login).status_code for _ in range(5)]
+        assert client.get("/api/sessions", params=params, headers=h).json()[0]["remaining"] == 1
+        statuses = [client.post("/api/auth/login", json=login).status_code for _ in range(5)]
         assert statuses == [200, 200, 200, 200, 429]  # 連同上面那次共 6 次登入：第 6 次被行程內的 bucket 擋下
     assert REGISTRY.get_sample_value("redis_errors_total", {"component": "rate_limit"}) >= before + 8
     assert REDIS_ERRORS.labels(component="cache")._value.get() > 0

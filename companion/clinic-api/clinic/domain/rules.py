@@ -16,6 +16,16 @@ def session_start(session_date: date, period: str) -> datetime:
     return datetime.combine(session_date, PERIOD_START[period], tzinfo=TPE)
 
 
+def current_period(now: datetime) -> str:
+    """報到看板要顯示的時段：依台北時間，下午診開始前是上午、晚上診開始前是下午，之後是晚上。"""
+    t = now.astimezone(TPE).time()
+    if t >= PERIOD_START["evening"]:
+        return "evening"
+    if t >= PERIOD_START["afternoon"]:
+        return "afternoon"
+    return "morning"
+
+
 def cancel_deadline(appointment_time: datetime) -> datetime:
     """看診前一日 17:00（台北時間）。「前一日」用台北的日期算，不是 UTC 的日期。"""
     if appointment_time.tzinfo is None:

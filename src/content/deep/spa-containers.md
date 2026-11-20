@@ -821,4 +821,4 @@ kubectl edit configmap clinic-web-config -n clinic      # 改 envName
 curl -s http://localhost:8080/config.js                 # 過一陣子再執行，內容會變，Pod 沒有重啟
 ```
 
-5. 照指南在同一座叢集裝好 Gateway API 的實作，套用第二條路的 HTTPRoute。本機的 `clinic-api` 是實作路線那一份：路由沒有 `/api` 前綴、Service 是 80，所以 `/api` 那條規則要加 `ReplacePrefixMatch: /`、port 改成 80。用 `curl -H 'Host: clinic.example' http://<Gateway 的位址>/api/healthz` 確認由 `clinic-api` 回應、`/api-docs/` 回到前端；再把 `ReplacePrefixMatch` 拿掉，看 `/api/healthz` 變成 404。
+5. 照指南在同一座叢集裝好 Gateway API 的實作，套用第二條路的 HTTPRoute。本機的 `clinic-api` 是實作路線那一份：業務路由和 Flask 一樣本來就在 `/api` 底下（健康檢查 `/healthz` 不在）、Service 是 80，所以 `/api` 那條規則原樣轉送、port 改成 80。用 `curl -H 'Host: clinic.example' http://<Gateway 的位址>/api/board` 確認由 `clinic-api` 回應（不用登入的看板 JSON）、`/api-docs/` 回到前端；再替 `/api` 那條規則加上 `ReplacePrefixMatch: /`，看 `/api/board` 變成 404：後端收到的是 `/board`。

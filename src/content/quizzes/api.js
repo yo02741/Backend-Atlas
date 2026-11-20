@@ -443,7 +443,7 @@ await fetch('/api/uploads', {
       {
         q: '`api` 是用 openapi-fetch 建立的 client。後端回 500 時，這段程式讓畫面顯示什麼？',
         code: `try {
-  const { data } = await api.GET('/appointments', { params: { query: { limit: 20 } } })
+  const { data } = await api.GET('/api/appointments', { params: { query: { limit: 20 } } })
   items.value = data?.items ?? []
   status.value = 'success'
 } catch {

@@ -23,7 +23,7 @@ from clinic.domain.models import Principal
 from clinic.domain.rules import TPE
 from clinic.repository.clinic_repo import ClinicRepository
 from clinic.repository.session_cache import SessionListCache
-from clinic.service.booking import BookingService
+from clinic.service.booking import BookingService, Idempotency
 from tests.conftest import World
 
 THREADS = 20
@@ -80,7 +80,7 @@ def test_last_seats_are_never_oversold(use_service: Callable, db: DbSession) -> 
     for pid in patients[:already]:  # 先掛掉 2 個，剩最後 3 個名額
         use_service(lambda s, pid=pid: s.book(DESK, sid, pid))
 
-    results = race(THREADS, lambda i: use_service(lambda s: s.book(DESK, sid, patients[already + i]).number))
+    results = race(THREADS, lambda i: use_service(lambda s: s.book(DESK, sid, patients[already + i]).body["number"]))
 
     numbers = sorted(r for r in results if isinstance(r, int))
     assert numbers == [3, 4, 5]  # 剛好發出剩下的 3 個號，沒有重複
@@ -93,7 +93,7 @@ def test_last_seats_are_never_oversold(use_service: Callable, db: DbSession) -> 
 
 
 def test_same_patient_racing_for_one_session_gets_one(use_service: Callable, db: DbSession, world: World) -> None:
-    results = race(10, lambda i: use_service(lambda s: s.book(DESK, world.s_afternoon, 1).number))
+    results = race(10, lambda i: use_service(lambda s: s.book(DESK, world.s_afternoon, 1).body["number"]))
     assert results.count(1) == 1 and results.count(AlreadyBooked) == 9  # 重複點擊：一筆成功，其餘 409
     assert db.execute(text("SELECT booked FROM sessions WHERE id = :id"), {"id": world.s_afternoon}).scalar_one() == 1
     assert db.execute(text(RECONCILE)).all() == []
@@ -108,7 +108,7 @@ def test_daily_limit_holds_under_concurrency(use_service: Callable, db: DbSessio
     sids = list(db.execute(text("SELECT id FROM sessions WHERE session_date = '2030-01-08' ORDER BY id")).scalars())
     db.commit()
 
-    results = race(len(sids), lambda i: use_service(lambda s: s.book(DESK, sids[i], 3).number))
+    results = race(len(sids), lambda i: use_service(lambda s: s.book(DESK, sids[i], 3).body["number"]))
 
     assert results.count(1) == 3 and results.count(DailyLimitExceeded) == 3
     booked = db.execute(text("SELECT sum(booked) FROM sessions WHERE session_date = '2030-01-08'")).scalar_one()
@@ -117,12 +117,27 @@ def test_daily_limit_holds_under_concurrency(use_service: Callable, db: DbSessio
 
 
 def test_concurrent_cancel_decrements_once(use_service: Callable, db: DbSession, world: World) -> None:
-    appointment = use_service(lambda s: s.book(DESK, world.s_small, 1))
+    appointment_id = use_service(lambda s: s.book(DESK, world.s_small, 1)).body["id"]
     use_service(lambda s: s.book(DESK, world.s_small, 2))
     now = datetime.now(TPE)
 
-    results = race(8, lambda i: use_service(lambda s: s.cancel(DESK, appointment.id, now).status))
+    results = race(8, lambda i: use_service(lambda s: s.cancel(DESK, appointment_id, now).status))
 
     assert results.count("cancelled") == 1 and results.count(InvalidStatus) == 7
     assert db.execute(text("SELECT booked FROM sessions WHERE id = :id"), {"id": world.s_small}).scalar_one() == 1
+    assert db.execute(text(RECONCILE)).all() == []
+
+
+def test_concurrent_retries_with_the_same_key_book_once(use_service: Callable, db: DbSession, world: World) -> None:
+    """同一個 Idempotency-Key 同時送 10 次（例如逾時後客戶端與 proxy 都重送）：只有一筆掛號，每次拿到同一個結果。"""
+    desk = Principal(id=3, role="desk")  # world 的 desk1；冪等鍵記在 users.id 底下
+    key = Idempotency("same-key", "fingerprint-of-the-same-body")
+
+    def attempt(i: int) -> Any:
+        return use_service(lambda svc: svc.book(desk, world.s_afternoon, 3, lambda a: {"id": a.id}, key))
+
+    results = race(10, attempt)
+    assert {r.body["id"] for r in results} == {1}
+    assert sorted(r.replayed for r in results) == [False] + [True] * 9
+    assert db.execute(text("SELECT count(*) FROM appointments")).scalar_one() == 1
     assert db.execute(text(RECONCILE)).all() == []

@@ -81,9 +81,11 @@ CI 的 `docs-sync` workflow 會補上忘記同步的 commit，部署前也會先
 - 同步流程、帳號 UI、規則：**改完必跑** `npm run e2e:cloud`（需要 Java 11+）。
 - Firebase SDK 只准出現在 `src/cloud/firebase.js`；主 chunk 不能含 SDK（`npm run e2e:ui` 的路由測試會檢查首頁沒下載 `firebase-*.js`）。
 
-## 參考專案 `companion/clinic-api/`
+## 參考專案 `companion/clinic-api/`、`companion/clinic-web/`
 
 獨立的 Python 專案（uv、FastAPI），有自己的 README、測試與 CI（`.github/workflows/companion.yml`：pytest、compose smoke、kind 叢集部署）。改 `k8s/` 後至少跑 `kubectl kustomize k8s/overlays/kind` 與 `kubectl kustomize k8s/overlays/production`；搬動或改名檔案時，同步更新引用它的課文與 `docs/local-k8s.md`。
+
+前後端的契約只有一份：`companion/clinic-api/docs/contract.md`（路徑都在 `/api` 底下，`/healthz`、`/ready`、`/metrics` 在根目錄；422 的 `errors` 是 `{欄位: [訊息]}`）。改契約時一起改參考專案、`src/runtime/fakeApi.js`（與 `scripts/test-sandbox.mjs`）、前後端實作路線的說明與驗收題。`companion/clinic-web/` 是接上參考專案的最小 Vue 前端（獨立的 npm 專案，不加進根目錄的 `package.json`），接線測試在它的 `e2e/`，CI 由 `companion.yml` 的 `clinic-web` job 跑。
 
 ## 交付前
 

@@ -39,7 +39,7 @@ mock 資料是同一個模型寫的，形狀和它猜的程式一致，所以本
 
 clinic-api 由 FastAPI 產生的規格有三個缺口，交給 AI 之前要自己補上說明：
 
-1. `POST /appointments/{id}/cancel` 只寫了 200 與 422；實際還會回 409（超過取消期限、狀態不對）、401、403、404。
+1. `POST /api/appointments/{id}/cancel` 只寫了 200 與 422；實際還會回 409（超過取消期限、狀態不對）、401、403、404。
 2. 422 寫的是 FastAPI 預設的 `HTTPValidationError`（`detail` 陣列），實際回的是 Problem Details，欄位錯誤在本站約定的 `errors` 裡。
 3. `status` 的型別是 `string`，沒有列出可能的值。
 
@@ -53,8 +53,8 @@ clinic-api 由 FastAPI 產生的規格有三個缺口，交給 AI 之前要自�
 ## API 契約（我的掛號）
 
 型別：只用 src/api/schema.d.ts，呼叫只用 src/api/client.ts 的 `api`（已處理 token 與 401 導向登入）。
-- GET /appointments?cursor=0&limit=20 → components['schemas']['AppointmentPage']
-- POST /appointments/{id}/cancel → components['schemas']['AppointmentOut']
+- GET /api/appointments?cursor=0&limit=20 → components['schemas']['AppointmentPage']
+- POST /api/appointments/{id}/cancel → components['schemas']['AppointmentOut']
 
 範例回應（格式照 clinic-api；文字內容是示意）：
 - 有資料：
@@ -66,7 +66,7 @@ clinic-api 由 FastAPI 產生的規格有三個缺口，交給 AI 之前要自�
   {"type":"https://clinic.example/problems/cancel-deadline-passed","title":"Cancel deadline passed",
    "status":409,"detail":"…"}
 - 422：{"type":"https://clinic.example/problems/validation-error","title":"Unprocessable Content",
-   "status":422,"errors":[{"field":"limit","message":"…"}]}
+   "status":422,"detail":"欄位格式錯誤","errors":{"limit":["…"]}}
 - 401：{"type":"about:blank","title":"Unauthorized","status":401,"detail":"…"}，標頭 WWW-Authenticate: Bearer
 
 欄位語意：

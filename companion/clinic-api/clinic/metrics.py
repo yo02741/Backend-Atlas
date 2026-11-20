@@ -5,7 +5,7 @@ from prometheus_client import CollectorRegistry, Counter, Histogram
 REGISTRY = CollectorRegistry()
 
 APPOINTMENTS_BOOKED = Counter(
-    "appointments_booked_total", "掛號結果（ok／full／dup／daily_limit）", ["result"], registry=REGISTRY
+    "appointments_booked_total", "掛號結果（ok／full／dup／daily_limit／replayed）", ["result"], registry=REGISTRY
 )
 HTTP_DURATION = Histogram("http_request_duration_seconds", "請求延遲；route 是路由樣板", ["route"], registry=REGISTRY)
 CACHE_REQUESTS = Counter(

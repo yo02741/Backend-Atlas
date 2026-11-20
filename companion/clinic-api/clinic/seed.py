@@ -19,16 +19,23 @@ from clinic.service.auth import hash_password
 
 
 def seed(db: DbSession, password: str) -> dict[str, object]:
-    doctors = [DoctorRow(name="林醫師", dept="家醫科"), DoctorRow(name="張醫師", dept="小兒科")]
+    doctors = [DoctorRow(name="林醫師", dept="家醫科", room="101"), DoctorRow(name="張醫師", dept="小兒科", room="102")]
     patients = [PatientRow(name="王小明"), PatientRow(name="陳小華"), PatientRow(name="李大同")]
     db.add_all([*doctors, *patients])
     db.flush()
 
-    day = datetime.now(TPE).date() + timedelta(days=7)  # 一週後：還在取消期限內
+    today = datetime.now(TPE).date()
+    day = today + timedelta(days=7)  # 一週後：還在取消期限內
     sessions = [
         SessionRow(doctor_id=doctors[0].id, session_date=day, period="morning", capacity=2),
         SessionRow(doctor_id=doctors[0].id, session_date=day, period="afternoon", capacity=30),
         SessionRow(doctor_id=doctors[1].id, session_date=day, period="morning", capacity=30),
+    ]
+    # 今天的三個時段（id 接在後面，上面三個的 id 不變）：報到看板顯示今天目前這個時段，什麼時候 seed 都看得到
+    sessions += [
+        SessionRow(doctor_id=d.id, session_date=today, period=p, capacity=30)
+        for d in doctors
+        for p in ("morning", "afternoon", "evening")
     ]
     password_hash = hash_password(password)
     users = [
@@ -40,7 +47,7 @@ def seed(db: DbSession, password: str) -> dict[str, object]:
     db.add_all([*sessions, *users])
     db.commit()
     return {"date": day.isoformat(), "doctor_id": doctors[0].id, "session_id": sessions[0].id,
-            "users": [u.username for u in users]}  # fmt: skip
+            "today": today.isoformat(), "users": [u.username for u in users]}  # fmt: skip
 
 
 def main() -> None:
@@ -56,6 +63,7 @@ def main() -> None:
         print(f"密碼（隨機產生，只顯示這一次）：{password}")
     print(f"林醫師 doctor_id={info['doctor_id']}，診次日期 {info['date']}")
     print(f"上午診 session_id={info['session_id']}（名額 2）")
+    print(f"今天 {info['today']} 兩位醫師的上午、下午、晚上診（報到看板顯示目前這個時段）")
 
 
 if __name__ == "__main__":

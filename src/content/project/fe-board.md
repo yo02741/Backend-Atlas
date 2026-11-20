@@ -1,6 +1,6 @@
 ## 這階段要做出什麼
 
-候診區的電視掛著報到看板 `/board`：每個診間一列，顯示醫師、目前叫到幾號、還有幾人候診。資料來自 `GET /api/board`（後端要另外提供；沙箱裡由題目用 `api.get('/api/board', …)` 加上），回傳 `[{ room, doctor, current_no, waiting }]`。
+候診區的電視掛著報到看板 `/board`：每個診間一列，顯示醫師、目前叫到幾號、還有幾人候診。資料來自 `GET /api/board`，回傳 `[{ room, doctor, current_no, waiting }]`，不需要登入（看板頁沒有 `requiresAuth`，回應裡沒有病患資料）。後端參考專案列出今天目前這個時段的每個診次：`current_no` 是已報到的最大號碼、`waiting` 是掛了號還沒報到的人數（系統沒有「叫號」的狀態，詳見 `companion/clinic-api/docs/contract.md`）。沙箱裡的假 API 內建資料沒有今天的診次，題目用 `api.get('/api/board', …)` 自己給回應。
 
 做法選輪詢，每 10 秒抓一次。這一階段要讓它長時間開著也不出事：
 
@@ -164,7 +164,7 @@ const staleText = computed(() => {
 
 ## 串接驗收
 
-後端參考專案沒有 `/api/board`，這一段在 Playground 的 Vue 模式做：貼上 `usePolling`（拿掉 `export`），寫一個最小的看板，`interval: 1000, maxInterval: 8000`，fetcher 用 `fetch('/api/board')`，非 2xx 時丟出帶 `status` 的錯誤。在 `createApp` 之前加：
+前三步在 Playground 的 Vue 模式做，斷線的時機才能精確控制：貼上 `usePolling`（拿掉 `export`），寫一個最小的看板，`interval: 1000, maxInterval: 8000`，fetcher 用 `fetch('/api/board')`，非 2xx 時丟出帶 `status` 的錯誤。在 `createApp` 之前加：
 
 ```js
 api.get('/api/board', [
@@ -178,4 +178,6 @@ api.get('/api/board', [
 
 **2. 恢復要等多久。** 用 `backoff` 的公式算出第 3 次失敗之後最多要等幾毫秒，再在 fetcher 裡 `console.log(Date.now())` 對照實際的間隔。預期：第 n 次失敗後等 `min(maxInterval, interval × 2^n)` 的 0.5 到 1 倍，第 3 次是 4000 到 8000 ms。換成正式的設定（10 秒、上限 120 秒），連續失敗 3 次之後最久 80 秒才再試；候診區等不了這麼久的話，調低上限，或在 `online` 事件時呼叫 `refresh()`。
 
-**3. 什麼時候才要補號。** 這個看板每次拿到的是完整快照，漏掉的中間狀態不用補。寫下看板加上「最近叫過的 5 個號碼」時快照要多帶什麼，以及改用 SSE 時斷線重連怎麼補。預期：快照多帶 `recent: [3, 4, 5, 6, 7]` 就不用補；SSE 要靠事件 id 與重連時送出的 `Last-Event-ID`，由伺服器重送漏掉的事件（[報到看板的即時更新](#/scenario/realtime-board)）。下一階段用鍵盤與螢幕閱讀器重走前面五個畫面。
+**3. 什麼時候才要補號。** 這個看板每次拿到的是完整快照，漏掉的中間狀態不用補。寫下看板加上「最近叫過的 5 個號碼」時快照要多帶什麼，以及改用 SSE 時斷線重連怎麼補。預期：快照多帶 `recent: [3, 4, 5, 6, 7]` 就不用補；SSE 要靠事件 id 與重連時送出的 `Last-Event-ID`，由伺服器重送漏掉的事件（[報到看板的即時更新](#/scenario/realtime-board)）。
+
+**4. 接上真的後端停一次。** 用 `companion/clinic-web`（或自己的專案照[登入](#/project/fe-login)串接驗收的接線）打開 `/board`，另一個分頁用 `desk1` 替今天目前這個時段的診次掛一個號，接著在參考專案的目錄 `docker compose stop api`，過半分鐘再 `docker compose up -d --wait api`。先預測三個時間點畫面各是什麼。預期：掛號後下一輪候診多 1 人；停掉期間人數不變、提示「更新失敗，顯示的是 … 的資料」，Network 裡請求的間隔越拉越長（Vite 的 proxy 回 500，nginx 回 502）；恢復後在下一次重試時提示消失、間隔回到 10 秒。`clinic-web` 的接線測試把這一步寫成了 Playwright。下一階段用鍵盤與螢幕閱讀器重走前面五個畫面。

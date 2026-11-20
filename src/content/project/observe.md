@@ -216,12 +216,12 @@ TypeError: Object of type datetime is not JSON serializable
 **1. 帶自己的 request ID 打一次。** 在後端參考專案（`companion/clinic-api`）用 `patient1` 對已經掛過的診次再掛一次（會 409），請求帶 `X-Request-ID: demo-trace-001`：
 
 ```bash
-curl -si -X POST "$BASE/sessions/1/appointments" -H "Authorization: Bearer $TOKEN" \
+curl -si -X POST "$BASE/api/sessions/1/appointments" -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' -H 'X-Request-ID: demo-trace-001' -d '{}' | grep -i '^x-request-id'
 docker compose logs api --no-log-prefix | grep demo-trace-001
 ```
 
-先預測日誌有幾行、哪幾行有 `status`、會不會出現病患姓名。預期：回應標頭原樣帶回 `demo-trace-001`；同一個 `request_id` 至少有兩行：`request rejected`（`reason` 是 `already-booked`）與這次請求的存取紀錄；沒有姓名。
+先預測日誌有幾行、哪幾行有 `status`、會不會出現病患姓名。預期：回應標頭原樣帶回 `demo-trace-001`；同一個 `request_id` 至少有兩行：`request rejected`（`reason` 是 `already-booked`）與這次請求的存取紀錄（`route` 是路由樣板 `/api/sessions/{id}/appointments`）；沒有姓名。
 
 **2. 不合格的 ID 會被換掉。** 把標頭改成 `X-Request-ID: bad id;drop` 再送一次。預期：回應的 `X-Request-ID` 變成 `req-` 開頭的新值。外部傳進來的值先檢查格式才寫進日誌與標頭（`clinic/api/middleware.py` 的 `SAFE_REQUEST_ID`）。
 

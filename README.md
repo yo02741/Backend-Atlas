@@ -248,11 +248,11 @@
 
 ### 實作路線：從零做完一個門診掛號前端
 
-`#/project?track=frontend`。登入（送出中、401 與 422、token 放記憶體、401 回登入頁並記下原頁）→ 診次清單（loading、success、empty、error 四種狀態，重新整理不閃畫面，篩選條件放網址）→ 掛號表單（422 對回欄位並移焦點、409 依 type 顯示、防重複送出與 Idempotency-Key、成功訊息寫進 live region）→ 我的掛號（cursor 分頁、原生 `<dialog>` 確認與焦點、換篩選時取消舊請求）→ 報到看板（setTimeout 輪詢、背景暫停、卸載清理、失敗時退避）→ 無障礙與 RWD（鍵盤、名稱、live region、換頁移焦點、390 與 1280 的 mobile-first 版面）→ 建置與部署（`/clinic/` 子路徑的 base、nginx fallback 與快取、執行時的 `config.js`、`vite:preloadError`）。每階段一份說明，關鍵程式是 Vue 3.5 的 SFC（Vue Router、Pinia）；15 道驗收題在沙箱 iframe 裡跑（fetch 由假 API 回應），第 7 階段有一題 nginx 設定檢查。
+`#/project?track=frontend`。登入（送出中、401 與 422、token 放記憶體、401 回登入頁並記下原頁）→ 診次清單（loading、success、empty、error 四種狀態，重新整理不閃畫面，篩選條件放網址）→ 掛號表單（422 對回欄位並移焦點、409 依 type 顯示、防重複送出與 Idempotency-Key、成功訊息寫進 live region）→ 我的掛號（cursor 分頁、原生 `<dialog>` 確認與焦點、換篩選時取消舊請求）→ 報到看板（setTimeout 輪詢、背景暫停、卸載清理、失敗時退避）→ 無障礙與 RWD（鍵盤、名稱、live region、換頁移焦點、390 與 1280 的 mobile-first 版面）→ 建置與部署（`/clinic/` 子路徑的 base、nginx fallback 與快取、執行時的 `config.js`、`vite:preloadError`）。每階段一份說明，關鍵程式是 Vue 3.5 的 SFC（Vue Router、Pinia）；15 道驗收題在沙箱 iframe 裡跑（fetch 由假 API 回應），第 7 階段有一題 nginx 設定檢查。各階段的關鍵程式接成一個可以跑的專案在 `companion/clinic-web/`（見下一節）。
 
-### 參考專案 `companion/clinic-api/`
+### 參考專案 `companion/clinic-api/` 與 `companion/clinic-web/`
 
-實作路線的題目做成一個可以 clone 下來跑的服務：FastAPI、SQLAlchemy + Alembic、PostgreSQL 16、Redis，對應階段 1–8 與第 10 階段（第 9 階段的 MCP server 不在裡面）。`docker compose up -d --build --wait` 之後跑 migration 與 seed 就能用 curl 走完掛號流程；74 個測試含並發搶號，需要真的 PostgreSQL 與 Redis。另附 Dockerfile、`.gitlab-ci.yml` 與 `k8s/` 的 manifest（Kustomize 的 base 加 `kind`、`production` 兩個 overlay）。[本機 Kubernetes 實作指南](companion/clinic-api/docs/local-k8s.md) 用 kind 在自己的電腦上部署這個服務、做滾動更新，並有六個故意弄壞再排錯的練習；CI 每次都在 kind 叢集上實際部署一次。步驟、階段與檔案的對照、和網站內容的差異都寫在 [`companion/clinic-api/README.md`](companion/clinic-api/README.md)。這個目錄和網站的建置無關，`Companion` workflow 只在它變動時跑。
+實作路線的題目做成一個可以 clone 下來跑的服務：FastAPI、SQLAlchemy + Alembic、PostgreSQL 16、Redis，對應階段 1–8 與第 10 階段（第 9 階段的 MCP server 不在裡面）。`docker compose up -d --build --wait` 之後跑 migration 與 seed 就能用 curl 走完掛號流程；91 個測試含並發搶號與冪等鍵，需要真的 PostgreSQL 與 Redis。業務介面都在 `/api` 底下（`/healthz`、`/ready`、`/metrics` 不在），和前端課、站上沙箱的假 API 照同一份契約 [`companion/clinic-api/docs/contract.md`](companion/clinic-api/docs/contract.md)：`GET /api/sessions` 的 `doctor_id` 與 `date` 選填、`GET /api/appointments` 可以依 `status` 篩選、掛號支援 `Idempotency-Key`、報到看板 `GET /api/board` 不需要登入，422 的 `errors` 是 `{ 欄位: [訊息] }`。另附 Dockerfile、`.gitlab-ci.yml` 與 `k8s/` 的 manifest（Kustomize 的 base 加 `kind`、`production` 兩個 overlay）。[本機 Kubernetes 實作指南](companion/clinic-api/docs/local-k8s.md) 用 kind 在自己的電腦上部署這個服務、做滾動更新，並有六個故意弄壞再排錯的練習；CI 每次都在 kind 叢集上實際部署一次。步驟、階段與檔案的對照、和網站內容的差異都寫在 [`companion/clinic-api/README.md`](companion/clinic-api/README.md)。[`companion/clinic-web/`](companion/clinic-web/README.md) 是前端實作路線的最小接線版本：Vite + Vue 3.5，登入、診次清單、掛號、我的掛號、報到看板五個畫面接上 clinic-api（Vite 的 proxy 或第 7 階段的 nginx 設定，`/api/` 原樣轉送），程式沿用各階段的關鍵程式；Playwright 的接線測試走「登入 → 掛號 → 看板更新」，中途停掉後端一次，核對看板保留舊資料並標出時間、掛號表單提示再送一次且沿用同一個 `Idempotency-Key`、後端恢復後兩邊都回來。兩個目錄都和網站的建置無關（clinic-web 有自己的 `package.json` 與 lock 檔），`Companion` workflow 只在 `companion/` 變動時跑，含 clinic-web 的建置與接線測試。
 
 <!-- sync:practice -->
 ### 練習題
@@ -354,7 +354,7 @@ src/
   verify.jsx       開發用：?verify=1 把每題解答與起始碼丟進真實執行環境評分；?verify=deep 執行深入內容的每個 run 區塊
 docs/              CURRICULUM.md、PLAN-2026Q4.md、AUDIT.md、CONTRIBUTING-lessons.md、CONTRIBUTING-labs.md、CONTRIBUTING-quizzes.md、CONTRIBUTING-scenarios.md
 scripts/           sync-docs.mjs（產生 README 與課綱的段落）、copy-pyodide.mjs、validate-content.mjs、validate-quizzes.mjs、validate-scenarios.mjs、test-progress.mjs、test-review.mjs、check-links.mjs
-companion/         clinic-api/：實作路線的參考專案（獨立的 Python 專案，有自己的 README、測試與 CI）
+companion/         clinic-api/：後端實作路線的參考專案（獨立的 Python 專案，有自己的 README、測試與 CI）；clinic-web/：前端的最小接線版本（獨立的 npm 專案）
 firestore.rules    雲端進度的存取規則（本人才能讀寫、文件形狀固定）；firebase.json 是 emulator 設定
 .env.e2e           e2e 用的 Firebase 設定（指向 emulator 的 demo 專案）
 e2e/               Playwright 腳本（見下）

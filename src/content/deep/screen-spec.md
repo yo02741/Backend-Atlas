@@ -77,8 +77,8 @@ app shell 的主內容區：標題列（標題、筆數）→ 預約清單 → �
 ## 資料來源
 | 資料 | API | 欄位 | 格式 |
 |---|---|---|---|
-| 清單 | GET /appointments?cursor=&limit=20 | items[].id、number、status、created_at；next_cursor | status 對應：booked 候診、checked_in 已報到、cancelled 已取消 |
-| 取消 | POST /appointments/{id}/cancel | 回傳更新後的 AppointmentOut | 成功後重抓清單 |
+| 清單 | GET /api/appointments?cursor=&limit=20 | items[].id、number、status、created_at；next_cursor | status 對應：booked 候診、checked_in 已報到、cancelled 已取消 |
+| 取消 | POST /api/appointments/{id}/cancel | 回傳更新後的 AppointmentOut | 成功後重抓清單 |
 | 看診日期、時段、醫師 | （缺）AppointmentOut 只有 session_id | | 見待決事項 1 |
 
 ## 互動與焦點

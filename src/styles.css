@@ -467,9 +467,9 @@ h2.section-title { font-family: var(--serif); font-weight: 700; font-size: clamp
 .kw-cloud a small { color: var(--ink-3); margin-left: 6px; font-family: var(--sans); }
 
 /* ============ 技能頁（課程） ============ */
-/* 單欄閱讀（.reading 限 760px），實驗室 .lab-full 破欄到整個版心寬 */
+/* 單欄閱讀（.reading 限 960px），實驗室 .lab-full 破欄到整個版心寬 */
 .lesson { padding-top: 30px; }
-.lesson .reading { max-width: 760px; min-width: 0; }
+.lesson .reading { max-width: 960px; min-width: 0; }
 .course-bar {
   position: sticky; top: 61px; z-index: 20;
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
@@ -1071,3 +1071,19 @@ h1.display, h2.section-title, .lesson-head h1, .domain-block-head h2, .track-tab
 .asg-no { display: inline-grid; place-items: center; width: 1.8em; height: 1.8em; flex: none; border: 2px solid var(--line); border-radius: 50%; background: var(--st-yellow); color: var(--on-sticker); font-size: 0.85rem; }
 .asg-twist { margin: 4px 0 0; }
 @media (max-width: 640px) { .challenge, .asg-step { padding: 12px 14px 14px; } }
+
+/* 課頁的正文寬度跟著 .lesson .reading（960px）走，不另外用 ch 限寬（中文一個字約 2ch，72ch 只有 36 個字） */
+.lesson .lesson-head .lede,
+.lesson .lesson-body p,
+.lesson .lesson-body ul,
+.lesson .lesson-body ol,
+.lesson .map-prompt,
+.lesson .ex-prompt { max-width: none; }
+
+/* 程式題（HTML、CSS、Vue）：寬螢幕時程式碼與預覽左右排；窄螢幕上下排 */
+.ex-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.ex-split > * { min-width: 0; }
+@media (min-width: 980px) {
+  .ex-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ex-split .fp { margin-top: 0; }
+}

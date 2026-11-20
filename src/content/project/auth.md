@@ -152,8 +152,8 @@ print("沒有 patient_id 的病患：", cancel_handler({"role": "patient"}, 41))
 
 **1. 先填預測表。** 後端參考專案（`companion/clinic-api`）啟動並 seed 後，用 `patient1` 在診次 1（林醫師）掛一筆，記下掛號 id。對同一筆掛號，四個帳號（`patient1`、`patient2`、`desk1`、`doctor1`）各做讀取、報到、取消；送出任何請求前，先把每一格的狀態碼填好。
 
-**2. 先跑不會改資料的。** 依序送：四個帳號的 `GET /appointments/{id}`；`patient1`、`patient2`、`doctor1` 的報到；`patient2`、`doctor1` 的取消。預期：讀取依序是 200、404、200、200；報到 403、404、403；取消 404、403。`patient2` 拿到 404，因為看不到的掛號一律當作不存在。
+**2. 先跑不會改資料的。** 依序送（參考專案的路徑都在 `/api` 底下）：四個帳號的 `GET /api/appointments/{id}`；`patient1`、`patient2`、`doctor1` 的報到；`patient2`、`doctor1` 的取消。預期：讀取依序是 200、404、200、200；報到 403、404、403；取消 404、403。`patient2` 拿到 404，因為看不到的掛號一律當作不存在。
 
 **3. 狀態改變之後。** `patient1` 取消（預期 200），接著 `desk1` 報到同一筆。預期：409、`type` 以 `invalid-status` 結尾：權限通過，狀態不允許。把實際結果和預測並排，猜錯的格子各寫一句原因。
 
-**4. 從日誌分辨 404。** 用 `patient1` 讀一個不存在的 id（例如 9999），再到 `docker compose logs api --no-log-prefix` 找這一次與 `patient2` 那一次的紀錄，先預測兩筆分不分得出來。預期（參考專案目前的寫法）：兩筆都是 `request rejected`、`status` 404、`reason` 為 `not-found`，分不出「不存在」與「看不到」。要分得出來，就在授權擋下時另記一個不回給使用者的原因欄位（[第 8 階段](#/project/observe)的日誌）。前端[登入](#/project/fe-login)的 `apiFetch` 只把 401 導回登入頁，403 與 404 交給頁面顯示。
+**4. 從日誌分辨 404。** 用 `patient1` 讀一個不存在的 id（例如 9999），再到 `docker compose logs api --no-log-prefix` 找這一次與 `patient2` 那一次的紀錄，先預測兩筆分不分得出來。預期：兩個回應的 body 完全相同；日誌兩筆都是 `request rejected`、`status` 404，但 `reason` 不同：不存在的是 `not-found`（INFO），`patient2` 那筆是 `not-visible`（WARNING）。原因只寫進日誌、不回給使用者：參考專案的 `NotFound` 例外多帶一個 `reason`，由錯誤處理寫進日誌（[第 8 階段](#/project/observe)的日誌格式）。先改回只記 `not-found` 的寫法再送一次，對照少了這個欄位時，病患說「我的掛號不見了」要怎麼查。前端[登入](#/project/fe-login)的 `apiFetch` 只把 401 導回登入頁，403 與 404 交給頁面顯示。

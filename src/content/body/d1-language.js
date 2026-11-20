@@ -4,7 +4,7 @@ import m1 from './parts/d1-language-m1.js'
 const base = {
   'python-backend': {
     challenge: {
-      task: '照[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的 README 起服務、用 `desk1` 登入，對 `POST /sessions/1/appointments` 送四個 body：`{"patient_id": "2"}`、`{"patient_id": 0}`、`{"patient_id": true}`，以及一個不是 JSON 的 `abc`。每送一個之前，先寫下你預測的狀態碼，以及前端表單該把錯誤標在哪個欄位。',
+      task: '照[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的 README 起服務、用 `desk1` 登入，對 `POST /api/sessions/1/appointments` 送四個 body：`{"patient_id": "2"}`、`{"patient_id": 0}`、`{"patient_id": true}`，以及一個不是 JSON 的 `abc`。每送一個之前，先寫下你預測的狀態碼，以及前端表單該把錯誤標在哪個欄位。',
       deliver: '四次請求的對照表：預測、實際狀態碼、回應的 `errors` 內容，加一句前端依哪個欄位決定標紅哪個輸入框。',
       check: [
         '每一列都有送出前寫下的預測；和實際不同的列，指出是 `BookIn` 的哪個設定（`strict=True`、`gt=0`）造成的',
@@ -128,7 +128,7 @@ const base = {
   },
   'error-design': {
     challenge: {
-      task: '在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)製造三種錯誤：`patient1` 對同一個診次掛號兩次；`desk1` 替 `{"patient_id": 99999}` 掛號；停掉 postgres（`docker compose stop postgres`）後送 `GET /appointments`。每次記下狀態碼、`Content-Type`、`type`、`detail` 與回應標頭 `X-Request-ID`，再用 request id 在 `docker compose logs api` 找出對應的日誌行。',
+      task: '在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)製造三種錯誤：`patient1` 對同一個診次掛號兩次；`desk1` 替 `{"patient_id": 99999}` 掛號；停掉 postgres（`docker compose stop postgres`）後送 `GET /api/appointments`。每次記下狀態碼、`Content-Type`、`type`、`detail` 與回應標頭 `X-Request-ID`，再用 request id 在 `docker compose logs api` 找出對應的日誌行。',
       deliver: '三個錯誤的對照表：回應裡的欄位 ↔ 日誌裡的欄位，加一欄前端該顯示的文字與依據的欄位。',
       check: [
         '三列都有 request id，而且在日誌裡找得到同一個 id 的那一行',

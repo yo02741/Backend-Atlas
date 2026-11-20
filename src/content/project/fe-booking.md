@@ -21,8 +21,8 @@
 
 | 來源 | 寫法 |
 |---|---|
-| 站上沙箱的假 API | `{ "patient_id": ["查無此病歷號"] }` |
-| 後端參考專案 `companion/clinic-api` | `[{ "field": "patient_id", "message": "…" }]` |
+| 本站的契約：沙箱的假 API 與後端參考專案 `companion/clinic-api` | `{ "patient_id": ["查無此病歷號"] }` |
+| 另一種常見的寫法 | `[{ "field": "patient_id", "message": "…" }]` |
 | RFC 9457 的範例 | `[{ "pointer": "#/patient_id", "detail": "…" }]` |
 
 `toFormErrors` 把三種都轉成「每個欄位一則訊息」加「對不到欄位的訊息」。表單欄位的名稱直接用後端的 `patient_id`；前端想用 camelCase 時，要在這裡加一張對照表，否則訊息永遠對不上欄位。對不到欄位的錯誤（例如後端多驗了 `session_id`）放在表單上方，寫成「欄位：訊息」，不丟掉。
@@ -43,7 +43,7 @@
 | 按鈕停用了，在輸入框按 Enter；或停用生效前的同一個瞬間又點了一次 | 處理 `<form>` 的 `submit`，開頭用 `submitting` 旗標 return |
 | 網路逾時、斷線後重送，第一次可能已經寫進資料庫 | `Idempotency-Key` 標頭：同一次送出的重送帶同一個鍵 |
 
-`Idempotency-Key` 要後端支援（目前是 IETF 的草案，後端的實作在 [分頁、篩選、版本與冪等鍵](#/skill/api-patterns)）。鍵的生命週期：按下送出時用 `crypto.randomUUID()` 產生；網路錯誤或 5xx 後重送沿用同一個；收到 201、409、422 代表這次已經有結果，下一次送出換新的；使用者改了欄位內容也換新的。`crypto.randomUUID()` 只在 secure context（HTTPS 或 localhost）能用，用 `http://` 的內網網址部署時它是 `undefined`。
+`Idempotency-Key` 要後端支援（目前是 IETF 的草案，後端的實作在 [分頁、篩選、版本與冪等鍵](#/skill/api-patterns)）。本站的契約：同一個鍵、同樣的內容再送一次，回第一次的 201 與同一筆掛號（另附 `Idempotent-Replayed: true`）；同一個鍵、不同的內容回 422，`type` 是 `…/idempotency-key-reused`，沒有 `errors`，`toFormErrors` 把 `detail` 放到表單上方。後端只記住成功的結果，第一次是 409 或 5xx 時，同一個鍵再送會重新執行。鍵的生命週期：按下送出時用 `crypto.randomUUID()` 產生；網路錯誤或 5xx 後重送沿用同一個；收到 201、409、422 代表這次已經有結果，下一次送出換新的；使用者改了欄位內容也換新的。`crypto.randomUUID()` 只在 secure context（HTTPS 或 localhost）能用，用 `http://` 的內網網址部署時它是 `undefined`。
 
 ### 成功的回饋放在一直存在的 live region
 
@@ -55,8 +55,8 @@
 
 ```js
 // src/lib/formErrors.js：422 的 Problem Details → { fields: { 欄位: 訊息 }, form: [對不到欄位的訊息] }
-// errors 不是 RFC 9457 的標準欄位，各家寫法不同：本站的假 API 是 { 欄位: ['訊息'] }，
-// 後端參考專案是 [{ field, message }]，RFC 9457 的範例是 [{ pointer, detail }]。三種都收。
+// errors 不是 RFC 9457 的標準欄位，各家寫法不同：本站的契約（假 API 與後端參考專案）是 { 欄位: ['訊息'] }，
+// 也有人寫成 [{ field, message }]，RFC 9457 的範例是 [{ pointer, detail }]。三種都收。
 export function toFormErrors(problem, knownFields) {
   const raw = problem?.errors
   const list = Array.isArray(raw)
@@ -208,7 +208,7 @@ async function submit() {
 
 從乾淨的資料開始（後端參考專案 `docker compose down -v` 後重跑 README 的三步驟），用[登入](#/project/fe-login)串接驗收的接線，以 `desk1` 登入（櫃台要輸入病歷號）。掛號有限流（每位使用者容量 5、每 6 秒補 1 個），連續送太快會收到 429，各步之間隔幾秒。
 
-**1. 欄位錯誤。** 病歷號留空送出一次、填 `0` 送出一次、填 `3` 送出一次，先預測每次是前端擋下、後端回 422，還是成功。預期：留空由 `required` 擋下，沒有請求；`0` 回 422，訊息在病歷號下方、焦點移到病歷號；`3` 只有在送出的是數字時才成功。參考專案的 `patient_id` 是不做轉型的整數，`v-model` 沒加 `.number` 時送出的是字串 `"3"`，一樣回 422。參考專案的 `errors` 是 `[{ field, message }]`，`toFormErrors` 照樣把訊息放到欄位下。
+**1. 欄位錯誤。** 病歷號留空送出一次、填 `0` 送出一次、填 `3` 送出一次，先預測每次是前端擋下、後端回 422，還是成功。預期：表單是 `novalidate`，前端不擋；留空時 `Number('')` 是 `0`，和填 `0` 一樣回 422，訊息在病歷號下方、焦點移到病歷號；`3` 只有在送出的是數字時才成功。參考專案的 `patient_id` 是不做轉型的整數，拿掉 `Number(…)` 直接送 `fields.patient_id` 時送出的是字串 `"3"`，一樣回 422。參考專案的 `errors` 和假 API 同一種格式（`{ patient_id: [...] }`）。
 
 **2. 額滿與重複。** 診次 1 的名額是 2。替病歷號 1、2 各掛一次，再替 3 掛一次，最後再替 1 掛一次，先預測後兩次的 `type`。預期：第三次是 `session-full`；第四次是 `already-booked`，因為檢查順序是重複 → 名額 → 每日上限（[第 2 階段](#/project/domain)）。兩次的 `role="alert"` 文案不同、表單內容都保留。
 
@@ -219,4 +219,4 @@ const h = { 'Content-Type': 'application/json', Authorization: 'Bearer <desk1 �
 for (const i of [1, 2]) console.log((await fetch('/api/sessions/2/appointments', { method: 'POST', headers: h, body: '{"patient_id":3}' })).status)
 ```
 
-預期：201、409。參考專案沒有實作 `Idempotency-Key`，網路錯誤後的重送如果第一次已經寫進資料庫，會收到 `already-booked`。寫下這種情況畫面要說什麼（例如「這筆可能已經掛好，請到我的掛號確認」）；下一階段的[我的掛號](#/project/fe-appointments)就是確認的地方。
+預期：201、201，兩次的 body 與 `Location` 相同，第二次多一個 `Idempotent-Replayed: true` 標頭，「我的掛號」裡只有一筆。把 body 改成 `{"patient_id":2}`、鍵不變再送一次，預期 422，`type` 以 `idempotency-key-reused` 結尾；換一個鍵就是新的請求，回 201。最後不帶鍵送 `{"patient_id":3}`，預期 409 `already-booked`：沒有鍵的重送認不出是同一筆。`companion/clinic-web` 的接線測試另外驗了網路那一段：後端停掉時送出得到 5xx，恢復後再按一次，第二個請求帶的是同一個鍵。下一階段的[我的掛號](#/project/fe-appointments)是確認掛號結果的地方。

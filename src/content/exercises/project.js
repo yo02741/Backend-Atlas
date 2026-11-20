@@ -632,7 +632,7 @@ assert issubclass(DailyLimitExceeded, BookingError)` },
 
 - \`POST /sessions/{id}/appointments\`，body \`{"patient_id": 7}\`：成功回 **201**，body 是新掛號（\`id\`、\`session_id\`、\`patient_id\`、\`number\`、\`status\`）
 - body 不是 dict → **400**
-- \`patient_id\` 缺少或不是整數（\`True\` 也不算）→ **422**，body 多一個 \`errors: [{"field": "patient_id", ...}]\`
+- \`patient_id\` 缺少或不是整數（\`True\` 也不算）→ **422**，body 多一個 \`errors: {"patient_id": ["訊息", ...]}\`（欄位名稱對到訊息清單；和前端課的格式相同）
 - 診次不存在 → **404**
 - 這位病患在這個診次已有有效掛號 → **409**，\`type\` 以 \`already-booked\` 結尾
 - 名額已滿 → **409**，\`type\` 以 \`session-full\` 結尾
@@ -700,7 +700,7 @@ def create_appointment(session_id, body):
     pid = body.get("patient_id")
     if not isinstance(pid, int) or isinstance(pid, bool):
         return problem(422, "Unprocessable Content", "validation-error",
-                       errors=[{"field": "patient_id", "message": "必填，且必須是整數"}])
+                       errors={"patient_id": ["必填，且必須是整數"]})
     session = SESSIONS.get(session_id)
     if session is None:
         return problem(404, "Not Found", detail=f"診次 {session_id} 不存在")
@@ -754,7 +754,8 @@ for _body in (None, "patient_id=7", [7]):
 for _body in ({}, {"patient_id": "7"}, {"patient_id": True}):
     _st, _b = handle("POST", "/sessions/1/appointments", _body, None)
     assert _st == 422, (_body, _st, _b)
-    assert any(e.get("field") == "patient_id" for e in _b.get("errors", [])), _b` },
+    _errors = _b.get("errors")
+    assert isinstance(_errors, dict) and isinstance(_errors.get("patient_id"), list) and _errors["patient_id"], _b` },
       { name: '診次或掛號不存在回 404', code: String.raw`reset()
 assert handle("POST", "/sessions/99/appointments", {"patient_id": 7}, None)[0] == 404
 assert handle("GET", "/appointments/999", None, None)[0] == 404

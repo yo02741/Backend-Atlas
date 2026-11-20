@@ -1,6 +1,6 @@
-# 參考專案 companion/clinic-api（實作路線的可執行版本）的測試。
-# 只在 companion/ 或這個檔案變動時跑，不影響網站的部署。
-name: Companion（clinic-api）
+# 參考專案 companion/clinic-api（後端實作路線的可執行版本）與 companion/clinic-web（前端的最小接線版本）的測試。
+# 只在 companion/ 或這個檔案變動時跑，不影響網站的部署。companion/** 涵蓋 companion/clinic-api/** 與 companion/clinic-web/**。
+name: Companion（clinic-api、clinic-web）
 
 on:
   push:
@@ -78,13 +78,63 @@ jobs:
         run: |
           curl --fail --silent --show-error http://127.0.0.1:8000/healthz
           curl --fail --silent --show-error http://127.0.0.1:8000/ready
-      - name: 掛號流程（登入 → 查診次 → 掛號 → 重複掛號 409 → 取消 → /metrics）
+      - name: 掛號流程（登入 → 查診次 → 掛號與冪等鍵重送 → 重複掛號 409 → 取消 → 看板 → /metrics）
         run: bash scripts/smoke.sh
       - name: 失敗時印出日誌
         if: failure()
         run: docker compose logs
       - name: 清除
         if: always()
+        run: docker compose down -v
+
+  # 前端的最小接線版本：建置，接著在 compose 起的 clinic-api 上跑 Playwright 的接線測試
+  # （登入 → 掛號 → 看板更新；中途 docker compose stop api 一次，核對看板與掛號表單怎麼恢復）
+  clinic-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SEED_PASSWORD: ci-only-password           # 只存在於這個 job 的測試帳號密碼
+    defaults:
+      run:
+        working-directory: companion/clinic-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: companion/clinic-web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - name: 子路徑的建置（第 7 階段的 base）
+        run: |
+          BASE_PATH=/clinic/ npx vite build --outDir dist-clinic
+          grep -q 'src="/clinic/assets/index-' dist-clinic/index.html
+          grep -q 'src="/clinic/config.js"' dist-clinic/index.html
+      - name: 後端：clinic-api 的 compose、migration、seed
+        working-directory: companion/clinic-api
+        run: |
+          docker compose up -d --build --wait
+          docker compose exec -T api alembic upgrade head
+          docker compose exec -T -e SEED_PASSWORD api python -m clinic.seed
+      - name: 安裝 Chromium（版本跟著 package-lock.json 的 @playwright/test）
+        run: npx playwright install --with-deps chromium
+      - name: 接線測試（Vite dev server 的 proxy 接 127.0.0.1:8000）
+        run: npm run test:e2e
+      - name: 失敗時保留 trace
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clinic-web-test-results
+          path: companion/clinic-web/test-results/
+          retention-days: 7
+      - name: 失敗時印出後端日誌
+        if: failure()
+        working-directory: companion/clinic-api
+        run: docker compose logs
+      - name: 清除
+        if: always()
+        working-directory: companion/clinic-api
         run: docker compose down -v
 
   # 在 kind 叢集上真的套用 k8s/overlays/kind：和 docs/local-k8s.md 同一套步驟（scripts/kind-up.sh），

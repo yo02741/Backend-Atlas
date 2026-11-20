@@ -42,13 +42,13 @@ npx vue-tsc --noEmit：用錯欄位、少參數、傳錯型別，在這一步失
 
 ```ts
 export interface paths {
-  "/appointments": {
+  "/api/appointments": {
     /** List Appointments */
-    get: operations["list_appointments_appointments_get"];
+    get: operations["list_appointments_api_appointments_get"];
     // …其他方法是 never
   };
-  "/appointments/{id}/cancel": {
-    post: operations["cancel_appointments__id__cancel_post"];
+  "/api/appointments/{id}/cancel": {
+    post: operations["cancel_api_appointments__id__cancel_post"];
   };
 }
 export interface components {
@@ -80,8 +80,8 @@ import type { paths, components } from './schema'
 
 type Appointment = components['schemas']['AppointmentOut']
 type ListResponse =
-  paths['/appointments']['get']['responses'][200]['content']['application/json']   // 就是 AppointmentPage
-type ListQuery = NonNullable<paths['/appointments']['get']['parameters']['query']>  // { patient_id?, cursor?, limit? }
+  paths['/api/appointments']['get']['responses'][200]['content']['application/json']   // 就是 AppointmentPage
+type ListQuery = NonNullable<paths['/api/appointments']['get']['parameters']['query']>  // { patient_id?, status?, cursor?, limit? }
 ```
 
 openapi-typescript 的 README 範例在 `['application/json']` 後面還多了 `['schema']`；7.13.0 實際產生的型別沒有這一層，以產生出來的檔案為準。
@@ -90,9 +90,9 @@ openapi-typescript 的 README 範例在 `['application/json']` 後面還多了 `
 
 ```ts
 import createClient from 'openapi-fetch'
-const api = createClient<paths>({ baseUrl: '/api' })
+const api = createClient<paths>()   // clinic-api 的規格裡，路徑已經帶 /api：不用再設 baseUrl
 
-const { data, error, response } = await api.GET('/appointments', {
+const { data, error, response } = await api.GET('/api/appointments', {
   params: { query: { cursor: 0, limit: 20 } },
 })
 ```
@@ -102,9 +102,9 @@ const { data, error, response } = await api.GET('/appointments', {
 | 寫法 | 錯誤 |
 |---|---|
 | `data.items[0].patientName` | `TS2339: Property 'patientName' does not exist on type '{ id: number; session_id: number; … }'.` |
-| `api.GET('/appointments/{id}')`（少了 path 參數） | `TS2554: Expected 2 arguments, but got 1.` |
+| `api.GET('/api/appointments/{id}')`（少了 path 參數） | `TS2554: Expected 2 arguments, but got 1.` |
 | `params: { path: { id: '12' } }` | `TS2322: Type 'string' is not assignable to type 'number'.` |
-| `params: { query: { page: 2 } }` | `TS2353: Object literal may only specify known properties, and 'page' does not exist in type '{ patient_id?: … cursor?: … limit?: … }'.` |
+| `params: { query: { page: 2 } }` | `TS2353: Object literal may only specify known properties, and 'page' does not exist in type '{ patient_id?: … status?: … cursor?: … limit?: … }'.` |
 
 執行時的行為（看 openapi-fetch 0.17.0 的原始碼）：
 
@@ -163,7 +163,7 @@ import type { paths, components } from './schema'
 export type Appointment = components['schemas']['AppointmentOut']
 export type AppointmentPage = components['schemas']['AppointmentPage']
 
-export const api = createClient<paths>({ baseUrl: '/api' })
+export const api = createClient<paths>()        // 規格裡的路徑已經帶 /api（和 Vite proxy、nginx 的前綴相同）
 
 api.use({
   onRequest({ request }) {                       // 每個請求都帶上 token
@@ -179,7 +179,7 @@ api.use({
 import { api, type AppointmentPage } from './client'
 
 export async function loadPage(cursor = 0): Promise<AppointmentPage> {
-  const { data, error, response } = await api.GET('/appointments', {
+  const { data, error, response } = await api.GET('/api/appointments', {
     params: { query: { cursor, limit: 20 } },
   })
   if (error) throw new Error(`HTTP ${response.status}`)   // 4xx、5xx：openapi-fetch 不會自己丟

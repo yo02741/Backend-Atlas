@@ -201,11 +201,11 @@ print("這一輪讀資料庫：", len(db_reads) - before)
 
 先預測兩次 `get` 各是 hit 還是 miss、兩次的 `left` 是否相同、資料庫讀幾次。預期：miss 然後 hit、`left` 相同、資料庫讀 1 次。單一執行緒依序執行，第二次一定命中，所以這段測不出「同時」。
 
-**2. 真的同時讀。** 在後端參考專案（`companion/clinic-api`）先查一次診次清單讓快取有值，掛號一次讓它失效，接著同時送兩個 `GET /sessions`，前後各抓一次指標（`$TOKEN`、`$DAY` 照 README 的 curl 範例設定）：
+**2. 真的同時讀。** 在後端參考專案（`companion/clinic-api`）先查一次診次清單讓快取有值，掛號一次讓它失效，接著同時送兩個 `GET /api/sessions`，前後各抓一次指標（`$TOKEN`、`$DAY` 照 README 的 curl 範例設定）：
 
 ```bash
 curl -s $BASE/metrics | grep '^cache_requests_total'
-for i in 1 2; do curl -s -o /dev/null "$BASE/sessions?doctor_id=1&date=$DAY" -H "Authorization: Bearer $TOKEN" & done; wait
+for i in 1 2; do curl -s -o /dev/null "$BASE/api/sessions?doctor_id=1&date=$DAY" -H "Authorization: Bearer $TOKEN" & done; wait
 curl -s $BASE/metrics | grep '^cache_requests_total'
 ```
 

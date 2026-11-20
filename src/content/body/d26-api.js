@@ -233,7 +233,7 @@ export default {
     map: {
       names: [
         { n: '前端驗證', t: '`required`、`type="email"`、`maxlength` 這類 HTML 屬性加上自己的規則，在送出前給即時回饋；請求可以繞過前端直接送，所以它是體驗，不是防線。' },
-        { n: '後端驗證與 422', t: '伺服器檢查完回 `422 Unprocessable Content`，body 列出每個欄位的錯誤；本站後端的格式是 Problem Details 加上 `errors: [{ field, message }]`，`errors` 是擴充欄位，各家 API 的寫法不同。' },
+        { n: '後端驗證與 422', t: '伺服器檢查完回 `422 Unprocessable Content`，body 列出每個欄位的錯誤；本站後端的格式是 Problem Details 加上 `errors: { 欄位: [訊息] }`，`errors` 是擴充欄位，各家 API 的寫法不同（也常見 `[{ field, message }]`）。' },
         { n: '欄位錯誤對回欄位', t: '依 `field` 把訊息放到對應輸入框下方，輸入框加 `aria-invalid="true"` 與指向訊息的 `aria-describedby`；對不到欄位的錯誤放表單上方。' },
         { n: '業務錯誤（409）', t: '欄位都對但做不到，例如「這個診次已額滿」「已經掛過號」；Problem Details 的 `type` 區分原因，訊息放在表單上方，表單內容保留。' },
         { n: '`@submit.prevent`', t: '在 `<form>` 上處理 `submit` 事件並取消瀏覽器預設的整頁送出；按鈕 click 與在輸入框按 Enter 都會走這裡，只綁按鈕的 `@click` 會漏掉 Enter。' },

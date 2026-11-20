@@ -104,7 +104,7 @@ export default function Skill({ id }) {
         <div className="lesson-body">
           <h2 id="points">重點</h2>
           <ul className="points">
-            {body.points.map((p, i) => <li key={i}><span><b>{p.b}</b>　<Inline text={p.t} /></span></li>)}
+            {body.points.map((p, i) => <li key={i}><span><b><Inline text={p.b} /></b>　<Inline text={p.t} /></span></li>)}
           </ul>
 
           {hasDeep(s.id) && (

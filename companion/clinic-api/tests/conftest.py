@@ -56,7 +56,8 @@ def redis(settings: Settings) -> Iterator[Redis]:
 @pytest.fixture
 def db(engine: Engine, redis: Redis) -> Iterator[DbSession]:
     with engine.begin() as conn:
-        conn.execute(text("TRUNCATE appointments, users, sessions, doctors, patients RESTART IDENTITY CASCADE"))
+        tables = "idempotency_keys, appointments, users, sessions, doctors, patients"
+        conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
     with DbSession(engine, expire_on_commit=False) as session:
         yield session
 
@@ -119,7 +120,7 @@ def auth(client: TestClient, world: World) -> Callable[[str], dict[str, str]]:
     """auth("patient1") → 帶 Bearer token 的標頭。"""
 
     def login(username: str) -> dict[str, str]:
-        r = client.post("/auth/login", json={"username": username, "password": TEST_PASSWORD})
+        r = client.post("/api/auth/login", json={"username": username, "password": TEST_PASSWORD})
         assert r.status_code == 200, r.text
         return {"Authorization": f"Bearer {r.json()['access_token']}"}
 

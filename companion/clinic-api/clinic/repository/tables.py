@@ -5,8 +5,10 @@
 """
 
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, Text, func, true
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -25,6 +27,7 @@ class DoctorRow(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     name: Mapped[str] = mapped_column(Text)
     dept: Mapped[str] = mapped_column(Text)
+    room: Mapped[str | None] = mapped_column(Text)  # 診間號碼；報到看板一列一個診間
 
 
 class SessionRow(Base):
@@ -57,3 +60,13 @@ class UserRow(Base):
     patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"))
     doctor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"))
     is_active: Mapped[bool] = mapped_column(server_default=true())
+
+
+class IdempotencyKeyRow(Base):
+    __tablename__ = "idempotency_keys"
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    key: Mapped[str] = mapped_column(Text, primary_key=True)
+    fingerprint: Mapped[str] = mapped_column(Text)
+    status_code: Mapped[int | None]
+    response: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

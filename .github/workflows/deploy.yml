@@ -1,6 +1,6 @@
 name: Deploy（GitHub Pages + Firebase Hosting）
 
-# 同一份 build 部署到兩個地方：GitHub Pages（yo02741.github.io/u-kinda-should-know/）與 Firebase Hosting（backend-atlas.web.app）。
+# 同一份 build 部署到兩個地方：GitHub Pages（yo02741.github.io/u-kinda-should-know/）與 Firebase Hosting（u-kinda-should-know.web.app）。
 # Firebase 那一段需要 repo secret FIREBASE_SERVICE_ACCOUNT（服務帳戶 JSON 金鑰），沒設定就跳過，不會讓整個 workflow 失敗。
 
 on:
@@ -88,5 +88,13 @@ jobs:
         if: env.FIREBASE_SA != ''
         with:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: backend-atlas
+          projectId: u-kinda-should-know
           channelId: live
+
+      # Firestore 規則跟著 repo 的 firestore.rules 走：用同一把服務帳戶金鑰部署，不用到主控台手動貼
+      - name: 部署 Firestore 規則
+        if: env.FIREBASE_SA != ''
+        run: |
+          printf '%s' "$FIREBASE_SA" > "$RUNNER_TEMP/sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" npx -y firebase-tools@15 deploy --only firestore:rules --project u-kinda-should-know --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"

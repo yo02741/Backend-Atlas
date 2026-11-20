@@ -4,7 +4,7 @@
 
 學習網站，三條路線：**前端**、**後端**、**AI**。每課的基底是一張「地圖」：叫得出名字（名詞與一句說明）、說得出要求（描述需求要講清楚的事，附一段描述範例）、驗得出對錯（怎麼檢查產出）；深入內容、互動實驗室與練習題是選讀。程式題在瀏覽器裡執行（PostgreSQL、Python、JavaScript；HTML、CSS、Vue 在沙箱 iframe），不需要後端伺服器。
 
-- **線上**：[backend-atlas.web.app](https://backend-atlas.web.app/)（Firebase Hosting）、[yo02741.github.io/u-kinda-should-know](https://yo02741.github.io/u-kinda-should-know/)（GitHub Pages），每次 push 到 `main` 兩邊同時更新。repo 與 Firebase 專案改名後，這兩個網址、`src/content/tracks.js` 的 `SITE.repo`、`.firebaserc`、`.env.production` 與 `deploy.yml` 的 `projectId` 要一起改。
+- **線上**：[u-kinda-should-know.web.app](https://u-kinda-should-know.web.app/)（Firebase Hosting）、[yo02741.github.io/u-kinda-should-know](https://yo02741.github.io/u-kinda-should-know/)（GitHub Pages），每次 push 到 `main` 兩邊同時更新。repo 與 Firebase 專案改名後，這兩個網址、`src/content/tracks.js` 的 `SITE.repo`、`.firebaserc`、`.env.production` 與 `deploy.yml` 的 `projectId` 要一起改。
 - **本機**：`npm install && npm run dev`（第一次會把 Pyodide 複製到 `public/pyodide/`）
 
 ### 網頁流程
@@ -411,12 +411,12 @@ npm run e2e:cloud                # 登入同步（自己 build、起 Firebase Em
 
 ### 啟用步驟
 
-1. [Firebase Console](https://console.firebase.google.com/) 建一個新專案（例如 `backend-atlas`，Google Analytics 可關）。
+1. [Firebase Console](https://console.firebase.google.com/) 建一個新專案（例如 `u-kinda-should-know`，Google Analytics 可關）。
 2. 專案設定 → 一般 → 新增「網頁」應用程式，記下 `firebaseConfig` 裡的 `apiKey`、`authDomain`、`projectId`、`appId`。
 3. Authentication → 開始使用 → Sign-in method → 啟用 Google（填支援 email）。
 4. Authentication → 設定 → 授權網域 → 新增 `yo02741.github.io`（`localhost`、`<專案 id>.web.app`、`<專案 id>.firebaseapp.com` 預設已在）。
-5. Firestore Database → 建立資料庫（正式版模式，區域 `asia-east1`）→ 規則分頁貼上 `firestore.rules` 的內容 → 發布。或用 CLI：`npx firebase-tools deploy --only firestore:rules --project <專案 id>`。
-6. repo 根目錄的 `.env.production`（已設定為 `backend-atlas` 專案；這些值本來就會出現在前端程式裡，資料安全靠規則）：
+5. Firestore Database → 建立資料庫（正式版模式，區域 `asia-east1`）→ 規則由 deploy workflow 自動部署（第一次也可以在規則分頁貼上 `firestore.rules` 的內容 → 發布，或用 CLI：`npx firebase-tools deploy --only firestore:rules --project <專案 id>`）。
+6. repo 根目錄的 `.env.production`（已設定為 `u-kinda-should-know` 專案；這些值本來就會出現在前端程式裡，資料安全靠規則）：
    ```
    VITE_FIREBASE_API_KEY=...
    VITE_FIREBASE_AUTH_DOMAIN=<專案 id>.firebaseapp.com
@@ -438,14 +438,14 @@ push 到 `main` 觸發 `.github/workflows/deploy.yml`：`npm ci` → 同步 READ
 
 ### Firebase Hosting
 
-`firebase.json` 的 `hosting` 以 `dist/` 為根目錄（hash 路由，不需要 rewrite）；`/assets/**` 檔名帶 hash，快取一年；`/pyodide/**` 快取一天；`index.html` 不快取。`.firebaserc` 的預設專案是 `backend-atlas`。
+`firebase.json` 的 `hosting` 以 `dist/` 為根目錄（hash 路由，不需要 rewrite）；`/assets/**` 檔名帶 hash，快取一年；`/pyodide/**` 快取一天；`index.html` 不快取。`.firebaserc` 的預設專案是 `u-kinda-should-know`。
 
-workflow 的 `firebase-hosting` job 拿 Pages 那份 build 產物，用 `FirebaseExtended/action-hosting-deploy` 部署到 live。需要 repo secret `FIREBASE_SERVICE_ACCOUNT`，沒設定時這個 job 只印一行提示就結束：
+workflow 的 `firebase-hosting` job 拿 Pages 那份 build 產物，用 `FirebaseExtended/action-hosting-deploy` 部署到 live，再用同一把金鑰部署 `firestore.rules`（改規則只要 push）。需要 repo secret `FIREBASE_SERVICE_ACCOUNT`，沒設定時這個 job 只印一行提示就結束：
 
-1. Firebase 控制台 → 專案 `backend-atlas` → 左上齒輪「專案設定」→「服務帳戶」分頁 →「產生新的私密金鑰」，下載 JSON。
+1. Firebase 控制台 → 專案 `u-kinda-should-know` → 左上齒輪「專案設定」→「服務帳戶」分頁 →「產生新的私密金鑰」，下載 JSON。
 2. GitHub repo → Settings → Secrets and variables → Actions → New repository secret，名稱 `FIREBASE_SERVICE_ACCOUNT`，值貼上整份 JSON。下載的檔案貼完就刪掉。
 
-這把是 Admin SDK 的金鑰，權限比部署需要的大（也能讀寫 Firestore、管理登入帳號）。想縮小權限的話，改到 [Google Cloud 控制台的服務帳戶頁](https://console.cloud.google.com/iam-admin/serviceaccounts?project=backend-atlas) 另建一個帳戶，只給 **Firebase Hosting 管理員**、**服務使用情形消費者**、**API 金鑰檢視者** 三個角色，再用它的 JSON 金鑰。workflow 只在 push 到 `main` 時執行，fork 來的 PR 拿不到這個 secret。
+這把是 Admin SDK 的金鑰，權限比部署需要的大（也能讀寫 Firestore、管理登入帳號）。想縮小權限的話，改到 [Google Cloud 控制台的服務帳戶頁](https://console.cloud.google.com/iam-admin/serviceaccounts?project=u-kinda-should-know) 另建一個帳戶，只給 **Firebase Hosting 管理員**、**服務使用情形消費者**、**API 金鑰檢視者** 三個角色，再用它的 JSON 金鑰。workflow 只在 push 到 `main` 時執行，fork 來的 PR 拿不到這個 secret。
 
 手動部署（本機有 Node）：`npm run build && npx firebase-tools deploy --only hosting`。
 

@@ -1,6 +1,6 @@
 # 在本機的 Kubernetes 叢集跑 clinic-api
 
-用 [kind](https://kind.sigs.k8s.io/) 在自己的電腦上建一個單節點的 Kubernetes 叢集，套用 `k8s/overlays/kind`，用 port-forward 走完掛號流程、做一次滾動更新，再故意弄壞六次，照 [Kubernetes 排錯](https://backend-atlas.web.app/#/skill/k8s-troubleshooting) 的順序查出原因。manifest 每個欄位為什麼這樣寫，見實作路線的 [第 10 階段：部署到 Kubernetes](https://backend-atlas.web.app/#/project/k8s)。
+用 [kind](https://kind.sigs.k8s.io/) 在自己的電腦上建一個單節點的 Kubernetes 叢集，套用 `k8s/overlays/kind`，用 port-forward 走完掛號流程、做一次滾動更新，再故意弄壞六次，照 [Kubernetes 排錯](https://u-kinda-should-know.web.app/#/skill/k8s-troubleshooting) 的順序查出原因。manifest 每個欄位為什麼這樣寫，見實作路線的 [第 10 階段：部署到 Kubernetes](https://u-kinda-should-know.web.app/#/project/k8s)。
 
 - 所有指令都在 `companion/clinic-api/` 目錄執行。
 - 預期輸出取自 kind v0.33.0、kubectl v1.37.2、Kubernetes v1.37.0 實際執行的結果，只留關鍵的幾行。Pod 名稱後面的亂數、IP、時間每次都不一樣。
@@ -35,7 +35,7 @@ sudo install -m 0755 kubectl /usr/local/bin/kubectl
 
 ## k8s/ 的結構
 
-manifest 整理成 Kustomize 的 base 與 overlay（做法見 [Helm、Kustomize 與 GitOps](https://backend-atlas.web.app/#/skill/k8s-helm-gitops)）：
+manifest 整理成 Kustomize 的 base 與 overlay（做法見 [Helm、Kustomize 與 GitOps](https://u-kinda-should-know.web.app/#/skill/k8s-helm-gitops)）：
 
 ```text
 k8s/
@@ -66,7 +66,7 @@ k8s/
 | | `overlays/kind` | `overlays/production` |
 |---|---|---|
 | 映像 | 本機建置的 `clinic-api:v1`，用 `kind load` 放進節點，`imagePullPolicy: IfNotPresent` | `registry.gitlab.example/clinic/api:<commit SHA>`，CI 用 `kustomize edit set image` 設定 |
-| PostgreSQL、Redis | 跑在叢集裡，只供本機，沒有備份 | 叢集外既有的服務（取捨見 [導入 Kubernetes 前要準備什麼](https://backend-atlas.web.app/#/skill/k8s-readiness)） |
+| PostgreSQL、Redis | 跑在叢集裡，只供本機，沒有備份 | 叢集外既有的服務（取捨見 [導入 Kubernetes 前要準備什麼](https://u-kinda-should-know.web.app/#/skill/k8s-readiness)） |
 | Secret | `secretGenerator` 產生，值是寫在檔案裡的本機假值 | 叢集管理者用 `kubectl create secret` 建立，明文不進 Git |
 | namespace | manifest 建立 | 叢集管理者建立 |
 | 對外 | `kubectl port-forward` | Ingress（或選讀的 Gateway API） |
@@ -456,7 +456,7 @@ REVISION  CHANGE-CAUSE
 
 ## 7. 故意弄壞
 
-每個練習都用一個指令直接改叢集裡的物件，Git 裡的 manifest 不動，然後照 [Kubernetes 排錯](https://backend-atlas.web.app/#/skill/k8s-troubleshooting) 的順序查：`get` → `describe` → `logs` → `events`。修法多半是 `kubectl apply -k k8s/overlays/kind`，把叢集改回 Git 裡寫的狀態；實際工作中錯誤通常就在 manifest 裡，要改檔案、走一次部署。
+每個練習都用一個指令直接改叢集裡的物件，Git 裡的 manifest 不動，然後照 [Kubernetes 排錯](https://u-kinda-should-know.web.app/#/skill/k8s-troubleshooting) 的順序查：`get` → `describe` → `logs` → `events`。修法多半是 `kubectl apply -k k8s/overlays/kind`，把叢集改回 Git 裡寫的狀態；實際工作中錯誤通常就在 manifest 裡，要改檔案、走一次部署。
 
 `uptime-probe` 留著。除了練習 4，舊的 Pod 都繼續服務，它一直是 `200`：壞掉的只有新 Pod，`maxUnavailable: 0` 讓舊的留到新的 ready 為止。
 
@@ -772,13 +772,13 @@ kubectl -n clinic rollout undo deployment/clinic-api
 kubectl apply -k k8s/overlays/kind          # deployment.apps/clinic-api unchanged
 ```
 
-直接改叢集（`set env`、`edit`、`patch`）和 `kubectl apply` 混用，就會遇到這種情況；這也是 GitOps 要求「改 Git，不改叢集」的原因之一（見 [Helm、Kustomize 與 GitOps](https://backend-atlas.web.app/#/skill/k8s-helm-gitops)）。
+直接改叢集（`set env`、`edit`、`patch`）和 `kubectl apply` 混用，就會遇到這種情況；這也是 GitOps 要求「改 Git，不改叢集」的原因之一（見 [Helm、Kustomize 與 GitOps](https://u-kinda-should-know.web.app/#/skill/k8s-helm-gitops)）。
 
 練習做完，刪掉觀察用的 Pod：`kubectl -n clinic delete pod uptime-probe`。
 
 ## 8. 選讀：接上 Gateway API
 
-社群維護的 ingress-nginx 已在 2026 年 3 月停止維護（[Kubernetes 官方公告](https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/)），這份指南不用它。這一段改用 Gateway API，實作選 [Envoy Gateway](https://gateway.envoyproxy.io/) v1.10.0：它的相容表列出 v1.10 支援 Kubernetes v1.34 到 v1.37，下面的步驟在本指南的 kind 叢集上實際跑過。Gateway 與 HTTPRoute 的概念見 [把服務寫成 manifest](https://backend-atlas.web.app/#/skill/k8s-manifests) 的 Ingress 一節。
+社群維護的 ingress-nginx 已在 2026 年 3 月停止維護（[Kubernetes 官方公告](https://kubernetes.io/blog/2025/11/11/ingress-nginx-retirement/)），這份指南不用它。這一段改用 Gateway API，實作選 [Envoy Gateway](https://gateway.envoyproxy.io/) v1.10.0：它的相容表列出 v1.10 支援 Kubernetes v1.34 到 v1.37，下面的步驟在本指南的 kind 叢集上實際跑過。Gateway 與 HTTPRoute 的概念見 [把服務寫成 manifest](https://u-kinda-should-know.web.app/#/skill/k8s-manifests) 的 Ingress 一節。
 
 安裝（含 Gateway API 的 CRD；指令照 Envoy Gateway 的官方安裝說明）：
 
@@ -964,7 +964,7 @@ NAME         READY   UP-TO-DATE   AVAILABLE   AGE
 clinic-api   0/2     2            0           4m17s
 ```
 
-kind 的 StorageClass 把資料建在某一個節點的磁碟上，PV 綁著那個節點；那個節點不能排程時，`postgres-0` 哪裡都去不了。資料庫一停，兩個 `clinic-api` 的 `/ready` 都回 503，整個服務停擺，`clinic-api` 的 PodDisruptionBudget 管不到這件事。`kubectl uncordon clinic-worker2` 之後 `postgres-0` 回到原節點，服務恢復。這是「資料庫先留在叢集外」的理由之一（[導入 Kubernetes 前要準備什麼](https://backend-atlas.web.app/#/skill/k8s-readiness)）。
+kind 的 StorageClass 把資料建在某一個節點的磁碟上，PV 綁著那個節點；那個節點不能排程時，`postgres-0` 哪裡都去不了。資料庫一停，兩個 `clinic-api` 的 `/ready` 都回 503，整個服務停擺，`clinic-api` 的 PodDisruptionBudget 管不到這件事。`kubectl uncordon clinic-worker2` 之後 `postgres-0` 回到原節點，服務恢復。這是「資料庫先留在叢集外」的理由之一（[導入 Kubernetes 前要準備什麼](https://u-kinda-should-know.web.app/#/skill/k8s-readiness)）。
 
 ## 用腳本一次做完
 

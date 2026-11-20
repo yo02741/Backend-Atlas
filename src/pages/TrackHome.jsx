@@ -10,6 +10,8 @@ import { EXERCISES } from '../content/exercises/index.js'
 import { SCENARIOS, groupOf } from '../content/scenarios/index.js'
 import { withTrack } from '../components/TrackFilter.jsx'
 import { stagesOf } from '../content/project/stages.js'
+import { assignmentsOf } from '../content/assignments.js'
+import { countsOf } from '../counts.js'
 
 /* 路線首頁 #/track/<id>：hero、學習路線圖、領域、關鍵字、設計情境、精選實驗室。
    還沒有課的路線列出規劃中的領域。 */
@@ -25,7 +27,8 @@ export default function TrackHome({ id }) {
   const stations = stationsOf(t.id)
   const doneHere = skills.filter((s) => isDone(s.id)).length
   const nextStation = stations.find((s) => !isDone(s.id)) || stations[0] || skills[0]
-  const labCount = skills.filter((s) => s.lab).length
+  const c = countsOf(t.id)
+  const assignments = assignmentsOf(t.id)
   const exCount = EXERCISES.filter((e) => !e.project && skills.some((s) => s.id === e.skill)).length
   const scenarios = SCENARIOS.filter((sc) => groupOf(sc).track === t.id)
   const keywords = keywordsOf(t.id)
@@ -44,14 +47,25 @@ export default function TrackHome({ id }) {
             </a>
             <a className="btn ghost" href={withTrack('roadmap', t.id)}>技能盤點</a>
             {stagesOf(t.id).length > 0 && <a className="btn ghost" href={withTrack('project', t.id)}>實作路線</a>}
+            {assignments.length > 0 && <a className="btn ghost" href={withTrack('assignments', t.id)}>跨課作業</a>}
           </div>
           <div className="hero-stats">
-            <div className="stat"><b>{domains.length}</b><span>領域</span></div>
-            <div className="stat"><b>{skills.length}</b><span>課</span></div>
-            {labCount > 0 && <div className="stat"><b>{labCount}</b><span>互動實驗室</span></div>}
-            {exCount > 0 && <div className="stat"><b>{exCount}</b><span>程式題</span></div>}
-            {scenarios.length > 0 && <div className="stat"><b>{scenarios.length}</b><span>設計情境</span></div>}
-            <div className="stat"><b>{doneHere}</b><span>已完成</span></div>
+            {(c.stations > 0 || c.weeks > 0) && (
+              <div className="stat-group" role="group" aria-label="主線">
+                <span className="stat-group-label">主線</span>
+                {c.stations > 0 && <div className="stat"><b>{c.stations}</b><span>路線站</span></div>}
+                {c.weeks > 0 && <div className="stat"><b>{c.weeks}</b><span>課綱週</span></div>}
+              </div>
+            )}
+            <div className="stat-group" role="group" aria-label="全部">
+              <span className="stat-group-label">全部（主線以外選讀）</span>
+              <div className="stat"><b>{skills.length}</b><span>課 · {domains.length} 領域</span></div>
+              {c.labs > 0 && <div className="stat"><b>{c.labs}</b><span>實驗室{c.labMounts > c.labs ? `（${c.labMounts} 課掛載）` : ''}</span></div>}
+              {exCount > 0 && <div className="stat"><b>{exCount}</b><span>程式題</span></div>}
+              {scenarios.length > 0 && <div className="stat"><b>{scenarios.length}</b><span>設計情境</span></div>}
+              {assignments.length > 0 && <div className="stat"><b>{assignments.length}</b><span>跨課作業</span></div>}
+            </div>
+            <div className="stat"><b>{doneHere}</b><span>讀過</span></div>
           </div>
         </div>
         {t.id === 'backend' && <div className="hero-art"><HeroArt /></div>}
@@ -61,7 +75,7 @@ export default function TrackHome({ id }) {
         <section className="home-section" id="route">
           <div className="section-head">
             <h2 className="section-title">學習路線</h2>
-            <p>{stations.length} 站。<a href={withTrack('curriculum', t.id)}>完整課綱 →</a>{stagesOf(t.id).length > 0 && <>　<a href={withTrack('project', t.id)}>實作路線 →</a></>}</p>
+            <p>主線 {stations.length} 站，其餘 {c.optional} 課選讀。<a href={withTrack('curriculum', t.id)}>完整課綱{c.weeks ? `（${c.weeks} 週）` : ''} →</a>{stagesOf(t.id).length > 0 && <>　<a href={withTrack('project', t.id)}>實作路線 →</a></>}{assignments.length > 0 && <>　<a href={withTrack('assignments', t.id)}>跨課作業 →</a></>}</p>
           </div>
           <MetroMap stations={stations} isDone={isDone} label={`${t.title}學習路線`} />
           <div className="metro-legend">
@@ -119,7 +133,7 @@ export default function TrackHome({ id }) {
         <section className="home-section">
           <div className="section-head">
             <h2 className="section-title">互動實驗室精選</h2>
-            <a href={withTrack('labs', t.id)} className="muted" style={{ fontSize: '0.88rem' }}>全部 {labCount} 個 →</a>
+            <a href={withTrack('labs', t.id)} className="muted" style={{ fontSize: '0.88rem' }}>全部 {c.labs} 個 →</a>
           </div>
           <div className="lab-strip">
             {t.featuredLabs.map((name) => {
@@ -159,7 +173,7 @@ function DomainGrid({ domains, isDone }) {
             <h3>{d.title}</h3>
             <p>{d.tagline}</p>
             <div className="dcard-meta">
-              <span>{d.skills.length} 課 · {d.skills.filter((s) => s.lab).length} 實驗室</span>
+              <span>{d.skills.length} 課 · {d.skills.filter((s) => s.lab).length} 實驗室 · 讀過 {doneN}</span>
             </div>
             {kws.length > 0 && <div className="dcard-tags">{kws.map((k) => <span key={k}>{k}</span>)}</div>}
           </a>

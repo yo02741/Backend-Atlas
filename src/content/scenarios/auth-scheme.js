@@ -10,7 +10,7 @@ export default {
   week: 7,
   lab: 'AuthSchemeScenarioLab',
   summary: '同一套 API 要服務同網域 SPA、iOS / Android App 與未來的第三方；要能「登出所有裝置」；六個微服務都要驗身分。',
-  situation: '電商後台的 API 目前只有一個同站的 React SPA 在用（`app.shop.tw` 打 `api.shop.tw`）。下一季要上 iOS / Android App，明年要開放第三方物流商呼叫。客服要求：使用者按「登出所有裝置」後，其他裝置 1 分鐘內就不能再操作。後端已拆成 6 個微服務，每一個都要能判斷「這個請求是誰」。',
+  situation: '電商後台的 API 目前只有一個同站的 React SPA 在用（`app.shop.example` 打 `api.shop.example`）。下一季要上 iOS / Android App，明年要開放第三方物流商呼叫。客服要求：使用者按「登出所有裝置」後，其他裝置 1 分鐘內就不能再操作。後端已拆成 6 個微服務，每一個都要能判斷「這個請求是誰」。',
   constraints: [
     'SPA 與 API 同站（同一個 eTLD+1），可以用 cookie；App 沒有瀏覽器的 cookie jar 與 same-origin 保護',
     '「登出所有裝置」後，其他裝置最多 1 分鐘內失效',
@@ -63,9 +63,24 @@ export default {
     { id: 'internal-sso', situation: '內部工具只有員工用，公司已有 Google Workspace；離職員工當天就要進不來。', options: ['cookie-session', 'jwt-storage', 'oauth-oidc'], answer: 'oauth-oidc',
       explain: '登入交給公司的 IdP（OIDC），你的工具是 relying party：帳號停用就登不進來，不用自己管密碼與 MFA。驗完 id_token 之後，工具本身用同站的 cookie session 維持狀態並設短效期；不要把 id_token 存進 localStorage 當 session 用。' },
   ],
+  switchIf: [
+    { when: '取消 App 計畫，只剩一個同站 SPA 與一個單體後端', then: '改選 `cookie-session`：同站 cookie 最省事，撤銷是刪一筆 session，不需要 BFF 或授權伺服器。' },
+    { when: '第三方物流商要上線，使用者要能授權它查自己的訂單、也能收回', then: '改選 `oauth-oidc`：第三方註冊成 client、拿 scope 限定的 token，不碰使用者密碼；SPA 仍可留在 BFF 後面。' },
+  ],
+  alternative: { option: 'oauth-oidc', holdsWhen: '團隊採用託管的授權服務（不自己寫授權伺服器），SPA 仍透過 BFF 拿 token，而且 access token 效期設到 1 分鐘或各服務檢查撤銷時間時。' },
+  challenge: {
+    task: '上方模擬器把「access token 效期」設成 15 分鐘，按「登出所有裝置」那顆按鈕，記下四種做法「舊憑證最多還能用」的數字。然後以 SPA 走 BFF、App 走授權碼加 PKCE 為前提，把三件事並排寫成兩欄三列的表：① access token 過期時使用者正在填表單、② refresh token 也過期或被撤銷，要重新登入、③ 另一台裝置按了「登出所有裝置」。每格寫：誰先發現（瀏覽器、BFF、App、API）、使用者看到什麼、填到一半的內容會不會丟、從事件發生到被擋要多久。',
+    deliver: '模擬器的四個數字，加一張兩欄三列的體驗對照表',
+    check: [
+      '① 兩欄都寫出靜默換新（BFF 用 session 換、App 用 refresh token 換），使用者不會看到登入頁，表單內容不丟',
+      '② 兩欄寫出重新登入後怎麼回到原本的頁面與草稿（例如 return_to、本機暫存），App 的登入走系統瀏覽器',
+      '③ 的時間和模擬器對得上：BFF 那欄立即、App 那欄最多到 access token 效期，並寫出要符合「1 分鐘內」要把效期調到多少或加什麼檢查',
+    ],
+    twist: '客服再要求：被停權的帳號要在 10 秒內從所有裝置登出，畫面上說明原因。先預測哪一欄做不到、差多少，再說出要加什麼（推播、更短的效期、各服務查 `revoked_at`）以及各自的代價。',
+  },
   implementation: [
     { title: 'Cookie session：登入回應與後續請求（__Host- 前綴強制 Secure、無 Domain、Path=/）', lang: 'http', code: `POST /login HTTP/1.1
-Host: api.shop.tw
+Host: api.shop.example
 Content-Type: application/json
 
 HTTP/1.1 204 No Content
@@ -73,7 +88,7 @@ Set-Cookie: __Host-sid=7f3a9c…; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Ag
 Set-Cookie: __Host-csrf=9c1e4b…; Path=/; Secure; SameSite=Lax
 
 POST /orders/42/cancel HTTP/1.1
-Host: api.shop.tw
+Host: api.shop.example
 Sec-Fetch-Site: same-site
 Cookie: __Host-sid=7f3a9c…; __Host-csrf=9c1e4b…
 X-CSRF-Token: 9c1e4b…` },
@@ -108,7 +123,7 @@ async def logout_everywhere(user_id: int) -> None:
     await db.execute("UPDATE refresh_tokens SET revoked_at = now() "
                      "WHERE user_id = $1 AND revoked_at IS NULL", user_id)` },
     { title: 'BFF 的路徑：瀏覽器只帶 cookie 到同站的 BFF，BFF 換成 Bearer 再打內部服務', lang: 'http', code: `GET /bff/orders/42 HTTP/1.1
-Host: app.shop.tw
+Host: app.shop.example
 Cookie: __Host-sid=7f3a9c…
 
 BFF：sid → Redis session → 取出該使用者的 access token，改寫成對內部服務的請求

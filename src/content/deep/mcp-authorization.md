@@ -58,7 +58,7 @@ MCP client 第一次連到一個 server 時，什麼都不知道：不知道要�
      │──────────────────────────────────────────────────────────────▶│
      │   authorization_endpoint、token_endpoint、jwks_uri …           │
      │◀──────────────────────────────────────────────────────────────│
-     │ ⑤（沒有 client_id 時）註冊 client，例如 RFC 7591               │
+     │ ⑤（沒有 client_id 時）取得 client 身分，見下文                  │
      │ ⑥ 授權碼 + PKCE，帶 resource=https://tickets.example.com/mcp   │
      │◀─────────────────── 瀏覽器登入、同意 ─────────────────────────▶│
      │ ⑦ POST /token（code + code_verifier + resource）               │
@@ -120,7 +120,13 @@ RFC 8414 定義了這份文件的位置與欄位。client 從這裡拿到所有�
 
 ### ⑤ client 註冊
 
-MCP client 和 MCP server 之間通常沒有事先的關係：使用者今天裝了一個新的 server，client 不可能預先在每個授權伺服器上都有 `client_id`。Dynamic Client Registration（RFC 7591）讓 client 自己到 `registration_endpoint` 註冊：
+MCP client 和 MCP server 之間通常沒有事先的關係：使用者今天裝了一個新的 server，client 不可能預先在每個授權伺服器上都有 `client_id`。規格對這件事的寫法改過幾次。2026 年 11 月核對的 2026-07-28 版列了三種方式，client 都支援時建議的順序是：
+
+1. **預先登記**：管理員事先在授權伺服器登記好的 `client_id`（企業環境最常見）。
+2. **Client ID Metadata Document**：`client_id` 本身是一個 https 網址，指向 client 自己公開的 JSON metadata；授權伺服器在 metadata 裡用 `client_id_metadata_document_supported` 表示支援。這是規格針對「彼此沒有事先關係」建議的主要做法（IETF 草案）。
+3. **Dynamic Client Registration**（RFC 7591）：當作相容舊版的備案，授權伺服器有 `registration_endpoint` 才能用。
+
+DCR 的請求長這樣：
 
 ```http
 POST /register HTTP/1.1
@@ -135,7 +141,7 @@ Content-Type: application/json
 }
 ```
 
-`token_endpoint_auth_method: none` 表示這是沒有 secret 的公開客戶端。規範也描述了其他取得 client 身分的方式，各版本不同；企業環境常見的做法是關掉開放註冊，由管理員預先登記允許的 client。
+`token_endpoint_auth_method: none` 表示這是沒有 secret 的公開客戶端。2026-07-28 版另外要求 DCR 時填 `application_type`（本機回呼用 `native`），並要求 client 依授權伺服器的 issuer 分開存放取得的 client 身分：授權伺服器換了，就重新註冊，不拿舊的去用。企業環境常見的做法是關掉開放註冊，只接受預先登記的 client。
 
 ### ⑥ ⑦ 授權碼 + PKCE，加上 resource
 
@@ -165,6 +171,8 @@ grant_type=authorization_code
 &code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
 &resource=https%3A%2F%2Ftickets.example.com%2Fmcp
 ```
+
+授權伺服器把使用者導回 `redirect_uri` 時，回應除了 `code` 與 `state`，可能還有 `iss`（RFC 9207）。2026-07-28 版要求 client 有收到 `iss` 就跟第 ④ 步記下的 issuer 逐字比對，不符就不拿這個 code 去換 token；這擋的是「授權碼其實來自另一個授權伺服器」的混淆攻擊。
 
 `resource` 的作用是讓授權伺服器把 token 的 `aud` 設成這個 MCP server。拿到的 token 只對 `tickets.example.com/mcp` 有效；開頭那個「天氣 server 的 token 打開工單 server」的事件，靠的就是這一步加上 server 端的 audience 檢查來擋。
 
@@ -197,6 +205,8 @@ MCP server 收到每一個請求都要依序檢查：
 | 7 | `scope` 涵蓋這個工具需要的權限 | 權限不足，回 403 而不是 401 |
 
 第 5 項就是開頭事件少掉的那一項。第 7 項要做到**每個工具**：`list_tickets` 要 `tickets.read`，`close_ticket` 要 `tickets.write`，在 `tools/call` 時依工具名稱檢查。
+
+:::stop 讀到這裡可以先停：會走從 401 到拿到 token 的發現流程，說得出 server 驗 token 的七項檢查。後面的 JWKS 輪替、錯誤回應、token 轉傳與驗章程式，在自己寫 MCP server 的驗證層或排查 401／403 時再回來讀。
 
 ### JWKS 與金鑰輪替
 

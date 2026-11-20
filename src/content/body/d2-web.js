@@ -1,6 +1,17 @@
 // 領域 2：網路、HTTP 與 API 設計 — 技能內文：重點 points / 自我檢核 checklist / 延伸閱讀 refs；索引在 ../d2-web.js
 export default {
   'http-basics': {
+    challenge: {
+      task: '用 `curl -o /dev/null -s -w` 印出 `time_namelookup`、`time_connect`、`time_appconnect`、`time_starttransfer`，量三組：`https://example.com/` 分兩次執行、同一個 curl 指令裡連續請求兩次 `https://example.com/`（會重用連線）、本機[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的 `GET /healthz`。再畫一張門診掛號請求的圖，標出客戶端、反向代理、API、資料庫，每一段寫上你量到或量不到的時間。',
+      deliver: '三組 `-w` 輸出、相減後的各段時間，以及標了時間的請求圖。',
+      check: [
+        '各段時間是相減後的值，不是 curl 印出的累計值',
+        '指出重用連線的那次哪幾段變成 0 或接近 0',
+        '圖上標出 clinic-api 這種本機、沒有 TLS 的請求少了哪幾段，前面加一層 nginx 後會多出哪一段',
+        '註明這些毫秒數是你這台機器、這個網路的量測',
+      ],
+      twist: '假設反向代理等上游 10 秒沒回應就放棄。先預測使用者拿到的狀態碼、`time_starttransfer` 大約多少，以及要看哪一層的日誌才找得到原因。',
+    },
     map: {
       names: [
         { n: 'DNS、TCP、TLS', t: '請求送出前的三步：把主機名換成 IP、三次握手建立連線、驗證憑證並協商金鑰（TCP 加 TLS 1.3 共 2 RTT）。第一個請求慢、連不上，多半卡在這三段。' },
@@ -47,6 +58,16 @@ export default {
     ],
   },
   'tcp-connections': {
+    challenge: {
+      task: '在本機（不是瀏覽器裡的 Pyodide）用 httpx 對 `https://example.com/` 各送 5 次請求：版本 A 每次 `with httpx.Client() as c:` 新建 client，版本 B 共用同一個 client。記錄每次的耗時，並在每個版本跑完後用 `ss -tan state time-wait | grep -c :443` 數 TIME-WAIT。跑之前先預測兩個版本第 2–5 次的耗時差多少。',
+      deliver: '兩個版本 5 次耗時的表、TIME-WAIT 計數，以及一行 `curl -w` 的 `time_connect`、`time_appconnect` 當對照。',
+      check: [
+        '版本 B 的第 2–5 次比第 1 次快，快的量和握手的時間（`time_appconnect`）同一個量級',
+        '版本 A 之後 TIME-WAIT 增加、版本 B 沒有增加，並說明 TIME-WAIT 出現在主動關閉的那一方',
+        '註明是本機量測，寫出網路環境（家用網路、公司 VPN 等）',
+      ],
+      twist: '對方的 keep-alive 逾時是 5 秒，你的連線池閒置逾時是 30 秒，每 10 秒送一次請求。先預測哪一次請求會出錯、錯誤長什麼樣，再說明池子的設定要怎麼改。',
+    },
     points: [
       { b: '一條連線由四元組決定', t: '來源 IP、來源 port、目的 IP、目的 port。客戶端的來源 port 從臨時 port 範圍挑（Linux 預設 32768–60999），所以一台機器連同一個目的地的連線數有上限；每條連線也佔一個檔案描述子。' },
       { b: '握手要花來回', t: 'TCP 三次握手 1 RTT，TLS 1.2 再 2 RTT、TLS 1.3 再 1 RTT。新的 HTTPS 連線拿到第一個回應要 3–4 RTT，重用的連線只要 1 RTT。' },
@@ -65,6 +86,16 @@ export default {
     ],
   },
   'rest-design': {
+    challenge: {
+      task: '以[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api) README 的介面表為起點，替 `POST /sessions/{id}/appointments`、`POST /appointments/{id}/cancel`、`GET /appointments/{id}` 寫行為表，每個端點四種情況：正常、重複送出、資源不存在、別人的資源。先填預測，再用 `curl -i` 實測、填實際。',
+      deliver: '行為表：每格有預測與實際的狀態碼，錯誤時加上 Problem Details 的 `type`。',
+      check: [
+        '每格都有實際 `curl -i` 的狀態碼',
+        '寫出重複取消同一筆時 clinic-api 回什麼，以及這個選擇的理由',
+        '「別人的掛號」寫出實際是 403 還是 404，以及這樣選對「洩漏資源存在與否」的取捨',
+      ],
+      twist: '同一張表改用在餐廳訂位：訂位時間前 2 小時內不能取消、同一桌可以多人共訂。先預測哪幾格的狀態碼或 `type` 要改，再分成兩欄列出：可以從掛號沿用的設計（重複送出回 409、錯誤格式），以及要跟訂位業務重新確認的條件（逾時取消算失敗還是收費、怎樣算重複訂位）。',
+    },
     map: {
       names: [
         { n: '資源與路徑', t: '名詞代表資料，例如 `/appointments`、`/appointments/{id}`；動作交給 HTTP 方法，不寫成 `/getAppointments`。' },
@@ -107,6 +138,16 @@ export default {
     ],
   },
   'api-patterns': {
+    challenge: {
+      task: '拆成兩次驗收。第一次（分頁）：在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)用 `desk1` 呼叫 `GET /appointments?limit=2`，照 `next_cursor` 一頁一頁翻；翻到第二頁後替另一位病患新增一筆掛號，再翻完剩下的頁。第二次（冪等）：做完練習題 [Idempotency-Key](#/exercise/api-patterns-2) 後，替倉儲的「庫存調撥」API `POST /transfers` 寫一段冪等鍵規格。',
+      deliver: '第一次：每頁的 id 與 `next_cursor` 紀錄。第二次：規格一段，加三個重送情境（同 key 同 body、同 key 不同 body、第一次還在處理中）各自的預期回應。',
+      check: [
+        '翻頁途中新增資料後，列出的 id 沒有重複；寫出新資料出現在哪一頁，或為什麼不會出現',
+        '規格寫出 key 存多久、存什麼（請求指紋與回應），同 key 不同 body 回什麼狀態碼',
+        '分成兩欄：可以從付款的冪等鍵沿用的條件，以及要跟倉儲業務確認的條件（調撥被人工取消後，同一把 key 重送要怎麼回）',
+      ],
+      twist: '倉儲要求列表改成依「到貨日」排序，而且到貨日可以被修改。先預測 cursor 只放 id 會出什麼問題，再寫出新的 cursor 要包含哪些欄位。',
+    },
     points: [
       { b: 'offset 分頁在深頁會慢', t: '`OFFSET 100000` 資料庫還是得掃過前十萬列。cursor 分頁用「上一頁最後一筆的排序鍵」當起點（`WHERE id > ?`），永遠走索引。' },
       { b: '篩選與排序要白名單', t: '允許哪些欄位可以 filter / sort 要明列，否則 `?sort=password` 之類的怪事會發生，也可能變成慢查詢。' },
@@ -121,6 +162,16 @@ export default {
     refs: [],
   },
   'resilience': {
+    challenge: {
+      task: '電商結帳要呼叫物流商的運費 API，整個結帳 API 的回應預算是 3 秒，其他步驟已經用掉 1 秒。替這個呼叫分配連線逾時、讀取逾時、重試次數與退避（含抖動）。接著做完練習題 [重試](#/exercise/resilience-1)，在 [Playground](#/playground?lang=python) 用固定的 `random.seed` 模擬物流商：30% 機率 1.5 秒才回、10% 機率回 503、其他 0.2 秒成功，跑 1,000 次（用累加的模擬時間，不要真的 sleep），統計超出預算的比例與平均嘗試次數。',
+      deliver: '參數表、模擬結果（超出預算的比例、平均嘗試次數），加一段取捨說明。',
+      check: [
+        '算得出最壞情況的總時間（每次嘗試的逾時加上退避上限），而且不超過 2 秒',
+        '模擬用固定 seed，重跑結果相同；標明機率是教材設定，不是實測',
+        '分成兩欄：可以從掛號呼叫病歷服務沿用的做法（只重試冪等的查詢、退避加抖動），以及要跟電商業務確認的條件（查不到運費時能不能先用預設運費結帳）',
+      ],
+      twist: '物流商在 503 時開始帶 `Retry-After: 5`。先預測你的參數還能不能在預算內遵守它，以及這時該重試還是直接降級。',
+    },
     points: [
       { b: '每個外部呼叫都設 timeout', t: '`httpx.Client(timeout=5.0)`、DB `statement_timeout`、佇列任務 time limit。連線與讀取分開設；預設值通常是「永遠等」。' },
       { b: '重試要退避加抖動', t: '失敗後等 0.5s、1s、2s… 再加隨機抖動，避免所有客戶端同時重打（thundering herd）。次數有上限，總時間有上限。' },
@@ -138,6 +189,16 @@ export default {
     ],
   },
   'openapi': {
+    challenge: {
+      task: '從本機的[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)下載 `/openapi.json` 存成 `before.json`；接著在 `clinic/api/schemas.py` 的 `AppointmentOut` 把 `number` 改名成 `queue_no`、把 `status` 改成 `Literal["booked", "cancelled", "checked_in"]`，重啟後存成 `after.json`。用深入內容「一個簡化的相容性檢查」的程式比較兩份（裝得到 oasdiff 這類工具的話也跑一次）。比較之前先寫下你預測哪個變更會被判成破壞性。',
+      deliver: '比較結果，標出哪個變更會讓既有前端壞掉、哪個不會，以及前端產生的型別會怎麼變。',
+      check: [
+        '兩份 JSON 都是實際下載的，`openapi` 欄位的值寫出來',
+        '改名被判成破壞性；`status` 改成列舉時，寫出它對「讀回應的前端」是收窄還是放寬、會不會壞',
+        '寫出 CI 要在哪一步跑這個比較、比對的基準是哪一份規格（例如 main 分支上的那份）',
+      ],
+      twist: '把 `number` 改成 `int | None`。先預測檢查器會不會報、前端哪一段程式會壞，再實際比較一次。',
+    },
     points: [
       { b: 'FastAPI 從型別自動產出規格', t: 'pydantic model + 路由宣告 = `/openapi.json` + Swagger UI，零額外工作。這是選它當範例的原因之一。' },
       { b: 'code-first 與 schema-first', t: '從程式碼產規格（FastAPI）適合小團隊快速迭代；先寫規格再實作適合多團隊並行。兩者都要把規格當合約看待。' },
@@ -153,6 +214,16 @@ export default {
     ],
   },
   'cors-cookies': {
+    challenge: {
+      task: '在本機寫一個最小的 API（例如 FastAPI 加 `CORSMiddleware`）跑在 `http://localhost:8000`：`POST /login` 用 `Set-Cookie` 種一個 HttpOnly cookie、`GET /me` 回 JSON。另用 `python3 -m http.server 5173` 提供一個頁面，用 fetch 先登入再呼叫 `/me`。依序換四組設定：(1) fetch 不帶 credentials；(2) `credentials: "include"`，伺服器 `allow_origins=["*"]` 加 `allow_credentials=True`；(3) 明列 `http://localhost:5173` 加 `allow_credentials=True`；(4) 同第 3 組，但頁面改從 `http://127.0.0.1:5173` 開。',
+      deliver: '4 組 × 3 欄的表：Cookie 有沒有送出、Console 有沒有 CORS 錯誤、JavaScript 讀不讀得到 body，每格附 Network 分頁的標頭摘錄。',
+      check: [
+        '每格都是實際觀察，附請求的 `Cookie` 與回應的 `Access-Control-Allow-Origin` 原文',
+        '第 2 組寫出回應實際帶的 `Access-Control-Allow-Origin`（有的框架在這組設定下會改成回傳請求的 origin），並說明這對安全的影響',
+        '第 4 組說明 `localhost` 與 `127.0.0.1` 是不同的 origin、cookie 屬於哪個 host，所以哪一欄跟著變',
+      ],
+      twist: '把 cookie 加上 `SameSite=Strict`。先預測第 3 組的 cookie 還會不會送出（`localhost:5173` 和 `localhost:8000` 是不是同一個 site），再實測。',
+    },
     points: [
       { b: 'CORS 是瀏覽器的規則，不是伺服器的防線', t: 'curl 不理 CORS。它保護的是「使用者的瀏覽器不被其他網站拿去打你的 API」，授權還是要靠 token / session。' },
       { b: 'preflight 的來回', t: '非簡單請求（自訂標頭、JSON、PUT）先送 `OPTIONS`，伺服器回 `Access-Control-Allow-Origin / Methods / Headers`，通過才送真請求。`Access-Control-Max-Age` 可快取這個結果。' },
@@ -169,6 +240,16 @@ export default {
     ],
   },
   'http-caching': {
+    challenge: {
+      task: '票務網站有兩個資源：「場次剩餘座位」`seats.json` 與「場館介紹」`venue.html`。在一個資料夾放這兩個檔案，用 `python3 -m http.server` 提供，瀏覽器開 `seats.json` 兩次（第二次按一般的重新整理），觀察 Network 分頁；再改一次檔案內容後重新整理。也用 `curl -i -H "If-Modified-Since: <上一次的 Last-Modified>"` 重做一次。',
+      deliver: '沒改檔與改了檔兩次的請求、回應標頭與畫面內容，加一句：304 時畫面顯示的是哪一份內容。',
+      check: [
+        '第二次請求帶了 `If-Modified-Since`（或 `If-None-Match`），回應是 304 而且沒有 body',
+        '說明 304 時畫面用的是瀏覽器快取裡的那份 body，並用改檔後的 200 對照',
+        '替兩個資源各寫一組 `Cache-Control`，並分成兩欄：可以從掛號的「診次剩餘名額」沿用的條件（個人化與否、要不要每次驗證），以及要跟票務業務確認的條件（開賣當下能接受幾秒的舊資料）',
+      ],
+      twist: '在同一秒內改兩次 `seats.json`。先預測只靠 `Last-Modified` 會不會漏掉第二次修改、`ETag` 能不能避免，再實測。',
+    },
     points: [
       { b: '`Cache-Control` 的幾個字', t: '`no-store`（別存）、`no-cache`（存但每次要驗證）、`max-age=60`（60 秒內直接用）、`private`（只有瀏覽器能存，CDN 不行）、`public`。' },
       { b: '304 Not Modified', t: '回應帶 `ETag`，客戶端下次帶 `If-None-Match`；沒變就回 304 不帶 body，省頻寬也省序列化。' },
@@ -184,11 +265,21 @@ export default {
     ],
   },
   'tls-dns': {
+    challenge: {
+      task: '製造兩種錯誤，各寫一張診斷卡。DNS：`curl -v https://no-such-host.example/` 與 `dig no-such-host.example`。憑證名稱：先用 `dig +short example.com` 取得 IP，再 `curl -v --resolve wrong.example.com:443:<那個 IP> https://wrong.example.com/`，並用 `openssl s_client -connect <IP>:443 -servername example.com </dev/null | openssl x509 -noout -ext subjectAltName` 看憑證列了哪些名字。',
+      deliver: '兩張診斷卡：症狀原文、第一個要跑的指令與輸出、怎麼判斷是這一層的問題、修法。',
+      check: [
+        '兩張卡的錯誤訊息都是實際指令輸出的原文',
+        'DNS 卡用 `dig` 的 `status:` 證明卡在解析（沒有拿到 IP）；憑證卡用 `curl -v` 的 `Connected to` 證明 TCP 已經連上',
+        '憑證卡寫出 SAN 實際列了哪些名字，說明為什麼 `wrong.example.com` 不在裡面就失敗',
+      ],
+      twist: '同一個名字在公司內網的 DNS 解析到舊機器、外面解析到新機器。先預測兩張卡的哪一步在兩個網路會得到不同結果，再寫出要多加的檢查指令。',
+    },
     points: [
       { b: 'DNS 紀錄的幾種', t: 'A / AAAA 指 IP、CNAME 指另一個名字、TXT 做驗證。TTL 決定改紀錄多久生效，換機器前先把 TTL 調短。' },
       { b: 'TLS 握手在做什麼', t: '驗證伺服器憑證（CA 簽的）、協商金鑰、之後整條連線加密。TLS 1.3 把握手縮到一趟來回。' },
       { b: 'TLS 終結在邊界', t: '憑證只放在 nginx / 負載平衡器，內網用 HTTP。後端要靠 `X-Forwarded-Proto` 知道原始請求是 HTTPS。' },
-      { b: '憑證自動更新', t: "Let's Encrypt 憑證 90 天，而且業界已決議逐步把公開憑證最長效期縮到 47 天（2029 年前分階段），手動換憑證會跟不上，用 certbot / acme.sh 自動續，並監控到期日。" },
+      { b: '憑證自動更新', t: "Let's Encrypt 的預設憑證 90 天；CA/Browser Forum 的規定把公開憑證的效期上限從 2026-03-15 起降到 200 天、2027-03-15 起 100 天、2029-03-15 起 47 天。手動換憑證會跟不上，用 certbot / acme.sh 自動續，並監控到期日。" },
     ],
     checklist: [
       '能解釋瀏覽器如何判斷一張憑證可信',
@@ -201,6 +292,16 @@ export default {
     ],
   },
   'http2-http3': {
+    challenge: {
+      task: '用 `curl --http1.1` 與 `curl --http2` 對同一個網站（例如 `https://example.com/`）各跑 10 次，`-w` 印 `%{http_version} %{time_appconnect} %{time_total}`；你的 curl 支援的話再加 `--http3`。也在瀏覽器 Network 分頁打開 Protocol 欄看同一個網站。跑之前先預測哪個協定在這個網站上最快、差多少。',
+      deliver: '每個協定 10 次的中位數與最大值、`curl --version`、網路環境，加三句「這組數字不能推論的事」。',
+      check: [
+        '每次都確認了協商結果：`%{http_version}` 實際是 1.1、2 或 3，而不是只看指令參數',
+        '用中位數與範圍比較，不拿單次數字下結論',
+        '至少寫出兩件不能推論的事（例如：單一小頁面看不出多工的好處；網路沒有丟包時看不到 TCP 隊頭阻塞）',
+      ],
+      twist: '換成一頁 80 個小資源、丟包率 2% 的行動網路。先用練習題 [兩種隊頭阻塞](#/exercise/http2-http3-1) 的模型預測哪個協定差最多，再寫出要怎麼在本機模擬丟包（例如 Linux 的 `tc netem`）才能驗證。',
+    },
     points: [
       { b: '語意不變，線路格式改變', t: '方法、路徑、狀態碼、標頭在三個版本都一樣；改的是怎麼編碼與傳輸。後端程式通常不用改，要改的是伺服器、proxy、負載平衡器的設定。' },
       { b: 'HTTP/2：一條連線多工', t: '二進位分幀，每個請求是一條 stream，不同 stream 的幀交錯傳送；HPACK 壓縮重複的標頭。解決 HTTP/1.1 一次一個請求的隊頭阻塞。伺服器推送已被主要瀏覽器移除。' },
@@ -221,6 +322,17 @@ export default {
     ],
   },
   'realtime-choice': {
+    challenge: {
+      task: '餐廳的候位叫號頁：客人在手機上等叫號。做完練習題 [解析 SSE](#/exercise/realtime-choice-1) 後，在 [Playground](#/playground?lang=js) 模擬：伺服器依序送 id 1–10 的事件，客戶端收到第 5 個後斷線，重連時帶 `Last-Event-ID`，這段期間伺服器又送了 6–8；伺服器只保留最近 N 筆事件。分別用 N=3 與 N=10 跑，先預測兩種情況客戶端收到的 id 序列。',
+      deliver: '兩種 N 的預測與實際 id 序列，加上「發現漏號時客戶端怎麼補」的做法。',
+      check: [
+        'N=10 時沒有漏號也沒有重複；N=3 時指出漏了哪幾個，而且程式偵測得到',
+        '漏號時的補救是重新取一次完整狀態（例如 `GET /queue/current`），不是當作沒發生',
+        '驗收清單多列兩項：手機鎖屏或分頁進背景後恢復、多台伺服器時事件 id 怎麼產生',
+        '分成兩欄：可以從門診叫號沿用的設計，以及要跟餐廳業務確認的條件（過號多久算棄號、要不要另外發推播）',
+      ],
+      twist: '改成演唱會開賣的排隊進度，十萬人同時在線。先預測 SSE 的連線數與心跳會在哪一層先撐不住，以及每 30 秒短輪詢在什麼條件下反而比較合理。',
+    },
     points: [
       { b: '先問能接受多少延遲', t: '幾十秒可以接受就短輪詢；要即時、只有伺服器推就 SSE；客戶端也要頻繁送資料才用 WebSocket。長輪詢是受限環境的退路。' },
       { b: 'SSE：單向、純 HTTP、自動重連', t: '回應 `Content-Type: text/event-stream` 且不結束；事件由 `data` / `event` / `id` 欄位加空行組成。瀏覽器的 `EventSource` 斷線會自動重連並帶 `Last-Event-ID`。' },
@@ -241,6 +353,16 @@ export default {
     ],
   },
   'beyond-rest': {
+    challenge: {
+      task: '物流追蹤頁要顯示一張託運單的目前狀態與歷程，電商平台也要在狀態改變時收到通知。分別用 REST 輪詢、GraphQL 查詢、SSE 推送、Webhook（給電商平台）設計，列出每一種的前端或接收端要保留哪些狀態（最後看到的事件 id、重連游標、已處理的 webhook id、快取的欄位），以及這個狀態不見時（重新整理、重連、重送）會發生什麼。接著用練習題 [驗證 Webhook](#/exercise/beyond-rest-1) 實際送兩次同一個事件 id。',
+      deliver: '四種介面的狀態表，加上練習題裡同一個事件送兩次的實際輸出。',
+      check: [
+        '四種介面各列出要保留的狀態，以及它不見時的後果',
+        'Webhook 那一列附上同一個事件 id 送兩次的實際輸出，只處理一次',
+        '分成兩欄：可以從付款通知沿用的條件（驗簽章、依事件 id 去重），以及要跟物流業務確認的條件（狀態會不會倒退，例如「配送中」回到「理貨中」）',
+      ],
+      twist: '物流商的事件不保證順序，「已送達」可能比「配送中」先到。先預測四種介面裡哪幾種的畫面會顯示錯，以及只靠事件 id 去重夠不夠。',
+    },
     points: [
       { b: 'GraphQL：前端決定要什麼欄位', t: '解決 over/under-fetching，但後端要處理 N+1（DataLoader）、查詢複雜度限制、快取變難。適合多端、多變的前端需求。' },
       { b: 'gRPC：服務對服務', t: 'Protobuf 二進位 + HTTP/2，型別強、效能好，但瀏覽器直接用不方便。微服務之間常見。' },

@@ -11,6 +11,7 @@ on:
       - 'src/content/**'
       - 'src/labs/**'
       - 'docs/CURRICULUM.md'
+      - 'docs/CURRICULUM-frontend.md'
       - 'README.md'
       - 'scripts/sync-docs.mjs'
       - '.github/workflows/docs-sync.yml'
@@ -39,13 +40,13 @@ jobs:
 
       - name: 有變動就提交
         run: |
-          if git diff --quiet -- README.md docs/CURRICULUM.md; then
+          if git diff --quiet -- README.md docs/CURRICULUM.md docs/CURRICULUM-frontend.md src/content/curriculum-weeks.js; then
             echo "產生段落已是最新"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md docs/CURRICULUM.md
+          git add README.md docs/CURRICULUM.md docs/CURRICULUM-frontend.md src/content/curriculum-weeks.js
           git commit -m "chore(docs): 同步 README 與課綱的產生段落"
           git pull --rebase origin main
           git push origin HEAD:main

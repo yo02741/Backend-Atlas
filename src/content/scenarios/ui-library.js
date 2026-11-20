@@ -56,6 +56,21 @@ export default {
     { id: 'legacy', situation: '已經用 Vuetify 做了 60 個畫面的舊後台，這季要再加 5 個畫面。', options: ['self', 'library', 'headless'], answer: 'library',
       explain: '同一個系統兩套元件，外觀與行為會不一致：使用者在兩種 Dialog、兩種日期選擇器之間切換。新畫面沿用現有的元件庫，才和舊畫面一樣；要換掉元件庫是另一個專案，不在加 5 個畫面時順便做。' },
   ],
+  switchIf: [
+    { when: '內部後台，沒有設計師、預設外觀就好，需要資料表格與 Tree', then: '改用 `library`：外觀、鍵盤與資料表格都現成，起步最快。' },
+    { when: '只有大按鈕、數字鍵盤與一個確認 Dialog，跑在很舊的平板上', then: '改用 `self`：原生 `<button>` 與 `<dialog>` 就夠，不必載入元件庫。' },
+  ],
+  alternative: { option: 'library', holdsWhen: '設計稿和元件庫的預設外觀差距小（模擬器的「設計稿與預設外觀的差距」在 30% 以下），只用主題變數就改得到、不必覆寫元件內部的 class 時。' },
+  challenge: {
+    task: '用同一個元件比修改成本：找病人的 Combobox，設計稿要求選項多顯示病歷號、選定後輸入框只留姓名、清除按鈕放左邊，而且上下鍵、Enter、Esc 照 WAI-ARIA APG。先為三種做法列出要改的地方（樣式、範本或插槽、鍵盤行為、ARIA 屬性）與估計時數。再到本頁模擬器的「② 升級一個大版本」，三種「樣式的寫法」各按一次「升級到 kit v3」，記下「失效的樣式規則」。',
+    deliver: '一張三欄的修改清單（自己做、元件庫、headless）：要改的項目、估計時數，以及升級後失效的樣式規則數',
+    check: [
+      '每一欄都寫明鍵盤行為（上下鍵、Enter、Esc）是自己寫還是元件提供',
+      '元件庫那一欄寫出是用插槽或主題變數改、還是要覆寫內部 class，並對照模擬器的升級結果',
+      '估計時數寫出依據（例如要自己實作 `aria-activedescendant`）',
+    ],
+    twist: '設計師再加一條：選項要依科別分群組，群組標題不能被選。先預測三種做法哪一個改起來最貴、鍵盤行為哪一步最容易出錯，再補進清單。',
+  },
   implementation: [
     { title: 'Element Plus 按需引入', lang: 'ts', code: `// vite.config.ts：只打包用到的元件與它們的樣式，不用 app.use(ElementPlus) 整套註冊
 import { defineConfig } from 'vite'

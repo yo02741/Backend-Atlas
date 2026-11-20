@@ -167,6 +167,52 @@ await test('errorRate：隨機回 503', async () => {
   assert.equal((await fetch('/api/x')).status, 200)
 })
 
+await test('scenario：固定情境不靠亂數；設了就不套用 errorRate', async () => {
+  const { api, fetch } = make({ random: () => 0 })
+  api.errorRate = 1
+  api.scenario = 'success'
+  const ok = await fetch('/api/sessions')
+  assert.equal(ok.status, 200)
+  assert.equal((await ok.json()).length, 3)
+})
+
+await test('scenario fail：每個方法 + 路徑第 1 次 503（Problem Details），重試成功', async () => {
+  const { api, fetch } = make()
+  api.scenario = 'fail'
+  const r1 = await fetch('/api/sessions')
+  assert.equal(r1.status, 503)
+  assert.equal((await r1.json()).status, 503)
+  assert.equal((await fetch('/api/sessions?doctor_id=1')).status, 200, '同一路徑（query 不同）第 2 次成功')
+  assert.equal((await fetch('/api/appointments')).status, 503, '另一個路徑重新算')
+  assert.equal((await fetch('/api/appointments')).status, 200)
+  api.reset()
+  api.latency = 0
+  api.scenario = 'fail'
+  assert.equal((await fetch('/api/sessions')).status, 503, 'reset 後重播同一組回應')
+})
+
+await test('scenario empty：成功的 GET 陣列變 []、分頁的 items 變空；錯誤與 POST 不動', async () => {
+  const { api, fetch } = make()
+  api.scenario = 'empty'
+  assert.deepEqual(await (await fetch('/api/sessions')).json(), [])
+  assert.deepEqual(await (await fetch('/api/appointments')).json(), { items: [], next_cursor: null })
+  api.get('/api/me', { body: { id: 1 } })
+  assert.deepEqual(await (await fetch('/api/me')).json(), { id: 1 })
+  assert.equal((await fetch('/api/sessions/99/appointments', { method: 'POST', body: '{}' })).status, 404)
+})
+
+await test('scenario shuffle：較早的請求較晚回，陣列倒序', async () => {
+  const { api, fetch } = make()
+  api.scenario = 'shuffle'
+  const order = []
+  await Promise.all([
+    fetch('/api/sessions').then(async (r) => { order.push('first'); return r.json() }).then((b) => assert.deepEqual(b.map((s) => s.id), [3, 2, 1])),
+    fetch('/api/sessions?doctor_id=1').then(() => order.push('second')),
+    fetch('/api/sessions?doctor_id=2').then(() => order.push('third')),
+  ])
+  assert.deepEqual(order, ['third', 'second', 'first'])
+})
+
 await test('內建門診：登入、查門診、掛號、重複掛號、額滿、取消', async () => {
   const { fetch } = make()
   const post = (url, body, token) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) })

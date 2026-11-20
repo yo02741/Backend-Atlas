@@ -125,6 +125,8 @@ function render(s: LoadState) {
 
 `default` 指定給 `never` 型別是窮舉檢查：之後在 `LoadState` 加了 `{ status: 'empty' }`，忘了加 `case` 的地方會報 `TS2322: Type '{ status: "empty"; }' is not assignable to type 'never'.`，漏處理的狀態在編譯時就找得到。
 
+:::stop 讀到這裡可以先停：會寫 `interface` 與 union，用 narrowing 處理 `null` 與選填欄位。後面的泛型、`as` 與 `any`、`tsconfig`，在讀 API 函式的型別或審 AI 加的型別斷言時再回來讀。
+
 ### 泛型
 
 泛型是型別的參數，讓同一段程式適用多種型別，又不丟掉型別資訊：

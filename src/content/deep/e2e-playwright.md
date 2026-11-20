@@ -120,6 +120,8 @@ expect(await page.getByRole('status').textContent()).toBe('已完成掛號，號
 
 不是 locator 的值（例如自己計數的 API 呼叫次數）用 `await expect.poll(() => calls).toBe(2)` 重試。web-first assertion 一定要 `await`，漏寫時測試函式先結束了，訊息是 `Error: Test ended.`。
 
+:::stop 讀到這裡可以先停：會用 locator 與 web-first assertion 寫出不靠固定等待的步驟。後面的 `page.route`、設定檔、trace 與截圖比對，在要造 API 回應或追 CI 上的偶發失敗時再回來讀。
+
 ### `page.route`：每個測試自己決定 API 回什麼
 
 ```js

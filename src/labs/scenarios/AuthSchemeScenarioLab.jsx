@@ -7,7 +7,7 @@ import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Callout, Statu
    右：選中那格的攻擊面 / 撤銷 / 多服務成本燈號；Slider 調 access token 效期看撤銷延遲 */
 
 const CLIENTS = [
-  { id: 'spa', name: '同站 SPA', sub: 'app.shop.tw → api.shop.tw' },
+  { id: 'spa', name: '同站 SPA', sub: 'app.shop.example → api.shop.example' },
   { id: 'app', name: 'iOS / Android App', sub: '沒有 cookie jar 與 same-origin' },
   { id: 'third', name: '第三方整合', sub: '物流商的伺服器' },
 ]

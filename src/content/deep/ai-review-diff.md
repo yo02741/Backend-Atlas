@@ -112,6 +112,8 @@ git restore src/components/AppointmentList.vue  # 丟掉沒收的部分（未 co
 
 在 GitHub 的 PR 上，Files changed 每個檔案都有 Viewed 可以勾，看過的收起來，沒勾的就是還沒審。看不懂的段落，請 AI 解釋或改寫成看得懂的樣子再收。
 
+:::stop 讀到這裡可以先停：會照由外往內的順序審一份 AI 的 diff，並分段收下。後面的特徵測試與一次拆一塊，在要請 AI 重構一個大檔案時再回來讀。
+
 ## 元件越寫越大時
 
 AI 傾向在現有的檔案裡加東西。幾輪之後，一個 SFC 同時管清單的請求、篩選表單、取消 Dialog、分頁與 Toast，700 行裡有十幾個 `ref` 與三個 `watch`。徵兆：

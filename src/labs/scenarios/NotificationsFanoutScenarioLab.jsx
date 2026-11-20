@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useLabVisible, Stats, Stat, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useLabVisible, Stats, Stat, fmtN, Measure } from '../ui.jsx'
 
 /* 通知扇出情境模擬器（純前端、所有數字示意）：
    發文者 → API → 佇列 → worker → 推播 / email 服務 → 10 萬使用者（1,000 格，每格 100 人）
@@ -153,8 +153,8 @@ export default function NotificationsFanoutScenarioLab() {
             </p>
           </LabStage>
           <Stats min={150} className="nf-stats">
-            <Stat label="發文 API 回應" value={f.apiS > 1 ? secs(f.apiS) : `${Math.round(f.apiS * 1000)} ms`} tone={f.apiS > 1 ? 'bad' : 'ok'} />
-            <Stat label="送完時間（示意）" value={isRead ? '不主動送' : secs(f.done)} tone={f.done > 120 ? 'bad' : ''} />
+            <Stat label="發文 API 回應" value={<Measure kind="set" value={f.apiS > 1 ? secs(f.apiS) : `${Math.round(f.apiS * 1000)} ms`} />} tone={f.apiS > 1 ? 'bad' : 'ok'} />
+            <Stat label="送完時間" value={isRead ? '不主動送' : <Measure kind="set" value={secs(f.done)} />} tone={f.done > 120 ? 'bad' : ''} />
             <Stat label="重複通知" value={fmtN(f.dups)} tone={f.dups ? 'bad' : 'ok'} note={crash && !isRead && (idem ? <Status ok>冪等鍵擋掉</Status> : f.dups ? <Status>沒有去重</Status> : <Status warn>當機後才看得到</Status>)} />
             <Stat label="佇列最高深度" value={fmtN(f.queueMax)} note={mode === 'fanout-write' && started ? `目前 ${fmtN(f.queue)}` : ''} />
           </Stats>

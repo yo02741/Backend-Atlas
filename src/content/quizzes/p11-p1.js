@@ -19,7 +19,7 @@ export default [
         code: '$ docker stats --no-stream billing-api\nCONTAINER ID   NAME          CPU %     MEM USAGE / LIMIT   MEM %     PIDS\n7f3e2a91c0d7   billing-api   100.82%   790MiB / 2GiB       38.57%    53\n\n$ docker inspect --format \'{{.State.OOMKilled}} {{.RestartCount}}\' billing-api\nfalse 0',
         lang: 'bash',
         options: [
-          'CPU 只用到 1 顆，像是單一 Python 行程受 GIL 限制；壓測比較多個 worker 的設定',
+          'CPU 只用到 1 顆，像是單一行程受 GIL 限制；壓測多個 worker 的設定',
           'CPU 被 --cpus 節流了，把上限調到 8 顆，排隊就會消失',
           '執行緒不夠用，把 --threads 調到 100，讓更多請求同時進行',
           '記憶體快到上限，Python 正在頻繁回收記憶體而變慢；把記憶體上限調到 4 GiB',

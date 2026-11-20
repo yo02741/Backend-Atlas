@@ -210,6 +210,8 @@ patches:
 
 `configMapGenerator` 產生的 ConfigMap，名稱後面會帶內容的雜湊（例如 `booking-config-7g2k9m4h5t`），Deployment 裡的參照會自動改成同一個名稱。內容一變，名稱就變，Deployment 的 template 跟著變，自動觸發滾動更新，解決「改了 ConfigMap，Pod 沒有重啟」的問題。
 
+:::stop 讀到這裡可以先停：會寫 base 與 overlay，用 `kubectl kustomize` 輸出最終 manifest 並比對兩個環境的差異。後面的 Helm、GitOps、IaC 與秘密管理，在要安裝第三方 chart、把部署改成叢集自己拉，或管叢集以外的資源時再回來讀。
+
 ## Helm：樣板加 values
 
 Helm 走另一條路：manifest 寫成樣板，會變的地方挖洞，值放在 values 檔。一包樣板叫 **chart**，安裝到叢集後的一個實例叫 **release**，每次升級產生一個 **revision**。

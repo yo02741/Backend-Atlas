@@ -36,7 +36,7 @@ a1f3c2d fix(auth): reject refresh tokens issued before password change
           '放棄 rebase，改用 git merge main 重來：任何分支都不該 force push，這是團隊規範的底線',
           '先刪掉遠端分支再重新 push 一次，遠端沒有舊歷史可比對，技術上就不算 force push',
           'git push --force：分支只有自己在用，直接覆寫最快，--force-with-lease 只是多打字',
-          'git push --force-with-lease：自己的短命分支 rebase 後改寫歷史是預期的，禁令針對的是共享分支',
+          'git push --force-with-lease：分支只有自己在用，rebase 改寫歷史是預期的',
         ],
         answer: 3,
         explain: '「本機整理用 rebase」的代價就是歷史改寫，所以 push 需要 force；--force-with-lease 會先確認遠端沒有別人剛推上來的 commit 才覆寫，比裸 --force 多一層保護。規範禁止的是對「共享分支」（main、多人協作的分支）force push，只有自己在用的 PR 分支正是該 rebase 整理的地方，全面禁用是過度保守。刪掉遠端再推只是繞路做同一件事，還會把 PR 一起關掉。',
@@ -57,8 +57,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
       - run: uvx ruff check .
   test:
     runs-on: ubuntu-latest
@@ -68,9 +68,9 @@ jobs:
         env: { POSTGRES_PASSWORD: test }
         ports: ["5432:5432"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - uses: actions/cache@v4
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/uv
           key: uv-\${{ hashFiles('uv.lock') }}
@@ -80,14 +80,14 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker build -t ghcr.io/org/app:\${{ github.sha }} .   # login 與 push 略`,
         lang: 'yaml',
         options: [
-          'lint → test → build 依序跑，job 預設照寫的順序執行',
+          'lint → test → build 依序跑，job 預設照 YAML 裡寫的順序執行',
           'lint 與 test 平行跑；build 被跳過，因為 if 只在 push 事件成立',
-          '三個 job 全部平行跑，needs 只影響顯示順序',
-          '只跑 lint；test 需要 secrets 所以 PR 事件不會執行',
+          '三個 job 全部平行跑，needs 只影響 Actions 頁面上的顯示順序',
+          '只跑 lint：test 用到 services 與 secrets，PR 事件預設不會執行',
         ],
         answer: 1,
         explain: 'GitHub Actions 的 job 預設平行，只有宣告 needs 的才會等；lint 與 test 同時開始（fail fast 就是這樣來的），build 等它們都綠。但 build 還有 if: github.event_name == \'push\'，PR 事件下條件為 false、job 被跳過，這是「PR 只 lint / test、合進 main 才 build 並用 SHA 當 tag」的實作。services 與 cache 都不需要 secrets。cache key 用 hashFiles(\'uv.lock\')：lock 檔不變就命中，一改就重建。',
@@ -122,10 +122,10 @@ deploy:
       when: manual`,
         lang: 'yaml',
         options: [
-          'test、build、deploy 都會出現，deploy 要手動按',
+          'test、build、deploy 都會出現，deploy 停在手動按鈕等人觸發',
           'test 與 build；deploy 因為 when: manual 不會出現',
-          '沒有 job 會跑，因為 stages 沒有列出 feature 分支',
-          '只有 test；build 與 deploy 的 rules 條件不成立，根本不會被加進 pipeline',
+          '沒有 job 會跑：stages 只定義階段，沒有一個寫到 feature 分支',
+          '只有 test：另外兩個 job 的 rules 不成立，不會被建立',
         ],
         answer: 3,
         explain: 'GitLab 的 rules: 決定 job 是否「被建立」：$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH 在 feature 分支為 false、又沒有其他規則，所以 build 與 deploy 直接不存在於這條 pipeline（不是跳過）。test 沒有 rules，預設每次 push 都跑。when: manual 只在條件成立（main 分支）時才生效，變成要人按的部署按鈕。stages 只定義階段順序，與分支無關。對照 GitHub Actions：rules: ↔ if:、stages ↔ needs、cache:key:files ↔ hashFiles。',
@@ -133,10 +133,10 @@ deploy:
       {
         q: 'CI 每次都花兩分鐘下載依賴，你加了 actions/cache 但 key 寫成固定字串 uv-cache。會發生什麼？',
         options: [
-          '第一次存進去後永遠命中舊快取，之後 lock 檔新增的套件每次都得補下載，快取內容也不會更新',
-          '完美：key 固定所以每次都命中，永遠不用重新下載',
-          'GitHub 會拒絕固定字串的 key，必須包含 runner.os',
-          '每個 PR 都會重新建立快取，等於沒快取',
+          '第一次存下後一直命中同一份舊快取，lock 檔新增的套件每次都得補下載',
+          'key 固定所以每次都命中，快取會跟著每次 run 更新，不用再重新下載',
+          'GitHub 會拒絕沒有變數的 key，必須包含 runner.os 才會存進快取',
+          '每個 PR 的分支都會重新建立一份快取，跨 PR 用不到，等於沒快取',
         ],
         answer: 0,
         explain: 'actions/cache 命中 key 時只還原、不回寫（cache 是不可變的），固定 key 代表快取內容凍結在第一次的狀態；依賴一變，缺的部分每次都要重抓，快取越來越沒用。正確的 key 要包含依賴描述檔的 hash（uv-${{ hashFiles(\'uv.lock\') }}），lock 檔一改 key 就變、重新建立；再加 restore-keys: uv- 讓舊快取先當底。加 runner.os 是好習慣但不是強制；cache 是 repo 層級共享，預設分支建立的快取也給 PR 用。',
@@ -155,16 +155,16 @@ deploy:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: ./deploy.sh \${{ github.sha }}
         env:
           DEPLOY_TOKEN: \${{ secrets.DEPLOY_TOKEN }}`,
         lang: 'yaml',
         options: [
-          '在 repo 設定的 Environments → production 設 required reviewers 與 deployment branches，YAML 不用改',
-          'YAML 加 if: github.ref == refs/heads/main 擋分支，再加一個 sleep 600 的 step 讓人有時間取消',
+          'repo 設定的 Environments → production 設 required reviewers 與 deployment branches',
+          'YAML 加 if: github.ref == \'refs/heads/main\' 擋分支，再加一個 sleep 600 的 step 讓人有時間按取消',
           '把 DEPLOY_TOKEN 從 environment secret 改成 repo 層級 secret，只有 admin 能觸發用到它的 job',
-          '把觸發改成 on: workflow_dispatch 並限制只能從 main 執行，需要有人手動按就等於核准',
+          '觸發改成 on: workflow_dispatch，job 加 if 限制只能從 main 執行，要有人手動按就等於有人核准',
         ],
         answer: 0,
         explain: '保護規則（required reviewers、wait timer、deployment branches）是 environment 的屬性，設在 repo 設定裡而不是 YAML；job 一宣告 environment: production 就會在執行前暫停等核准，非 main 分支的 run 直接被拒，而且 environment 的 secrets 只有通過保護的 job 拿得到。sleep 不是核准機制、if 也能被改 YAML 的人繞過；environment secret 比 repo secret 更受限，改成 repo 層級是反方向；手動觸發不等於核准，任何有寫入權限的人都能按。',
@@ -174,7 +174,7 @@ deploy:
         options: [
           '兩者底層都是壓縮上傳的儲存空間，差別只在名字；三者都用 cache 最快，也不佔 artifact 配額',
           'artifact 是加速用、以 key 命中的儲存（依賴目錄）；cache 是保留給人下載的產物（報告、wheel）',
-          'cache 是加速用、可丟的跨 run 資料（依賴目錄）；artifact 是這次 run 的產物，在 job 間傳或給人下載（報告、wheel）',
+          'cache 是可丟的加速資料（依賴目錄）；artifact 是這次 run 的產物（報告、wheel），在 job 間傳或給人下載',
           'cache 只能在同一個 job 內還原，依賴目錄用它；artifact 才能跨 job，報告與 wheel 都得用 artifact',
         ],
         answer: 2,
@@ -200,9 +200,9 @@ deploy:
         q: 'rolling deploy 過程中，為什麼新版程式碼與資料庫 schema 必須「同時相容新舊版」？',
         options: [
           'rolling 會先跑 migration 再一次換掉所有實例，中間有幾秒停機',
-          '負載平衡器會隨機把舊版的請求送到新版，造成 session 不一致',
-          '不需要，rolling 本身就保證零停機',
-          '換版是一台一台，某段時間新舊版程式同時服務同一個資料庫；任一版讀不懂當下的 schema 就會出錯',
+          '負載平衡器會把舊版建立的 session 隨機送到新版，造成 session 資料格式不一致',
+          '不需要：rolling 會等新版全部健康才切流量，本身就保證新舊版不會同時服務',
+          '換版是一台一台，有段時間新舊版同時連同一個資料庫，任一版讀不懂當下的 schema 就出錯',
         ],
         answer: 3,
         explain: 'rolling 的本質是「新版起來、readiness 通過、舊版下線、下一台」，中間有一段新舊共存期；回滾時又會倒回舊版跑在新 schema 上。這就是 expand / contract 的來源：先加可空欄位（舊版不知道也沒事）、雙寫、回填、切讀、最後才刪舊欄位。「一次換掉所有實例」不是 rolling；session 問題靠 API 無狀態解決，與 schema 無關；零停機是做對相容性後的結果，不是策略自帶的。',
@@ -223,10 +223,10 @@ deploy:
       {
         q: '新版改了核心的訂單計價邏輯，測試都過但你不放心。服務有完整的錯誤率、延遲、每分鐘訂單數指標。哪種部署策略最能降低風險？',
         options: [
-          'blue-green：新版整套起好後一次切 100%，出問題再切回',
-          'rolling：逐台換最省資源，出問題就停止換版',
-          'canary：先讓 5% 流量進新版、盯錯誤率與訂單數，正常再逐步放大，異常就切回',
-          '週末凌晨停機部署，那時沒人下單',
+          'blue-green：新版整套起好後一次切 100%，出問題再整套切回舊版',
+          'rolling：逐台換最省資源，出問題就停止換版，把已換的機器換回去',
+          'canary：先讓 5% 流量進新版並盯指標，正常再逐步放大，異常就切回',
+          '週末凌晨停機部署：那時幾乎沒人下單，出問題也有時間慢慢修',
         ],
         answer: 2,
         explain: 'canary 的價值是「用真實流量、有限爆炸範圍」驗證測試抓不到的問題，前提是要有指標判斷好壞，題目已經有。blue-green 回滾快，但一切就是 100% 使用者吃到 bug，比較適合「要整套一起切」的情境；rolling 的爆炸範圍隨換掉的台數增長且沒有明確的觀察閘門；停機部署不會發現邏輯 bug，只是把發現時間延後到早上。搭配 feature flag 的話，甚至不用重新部署就能把新計價邏輯關掉。',
@@ -241,8 +241,8 @@ deploy:
         options: [
           '兩個都用 log：現代 log 平台支援全文檢索與聚合查詢，p99 與 stack trace 都能從同一份資料算出來',
           '前者看 log（逐筆記錄延遲才算得出 p99）、後者看 metrics（錯誤計數器會附上最後一次的例外）',
-          '前者看 metrics（histogram 聚合）、後者看 log（單一事件），兩者用 request id / trace id 串起來',
-          '兩個都用 trace：每個 span 都有延遲與例外資訊，trace 是三者中資訊最完整的',
+          '前者看 metrics（histogram 聚合），後者看 log（單一事件），用 trace id 串起來',
+          '兩個都用 trace：每個 span 都帶延遲與例外資訊，trace 是三者中資訊最完整的一種',
         ],
         answer: 2,
         explain: 'metrics 是預先聚合好的數字（counter、histogram），便宜、能長期保存、適合畫趨勢與告警；log 是一筆筆事件，才有 stack trace 這種細節；metrics 只有數字，不會帶例外內容。用 log 算 p99 在流量大時又貴又慢，還可能因採樣或遺失而不準；trace 通常會採樣、保留期短，不適合當長期趨勢來源。實務流程是：metrics 告警 → 找到時間點 → 用 trace id 找那條 trace → 跳到對應的 log。',
@@ -267,9 +267,9 @@ deploy:
         q: '服務有 200 條告警，多數是「CPU > 70%」「出現一次 5xx」這類，值班的人已經習慣直接忽略。該怎麼調整？',
         options: [
           '把門檻調高（CPU > 95%、5xx 連續 5 次），告警數量下降到值班的人願意看，內容不用動',
-          '以四個黃金訊號重建告警，每條對應使用者感受到的症狀並附 runbook；不知道收到要做什麼的就刪掉',
-          '全部改成只寄 email 與每日摘要，不再推播到手機，值班的人白天集中處理就不會疲勞',
-          '告警太多是因為沒分級：全部保留並再加更多告警覆蓋所有指標，用 P1–P4 分級讓人自己篩',
+          '以四個黃金訊號重建告警，每條對應使用者感受到的症狀並附 runbook，不知道要做什麼的就刪',
+          '全部改成只寄 email 與每日摘要、不再推播到手機，值班的人白天集中處理就不會再疲勞',
+          '告警太多是因為沒分級：全部保留、再補上缺的指標告警，用 P1–P4 分級讓值班的人自己篩',
         ],
         answer: 1,
         explain: '會被忽略的告警等於沒有：告警疲勞讓真正的事故也被略過。好的告警描述症狀（p99 > 1s、錯誤率 > 1%、佇列積壓）而不是原因（CPU 高不一定有人受影響），且每條都要回答「收到後做什麼」。只調數字是換個門檻繼續吵；只寄 email 等於關掉告警；加更多告警讓噪音更大。單一 5xx 這類事件該進錯誤追蹤工具（Sentry 類）聚合看趨勢，不是每次都叫人。',
@@ -283,9 +283,9 @@ deploy:
         q: '資料庫每天凌晨 3 點全量備份一次，從備份還原到能服務約需 2 小時。這代表 RPO 與 RTO 分別是多少？',
         options: [
           'RPO 2 小時、RTO 24 小時',
-          'RPO 最多 24 小時（最壞丟一整天資料）、RTO 約 2 小時',
+          'RPO 最多 24 小時、RTO 約 2 小時',
           'RPO 與 RTO 都是 2 小時',
-          'RPO 是 0（有備份就不會丟資料）、RTO 2 小時',
+          'RPO 是 0（有備份就不會丟）、RTO 2 小時',
         ],
         answer: 1,
         explain: 'RPO（Recovery Point Objective）是「最多能接受丟多少時間的資料」：每天備一次，災難若發生在下一次備份前一刻就丟了近 24 小時。RTO（Recovery Time Objective）是「還原到能服務要多久」，這裡是 2 小時。「有備份就不會丟資料」是常見誤解，要讓 RPO 趨近 0 得靠 WAL 歸檔 / PITR 或同步複寫。這些數字要拿實際演練過的還原來驗證；「上次成功還原是什麼時候」比「有沒有備份」重要。',
@@ -313,10 +313,10 @@ psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'i
       {
         q: '第三方金流 API 昨天慢到 30 秒，結果整個網站（包含跟金流無關的商品瀏覽）一起掛。事故檢討會該聚焦什麼？',
         options: [
-          '為什麼一個外部依賴變慢會拖垮全站：補 timeout、斷路器、讓結帳降級而其他功能照常，寫成行動項',
-          '找出是誰選了這家金流、誰在整合時沒設 timeout，釐清責任歸屬並記入績效，避免下次再犯',
+          '一個外部依賴變慢為什麼會拖垮全站：補 timeout、斷路器、讓結帳降級，寫成行動項',
+          '找出是誰選了這家金流、誰在整合時沒設 timeout，釐清責任歸屬並記入績效，避免同一個人再犯',
           '評估並更換一家 SLA 更好的金流供應商，並在合約裡加入可用性條款，從源頭消除這個風險',
-          '整理停機時間軸與損失金額，向金流廠商求償並寫進合約，同時把事故歸類為外部因素結案',
+          '整理停機時間軸與損失金額，向金流廠商求償並寫進合約，把事故歸類為外部因素後結案',
         ],
         answer: 0,
         explain: '不咎責的 postmortem 問的是「系統為什麼允許這個失敗擴散」：沒有 timeout 讓 worker 全部卡在等金流、沒有斷路器讓每個請求都去撞、沒有降級讓無關功能陪葬。這些是可以改的系統性質。找人負責只會讓下次沒人敢說實話。換供應商或談賠償沒有解決「任何外部依賴都可能慢」這個事實，換一家一樣會發生。時間軸、根因、影響、行動項四件事寫下來，行動項要有負責人與期限。',

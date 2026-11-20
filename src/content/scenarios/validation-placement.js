@@ -64,6 +64,22 @@ export default {
     { id: 'monorepo', situation: '自家的門診掛號表單，FastAPI 後端與 Vue 前端在同一個 repo，CI 跑兩邊的測試；規則每季調整。', options: ['front', 'back', 'both', 'shared'], answer: 'shared',
       explain: '後端的 pydantic model 已經產生 OpenAPI，前端建置前產生 zod schema，規則改一次兩邊生效，產生的檔案有變動時 CI 看得到 diff。名額與病歷號存在仍只有後端驗得了，前端照樣要把 409 與 422 顯示在對的位置。' },
   ],
+  switchIf: [
+    { when: '後端是外包的舊系統，沒有 OpenAPI，規則只在 PDF 規格書裡', then: '改用 `both`：沒有可以產生的來源，前端照規格書手寫即時提示，後端照舊驗；兩份要定期對照。' },
+    { when: '純前端計算的小工具，不送資料也不存檔', then: '改用 `front`：沒有繞過表單的請求，也沒有後端可以驗。' },
+    { when: '沒有畫面，排程程式直接呼叫 API', then: '只要 `back`：沒有人需要即時回饋。' },
+  ],
+  alternative: { option: 'both', holdsWhen: '規則很少改、前後端分屬不同 repo 或不同團隊，而且有一組測試定期拿同樣的案例打前端與後端、差異會被發現時。' },
+  challenge: {
+    task: '有些錯誤只有後端在送出後才知道，而且牽涉兩個欄位，例如「生日顯示未滿 18 歲，但沒填監護人電話」或「這個診次已額滿」。設計 422 或 409 回來之後的畫面：訊息放在哪一欄旁邊、焦點移到哪裡、螢幕閱讀器念什麼、改好之後錯誤何時消失。先在本頁模擬器選「共用 schema」，載入「診次已額滿」案例按「掛號」，看錯誤出現在哪裡、是送出前還是送出後。',
+    deliver: '一份錯誤呈現規格：後端回應的 JSON 範例、對應的欄位、焦點位置、`aria-describedby` 或 live region 的寫法，以及錯誤清掉的條件',
+    check: [
+      '跨欄位錯誤指定一個主要欄位放訊息，另一個欄位也有標示（例如 `aria-invalid`）',
+      '送出後焦點移到第一個錯誤欄位或錯誤摘要，並寫出鍵盤使用者怎麼到其他錯誤',
+      '寫出錯誤在什麼時候清掉（改了相關欄位、重新送出成功），不會打一個字就消失',
+    ],
+    twist: '「後端最近的規則變更」選「備註上限 200 → 100」。先預測四種做法裡哪幾種會讓「備註 150 字」在送出後才知道錯、哪一種會讓壞資料進資料庫，再逐一切換驗證。',
+  },
   implementation: [
     { title: '規則的來源：pydantic model', lang: 'python', code: `# clinic/api/schemas.py：FastAPI 把 Field 的限制寫進 /openapi.json
 from datetime import date

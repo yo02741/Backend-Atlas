@@ -25,7 +25,7 @@ export default [
         options: [
           '沒有問題：有拋 ValueError 就會進 except，測試正確地驗證了例外',
           '應該捕捉 Exception 而不是 ValueError，否則其他例外會讓測試失敗',
-          'shipping_fee 沒拋例外時測試也會通過，等於沒有驗證；應改用 pytest.raises',
+          '沒拋例外時測試照樣通過，等於沒驗證；應改用 pytest.raises',
           '測試名稱沒有寫出期望的行為，改名成 test_negative_raises 就能解決',
         ],
         answer: 2,
@@ -97,7 +97,7 @@ forbid:
         options: [
           '規範檔只有人看得到，agent 不會讀取 repo 裡的 markdown 檔案',
           '寫成測試後可以刪掉規範檔，避免同一條規則存在兩個地方',
-          '規範檔是 agent 的輸入，違反時不會有任何東西變紅；測試在每次 CI 都檢查，違反就擋下合併',
+          '規範檔只是 agent 的輸入，違反了沒有東西會紅；測試每次 CI 都檢查',
           '架構測試能讓模型在生成程式碼時自動避開違規的 import',
         ],
         answer: 2,
@@ -116,7 +116,7 @@ from decimal import Decimal`,
         lang: 'python',
         options: [
           'app/handlers/orders.py import app.services.orders',
-          'app/services/orders.py import app.repositories.orders',
+          'app/services/orders.py import app.repositories.payments',
           'app/services/pricing.py import decimal',
           'app/repositories/orders.py import app.services.pricing',
         ],
@@ -142,8 +142,8 @@ from decimal import Decimal`,
       {
         q: '把溫度設成 0 之後，同一個 prompt 仍然偶爾得到不同的輸出。下列說法哪個正確？',
         options: [
-          '溫度 0 保證輸出完全相同，出現差異代表 API 回傳了快取結果',
-          '溫度 0 不保證完全相同，而且 context、工具回傳、模型版本等其他來源也可能不同，要先比對實際送出的請求',
+          '溫度 0 保證輸出完全相同，出現差異代表 API 回了快取結果，要關掉供應商端的快取',
+          '溫度 0 不保證相同，context、工具回傳、模型版本也會變，先比對實際送出的請求',
           '溫度 0 只影響輸出長度，不影響內容，所以本來就會不同',
           '出現差異一定是模型版本被更新了，應該立刻換回上一版模型',
         ],

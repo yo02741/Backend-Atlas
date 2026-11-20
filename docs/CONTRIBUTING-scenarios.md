@@ -38,6 +38,19 @@ export default {
 }
 ```
 
+### 換方案的條件、第二方案、進階驗收（選填）
+
+```js
+switchIf: [                    // 1–3 條：哪個條件改變會換方案
+  { when: '使用者要直接跳到第 37 頁並看總筆數', then: '改選 `offset`：頁碼與總數只有 offset 給得出，資料量小時代價可接受。' },
+],
+alternative: { option: 'hybrid', holdsWhen: '前幾頁要頁碼、深頁只給「下一頁」也可以時。' },   // option 要是 options 的 id
+challenge: { task, deliver, check: ['…', '…'], twist },   // 格式同課的進階驗收（docs/CONTRIBUTING-lessons.md）
+```
+
+- `then` 一定要用 options 的 id 指出改選哪個做法（validate 會檢查），頁面會在旁邊標上做法名稱。
+- 三者顯示在情境頁的決策之後、落地之前；`challenge` 的勾選只存在讀者的瀏覽器。
+
 內容欄位不可含超連結；只有 `implementation[].code` 例外（nginx `proxy_pass http://…`、範例 URL 之類本來就是程式碼的一部分）。
 
 ## 模擬器規則

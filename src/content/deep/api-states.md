@@ -222,6 +222,8 @@ onUnmounted(() => controller?.abort())
 | error（不可重試） | 顯示 Problem Details 的 `title`；沒有重試按鈕 |
 | 重新整理失敗 | 舊清單還在，上方一行「更新失敗」 |
 
+:::stop 讀到這裡可以先停：會用一個 `status` 表示五個值、分出能不能重試的錯誤，並照表驗收每個狀態。後面的現成工具與常見錯誤，在改用 TanStack Query 或排查畫面錯亂時再回來讀。
+
 ### 現成的工具
 
 同樣的狀態有現成的函式庫處理：TanStack Query v5 的 `status` 是 `pending`、`error`、`success`，另外用 `fetchStatus`（`fetching`、`paused`、`idle`）表示背景更新，對應上面的 `refreshing`；空陣列仍然是 `success`，empty 要自己判斷。用不用工具，四種畫面與驗收條件都要自己定。

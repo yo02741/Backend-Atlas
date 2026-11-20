@@ -78,14 +78,14 @@ jobs:
     outputs:
       image: ghcr.io/example-org/shop-api@${{ steps.push.outputs.digest }}   # 用 digest 傳給後面的 job
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           push: true
           tags: ghcr.io/example-org/shop-api:${{ github.sha }}
@@ -186,6 +186,8 @@ print("目前程序有沒有 DATABASE_URL：", "DATABASE_URL" in os.environ)
 - **protected 才擋得住**：GitLab 的 protected 變數、GitHub 的 environment secrets 加上分支限制，確保只有審查過、合進受保護分支的程式碼拿得到 production 的秘密。
 - 秘密的輪替、撤銷與存放方式見 [秘密管理](#/skill/secrets)。
 
+:::stop 讀到這裡可以先停：會讓同一個 image 從 staging 晉升到 production、設 environment 的核准與分支限制、用環境變數注入設定與秘密。後面的 OIDC 與環境資料的存取控管，在部署要拿雲端權限或要決定誰能碰正式資料時再回來讀。
+
 ## OIDC：不存長期金鑰
 
 部署到雲端時，傳統做法是建一組雲端帳號的長期 access key，存進 CI 的 secret。這組金鑰不會過期，外洩了要等到有人發現才會撤銷。
@@ -230,7 +232,7 @@ deploy-production:
     id-token: write          # 允許這個 job 向 GitHub 要 ID token
     contents: read
   steps:
-    - uses: aws-actions/configure-aws-credentials@v4
+    - uses: aws-actions/configure-aws-credentials@v6
       with:
         role-to-assume: arn:aws:iam::111122223333:role/shop-api-deploy-prod
         aws-region: ap-northeast-1

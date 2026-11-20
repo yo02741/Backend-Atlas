@@ -155,6 +155,8 @@ const visible = computed(() =>
 
 `$event` 是模板裡拿到原生事件物件的寫法。`emit('save-note', …)` 的事件名用 kebab-case，父元件寫 `@save-note` 監聽。
 
+:::stop 讀到這裡可以先停：會用插值、`v-bind`、`v-on`、`v-if`、`v-show` 與帶 key 的 `v-for` 寫出清單。後面的 React 對照與錯誤訊息表，在讀 JSX 或遇到模板警告時再回來讀。
+
 ## React 對照
 
 | Vue 模板 | React JSX |

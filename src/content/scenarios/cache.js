@@ -56,6 +56,21 @@ export default {
     { id: 'leaderboard', situation: '活動排行榜：全站共用、排程每分鐘重算一次寫進 DB，活動期間全球流量湧入，接受最多 1 分鐘舊資料。', options: ['http', 'redis', 'none'], answer: 'http',
       explain: '共用資料 + 明確的更新週期 + 可容忍一分鐘舊值，`public, s-maxage=60` 讓 CDN 在每個地區各自只回源一次。Redis 也可以（TTL 60 秒），但流量會全部湧回單一區域的 API，邊緣快取更省。' },
   ],
+  switchIf: [
+    { when: '商品頁改成依會員等級顯示不同價格，每位使用者看到的價格可能不同', then: '商品頁改選 `redis`：回應變成個人化，CDN 不能用 `public` 共用一份；key 帶等級或 user_id，改價時 DEL。' },
+    { when: '讀流量降到每秒幾十次、DB 遠在能力以內，且改價要求立即生效', then: '改選 `none`：沒有需要擋的流量，加任何一層快取都只換來一段舊值時間。' },
+  ],
+  alternative: { option: 'redis', holdsWhen: '商品頁的使用者集中在 API 所在的區域，或改價必須幾秒內全面生效而 CDN purge 做不到時；回應標 `private, no-store`，DB 負載一樣壓得下來，代價是每個請求仍進 API。' },
+  challenge: {
+    task: '替 `GET /products/{id}` 與 `GET /cart` 各寫一份新鮮度承諾：最多舊幾秒、哪些層可以存、寫入後怎麼失效。寫完到上方模擬器驗證：資料種類選「公開商品頁」，把 TTL 設成你承諾的秒數、資料更新頻率設「每 10 秒」，送 1,000 個請求，再按「商品被更新」看每一層多久拿到新值；「個人購物車」照做一次。承諾和模擬結果對不上就改承諾，記下改了哪裡。',
+    deliver: '兩份三行的新鮮度承諾，各附模擬器的「DB 請求」與「看到舊值」兩個數字，加一行說明哪一處因模擬結果而修改',
+    check: [
+      '商品頁承諾的最多舊值秒數不超過 60 秒，而且算進了瀏覽器那一層（max-age 到期前伺服器清不掉）',
+      '購物車承諾寫明 `private` 或 `no-store`，在你的設定下 CDN 顯示不可用、「看到舊值」為 0',
+      '寫出 TTL 從 60 秒改成 10 秒時「DB 請求」怎麼變，數字來自模擬器',
+    ],
+    twist: '行銷要辦限時搶購：價格每 5 秒變一次，改價後 5 秒內全站都要看到新價。先預測沿用你的商品頁承諾時「看到舊值」會變多少、哪一層最先違反承諾，再把資料更新頻率拉到每 5 秒驗證，說出要關掉哪一層、DB 請求會回到多少。',
+  },
   implementation: [
     { title: '回應標頭：公開商品頁 vs 個人購物車', lang: 'http', code: `HTTP/1.1 200 OK
 Cache-Control: public, max-age=30, s-maxage=60, stale-while-revalidate=30

@@ -168,6 +168,8 @@ print(accept_for("dGhlIHNhbXBsZSBub25jZQ=="))   # s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
   - 升級之後就不是 HTTP 了：快取、HTTP 層的日誌、依路徑的監控都看不到裡面的訊息，要自己補訊息層的日誌與指標。
   - 長時間沒有資料時，中間設備可能把連線切掉，要定期 ping / pong。
 
+:::stop 讀到這裡可以先停：會比較短輪詢、長輪詢、SSE 與 WebSocket 的成本與限制。後面的 proxy 設定與多台伺服器廣播，在要放到 nginx 後面或擴到多台時再回來讀。
+
 ## 經過 proxy 與負載平衡器時要注意的事
 
 這三種長連線做法（長輪詢、SSE、WebSocket）在本機開發時都正常，一放到 nginx 或雲端負載平衡器後面就常出事，原因大多是下面幾個。

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Caption, Status, useWidth, fmtMs } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Caption, Status, useWidth, fmtMs, Measure } from './ui.jsx'
 
 /* ============================================================
    Core Web Vitals：門診看板頁的載入時間線（純前端模擬，時間是示意）
@@ -230,7 +230,7 @@ function Gauge({ name, value, note }) {
   return (
     <div className="vt-card">
       <div className="h"><span>{name}</span><span className={`r vt-${r}`}>{RATE[r]}</span></div>
-      <div className="v">{name === 'CLS' ? r3(value) : fmtMs(value)}</div>
+      <div className="v"><Measure kind="set" value={name === 'CLS' ? r3(value) : fmtMs(value)} /></div>
       <div className="vt-band" aria-hidden="true">
         <i className="g" style={{ width: `${a / max * 100}%` }} /><i className="n" style={{ width: `${(b - a) / max * 100}%` }} /><i className="p" style={{ flex: 1 }} />
         <b style={{ left: `calc(${pos}% - 1.5px)` }} />

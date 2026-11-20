@@ -38,6 +38,7 @@ export default {
       example: { primary: '[[wikilink]] + 反向連結', alts: ['PostgreSQL 遞迴 CTE 存圖與找路徑', 'Microsoft GraphRAG（自動抽取建圖）'] },
       keywords: ['Python', 'SQL', 'PostgreSQL', 'RAG'],
       lab: 'WikiGraphLab',
+      reviewed: '2026-11',
     },
     {
       id: 'knowledge-choice',
@@ -55,9 +56,10 @@ export default {
       en: 'Semantic layer',
       level: 2,
       summary: '把「營收」「掛號數」這類指標和維度定義成一層（名稱、公式、來源表、允許的篩選），agent 用定義好的指標查，不是看欄位名猜 SQL；定義由資料擁有者維護，查詢可追溯。',
-      example: { primary: '指標定義（YAML / SQL view）', alts: ['dbt metrics', 'Cube', '資料庫 view'] },
+      example: { primary: '指標定義（YAML / SQL view）', alts: ['dbt Semantic Layer（MetricFlow）', 'Cube', '資料庫 view'] },
       keywords: ['SQL', 'PostgreSQL'],
       lab: 'SemanticLayerLab',
+      reviewed: '2026-11',
     },
     {
       id: 'knowledge-poisoning',
@@ -68,6 +70,7 @@ export default {
       example: { primary: '來源白名單 + git diff 審查 + 檢索層權限', alts: ['OWASP MCP Top 10：MCP10 Context Injection & Over-Sharing'] },
       keywords: ['OWASP', 'RAG'],
       lab: null,
+      reviewed: '2026-11',
     },
   ],
 }

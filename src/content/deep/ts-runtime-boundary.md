@@ -196,6 +196,8 @@ export async function fetchAppointments(date: string, signal?: AbortSignal): Pro
 }
 ```
 
+:::stop 讀到這裡可以先停：知道型別擋不住 API 回來的資料，會在 `fetch` 之後用 schema 驗證一次。後面的逐筆檢查、網址參數、環境變數的型別，在處理 localStorage、query 或 `import.meta.env` 時再回來讀。
+
 ### 逐筆檢查：一筆壞資料不拖垮整個清單
 
 ```ts

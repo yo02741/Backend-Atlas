@@ -256,6 +256,8 @@ Cache-Control: no-store
 | 拿 token 的方式 | 輪詢 token 端點 | 用 code + verifier 換 | 直接要 |
 | 主要風險 | user_code 釣魚 | 攔截授權碼（PKCE 擋）、redirect_uri 設定過寬 | 憑證外洩、scope 過大 |
 
+:::stop 讀到這裡可以先停：會依「有沒有瀏覽器、有沒有使用者、能不能保密 secret」選出三種流程之一，看得懂各自的 HTTP 往返。後面的 PKCE 計算、輪詢模擬與錯誤訊息，在自己實作 CLI 登入或排查 token 端點的錯誤時再回來讀。
+
 ## 實際程式
 
 ### 計算 PKCE 的 code_challenge

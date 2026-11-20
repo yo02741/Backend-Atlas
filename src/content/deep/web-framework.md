@@ -185,6 +185,8 @@ def create_order(order: OrderIn, user=Depends(get_current_user), db=Depends(get_
 
 這裡 `create_order` 是 `def` 而不是 `async def`：裡面用的是同步的 DB session，FastAPI 會把它放到執行緒池執行，不會卡住 event loop（見 [同步、多執行緒與 async](#/skill/python-async)）。
 
+:::stop 讀到這裡可以先停：會說出請求經過的每一層，在 FastAPI 裡各寫一段。後面的極小框架與手動呼叫 WSGI／ASGI，在想看懂框架內部怎麼接起來時再回來讀。
+
 ### 在瀏覽器裡跑一個極小的框架
 
 下面用標準函式庫寫一個一百行左右的框架，照真實框架的順序走一次生命週期：middleware → 路由 → 依賴 → 驗證 → handler → 序列化 → 例外處理。每一層都印出經過的紀錄。

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, Stats, Stat, Caption, fmtN } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, Stats, Stat, Caption, fmtN, Measure } from './ui.jsx'
 
 /* ============================================================
    容量估算：尖峰 RPS × 每請求成本 ÷ 目標使用率
@@ -149,14 +149,14 @@ export default function CapacityLab() {
           </LabStage>
           <Stats min={150}>
             <Stat label="尖峰 RPS" value={f1(m.rps)} unit="req/s" note={`平均忙 ${f1(m.busy)} 核`} />
-            <Stat label="需要的 CPU" value={Math.ceil(m.cores - EPS)} unit="核" note={`${f1(m.cores)}（÷ ${util}%）`} />
+            <Stat label="需要的 CPU" value={<Measure kind="env" value={Math.ceil(m.cores - EPS)} unit="核" />} note={`${f1(m.cores)}（÷ ${util}%）`} />
             <Stat label="同時處理中 L" value={f1(m.L)} unit="個" note={`W = ${cpuMs + waitMs} ms`} />
-            <Stat label="worker / 記憶體" value={`${fmtN(m.workers)} / ${gb(m.memGB)}`} note={`每個 ${memMB} MB`} />
-            <Stat label="磁碟（含備份、headroom）" value={gb(m.disk)} note={`資料 ${gb(m.data)} + 備份 ${gb(m.backup)}`} />
+            <Stat label="worker / 記憶體" value={<Measure kind="env" value={`${fmtN(m.workers)} / ${gb(m.memGB)}`} />} note={`每個 ${memMB} MB`} />
+            <Stat label="磁碟（含備份、headroom）" value={<Measure kind="env" value={gb(m.disk)} />} note={`資料 ${gb(m.data)} + 備份 ${gb(m.backup)}`} />
             {k8s
-              ? <Stat label="Pod / 節點" value={`${fmtN(m.pods)} / ${m.ppn ? m.nodes : '—'}`} tone={pending > 0 ? 'bad' : ''}
+              ? <Stat label="Pod / 節點" value={<Measure kind="env" value={`${fmtN(m.pods)} / ${m.ppn ? m.nodes : '—'}`} />} tone={pending > 0 ? 'bad' : ''}
                       note={down ? (pending > 0 ? `掛一台：${fmtN(pending)} 個 Pending` : '掛一台：還放得下') : `每節點 ${m.ppn} 個`} />
-              : <Stat label="機器台數" value={m.vmN} unit="台" tone={down ? vmTone : ''}
+              : <Stat label="機器台數" value={<Measure kind="env" value={m.vmN} unit="台" />} tone={down ? vmTone : ''}
                       note={down ? (alive === 0 ? '只有一台，掛了就全停' : `剩 ${alive} 台：每台 CPU ${Math.round(perUtil * 100)}%`) : (m.vmMemN > m.vmCpuN ? '記憶體決定台數' : 'CPU 決定台數')} />}
           </Stats>
           <div className="cap-math" aria-label="公式代入">

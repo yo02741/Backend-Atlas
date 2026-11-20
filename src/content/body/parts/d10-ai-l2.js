@@ -13,6 +13,17 @@ export default {
       '能寫出一個 eval job：只在 prompt 或 skill 變動時執行、通過率低於門檻就讓 pipeline 失敗、模型金鑰用受保護變數',
       '能說出金絲雀釋出一版 prompt 需要哪些紀錄欄位，以及回滾時實際上改的是什麼',
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=python) 的評測模擬加兩個候選版本：`v13` 換用比較便宜的模型，`v14` 用目前的模型但 prompt 加長。替每個版本設一個每次呼叫的成本（教材設定的虛構單位，例如 v11 = 1.0、v13 = 0.4、v14 = 1.3），把 `evaluate` 改成同時檢查成本：每千筆工單的預估成本超過 1,000 單位就判 fail。v13、v14 的輸出自己設計，兩者至少有一個案例結果不同。',
+      deliver: '每個版本一列：通過率、必過失敗的案例、每千筆成本、閘門結果，加上一句上線決定',
+      check: [
+        '成本用「每次呼叫的單價 × 呼叫次數」算出來，不是直接寫結論',
+        '通過率比較高但超出預算的版本被閘門擋下',
+        '有必過案例失敗的版本，不論成本多低都被擋下',
+        '上線決定寫出：哪個證據出現時會改選另一個版本',
+      ],
+      twist: '財務把預算砍成 500 單位，而 v13 在五次重跑裡有一次把 `refund-021` 分錯。先預測哪個版本還過得了閘門，再決定要不要把必過放寬成「五次至少過四次」，並說明放寬之後退款小組會多承擔什麼。',
+    },
     refs: [
       { label: 'GitLab CI：rules:changes', url: 'https://docs.gitlab.com/ee/ci/yaml/#ruleschanges' },
       { label: 'GitLab CI：Protected CI/CD variables', url: 'https://docs.gitlab.com/ee/ci/variables/#protect-a-cicd-variable' },
@@ -32,12 +43,48 @@ export default {
       '能寫一段程式：解析清單、比對本機安裝的版本與雜湊、列出可更新與雜湊不符的項目',
       '能說出為什麼更新要「通知並顯示 diff」而不是自動替換，並對應到 rug pull 的風險',
     ],
+    challenge: {
+      task: '一個舊專案的 CI 腳本會解析 release notes 的格式，`release-notes` 升到 1.4.0 後解析失敗，要先回退到 1.3.2。在 [Playground](#/playground?lang=python) 的比對程式裡，把 `MANIFEST` 的每個 skill 改成保留所有發布過的版本（`versions`：版本 → 雜湊、是否下架），讓 `audit` 拿安裝的那個版本去比 registry 裡同一版的雜湊。再把 lock 設成 1.3.2，跑一次比對。',
+      deliver: '改過的 `MANIFEST` 片段、回退前後的 lock、兩次比對的輸出，以及一句「什麼條件達成後再升回 1.4.x」',
+      check: [
+        'lock 同時記版本與 1.3.2 的雜湊，雜湊取自 registry 的版本紀錄，不是拿本機內容重算後填入',
+        '回退後的輸出仍列出 1.4.0 可更新，但沒有 `hash_mismatch` 或 `registry_tampered`',
+        '把 registry 裡 1.3.2 的雜湊改掉，比對會報出 `registry_tampered`',
+        '升回的條件指名要改的那支 CI 腳本或那個格式',
+      ],
+      twist: '安全團隊把 1.3.2 標成 yanked（這一版會貼出內部票號）。先預測比對輸出會怎麼變、舊專案還能不能繼續用 1.3.2，再提出一個讓舊專案不必回退的發版做法（例如 1.4.1 加回舊格式的選項），並說明它該是 patch 還是 minor。',
+    },
     refs: [
       { label: 'Semantic Versioning 2.0.0', url: 'https://semver.org/' },
       { label: 'Agent Skills 概觀（Claude 文件）', url: 'https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview' },
     ],
   },
   'ai-gateway': {
+    map: {
+      names: [
+        { n: '虛擬金鑰', t: 'gateway 發給各團隊的金鑰，綁定可用的別名與額度；可以單獨撤銷，供應商金鑰不必跟著換。' },
+        { n: '模型別名與路由表', t: '應用程式只寫 `support-chat` 這類別名，別名對到哪個供應商的哪個模型由 gateway 的路由表決定。' },
+        { n: 'fallback', t: '主要模型逾時、5xx 或被限流時改送備援模型；請求本身的錯誤（400、超過 context 長度）不換。' },
+        { n: '配額與速率限制', t: '每團隊每分鐘的請求數上限，與以成本計的月額度；超過時回 429。' },
+        { n: '出口過濾', t: '請求送出前檢查有沒有秘密、個資等不該送出去的內容，命中就擋下或遮罩。' },
+        { n: '用量紀錄', t: '每次呼叫記錄團隊、別名、實際用到的模型、是否 fallback、token 數與成本。' },
+      ],
+      ask: [
+        '每個團隊的虛擬金鑰能用哪些別名、每月額度多少、超過時拒絕還是降級。',
+        '每個別名的候選模型順序，以及哪些錯誤會 fallback、哪些不會。',
+        '資料分級對路由的限制：哪些請求不能送到某些供應商。',
+        '紀錄要存哪些欄位、保存多久，prompt 內容存不存。',
+        '單價放在哪裡、供應商調價時怎麼更新。',
+      ],
+      prompt: '在應用程式與模型供應商之間放 AI Gateway：每個團隊一把虛擬金鑰，綁定可用的別名與每月額度，額度用完回 429 並在錯誤 body 寫明原因是 `budget_exhausted`；別名 `support-chat` 先走 vendor-a 的模型，只有逾時、5xx 與 429 才 fallback 到 vendor-b，400 不換。每次呼叫記錄團隊、別名、實際模型、是否 fallback、輸入與輸出 token、成本，不存 prompt 內容。供應商金鑰只放在 gateway 的 secret 儲存，應用程式的設定裡只有虛擬金鑰。',
+      verify: [
+        { c: '金鑰位置', t: '在各應用程式的 repo 與部署設定搜尋供應商金鑰的前綴，應該一筆都沒有。' },
+        { c: 'fallback 條件', t: '用 `curl -i` 送一個超過 context 長度的請求，要回 400 且紀錄裡 `fallback` 是 false；把主要供應商模擬成 503，紀錄裡的實際模型要換成備援、`fallback` 是 true。' },
+        { c: '配額', t: '把測試團隊的額度調到很小再連打，看狀態碼與錯誤 body 是否照約定，不是 500 或悄悄改用別的模型。' },
+        { c: '紀錄內容', t: '抽幾筆紀錄確認有實際模型與成本，沒有 prompt 全文，也沒有 `Authorization` 標頭。' },
+        { c: '出口過濾', t: '送一段含虛構身分證號或 `sk-` 開頭字串的 prompt，看它被擋下、遮罩，還是原樣送出。' },
+      ],
+    },
     points: [
       { b: '應用程式只連 gateway', t: '所有模型呼叫都送到同一個端點，由 gateway 依設定轉給供應商。供應商的 API 金鑰只存在 gateway；應用程式拿的是 gateway 發的、綁定團隊的虛擬金鑰，可以個別撤銷、個別設額度。' },
       { b: '路由與 fallback', t: '請求裡寫的是模型別名（例如「預設」「便宜的」），對應到哪個供應商的哪個版本由 gateway 的路由表決定；主要模型逾時或回 5xx 時自動改送備援模型，並在回應裡標明實際用了哪一個。換模型不用改應用程式。' },
@@ -54,5 +101,16 @@ export default {
       { label: 'LiteLLM 文件（開源的 LLM proxy / gateway）', url: 'https://docs.litellm.ai/' },
       { label: 'OWASP Top 10 for LLM Applications', url: 'https://genai.owasp.org/' },
     ],
+    challenge: {
+      task: '虛構的餐廳訂位平台有兩個團隊共用 gateway：`booking` 處理訂位對話，`marketing` 寫活動文案。在本課「模擬路由、配額與 fallback」的程式裡把 `TEAMS` 換成這兩個團隊，`marketing` 的額度設得很小並讓它用完。接著替 `budget_exhausted` 設計兩種處理：一律回 429，或自動改走 `cheap` 別名並在回應加一個欄位說明已降級。先預測兩種處理在紀錄、成本與使用者畫面上各會看到什麼，再改程式跑一次。',
+      deliver: '兩種處理的比較表（狀態碼、紀錄欄位、成本、使用者看到的訊息），以及你選的做法',
+      check: [
+        '降級版本的紀錄分得出「因額度降級」與「因供應商故障 fallback」，兩者不是同一個欄位值',
+        '拒絕版本的 429 回應讓使用者知道何時恢復或找誰加額度，前端不會把它當成暫時錯誤自動重試',
+        '說明降級後 `cheap` 一樣有成本，額度用完之後的花費上限寫在哪裡',
+        '列出哪些規則可以沿用到醫療情境（金鑰集中、紀錄欄位），哪些要跟業務確認（訂位對話能不能降級、誰能核准加額度）',
+      ],
+      twist: '改成 `booking` 的額度先用完。先預測你選的做法還適不適用（訂位對話降級可能讓確認訊息出錯），再說明要改哪一條規則。',
+    },
   },
 }

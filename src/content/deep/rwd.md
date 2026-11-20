@@ -104,6 +104,8 @@ img { max-width: 100%; height: auto; }
 - `width` 與 `height` 屬性讓瀏覽器在圖片下載完成前就知道比例，先留好空間，載入時版面不會往下跳。
 - `srcset` 列出不同寬度的檔案，`sizes` 告訴瀏覽器圖片在版面上會占多寬，瀏覽器再依螢幕密度挑一個檔案下載。
 
+:::stop 讀到這裡可以先停：會寫 viewport meta、用 mobile-first 的 media query 與 container query 換版面、讓表格與圖片不撐破螢幕。後面的視窗高度單位，在手機底部按鈕被網址列蓋住時再回來讀。
+
 ### 視窗高度：`vh` 與 `dvh`
 
 手機的網址列會隨捲動收合或展開，可見的高度跟著變。`100vh` 在多數手機瀏覽器上等於網址列收合時的高度，網址列展開時就比可見區域高，貼在底部的按鈕被蓋住。`dvh`（dynamic viewport height）跟著網址列變化；`svh` 固定取網址列展開時的較小高度，`lvh` 取收合時的較大高度。這組單位是 Baseline 2022，2025 年起列為 Widely available。

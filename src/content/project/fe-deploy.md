@@ -198,3 +198,19 @@ curl -sI "$BASE/$ASSET" | grep -iE '^(HTTP|cache-control)'                # 200�
 **執行時設定**（vue 題）：測試在應用程式之前放好不同的 `window.__CLINIC_CONFIG__`。`apiBase` 是 `/api/v2` 時請求打到 `/api/v2/sessions`；`envName` 是「測試」時顯示「測試環境」、「正式」時不顯示；`showDebug` 是字串 `'false'` 時沒有除錯面板、是 `'true'` 時有；缺 `apiBase` 與 `showDebug` 時用預設值，Console 的警告提到這兩個欄位名稱；整個物件不存在時也能啟動、用預設值並警告。
 
 `vite.config.js` 與 Vue Router 的部分沒有驗收題，上面的程式在 Vite 7.3.8 建置過。走完七個階段，前端從登入到部署的每一段都有一份能對照的程式與驗收條件；後端的同一個系統在 [從零做完一個門診掛號後端](#/project?track=backend)。
+
+## 串接驗收
+
+**1. 用真的前綴跑起來。** `base: '/clinic/'` 建置之後，用 nginx 容器照正式環境的路徑擺放 `dist/`。本機測試時把上面 nginx 設定裡 `location /api/` 的 `proxy_pass` 換成 `http://api:8000/`：`api` 是後端參考專案 compose 的服務名稱，結尾的 `/` 讓 nginx 去掉 `/api/` 前綴（參考專案的路徑沒有這個前綴）。容器加入參考專案的網路：
+
+```bash
+docker run --rm -p 8080:8080 --network clinic_default \
+  -v "$PWD/dist:/usr/share/nginx/html/clinic:ro" \
+  -v "$PWD/nginx.conf:/etc/nginx/conf.d/default.conf:ro" nginx:1.27
+```
+
+預期：上面那組部署後的 `curl` 檢查（把 `BASE` 換成 `http://localhost:8080/clinic`）每一行都符合註解；`curl -s http://localhost:8080/api/healthz` 回 `{"status":"ok"}`。
+
+**2. 在瀏覽器重新整理深層頁面。** 打開 `http://localhost:8080/clinic/appointments`，登入後按重新整理，Network 只看 JS、CSS 與 `config.js`。預期：頁面照常顯示；每個 asset 都在 `/clinic/assets/` 底下、狀態 200；`config.js` 的回應標頭是 `no-cache`。在 `vite preview` 上做同一件事也全部正常，所以它代替不了這一步。
+
+**3. 部署時開著的舊頁面。** 開著第 2 步的分頁，改一個還沒點進去過的懶載入頁面（例如報到看板）的文字，重新建置並換掉 `dist/`，然後在舊分頁點進那個頁面。預期：Network 先出現一個舊 chunk 的 404，接著整頁重新載入一次、拿到新版；10 秒內再發生不會重複重新載入。前面六個階段的畫面在這個前綴下要再走一次：[無障礙與 RWD](#/project/fe-a11y-rwd) 的回歸測試把 `baseURL` 換成 `http://localhost:8080/clinic/`。

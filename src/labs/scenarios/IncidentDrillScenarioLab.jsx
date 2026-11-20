@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Callout, Status, useTicker, Stats, Stat, Flow, LineChart, Caption, fmtN, kfmt } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Callout, Status, useTicker, Stats, Stat, Flow, LineChart, Caption, fmtN, kfmt, Measure } from '../ui.jsx'
 
 /* 事故處理情境模擬器：週一 08:00 掛號尖峰，07:40 上線的 v4.2 占滿資料庫連線池，錯誤率升到 25%。
    三種處理方式各有一條事件時間線與錯誤率曲線；可加「回滾本身失敗」。按「開始事故」逐分鐘播放，
@@ -209,7 +209,7 @@ export default function IncidentDrillScenarioLab() {
           </LabStage>
           <Stats min={100}>
             <Stat label="MTTR" note="從錯誤超出 SLO 到恢復"
-                  value={recovered ? `${sim.recover - IMPACT} 分` : `> ${Math.max(0, shown - IMPACT)} 分`}
+                  value={<Measure kind="set" value={recovered ? `${sim.recover - IMPACT} 分` : `> ${Math.max(0, shown - IMPACT)} 分`} />}
                   tone={recovered ? (sim.recover - IMPACT > 30 ? 'bad' : sim.recover - IMPACT > 12 ? 'warn' : 'ok') : 'bad'} />
             <Stat label="錯誤預算剩餘" note={`事故前 ${LEFT0 * 100}%`}
                   value={left < 0 ? `超支 ${Math.abs(left).toFixed(0)}%` : `${left.toFixed(0)}%`}
@@ -217,7 +217,7 @@ export default function IncidentDrillScenarioLab() {
             <Stat label="失敗請求" value={fmtN(sim.bad[shown])} />
             <Stat label="重複 / 衝突操作" value={`${dups} / ${conflicts}`} tone={dups + conflicts ? 'bad' : 'ok'} />
             <Stat label="對外公告延遲" note="從錯誤超出 SLO 起算"
-                  value={comm && comm.t <= shown ? `${comm.t - IMPACT} 分` : '尚未公告'}
+                  value={comm && comm.t <= shown ? <Measure kind="set" value={`${comm.t - IMPACT} 分`} /> : '尚未公告'}
                   tone={!comm || comm.t > shown || comm.t - IMPACT > 15 ? 'bad' : 'ok'} />
             <Stat label="證據保全" value={evidence ? '有' : mode === 'chaos' ? '已遺失' : '尚未'}
                   note={mode === 'chaos' ? '重啟前沒保存' : '連線與慢查詢快照'} tone={evidence ? 'ok' : mode === 'chaos' ? 'bad' : ''} />

@@ -161,6 +161,8 @@ function save() { emit('save', { ...draft.value }) }
 
 巢狀物件要深拷貝；`structuredClone(props.patient)` 遇到 reactive Proxy 會丟出 `DataCloneError`（`could not be cloned`），先用 `toRaw()` 取出原始物件再複製。
 
+:::stop 讀到這裡可以先停：會用 props 傳下、emit 傳上，用 `defineModel` 做元件的 `v-model`。後面的 React 對照與錯誤訊息表，在讀 React 的受控元件或 Console 出現 props 警告時再回來讀。
+
 ## React 對照
 
 | Vue 3.5 | React 19 |

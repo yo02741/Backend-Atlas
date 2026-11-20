@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import FramePreview from './FramePreview.jsx'
 import CodeEditor from './CodeEditor.jsx'
 import Md from './Md.jsx'
-import { ConsoleOut, ResultTable, PlanTree, TestResults, RuntimeStatus } from './Output.jsx'
+import { ConsoleOut, ResultTable, PlanTree, TestResults, RuntimeStatus, Verifies } from './Output.jsx'
 import { grade, runOnly, FRAME_KINDS } from '../runtime/check.js'
 import { explain, resetSchema } from '../runtime/sql.js'
 import { ensurePython } from '../runtime/py.js'
@@ -119,6 +119,7 @@ export default function ExerciseRunner({ exercise: ex, compact = false, showStat
           {graded && (
             <div className="lab-stack">
               <p className={`ex-verdict ${graded.pass ? 'ok' : 'bad'}`}>{graded.pass ? '✓ 通過' : '✕ 未通過'}　<span>{graded.message}</span></p>
+              <Verifies exercise={ex} />
               {graded.error && <pre className="out-pre out-err">{graded.error}</pre>}
               {graded.output && <ConsoleOut output={graded.output} />}
               {graded.results && <TestResults results={graded.results} />}

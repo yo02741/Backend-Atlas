@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, useWidth, Measure } from '../ui.jsx'
 
 /* 搜尋情境模擬器：
    30 件商品的小資料集，同一個關鍵字在 ILIKE / PostgreSQL 全文檢索 / 外部搜尋引擎三種做法下命中誰、怎麼排、示意延遲多少。
@@ -143,7 +143,7 @@ export default function SearchFilterScenarioLab() {
           </p>
           <Stats min={150}>
             <Stat label="命中" value={hits.length} unit={`/ ${filtered.length} 件`} />
-            <Stat label={`延遲（示意，${fmtN(n)} 件）`} value={`${ms < 10 ? ms.toFixed(1) : Math.round(ms)} ms`} tone={ms > 200 ? 'bad' : ms > 50 ? 'warn' : 'ok'} />
+            <Stat label={`延遲（${fmtN(n)} 件）`} value={<Measure kind="set" value={ms < 10 ? ms.toFixed(1) : Math.round(ms)} unit="ms" />} tone={ms > 200 ? 'bad' : ms > 50 ? 'warn' : 'ok'} />
           </Stats>
           {(relNA || stale || renamed) && (
             <div className="sf-bar">

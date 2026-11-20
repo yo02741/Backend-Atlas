@@ -160,6 +160,8 @@ console.log('原陣列順序沒變：', clinics.map((c) => c.id).join(','))
 console.log('空陣列：', JSON.stringify(summarizeClinics([])))
 ```
 
+:::stop 讀到這裡可以先停：會用 `?.`、`??` 與 `toSorted` 寫出不吃掉 0、不改原陣列的整理函式。後面的 `sort` 細節、分組與錯誤訊息表，在 Console 出現看不懂的 TypeError 時再回來查。
+
 ### `sort` 改到原陣列
 
 ```js run

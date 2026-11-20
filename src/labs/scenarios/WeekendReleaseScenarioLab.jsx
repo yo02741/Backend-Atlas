@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Callout, Status, Stats, Stat, Caption, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Callout, Status, Stats, Stat, Caption, fmtN, Measure } from '../ui.jsx'
 
 /* 週末上線情境模擬器：同一份改版（醫令表 schema 變更 + 新的外部檢驗介面），三種上線做法的時間軸。
    可注入三種故障：migration 比預期慢、外部介面不相容、某一步沒人簽核。逐步播放，
@@ -211,8 +211,8 @@ export default function WeekendReleaseScenarioLab() {
             <Caption>目前：{clock(s.t)} {s.title}（示意）</Caption>
           </LabStage>
           <Stats min={118}>
-            <Stat label="停機時間" value={sum.downMin ? hm(sum.downMin) : '0'} tone={sum.downMin > 600 ? 'bad' : sum.downMin ? 'warn' : 'ok'} />
-            <Stat label="回滾所需時間" value={plan.rollback.v} note={plan.rollback.note} tone={mode === 'bigbang' ? 'bad' : ''} />
+            <Stat label="停機時間" value={<Measure kind="set" value={sum.downMin ? hm(sum.downMin) : '0'} />} tone={sum.downMin > 600 ? 'bad' : sum.downMin ? 'warn' : 'ok'} />
+            <Stat label="回滾所需時間" value={<Measure kind="set" value={plan.rollback.v} />} note={plan.rollback.note} tone={mode === 'bigbang' ? 'bad' : ''} />
             <Stat label="受影響（人次）" value={fmtN(sum.affected)} note={sum.late ? `含開診延誤 ${hm(sum.late)}` : mode === 'phased' ? '只有金絲雀科別' : '急診與住院走紙本'} tone={sum.late ? 'bad' : ''} />
             <Stat label="週一 08:00 開診" value={sum.late ? '延誤' : '可以'} note={plan.version} tone={sum.late ? 'bad' : 'ok'} />
             <Stat label="稽核紀錄完整度" value={`${sum.audit}%`} note={sum.missing ? `${sum.missing} 步沒有紀錄` : sum.audit < 100 ? '部分只有 email 或終端機紀錄' : '每一步可追溯'} tone={sum.audit < 70 ? 'bad' : sum.audit < 100 ? 'warn' : 'ok'} />

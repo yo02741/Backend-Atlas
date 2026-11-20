@@ -176,3 +176,19 @@ ERROR:  duplicate key value violates unique constraint "appointments_pkey"
 驗收題只給欄位名稱，約束要自己寫。驗證時先插入一位醫師、兩位病患、一個名額 2 的診次與一筆掛號，接著嘗試 12 種寫入：一種合法（沒給 `status` 與 `created_at`，用來確認預設值）、11 種違規（號碼重複、同病患重複、診次或病患不存在、病患為 NULL、號碼 0、狀態不合法、名額 0、時段不合法、同醫師同天同時段兩個診次、醫師不存在）。每一項都要得到預期的 SQLSTATE。
 
 題目沒有檢查約束的名稱，也沒有檢查索引；`patient_id` 的索引是上面建議要加的，但不在驗收範圍內。下一階段把同樣的規則寫成 Python，並補上資料庫守不住的那兩條（名額上限與每日上限）。
+
+## 串接驗收
+
+**1. 插入資料前先寫下兩條約束。** 從上面的表挑兩條（例如「同一診次號碼不重複」與「同一醫師同一天同一時段只有一個診次」），各寫一句違反它的 `INSERT`，執行前先寫下預期的 SQLSTATE。在 Playground 執行「關鍵 SQL」那段，再把兩句各包成 `try_sql($q$…$q$)` 接在最後執行。預期：兩句都回你寫下的代碼（唯一鍵衝突是 `23505`）。猜錯的那一句，看錯誤訊息裡的約束名稱找出是誰擋下的。
+
+**2. 找出資料庫守不住的規則。** 接著執行：
+
+```sql
+INSERT INTO patients (name) VALUES ('李大同');
+INSERT INTO appointments (session_id, patient_id, number) VALUES (1, 2, 2);
+SELECT try_sql($q$INSERT INTO appointments (session_id, patient_id, number) VALUES (1, 3, 3)$q$) AS third;
+```
+
+預期：`third` 是 `ok`，名額 2 的診次收得下第 3 筆。這條規則先由[第 2 階段](#/project/domain)的 `SessionFull` 寫成程式，到[第 5 階段](#/project/concurrency)加上 `booked` 計數欄位後才寫得成 `CHECK`。
+
+**3. 同一個代碼，兩種意思。** 寫下 `23505` 在[第 3 階段](#/project/api)的 API 該回什麼。預期：約束是 `appointments_session_id_patient_id_key`（同病患同診次）時回 409、`type` 以 `already-booked` 結尾；約束是 `appointments_session_id_number_key`（號碼重複）時代表取號的程式有 bug，回 500。API 要依約束名稱轉換，只看代碼會把 bug 當成使用者的錯。

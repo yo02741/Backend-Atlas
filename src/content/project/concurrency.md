@@ -205,3 +205,27 @@ assert len(issued) == CAPACITY and len(set(issued)) == CAPACITY
 **一句 SQL 取號**：寫 `book()`。驗證查詢對名額 3 的診次依序掛 5 位，預期拿到 1、2、3、NULL、NULL；名額 1 的診次第二位拿到 NULL；不存在的診次回 NULL；最後檢查掛號筆數、號碼不重複、`booked` 與 `next_no` 的值。題目要求「同一句 UPDATE 完成」，但驗證只在單一連線上看行為，測不出先 SELECT 再 UPDATE 的寫法在並行下的問題，那部分在這頁上面解釋過。
 
 **取消與重掛**：把全欄位的唯一約束換成部分唯一索引、寫 `cancel()`。驗證：有效掛號重複掛會得到 `23505`；取消回 true、再取消一次回 false 且 `booked` 只減一次；取消後可以重掛，拿到新號碼；已報到與不存在的掛號不能取消；資料表上確實有一個帶 `WHERE` 的唯一索引。
+
+## 串接驗收
+
+**1. 兩個 psql 交錯。** 後端參考專案（`companion/clinic-api`）從乾淨的資料開始（`docker compose down -v` 後重跑 README 的三步驟），開兩個終端機各執行 `docker compose exec postgres psql -U clinic clinic`。先在其中一個把診次 1 調成只剩一個名額：`UPDATE sessions SET capacity = booked + 1 WHERE id = 1;`。接著兩邊都 `BEGIN;`，A 執行下面這句，B 再執行同一句：
+
+```sql
+UPDATE sessions SET booked = booked + 1, next_no = next_no + 1
+WHERE id = 1 AND booked < capacity RETURNING next_no - 1 AS number;
+```
+
+先預測 A `ROLLBACK` 之後 B 拿到什麼。預期：B 一直等到 A 結束；A `ROLLBACK` 之後 B 拿到號碼（它用那一列最新提交的版本重新檢查條件，名額還在）。B 也 `ROLLBACK`，資料不留下改變。
+
+**2. 兩個 HTTP 請求搶同一個名額。** 用 README 的方式拿 `patient1`、`patient2` 的 token（存成 `$T1`、`$T2`），診次 1 仍只剩一個名額時同時送出：
+
+```bash
+for T in "$T1" "$T2"; do
+  curl -s -o /dev/null -w '%{http_code}\n' -X POST "$BASE/sessions/1/appointments" \
+    -H "Authorization: Bearer $T" -H 'Content-Type: application/json' -d '{}' &
+done; wait
+```
+
+預期：一個 201、一個 409（`type` 以 `session-full` 結尾）。印出的順序每次可能不同，數量不變。接著在 psql 執行這頁「關鍵 SQL」最後的對帳查詢，預期沒有任何一列。參考專案的 `uv run pytest tests/test_concurrency.py -v` 用 20 個執行緒做同一件事。
+
+**3. 往後接。** 寫下輸掉的那個請求在前端[掛號表單](#/project/fe-booking)看到什麼，以及[第 6 階段](#/project/cache-ratelimit)的診次清單快取被清了幾次。預期：`role="alert"` 顯示額滿與「選擇其他診次」、表單內容保留；快取只在成功的那一次 `COMMIT` 之後失效一次。

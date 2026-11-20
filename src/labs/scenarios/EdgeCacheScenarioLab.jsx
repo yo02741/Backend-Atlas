@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useWidth, useLabVisible, Stats, Stat, Caption } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useWidth, useLabVisible, Stats, Stat, Caption, Measure } from '../ui.jsx'
 
 /* 快取到期情境模擬器（純前端、所有數字示意）：
    ① 60 秒時間軸：每秒 10,000 次讀、N 個熱門 key 同時在 t=0 填入。切做法看到期瞬間打到原站的 QPS 尖峰
@@ -119,7 +119,7 @@ export default function EdgeCacheScenarioLab() {
             <QpsChart bins={sim.bins} upto={t} playing={playing} peak={sim.peak} peakAt={sim.peakAt} />
           </LabStage>
           <Stats min={140} className="ec-stats">
-            <Stat label="尖峰（原站每秒）" value={fmt(sim.peak)} tone={dbDown ? 'bad' : 'ok'} note={dbDown ? <Status>DB 撐不住</Status> : <Status ok>DB 撐得住</Status>} />
+            <Stat label="尖峰（原站每秒）" value={<Measure kind="set" value={fmt(sim.peak)} unit="次" />} tone={dbDown ? 'bad' : 'ok'} note={dbDown ? <Status>DB 撐不住</Status> : <Status ok>DB 撐得住</Status>} />
             <Stat label="60 秒內打到原站" value={fmt(sim.total)} />
             <Stat label="等原站回來的請求" value={fmt(sim.waitTotal)} tone={sim.waitTotal ? 'warn' : ''} />
             <Stat label="拿到舊值的請求" value={fmt(sim.staleTotal)} tone={sim.staleTotal ? 'warn' : ''} />

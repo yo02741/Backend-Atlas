@@ -116,7 +116,7 @@ build-image:
 
 deploy-production:
   stage: deploy
-  image: alpine:3.20
+  image: alpine:3.22
   needs: [build-image]
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
@@ -180,6 +180,8 @@ push 一個分支會觸發分支 pipeline；這個分支有開著的 MR 時，Gi
 
 在專案設定的 Merge requests 裡勾選「Pipelines must succeed」，MR 的 pipeline 沒有通過就不能合併。main 要保持可部署，靠的主要是這個設定。
 
+:::stop 讀到這裡可以先停：會讀寫 stages、needs、rules，判斷一個 job 在 MR pipeline 與預設分支的 pipeline 會不會出現。後面的 Runner、protected 與 masked 變數、Container Registry 與手動部署，在要自己架 Runner 或接上正式環境部署時再回來讀。
+
 ## Runner：job 真正在哪裡執行
 
 GitLab 本身只負責排程與記錄；job 由 **GitLab Runner** 執行。Runner 是另外安裝的程式，向 GitLab 輪詢有沒有待執行的 job。
@@ -223,10 +225,10 @@ Runner 要能連到 GitLab（輪詢 job、上傳 log 與 artifact），也要能
 |---|---|---|
 | Protected | 只注入**受保護分支或受保護 tag** 上的 pipeline | 有人在自己的分支改 `.gitlab-ci.yml`，把變數 `echo` 出來或傳到別處 |
 | Masked | 值出現在 job log 時顯示成 `[MASKED]` | 不小心在 log 裡印出機密 |
-| Masked and hidden（較新版本） | 除了遮蔽，建立後在設定頁面上也看不到值 | 有專案設定權限的人看到值 |
+| Masked and hidden（專案與群組變數 GitLab 17.4 起，17.6 正式提供） | 除了遮蔽，建立後在設定頁面上也看不到值 | 有專案設定權限的人看到值 |
 | File 型 | 值寫進一個暫存檔，變數內容是檔案路徑 | SSH 金鑰、kubeconfig 這類工具要求以檔案提供的機密 |
 
-masked 的值要符合格式限制（例如單行、至少 8 個字元，字元種類也有限制），不符合時介面不允許勾選。
+masked 的值要符合格式限制：單行、不含空格、至少 8 個字元；開啟「Expand variable reference」時特殊字元只能用少數幾種。不符合時介面不允許選。GitLab 18.3 起在介面新增變數時，預設的可見度就是 Masked（2026 年 11 月依 GitLab 官方文件核對；自架版以所用版本的文件為準）。
 
 **受保護分支**在 Settings → Repository → Protected branches 設定：誰可以 push、誰可以合併、能不能 force push。protected 變數、protected Runner 都依賴這個設定：main 沒有設成受保護分支，protected 變數在 main 上也拿不到。
 
@@ -259,7 +261,7 @@ job 加上 `environment:` 之後，GitLab 會在 Operate → Environments 記錄
 
 - `when: manual`：部署需要人按下。寫在 `rules` 裡的 manual job，預設不允許失敗（`allow_failure: false`），pipeline 會停在等待狀態，直到有人執行。
 - `resource_group`：同一個 resource group 的 job 一次只跑一個，避免兩條 pipeline 同時部署到 production。
-- **Protected environments**：限制誰能部署到某個環境，並可要求核准（deployment approvals）。這兩個功能在 GitLab 的付費方案才有；免費版可以用 protected 變數加受保護分支，達到「只有合進 main 的程式碼能部署」的效果；受保護分支上的手動 job，依 GitLab 的權限規則，需要有合併到該分支的權限才能執行。方案與功能的對應會隨版本調整，採用前以官方文件為準。
+- **Protected environments**：限制誰能部署到某個環境，並可要求核准（deployment approvals）。這兩個功能在 GitLab 的付費方案（Premium、Ultimate）才有；免費版可以用 protected 變數加受保護分支，達到「只有合進 main 的程式碼能部署」的效果；受保護分支上的手動 job，依 GitLab 的權限規則，需要有合併到該分支的權限才能執行。方案與功能的對應會隨版本調整，採用前以官方文件為準。
 
 部署需要審核紀錄的環境（例如需要變更管理的系統），MR 的核准紀錄、pipeline 紀錄、environment 的部署歷史串在一起，就是一份完整的變更證據。見 [受監管環境的變更管理](#/skill/change-management)。
 

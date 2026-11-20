@@ -52,7 +52,7 @@ Chromium 實測（只換視窗寬度與密度）：
 
 `sizes` 一定要寫在 HTML 裡。瀏覽器在 CSS 還沒下載、版面還沒算出來之前就開始下載圖片（preload scanner 掃 HTML 時就發出請求），這時它只知道視窗寬度與 `sizes` 寫的數字。`sizes` 寫得比實際小，畫面會模糊；寫得比實際大，浪費流量。
 
-`sizes="auto"` 搭配 `loading="lazy"` 可以讓瀏覽器用實際的版面寬度，但 2026 年 11 月時 Safari 還不支援，不是 Baseline，目前仍要自己寫 `sizes`。
+`sizes="auto"` 搭配 `loading="lazy"` 可以讓瀏覽器用實際的版面寬度。2026 年 11 月時 Chrome 126、Firefox 150 起支援，Safari 27 只有部分支援（SVG 同時設了 `object-fit` 時會變形），web-features 還沒有把它標成 Baseline，目前仍要自己寫 `sizes`；寫成 `sizes="auto, (min-width: 768px) 50vw, 100vw"`，不支援的瀏覽器會略過 `auto`、改用後面的值。
 
 固定大小的圖（例如 48px 的頭像）用 `x` 描述子，依密度挑：
 
@@ -142,6 +142,8 @@ img { max-width: 100%; height: auto; }   /* 寬度跟著容器，高度依比例
 - 很多圖示時，用 sprite：把圖示定義在一個 `<svg>` 的 `<symbol>` 裡，使用處寫 `<svg><use href="#icon-refresh"/></svg>`。
 
 使用者上傳的 SVG 檔可能含有 script。用 `<img>` 顯示時 script 不會執行，但直接在同一個網域打開那個檔案就會；伺服器端的處理見 [XSS、CSRF 與安全標頭](#/skill/xss-csrf)。
+
+:::stop 讀到這裡可以先停：會寫 `srcset` 與 `sizes`、用寬高先保留空間、只給首屏以下的圖 `loading="lazy"`、用 `currentColor` 的 SVG 圖示。後面的影片與快取，在頁面要放影片或調整快取時再回來讀。
 
 ### 影片
 

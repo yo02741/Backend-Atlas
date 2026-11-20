@@ -151,6 +151,8 @@ for (const [label, fn] of Object.entries(samples)) {
 }
 ```
 
+:::stop 讀到這裡可以先停：讀得懂錯誤類型與 stack trace，會用 source map 與中斷點找到出錯的那一行。後面的 `cause`、全域錯誤收集與 hidden source map，在要替正式站接錯誤監控時再回來讀。
+
 ### 用 `cause` 保留原本的錯誤
 
 ```js run

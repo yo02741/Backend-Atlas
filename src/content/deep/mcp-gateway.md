@@ -95,6 +95,8 @@ Gateway 不是免費的，導入前要接受這幾件事：
 
 三種做法的共同點：**使用者拿去登入 gateway 的 token 只對 gateway 有效**，不轉傳給下游（token passthrough 的問題見 [MCP 的授權](#/skill/mcp-authorization)）。
 
+:::stop 讀到這裡可以先停：會說出 gateway 處理一個工具呼叫的八個步驟，以及下游憑證的三種給法。後面的上架流程與模擬程式，在要讓新的 MCP server 進 gateway 或要寫審核清單時再回來讀。
+
 ## 上架流程：讓一個 MCP server 進 gateway
 
 下游 server 不是「填個 URL 就上線」。工具描述會被模型當成指示來讀，一個寫壞或惡意的描述，影響的是所有用 gateway 的 agent。
@@ -186,7 +188,7 @@ for row in AUDIT:
     print(" ", row["t"], row["user"], row["tool"], "→", row["result"].split(" with ")[0])
 ```
 
-這只是檢查順序的模型。實際的 gateway 要處理 MCP 的 JSON-RPC 訊息、串流回應、session，速率限制要存在多個實例共用的地方（例如 Redis），不能放在單一程序的記憶體裡。
+這只是檢查順序的模型。實際的 gateway 要處理 MCP 的 JSON-RPC 訊息與串流回應，還要同時應付新舊版規格（2026-07-28 版拿掉了 `initialize` 握手與協定層的 session，之前的版本還有），速率限制要存在多個實例共用的地方（例如 Redis），不能放在單一程序的記憶體裡。
 
 ## 常見錯誤
 

@@ -143,6 +143,8 @@ ORDER BY total DESC, u.id;
 
 所以「只算已付款的訂單」放 `WHERE status = 'paid'`；「只列總額超過 5,000 的使用者」放 `HAVING sum(amount) > 5000`。能放 WHERE 的條件就不要放 HAVING。
 
+:::stop 讀到這裡可以先停：會依邏輯執行順序判斷條件放 WHERE 還是 HAVING，也算得出含 NULL 的查詢會回幾列。後面的欄位型別與 DISTINCT ON，在要建表選型別或取「每組一列」時再回來讀。
+
 ## 型別：存什麼就得到什麼
 
 型別決定了值怎麼比較、怎麼運算、能不能用索引。範例資料庫的選擇各有理由：

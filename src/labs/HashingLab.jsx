@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useWidth } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useWidth, Measure } from './ui.jsx'
 
 /* ============================================================
    編碼、雜湊、加密：密碼該怎麼存
@@ -117,7 +117,7 @@ export default function HashingLab() {
                   <div className="hsh-salt"><span className="tag">salt B</span><code>{saltB}</code></div>
                   <Row who="B" value={out.kdfB} busy={out.busy} diff />
                 </>}
-                <p className="hsh-meta">{iters.toLocaleString()} 次 iterations · 實測 <b>{out.busy ? '計算中…' : `${ms.toFixed(1)} ms`}</b>{out.error && ` · ${out.error}`}</p>
+                <p className="hsh-meta">{iters.toLocaleString()} 次 iterations · 實測 {out.busy ? <b>計算中…</b> : <Measure kind="local" value={ms.toFixed(1)} unit="ms" />}{out.error && ` · ${out.error}`}</p>
               </>}
             </Card>
           </div>
@@ -240,7 +240,7 @@ function SpeedChart({ perSec, iters }) {
           )
         })}
       </svg>
-      <p className="hsh-note">你的瀏覽器單執行緒 PBKDF2（{iters.toLocaleString()} 次）：{perSec ? <>每秒約 <b>{perSec.toLocaleString()}</b> 次</> : '量測中…'}。GPU 叢集會再快幾個數量級，所以參數要留餘裕。</p>
+      <p className="hsh-note">你的瀏覽器單執行緒 PBKDF2（{iters.toLocaleString()} 次）：{perSec ? <>每秒約 <Measure kind="local" value={perSec.toLocaleString()} unit="次" /></> : '量測中…'}。GPU 叢集會再快幾個數量級，所以參數要留餘裕。</p>
     </div>
   )
 }

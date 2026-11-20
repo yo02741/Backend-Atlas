@@ -18,7 +18,7 @@ export default {
       example: { primary: 'OWASP Top 10 (2021)', alts: ['OWASP API Security Top 10', 'CWE Top 25'] },
       keywords: ['OWASP'],
       lab: null,
-      reviewed: '2026-10',
+      reviewed: '2026-11',
     },
     {
       id: 'injection',
@@ -29,6 +29,7 @@ export default {
       example: { primary: '參數化查詢（psycopg / SQLAlchemy）', alts: ['ORM', '預備語句（prepared statement）'] },
       keywords: ['SQL', 'OWASP', 'PostgreSQL', 'MongoDB'],
       lab: 'SqlInjectionLab',
+      reviewed: '2026-11',
     },
     {
       id: 'password-storage',
@@ -39,6 +40,7 @@ export default {
       example: { primary: 'argon2id（或 bcrypt）', alts: ['scrypt', 'PBKDF2（相容性考量時）'] },
       keywords: ['OWASP'],
       lab: 'HashingLab',
+      reviewed: '2026-11',
     },
     {
       id: 'crypto-toolbox',

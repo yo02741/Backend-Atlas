@@ -20,7 +20,7 @@ export default [
         lang: 'yaml',
         options: [
           'PV 變成 Released，資料保留；之後建立同名的 PVC 會自動綁回原本的 PV',
-          'reclaimPolicy 沒寫，預設是 Delete：PV 與後端的 volume 一起刪除，資料沒了',
+          'reclaimPolicy 沒寫就是 Delete：PV 與後端 volume 一起刪除',
           'reclaimPolicy 沒寫，預設是 Retain：PV 與資料保留，要管理者手動清除',
           'Kubernetes 會先替這個 volume 建一個 VolumeSnapshot，再刪除 PV',
         ],
@@ -33,7 +33,7 @@ export default [
           'PV 進入 Released 狀態，要等 Kubernetes 的垃圾回收在下一個週期清掉，等著就好',
           '縮減時 StatefulSet 先刪最小序號的 Pod，clinic-queue-0 的資料被搬到其他 PVC，用量所以不變',
           'Longhorn 的副本要等節點重開機才會釋放，要排程輪流重啟節點',
-          '縮減副本預設保留 PVC，data-clinic-queue-2 還在；確認不需要後手動刪除，或把 whenScaled 設成 Delete',
+          '縮減預設保留 PVC，data-clinic-queue-2 還在，要另外刪除',
         ],
         answer: 3,
         explain: 'StatefulSet 縮減時從最大的序號開始刪 Pod，但 volumeClaimTemplates 建出來的 PVC 預設保留（whenScaled 與 whenDeleted 都是 Retain），擴回 3 時新的 clinic-queue-2 才能掛回原本的資料。PVC 還在，PV 就還是 Bound，不會進入 Released，也沒有垃圾回收會處理它。縮減是從最大的序號開始，不會搬資料；空間不會因為重開機而釋放。',

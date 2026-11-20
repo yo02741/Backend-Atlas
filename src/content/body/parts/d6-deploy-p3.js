@@ -42,6 +42,17 @@ export default {
       '能寫出 index.html、/assets/ 與 SPA fallback 分開快取的 nginx 設定，並指出哪些 location 會因為自己有 add_header 而少了 server 層的標頭',
       '能比較「保留 nginx 當入口」與「HTTPRoute 依路徑分流」，寫出各自的 manifest，並說出換了前面那一層之後，要調哪個閒置逾時才能避免偶發的 502 或 503',
     ],
+    challenge: {
+      task: '照本課的三個停靠點分三段交付，每一段都能單獨驗收：(1) 靜態檔：用多階段 Dockerfile 建出前端映像，`index.html`、`/assets/` 與 SPA fallback 的快取標頭正確；(2) 執行期設定：同一個映像搭兩份 ConfigMap，跑出兩個環境；(3) API 轉發：用 HTTPRoute 把 `/api` 送到後端。叢集用 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 的 kind。',
+      deliver: '三段各一份可以重跑的驗收腳本（`curl` 指令加預期輸出），以及一次實際執行的結果',
+      check: [
+        '第一段：`/patients/123`、`/assets/<檔名>`、`/assets/not-exist.js` 分別得到 `no-cache`、`immutable` 與 404',
+        '第二段：兩個環境的映像 digest 相同、`/config.js` 內容不同，`grep` `dist/` 找不到任何一個環境的網址',
+        '第三段：`/api/healthz` 由後端回應、`/api-docs/` 回到前端，並寫出 Gateway 對後端的閒置逾時與後端的 keep-alive 秒數（參考專案用 uvicorn，看 `--timeout-keep-alive`，預設 5 秒）',
+        '只做完第一段時，第一段的腳本也能獨立跑完',
+      ],
+      twist: '業務要求前端改放在子路徑 `/portal/`。先預測三段的驗收腳本各要改哪幾行，哪一段的映像要重建。',
+    },
     refs: [
       { label: 'nginx：ngx_http_headers_module（add_header）', url: 'https://nginx.org/en/docs/http/ngx_http_headers_module.html' },
       { label: 'Vite：Env Variables and Modes', url: 'https://vite.dev/guide/env-and-mode' },

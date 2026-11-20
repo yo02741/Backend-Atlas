@@ -56,8 +56,14 @@ CI 的 `docs-sync` workflow 會補上忘記同步的 commit，部署前也會先
 
 ## 改內容時
 
+- **進階驗收、停靠點、跨課作業**：課與情境的 `challenge`、深入內容的 `:::stop`、`src/content/assignments.js` 的格式見 `docs/CONTRIBUTING-lessons.md`；情境的 `switchIf`、`alternative` 見 `docs/CONTRIBUTING-scenarios.md`；實驗室的 `src/labs/tasks.js` 與 `Measure` 見 `docs/CONTRIBUTING-labs.md`。改完必跑 `npm run validate`。
+- **選擇題**：每課最多 1 題的正解是唯一最長的選項（`npm run quiz:stats` 看全站，`validate:quizzes` 會擋）；解釋放 `explain`，干擾項寫成同樣具體的錯誤做法。
+- **課綱週次**：課頁的「課綱第 W 週」與首頁的「課綱 N 週」讀 `src/content/curriculum-weeks.js`（`docs:sync` 產生，不要手改）；改了課綱的「對應技能」要跑 `npm run docs:sync`。
+- **只存本機的紀錄**放 `src/localStore.js`（`atlas-local-v1`），不要加進 `progress.js` 的形狀（否則要改 `firestore.rules`）；改了同步範圍要同步改複習頁「紀錄存在哪裡」與 Account 的說明。
+- 頁內錨點寫 `href="#id"` 即可，`App.jsx` 的 `useInPageAnchors` 會攔下來捲動，不會被當成路由。
+
 - **技能**：索引在 `src/content/dN-*.js`（列表與卡片用的欄位，領域要有 `track`），內文在 `src/content/body/dN-*.js` 或 `body/parts/`（`points` / `checklist` / `refs`，以技能 id 為 key，技能頁才懶載入），深入內容在 `src/content/deep/<id>.md`（格式見 `docs/CONTRIBUTING-lessons.md`）。id 全站唯一，`lab` 對應 `src/labs/index.js` 的 key。`roadmap.js` 與 `dN-*.js` 要能被 Node 直接 import（校驗與 `docs:sync` 用），不放 `import.meta.glob`。**改完必跑** `npm run validate:content`，有 run 區塊再跑 `npm run e2e:deep`。
-- **程式題**：`src/content/exercises/`；**改完必跑** `npm run e2e:verify`（解答必須通過、起始碼應該不通過）。html、css、vue 題在沙箱 iframe 評分，每題要在 10 秒內評完；`ONLY=` 一樣可用。改了 `src/runtime/frame*`、`fakeApi.js`、`loopGuard.js` 必跑 `npm run test:unit` 與 `npm run e2e:frame`。html 與 vue 題設 `tailwind: true` 時沙箱載入 Tailwind CSS，測試開始前會等它產生完 CSS；測試中途改了 class 或屬性要 `await twReady()`；互動狀態的樣式用 `cssWhen(el, ':hover', 'background-color')` 讀，不檢查 class 字串。改了 `src/runtime/versions.js`（含 `VENDOR_SUBMODULES`、`VENDOR_STYLES`）之後，另外跑 `node e2e/ui-routing.mjs` 確認沒用到的題目不下載。
+- **程式題**：`src/content/exercises/`；**改完必跑** `npm run e2e:verify`（解答必須通過、起始碼應該不通過）。html、css、vue 題在沙箱 iframe 評分，每題要在 10 秒內評完；`ONLY=` 一樣可用。改了 `src/runtime/frame*`、`fakeApi.js`、`loopGuard.js` 必跑 `npm run test:unit` 與 `npm run e2e:frame`。html 與 vue 題設 `tailwind: true` 時沙箱載入 Tailwind CSS，測試開始前會等它產生完 CSS；測試中途改了 class 或屬性要 `await twReady()`；互動狀態的樣式用 `cssWhen(el, ':hover', 'background-color')` 讀，不檢查 class 字串。改了 `src/runtime/versions.js`（含 `VENDOR_SUBMODULES`、`VENDOR_STYLES`）之後，另外跑 `node e2e/ui-routing.mjs` 確認沒用到的題目不下載。改了 `src/pages/Playground.jsx` 或它的範例，跑 `node e2e/ui-playground.mjs` 與 `npm run e2e:runtime`；範例只靠註解或第二段程式加學習步驟，不改 `SHOP_SCHEMA`（練習題共用），要暫時改資料的 SQL 範例包在 `BEGIN … ROLLBACK` 裡。
 - **選擇題**：`src/content/quizzes/`，格式見 `docs/CONTRIBUTING-quizzes.md`；**改完必跑** `npm run validate:quizzes`。
 - **實驗室**：照 `docs/CONTRIBUTING-labs.md`；`src/labs/index.js` 的 `LAB_META` 每筆寫成一行 `{ title, blurb, skill }`（`docs:sync` 靠這個格式解析）；用 `?lab=XxxLab` 單獨預覽；**改完必跑** `LAB=XxxLab npm run e2e:labs`（改 `src/labs/ui.jsx` 則跑全部）。
 - **設計情境**：`src/content/scenarios/` + `src/labs/scenarios/`，照 `docs/CONTRIBUTING-scenarios.md`；**改完必跑** `npm run validate:scenarios`。

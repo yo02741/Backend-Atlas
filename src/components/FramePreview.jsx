@@ -3,11 +3,12 @@ import React, { useEffect, useRef, useState } from 'react'
 /* 前端題與 Playground 的預覽：看得見的沙箱 iframe（src/runtime/frame.js，第一次執行時才 import）。
    寬度可切換 390、768、1280；比窗格寬時整個縮小顯示，iframe 自己的 viewport 維持選的寬度（media query 照那個寬度算）。
    下方是 iframe 回報的 Console（含 [Vue warn] 與未處理的錯誤）與假 API 的網路紀錄。
-   props：kind、code、ex（題目的 html / css / api）、setup（Playground 的假 API 設定）、runKey（變了就重建 iframe） */
+   props：kind、code、ex（題目的 html / css / api）、setup（Playground 的假 API 設定）、runKey（變了就重建 iframe）、
+   onStatus（選填：{ state, errors, warns, lastError } 變了就呼叫，Playground 的狀態列與 live region 用） */
 const WIDTHS = [390, 768, 1280]
 const MAX_ENTRIES = 300
 
-export default function FramePreview({ kind, code, ex = {}, setup = '', runKey = 0, height = 320, empty = '按「執行」看畫面。' }) {
+export default function FramePreview({ kind, code, ex = {}, setup = '', runKey = 0, height = 320, empty = '按「執行」看畫面。', onStatus }) {
   const stageRef = useRef(null)
   const hostRef = useRef(null)
   const frameRef = useRef(null)
@@ -63,6 +64,10 @@ export default function FramePreview({ kind, code, ex = {}, setup = '', runKey =
 
   const errors = logs.filter((l) => l.level === 'error').length
   const warns = logs.filter((l) => l.level === 'warn').length
+  const onStatusRef = useRef(onStatus)
+  onStatusRef.current = onStatus
+  const lastError = errors ? logs.filter((l) => l.level === 'error').pop().text : ''
+  useEffect(() => { onStatusRef.current?.({ state, errors, warns, lastError, runKey }) }, [state, errors, warns, lastError, runKey])
   return (
     <div className="fp">
       <div className="fp-bar">

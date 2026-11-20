@@ -70,6 +70,8 @@ dev server 不打包、不做型別檢查，所以「dev 能跑」不代表「bu
 
 在 preview 上正常，不代表伺服器的 fallback 與快取設定是對的。正式環境的設定見 [SPA 的部署](#/skill/spa-deploy)。
 
+:::stop 讀到這裡可以先停：會分辨 `vite`、`vite build`、`vite preview` 各做什麼，判斷一次存檔是 HMR 還是整頁重載。後面的 Vite 6 與 8 差異、完整設定與錯誤訊息，在升級主版本或 CI 建置失敗時再回來讀。
+
 ### Vite 6 與 Vite 8
 
 2026 年 11 月，npm 上 vite 的最新版是 8.3.8；本站自己用的是 Vite 6（`package.json` 寫 `^6.0.0`，實際安裝 6.4.3）。兩者的主要差別：

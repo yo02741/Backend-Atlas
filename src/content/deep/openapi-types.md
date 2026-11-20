@@ -187,6 +187,8 @@ export async function loadPage(cursor = 0): Promise<AppointmentPage> {
 }
 ```
 
+:::stop 讀到這裡可以先停：會用 openapi-typescript 產生型別、用 openapi-fetch 呼叫 API，並說得出型別保證不了什麼。後面的列舉與執行時驗證，在規格寫得不夠精確或要防後端回傳意外的資料時再回來讀。
+
 ### 規格是 `string` 的列舉
 
 ```ts

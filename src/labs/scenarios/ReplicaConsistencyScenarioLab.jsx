@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useReducedMotion, useWidth, Stats, Stat, Caption, fmtMs } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useReducedMotion, useWidth, Stats, Stat, Caption, fmtMs, Measure } from '../ui.jsx'
 
 /* 讀寫分離情境模擬器：
    主庫 + 兩台副本。按「寫入然後立刻重整」跑一次時序：寫到主庫 → WAL 串流 → 使用者 gap ms 後按 F5 →
@@ -196,7 +196,7 @@ export default function ReplicaConsistencyScenarioLab() {
           <Stats min={140}>
             <Stat label="讀取" value={stats.reads} unit="次" />
             <Stat label={isOrder ? '404' : '讀到舊資料'} value={stats.stale} unit="次" note={stats.reads ? `（${Math.round((stats.stale / stats.reads) * 100)}%）` : ''} tone={stats.stale ? 'bad' : ''} />
-            <Stat label="主庫承受的讀" value={`${primaryPct}%`} />
+            <Stat label="主庫承受的讀" value={<Measure kind="set" value={`${primaryPct}%`} />} />
             {mode === 'lsn' && <Stat label="副本沒追上改讀主庫" value={stats.fallback} unit="次" />}
           </Stats>
           {log.length > 0 && (

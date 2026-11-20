@@ -11,7 +11,8 @@ import { javascript } from '@codemirror/lang-javascript'
 
 /* CodeMirror 6 編輯器：主題全走 CSS token（亮暗自動），語言 python / sql / js / vue（JS）/ html / css。
    html 與 css 用下面的小型 StreamLanguage 上色（沒有 @codemirror/lang-html、lang-css 依賴）。
-   props: value, onChange, lang, onRun(Ctrl/Cmd+Enter), readOnly, minHeight */
+   props: value, onChange, lang, onRun(Ctrl/Cmd+Enter), readOnly, minHeight, ariaLabel, describedBy（編輯區的 aria-label、aria-describedby）
+   Tab 會縮排（indentWithTab）；CodeMirror 內建：先按 Esc，2 秒內按 Tab 會把焦點移出編輯器。 */
 
 const theme = EditorView.theme({
   '&': { backgroundColor: 'var(--surface-2)', color: 'var(--ink-1)', fontSize: '0.86rem', borderRadius: 'var(--radius)' },
@@ -117,7 +118,7 @@ function langExt(lang) {
   return []
 }
 
-export default function CodeEditor({ value, onChange, lang = 'python', onRun, readOnly = false, minHeight = 180, placeholder = '' }) {
+export default function CodeEditor({ value, onChange, lang = 'python', onRun, readOnly = false, minHeight = 180, placeholder = '', ariaLabel = '', describedBy = '' }) {
   const host = useRef(null)
   const view = useRef(null)
   const onChangeRef = useRef(onChange)
@@ -142,6 +143,7 @@ export default function CodeEditor({ value, onChange, lang = 'python', onRun, re
         theme, syntaxHighlighting(highlight),
         EditorView.lineWrapping, // 長行換行，手機上不用左右滑
         placeholder ? cmPlaceholder(placeholder) : [],
+        ariaLabel || describedBy ? EditorView.contentAttributes.of({ ...(ariaLabel ? { 'aria-label': ariaLabel } : {}), ...(describedBy ? { 'aria-describedby': describedBy } : {}) }) : [],
         EditorView.updateListener.of((u) => { if (u.docChanged) onChangeRef.current?.(u.state.doc.toString()) }),
       ],
     })

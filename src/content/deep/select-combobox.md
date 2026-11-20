@@ -80,7 +80,7 @@ Autocomplete 每一次輸入都可能變成一個請求，規格要寫清楚：
 | 查無結果 | 清單顯示「沒有符合的病患」，不直接關閉清單 |
 | 錯誤 | 清單顯示「搜尋失敗，稍後再試」，不顯示成查無結果 |
 
-沒有取消舊請求時，三個請求同時在跑，最後回來的那一個決定畫面，和使用者最後打的字不一定一致。時間線與 `AbortController` 的寫法見 [API 的四種狀態](#/skill/api-states) 的競態一節。
+沒有取消舊請求時，三個請求同時在跑，最後回來的那一個決定畫面，和使用者最後打的字不一定一致。時間線與 `AbortController` 的寫法見 [取消請求與競態](#/skill/cancel-race)。
 
 ### Multi-select
 
@@ -144,6 +144,7 @@ const activeId = computed(() =>
   active.value >= 0 ? `${id}-opt-${filtered.value[active.value].id}` : undefined)
 
 function onKeydown(e) {
+  if (e.isComposing || e.keyCode === 229) return   // 注音、倉頡組字中的按鍵交給輸入法
   if (e.key === 'ArrowDown') {
     e.preventDefault()
     if (!open.value) { open.value = true; active.value = 0; return }
@@ -187,10 +188,13 @@ function pick(doc) {
 </template>
 ```
 
+- 用注音或倉頡輸入時，組字中的按鍵也會觸發 `keydown`。各瀏覽器送出的值不一致（`key` 可能是 `Process` 或 `Enter`，部分版本的 Safari 在選字的 Enter 上 `isComposing` 已經是 `false`），沒擋住時按 Enter 選字會同時選走反白的選項；常見的保險寫法是同時檢查 `isComposing` 與 `keyCode === 229`，驗收時用注音實際打一次。`v-model` 在組字結束（`compositionend`）後才更新 `query`，清單在選完字之後才開始篩選。
 - `@mousedown.prevent` 讓點選項時輸入框不會先失去焦點（否則 `blur` 先把清單關掉，`click` 永遠點不到）。
 - `aria-activedescendant` 只在清單開著時設定；指到的 id 一定要存在於 DOM。
 - 查無結果的訊息放在一直存在的 `role="status"` 裡，不塞一個假的選項進 listbox。
 - `.active` 是視覺焦點的樣式，要有和背景 3:1 以上的對比，不能只靠很淡的底色。
+
+:::stop 讀到這裡可以先停：會分辨五種選擇類元件，照 APG 做出焦點留在輸入框的 Combobox。後面的 Autocomplete 請求在選項要邊打邊查 API 時再回來讀。
 
 Autocomplete 的查詢部分，debounce 與取消舊請求：
 

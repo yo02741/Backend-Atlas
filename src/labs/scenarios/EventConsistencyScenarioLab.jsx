@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status,
-  useTicker, useWidth, Stats, Stat, Flow, LineChart, Caption, fmtN, kfmt,
+  useTicker, useWidth, Stats, Stat, Flow, LineChart, Caption, fmtN, kfmt, Measure,
 } from '../ui.jsx'
 
 /* 事件和資料庫不同步：1,000 筆掛號，每筆依序抽籤決定「交易回滾、程序被砍、publish 失敗或逾時、消費端重複收到」，
@@ -230,7 +230,7 @@ export default function EventConsistencyScenarioLab() {
             <Stat label="幽靈事件" value={ghostNow} tone={ghostNow ? 'bad' : 'ok'} note="通知了不存在的掛號" />
             <Stat label="重複送達" value={fmtN(started && k < steps ? Math.round(sim.dupDeliv * k / steps) : sim.dupDeliv)} tone={sim.dupDeliv ? 'warn' : ''} note="消費端多收到的份數" />
             <Stat label="重複生效" value={dupNow} tone={dupNow ? 'bad' : 'ok'} note="LINE 寄兩次" />
-            <Stat label="端到端延遲" value={`${Math.round(sim.p50)} / ${Math.round(sim.p95)}`} unit="ms" note="p50 / p95（示意）" />
+            <Stat label="端到端延遲" value={<Measure kind="set" value={`${Math.round(sim.p50)} / ${Math.round(sim.p95)}`} unit="ms" />} note="p50 / p95" />
           </Stats>
         </div>
         <div className="lab-stack ec-col">

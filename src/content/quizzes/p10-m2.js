@@ -30,7 +30,7 @@ export default [
       {
         q: '新版部署後錯誤率飆高，確定是新版的問題。團隊的 manifest 放在 Git，由 CI 執行 `kubectl apply`。哪一種處理方式最完整？',
         options: [
-          '執行 kubectl rollout undo 回到上一版，接著把 Git 裡的 image tag 也改回去，否則下一次 apply 會把壞的版本再部署一次',
+          'kubectl rollout undo 回上一版，再把 Git 裡的 image tag 改回去',
           '把出錯的 Pod 逐一 kubectl delete，讓 Deployment 重建出健康的 Pod',
           '把 replicas 先改成 0 再改回原本的數字，強迫所有 Pod 重新啟動',
           '修改 Service 的 selector，讓流量暫時不要進到這個 Deployment',
@@ -48,7 +48,7 @@ export default [
         options: [
           'readiness 探針檢查了資料庫，所以 Pod 被移出 Service 後就被重啟',
           'limits.memory 設得太小，資料庫中斷時 Pod 被 OOMKilled',
-          'liveness 探針的端點會檢查資料庫，中斷期間每個 Pod 的 liveness 都失敗而被重啟',
+          'liveness 探針會檢查資料庫，中斷期間每個 Pod 都被重啟',
           '沒有設定 startupProbe，所以資料庫一中斷容器就重新啟動',
         ],
         answer: 2,
@@ -59,7 +59,7 @@ export default [
         code: 'resources:\n  requests:\n    cpu: "250m"\n    memory: "256Mi"\n  limits:\n    cpu: "500m"\n    memory: "512Mi"',
         lang: 'yaml',
         options: [
-          '記憶體超過 limits，容器被 OOMKilled 後重啟；CPU 超過 limits 則是被節流、變慢，不會被殺',
+          '記憶體超限被 OOMKilled 重啟；CPU 超限只被節流',
           'CPU 與記憶體都超過 limits，兩者都會讓容器被殺掉重啟',
           '兩者都只是被節流：程式變慢，但容器不會重啟',
           '排程器發現超過 requests，把 Pod 搬到資源比較多的節點',
@@ -88,8 +88,8 @@ export default [
         code: 'NAME                           READY   STATUS             RESTARTS      AGE\nbooking-api-7c5d9f8b66-h2m8q   0/1     CrashLoopBackOff   5 (40s ago)   4m',
         lang: 'bash',
         options: [
-          '用 kubectl exec 進容器裡，手動執行啟動指令看錯誤',
-          '加上 --previous 看上一次執行的 log，並用 describe 看 Last State 的結束原因與 Exit Code',
+          '用 kubectl exec 進容器裡，手動執行一次啟動指令看錯誤輸出',
+          'logs 加 --previous，再看 Last State 的結束原因',
           '刪掉這個 Pod，讓 Deployment 重建一個新的',
           '把 Deployment 的副本數調高，讓其他 Pod 分擔',
         ],
@@ -101,7 +101,7 @@ export default [
         options: [
           '三個節點目前的 CPU 使用率都是 100%，要等負載降下來',
           '容器的 CPU 用量超過 limits，被排程器暫停',
-          '每個節點上尚未被保留的 CPU，都放不下這個 Pod 的 requests；與節點當下的實際使用率無關',
+          '節點未保留的 CPU 放不下 Pod 的 requests',
           '映像太大，節點沒有足夠的 CPU 可以解壓縮',
         ],
         answer: 2,
@@ -110,7 +110,7 @@ export default [
       {
         q: '某個服務的 Pod 全部是 Running、READY 1/1、RESTARTS 0，但其他服務連它的 Service 一律失敗。`kubectl get endpointslices` 顯示這個 Service 沒有任何後端位址。最可能的原因是？',
         options: [
-          'Service 的 selector 與 Pod 的 label 對不上，或兩者不在同一個 namespace',
+          'selector 對不上 label，或不在同一個 namespace',
           'readiness 探針沒有通過，所以 Pod 沒被加進後端',
           'Service 的 targetPort 寫成了程式沒有在監聽的 port',
           'NetworkPolicy 擋住了來源 Pod 的流量',
@@ -131,7 +131,7 @@ export default [
           'containers 清單整個被補丁取代，api 容器只剩 name 與 resources，image 不見了',
           '補丁缺少 image 這個必填欄位，kubectl kustomize 會報錯',
           '補丁只能修改 replicas 這種純量欄位，containers 的部分會被忽略',
-          'replicas 變成 6；api 容器保留原本的 image、env 與探針，只有 limits.memory 被改成 1Gi',
+          'replicas 變成 6；api 容器其他欄位保留，只改 limits.memory',
         ],
         answer: 3,
         explain: 'strategic merge patch 逐層合併：純量直接取代，`containers` 這個清單依 `name` 找到同名的容器後再往下合併，所以補丁只需要寫 name 與要改的欄位。補丁本身不是完整的 manifest，不需要必填欄位。要注意的是，沒有合併鍵資訊的清單（多數自訂資源）才是整個取代。',
@@ -141,7 +141,7 @@ export default [
         options: [
           'CI 不再需要 build 映像，控制器會從原始碼自動產生',
           '從此不需要管理秘密，因為控制器會自動加密 Git 裡的 Secret',
-          '叢集的憑證不必再交給 CI；有人直接用 kubectl 改了線上物件時，控制器會發現與 Git 不一致並修正或標示',
+          '叢集憑證不必交給 CI；線上物件被手改時控制器會發現 drift',
           '部署一定會變快，因為控制器在每次 git push 的瞬間就完成同步',
         ],
         answer: 2,
@@ -151,7 +151,7 @@ export default [
         q: '採用 GitOps 後，資料庫密碼也需要有「期望狀態」。下列哪一種做法可以接受？',
         options: [
           '把 Secret 的 YAML 放進設定 repo，因為 data 欄位已經過 base64 處理',
-          '在 Git 裡放一份 ExternalSecret 之類的參照，由叢集內的控制器到秘密管理服務取值後產生 Secret',
+          'Git 裡放 ExternalSecret 之類的參照，由控制器取值產生 Secret',
           '把密碼寫進 Helm 的 values.yaml，因為 Helm 安裝時會自動加密',
           '把密碼放進 ConfigMap，並把設定 repo 設成私有',
         ],

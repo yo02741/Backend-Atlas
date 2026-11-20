@@ -177,9 +177,11 @@ for name, tests in (("weak", tests_weak), ("strong", tests_strong)):
 
 這段程式靠 `copy.deepcopy` 加上「用 `ast.walk` 的位置找回同一個節點」：每個突變體都從原始的樹複製出來，只改一處，彼此不會互相污染。
 
+:::stop 讀到這裡可以先停：會認出三種假綠燈，用迷你突變器看出哪個突變體存活。後面的 mutmut、Stryker 與性質測試，在要把突變測試放進專案或 CI 時再回來讀。
+
 ### 真實工具：mutmut 與 Stryker
 
-- **mutmut**（Python）：在 pytest 之上做的突變測試工具。基本流程是 `mutmut run` 產生並執行突變體，再用 `mutmut results` 列出存活的、`mutmut show <突變體>` 看某一個的 diff。設定（要突變哪些路徑、怎麼跑測試）寫在 `pyproject.toml` 或 `setup.cfg`。2.x 與 3.x 之間的指令輸出與設定方式有改動，照專案實際安裝的版本看文件。
+- **mutmut**（Python）：在 pytest 之上做的突變測試工具。基本流程是 `mutmut run` 產生並執行突變體，再用 `mutmut results` 列出存活的、`mutmut show <突變體>` 看某一個的 diff。設定（要突變哪些路徑、怎麼跑測試）寫在 `pyproject.toml` 或 `setup.cfg`。2.x 與 3.x 之間的指令輸出與設定方式有改動，照專案實際安裝的版本看文件；3.x 需要支援 fork 的系統，Windows 要在 WSL 裡跑。
 - **Stryker**（JavaScript / TypeScript，另有 C#、Scala 版）：`npx stryker run`，產出 HTML 報告標出每個存活的突變體。
 
 以下是示意，需要安裝套件，不能在瀏覽器執行：

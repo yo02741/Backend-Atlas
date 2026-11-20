@@ -166,6 +166,8 @@ console.log(at.toLocaleString('zh-TW', { timeZone: 'UTC' }))   // 沒寫時區�
 
 元素需要不重複的 `id`（例如 `<label for>` 對應的欄位）時，用 Vue 3.5 的 `useId()`，伺服器與瀏覽器產生同一個值；用亂數產生 `id` 就是一個 mismatch。
 
+:::stop 讀到這裡可以先停：會從初始 HTML 分辨 CSR、SSR、SSG，修掉一個 hydration mismatch。後面的 Nuxt `routeRules` 與選擇方式，在要替不同頁面各選渲染方式時再回來讀。
+
 ### 用 Nuxt 依路由選渲染方式
 
 Nuxt 4 預設每個頁面都 SSR。門診系統可以這樣分：

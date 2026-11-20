@@ -55,6 +55,23 @@ export default {
     { id: 'csv-import', situation: '匯入 CSV（幾 MB），要先驗欄位格式，格式錯要立刻告訴使用者第幾行有問題。', options: ['through-api', 'presigned', 'chunked'], answer: 'through-api',
       explain: '需求是同步驗證內容，檔案必須在 API 手上才能解析。幾 MB 經過 API 沒問題：限制 body 大小、串流解析、驗完再決定要不要存。' },
   ],
+  switchIf: [
+    { when: '檔案只有幾百 KB（頭像），上傳後要立刻裁切並回傳新圖', then: '改選 `through-api`：小檔進 API 沒有負擔，驗證、裁切、回傳一個請求做完，presigned 只多兩次來回。' },
+    { when: '單檔變成好幾 GB，網路又不穩', then: '改選 `chunked`：單一 PUT 有大小上限，斷線整檔重傳不能接受；分段可平行、斷了只補缺的段。' },
+    { when: '上傳的是要立刻驗欄位的 CSV，格式錯要當場告訴使用者第幾行', then: '改選 `through-api`：內容驗證要在 API 手上同步做，檔案必須經過 API；限制 body 大小、串流解析。' },
+  ],
+  alternative: { option: 'chunked', holdsWhen: '行動網路斷線重傳的抱怨已經出現，客戶端願意維護切段與續傳狀態，後端也設好未完成上傳的生命週期清理時。' },
+  challenge: {
+    task: '上方模擬器選「Presigned URL 直傳」並打開「網路在傳到約 70% 時中斷一次」，按「上傳 100 MB」，記下「客戶端送出」與「全部完成」；換「分段上傳 + 續傳」再做一次。接著替 presigned 做法寫三條恢復路徑：① 簽出的 URL 在上傳途中過期、② 使用者傳到 60% 按取消、③ 檔案已經進物件儲存，但 `POST /uploads/{id}/complete` 沒有成功（API 回 5xx，或 App 被關掉）。每條寫出誰先發現、uploads 紀錄停在什麼狀態、物件儲存裡留下什麼、最後由誰清掉或補登。',
+    deliver: '兩次播放的「客戶端送出」與「全部完成」，加三條恢復路徑各三到五行',
+    check: [
+      'Presigned 中斷後客戶端送出超過 100 MB，分段上傳只多送進行中的那一段；數字和模擬器一致',
+      '① 寫出 URL 效期要怎麼跟檔案大小與上傳速度對上，過期後客戶端重新 `POST /uploads` 取新 URL',
+      '③ 不只靠客戶端重試：有排程或物件儲存事件去找「物件存在但沒有 complete」的紀錄，補登或刪除',
+      '三條都寫出 uploads 紀錄的狀態名稱與轉換時機',
+    ],
+    twist: '產品要求同一份檔案被使用者重複上傳時（同一支影片按了兩次）只存一份。先預測現在的流程會在物件儲存留下幾份、縮圖 worker 跑幾次，再說出要在哪一步算 hash、由誰算才可信。',
+  },
   implementation: [
     { title: '簽出限時、限大小、限類型的上傳 URL（boto3 風格示意）', lang: 'python', code: `ALLOWED = {"image/jpeg", "image/png", "video/mp4"}
 MAX_BYTES = 100 * 1024 * 1024

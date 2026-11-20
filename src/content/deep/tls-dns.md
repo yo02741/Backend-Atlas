@@ -130,6 +130,8 @@ dig +trace api.shop.example            # 從根一路問下來，看每一層的
 
 信任鏈的細節、DV／OV／EV、Let's Encrypt 與自動續約、用 `openssl` 檢查憑證，見 [HTTPS 憑證](#/skill/https-certificates)。本課只講驗證的原理。
 
+:::stop 讀到這裡可以先停：會查 DNS 紀錄、安排 TTL 換 IP，說得出瀏覽器怎麼驗證憑證。後面的 SNI 與 TLS 終結位置，在一台機器掛多個網域或規劃反向代理時再回來讀。
+
 ### SNI：一個 IP 上的很多網站
 
 TLS 握手發生在 HTTP 請求之前，伺服器還沒看到 `Host` 標頭，就要決定送哪張憑證。**SNI**（Server Name Indication）讓客戶端在 ClientHello 裡先說「我要連 `api.shop.example`」，伺服器據此選憑證。開頭那支舊 App 沒送 SNI，伺服器只能回預設憑證，名字對不上。

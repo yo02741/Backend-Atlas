@@ -8,7 +8,7 @@ export default [
         options: [
           '保留規則刪掉的 tag 會先進資源回收筒，要過 30 天才會從磁碟移除',
           '專案配額把已刪除映像的空間保留給同一個專案，要把配額調低才會釋放',
-          '刪 tag 只拿掉指向 manifest 的名字，layer 要等垃圾回收才會移除；被保留的映像共用的層也不會釋放',
+          '刪 tag 只拿掉名字，layer 要等垃圾回收才移除，被保留的映像共用的層也不會釋放',
           '被刪的都成了 untagged artifact，Harbor 不計算它們的大小，所以用量看不出變化',
         ],
         answer: 2,
@@ -19,7 +19,7 @@ export default [
         code: 'skopeo copy docker://registry.k8s.io/pause:3.10.1 \\\n  docker://harbor.example.org/k8s/pause:3.10.1\n\n# manifest 裡\nimage: harbor.example.org/k8s/pause:3.10.1@sha256:<上游的 digest>',
         lang: 'bash',
         options: [
-          '沒加 `--all`，skopeo 只複製了跳板機架構的那一份、沒有複製多架構索引，院內沒有上游的那個 digest；加 `--all`（搭配 `--preserve-digests`）重新複製',
+          '沒加 `--all`，只複製了跳板機架構那一份、沒有多架構索引；加 `--all` 重新複製',
           'Harbor 收到映像後會重新壓縮 layer，digest 一定會變；斷網環境只能用 tag，不能用 digest',
           'Harbor 裡沒有事先建立 `pause` 這個 repository，skopeo 推送到不存在的 repository 時只寫入 tag、不寫入 manifest',
           'digest 綁定原本的 registry，換了 registry 就要用 `crane digest` 重算，把新的值寫回 manifest 就好',

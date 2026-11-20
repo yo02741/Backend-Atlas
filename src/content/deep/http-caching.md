@@ -116,6 +116,8 @@ ETag 怎麼產生：
 
 `If-Match` 是同一套機制的另一個用途：寫入時帶上版本，版本不對回 `412 Precondition Failed`，用來防止覆蓋別人的修改（見 [REST API 設計](#/skill/rest-design)）。
 
+:::stop 讀到這裡可以先停：會寫 `Cache-Control`、用 ETag 拿到 304。後面的 Vary 與典型設定，在同一個網址依語言、壓縮或登入狀態回不同內容時再回來讀。
+
 ## Vary：同一個網址，不同的回應
 
 `/products/1` 對 `Accept-Encoding: br` 的請求回 Brotli 壓縮的 body，對不支援的客戶端回未壓縮的。快取若只用網址當 key，就可能把 Brotli 的 body 給了不支援的客戶端。`Vary` 告訴快取：「key 要加上這些請求標頭」：

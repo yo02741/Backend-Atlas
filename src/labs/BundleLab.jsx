@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Code, Callout, Caption, Stats, Stat } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Code, Callout, Caption, Stats, Stat, Measure } from './ui.jsx'
 
 /* ============================================================
    bundle、chunk 與 hash：門診前端的建置產物
@@ -177,7 +177,7 @@ export default function BundleLab() {
               </div>
             )}
             <Stats min={130}>
-              <Stat label="首頁要下載（gzip）" value={k1(homeGz)} unit="kB" tone={homeGz > 150 ? 'bad' : 'ok'} note="上限示意 150 kB" />
+              <Stat label="首頁要下載（gzip）" value={<Measure kind="set" value={k1(homeGz)} unit="kB" />} tone={homeGz > 150 ? 'bad' : 'ok'} note="上限示意 150 kB" />
               <Stat label="chunk 數" value={chunks.length} />
               <Stat label="改完回訪要重新下載" value={c.edit === 'none' ? '—' : k1(refetch)} unit={c.edit === 'none' ? '' : 'kB'} tone={c.edit !== 'none' && refetch > 50 ? 'warn' : ''} />
             </Stats>

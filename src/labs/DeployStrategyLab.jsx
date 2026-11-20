@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Callout, Status, Stats, Stat, LineChart, Caption, useWidth, fmtN } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Callout, Status, Stats, Stat, LineChart, Caption, useWidth, fmtN, Measure } from './ui.jsx'
 
 /* ============================================================
    部署策略與資料庫遷移：rolling / blue-green / canary 三種換版方式
@@ -160,10 +160,10 @@ export default function DeployStrategyLab() {
           </LabStage>
           <Stats min={130}>
             <Stat label="同時在線的版本數" value={serving} unit="個" note={f.idle ? `${f.idle === 'new' ? 'v2' : 'v1'} 已啟動、沒接流量` : serving === 2 ? 'v1 與 v2 都在接流量' : `只有 ${f.share === 1 ? 'v2' : 'v1'}`} tone={serving === 2 ? 'warn' : ''} />
-            <Stat label="受影響請求比例" value={`${pct(f.err)}%`} note={errNote} tone={f.err > 5 ? 'bad' : f.err > 1 ? 'warn' : 'ok'} />
+            <Stat label="受影響請求比例" value={<Measure kind="set" value={`${pct(f.err)}%`} />} note={errNote} tone={f.err > 5 ? 'bad' : f.err > 1 ? 'warn' : 'ok'} />
             <Stat label="多出來的失敗請求" value={fmtN(Math.round(extraFail))} unit="個" note="部署開始累計到這一步" tone={extraFail > 500 ? 'bad' : extraFail > 20 ? 'warn' : ''} />
-            <Stat label="多久發現 bug" value={bug ? `約 ${S.detect} 分鐘` : '—'} note={bug ? S.detectNote : '打開「新版有 bug」'} />
-            <Stat label="回滾時間" value={S.rollback} note={anyBroken ? '回得去，但舊版會再壞' : S.rollbackNote} tone={anyBroken ? 'bad' : ''} />
+            <Stat label="多久發現 bug" value={bug ? <Measure kind="set" value={`約 ${S.detect} 分鐘`} /> : '—'} note={bug ? S.detectNote : '打開「新版有 bug」'} />
+            <Stat label="回滾時間" value={<Measure kind="set" value={S.rollback} />} note={anyBroken ? '回得去，但舊版會再壞' : S.rollbackNote} tone={anyBroken ? 'bad' : ''} />
             <Stat label="額外資源" value={S.extra} note={S.extraNote} tone={st === 'bluegreen' ? 'warn' : ''} />
           </Stats>
           <LineChart width={cw} height={Math.round(cw * (cw < 420 ? 0.5 : 0.34))} title={`部署期間的錯誤率 · 這一步 ${pct(f.err)}%`} xMax={XMAX} yMax={anyBroken ? 100 : 40}

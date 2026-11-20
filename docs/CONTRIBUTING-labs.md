@@ -21,7 +21,7 @@
 ## 共用元件（`./ui.jsx`）
 
 ```jsx
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Status, useWidth, useTicker, useReducedMotion, useLabVisible } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Status, useWidth, useTicker, useReducedMotion, useLabVisible, Measure } from './ui.jsx'
 
 <Lab accent="violet" kicker="SQL LAB" title="…" blurb="…">           // accent: blue|orange|aqua|yellow|magenta|green|violet|red
   <LabControls> <Seg label="模式" tinted value={v} onChange={setV} options={[{value,label,title?}]}/> <Toggle label checked onChange/> <Slider label min max step value onChange format?/> <span className="spacer"/> <Stepper step total onStep playing onPlay labels?/> </LabControls>
@@ -41,6 +41,37 @@ const visible = useLabVisible()   // 自己用 setInterval / requestAnimationFra
 SVG 可用 class：`.svg-text`（12px ink-1）`.svg-text.small`（10.5px ink-3）`.svg-mono`、`.svg-node`（surface 底＋hairline 框；`.on` 用 accent）、`.svg-edge`（`.on` 加粗 accent）、`.svg-flow`（虛線流動動畫）、`.svg-pulse`、`.svg-pop`、`.svg-dash`。
 表格 class：`.dtable`（`caption` / `th` / `td`），列 `.row-in`（進場動畫）`.off`（劃掉）`.dim`（變淡）`.hit`（高亮）`.clickable`；格 `.null`（NULL 樣式）`.src-a`/`.src-b`（左/右來源色條）。
 小標籤：`.tag`、`.tag.a`（藍）`.tag.b`（橘）；`.pill`、`.muted`、`.btn.ghost.small`。
+
+## 觀察任務（`src/labs/tasks.js`）
+
+實驗室頁（`#/lab/X`）與課頁嵌入的實驗室上方顯示「先猜 → 操作 → 看哪個觀察推翻猜測」，讀者的猜測存在自己的瀏覽器。
+
+```js
+export const LAB_TASKS = {
+  CacheLab: {
+    predict: '關掉「寫入時使快取失效」，UPDATE 之後馬上 GET，拿到的是新名字還是舊名字？',   // 一句，要讀者寫下預測
+    steps: ['關掉「寫入時使快取失效（invalidate）」', '按 GET /users/1 兩次，再按 UPDATE'],       // 2–4 步，用實驗室上真的有的控制項名稱
+    observe: '請求記錄裡第一次讀到新名字的那一筆是 hit 還是 miss。',                             // 一句，指出看哪裡，不寫答案
+    preset: 'TTL 15 秒、invalidate 關閉。',                                                     // 選填：帶人時共用的固定參數
+  },
+}
+```
+
+key 要是 `src/labs/` 裡存在的實驗室（`npm run validate:content` 檢查）。設計情境的模擬器不用這個檔。
+
+## 數字的來源標籤（`Measure`）
+
+模擬器裡會被讀者當成容量或效能承諾的數字（延遲、吞吐、容量、命中率、耗時）用 `<Measure>` 包起來：
+
+```jsx
+<Stat label="p95" value={<Measure kind="set" value={120} unit="ms" />} />
+```
+
+| kind | 標籤 | 用在 |
+|---|---|---|
+| `set` | 教材設定 | 寫死的示意值 |
+| `local` | 本機量測 | 在讀者瀏覽器裡真的量到的（`performance.now()` 等） |
+| `env` | 需在你的環境測 | 只能在讀者自己的系統量到的數字 |
 
 ## 品質基準
 

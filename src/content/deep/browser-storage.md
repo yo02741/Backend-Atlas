@@ -212,6 +212,8 @@ window.addEventListener('storage', (e) => {
 
 伺服器也可以在登出的回應加上 `Clear-Site-Data: "storage"`，要求瀏覽器清掉這個 origin 的儲存（Chrome 61、Firefox 63、Safari 17 起支援）。前端仍然要自己清，不依賴這個標頭。
 
+:::stop 讀到這裡可以先停：會依範圍、生命週期與誰讀得到選儲存位置，用包一層的讀寫處理字串與版本，登出時清乾淨。後面的 VueUse、Pinia 與 IndexedDB，在要保存大量或結構化資料時再回來讀。
+
 ### Vue 裡的寫法
 
 設定值這類小資料，可以用 VueUse 的 `useLocalStorage`：它依預設值的型別自動序列化，預設也會監聽 `storage` 事件同步其他分頁。

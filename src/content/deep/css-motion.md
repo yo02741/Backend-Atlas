@@ -151,6 +151,8 @@ macOS、iOS、Windows、Android 的協助工具設定裡都有「減少動態效
 
 WCAG 2.2 相關的條文：2.2.2 Pause, Stop, Hide（A）要求自動開始、持續超過 5 秒、和其他內容同時出現的動態內容要能暫停或隱藏，跑馬燈式的看板公告屬於這一類；2.3.1 要求一秒內閃爍不超過三次；2.3.3 Animation from Interactions（AAA）要求互動觸發的動畫可以關掉。
 
+:::stop 讀到這裡可以先停：會只用 `transform` 與 `opacity` 做動畫，用 `<Transition>`、`<TransitionGroup>` 做進出場與排序，並尊重減少動態效果的設定。後面的新工具，在要做不經過 Vue 的進場或捲動效果時再回來讀。
+
 ### 新一點的工具
 
 | 功能 | 用途 | 支援狀況（2026 年 11 月） |

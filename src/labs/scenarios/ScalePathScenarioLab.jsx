@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Toggle, Stepper, Callout, Status, Stats, Stat, Caption, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Slider, Toggle, Stepper, Callout, Status, Stats, Stat, Caption, useWidth, Measure } from '../ui.jsx'
 
 /* 擴展路徑情境模擬器（容量模擬器）：
    QPS 對數滑桿 100 → 100,000；右側六個元件各有示意容量。畫面算出每個元件的使用率、
@@ -177,8 +177,8 @@ export default function ScalePathScenarioLab() {
               })}
             </div>
             <Stats min={150}>
-              <Stat label="目前配置可撐" value={`≈ ${fmtN(r.holds)} QPS`} />
-              <Stat label="p95" value={`≈ ${Math.round(r.p95)} ms`} tone={r.p95 > 300 ? 'bad' : ''} />
+              <Stat label="目前配置可撐" value={<Measure kind="set" value={`≈ ${fmtN(r.holds)}`} unit="QPS" />} />
+              <Stat label="p95" value={<Measure kind="set" value={`≈ ${Math.round(r.p95)}`} unit="ms" />} tone={r.p95 > 300 ? 'bad' : ''} />
               <Stat label="錯誤率" value={r.errRate ? `${Math.max(1, Math.round(r.errRate * 100))}%` : '0%'} tone={r.errRate > 0.01 ? 'bad' : ''} />
               <Stat label="每月" value={`≈ $${fmtN(r.cost)}`} />
             </Stats>

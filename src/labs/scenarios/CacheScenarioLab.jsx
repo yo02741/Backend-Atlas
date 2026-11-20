@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useTicker, useWidth, Stats, Stat, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useReducedMotion, useTicker, useWidth, Stats, Stat, fmtN, Measure } from '../ui.jsx'
 
 /* 快取情境模擬器：
    ① 送 1,000 個請求：瀏覽器 → CDN → API → Redis → DB，每層擋掉多少、DB 收到幾個、多少人看到舊值
@@ -109,9 +109,9 @@ export default function CacheScenarioLab() {
           </LabStage>
           <Stats min={120}>
             <Stat label="DB 請求" value={ran ? fmtN(Math.round(res.hit.db * prog)) : '—'} unit="/ 1,000" />
-            <Stat label="命中率" value={ran ? `${(res.hitRate * prog).toFixed(1)}%` : '—'} />
+            <Stat label="命中率" value={ran ? <Measure kind="set" value={`${(res.hitRate * prog).toFixed(1)}%`} /> : '—'} />
             <Stat label="看到舊值" value={ran ? fmtN(Math.round(res.staleTotal * prog)) : '—'} unit="個請求" tone={ran && res.staleTotal ? 'bad' : ''} />
-            <Stat label="平均延遲（示意）" value={ran ? `${res.latency} ms` : '—'} />
+            <Stat label="平均延遲" value={ran ? <Measure kind="set" value={res.latency} unit="ms" /> : '—'} />
             <Stat label="視窗內更新" value={res.updates} unit="次" />
           </Stats>
           <UpdatePanel flags={{ browser, cdn: useCdn, redis, purge, ttl }} />

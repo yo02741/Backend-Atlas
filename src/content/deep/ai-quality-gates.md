@@ -73,6 +73,8 @@ repos:
 
 **CI** 在伺服器上重跑同一套檢查（加上比較慢的型別檢查、測試、相依套件掃描），失敗就不能合併。這一層不能被跳過，人與 AI 的改動走的是同一道門。
 
+:::stop 讀到這裡可以先停：分得出每一道閘門抓什麼，也知道 pre-commit 之外為什麼還要 CI。後面的 GitLab 設定與 diff 檢查，在要實際設閘門或審查 CI 設定的改動時再回來讀。
+
 ## 實際設定：GitLab CI
 
 ```yaml
@@ -139,7 +141,7 @@ YAML 寫好只完成一半。還要在專案設定裡：
 
 - **開啟「Pipelines must succeed」**（Settings → Merge requests 的合併檢查；名稱依版本可能略有不同）。沒開的話，pipeline 紅了 MR 一樣能按合併。
 - **保護 main 分支**：不允許任何人直接 push，只能透過 MR 合併。否則 agent 或人可以繞過整個流程。
-- **不要讓閘門 job `allow_failure: true`**。另外注意 `when: manual` 的 job 預設允許失敗，閘門不要做成手動 job。
+- **不要讓閘門 job `allow_failure: true`**。另外注意 job 層級寫 `when: manual` 的手動 job 預設 `allow_failure: true`（寫在 `rules` 裡的 `when: manual` 預設是 `false`），閘門不要做成手動 job。
 - **小心 `rules: changes:`**。用它讓 job 只在某些檔案改動時執行可以省時間，但條件寫錯時，MR 可能沒跑檢查就顯示綠燈。
 - **CI 設定本身也要保護**。AI 被要求「讓 CI 通過」時，最省事的路是改 `.gitlab-ci.yml`、降低 `--fail-under`、在 `pyproject.toml` 關掉規則。可以用 CODEOWNERS 讓這些檔案的改動需要指定的人核准（是否能強制核准依方案而定）；至少在 review 時把它們列為必看。
 

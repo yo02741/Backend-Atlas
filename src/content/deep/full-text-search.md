@@ -193,6 +193,8 @@ FROM articles WHERE title % 'autovacum' ORDER BY sim DESC;
 - 中文詞常常只有兩個字。`LIKE '%檢索%'` 抽不出任何三個字元的片段時，trigram 索引幫不上忙，會退化成掃描整個索引。
 - `pg_trgm` 只從「字母與數字」組成的字裡抽三元組，中文字元算不算由資料庫的 locale（`LC_CTYPE`）決定，不同環境的結果可能不同。
 
+:::stop 讀到這裡可以先停：會用 tsvector、GIN 索引與 `websearch_to_tsquery` 做出能排序的搜尋，也知道內建設定不切中文。後面何時換搜尋引擎，在需要錯字容錯、同義詞或大量中文內容時再回來讀。
+
 ### 什麼時候該換搜尋引擎
 
 PostgreSQL 全文檢索的優點是零同步：文章 commit 的同時就搜得到，篩選條件、權限檢查、分頁都在同一句 SQL 裡。需要以下功能時，Elasticsearch / OpenSearch 這類搜尋引擎比較省力：

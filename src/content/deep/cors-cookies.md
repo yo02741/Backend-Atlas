@@ -185,6 +185,8 @@ Set-Cookie: __Host-sid=k8Jf2...; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age
 
 沒有設 `SameSite` 時，Chrome 當作 `Lax` 處理；其他瀏覽器的預設不完全相同，所以要明確寫出來。
 
+:::stop 讀到這裡可以先停：會判斷請求要不要 preflight、設定帶憑證的 CORS，選對 cookie 的屬性。後面的第三方 cookie 與 CORS 判斷模擬，在做嵌入式元件或排查瀏覽器擋請求時再回來讀。
+
 ### 第三方 cookie
 
 「第三方」是指 cookie 所屬的站和網址列上的頂層網站不同，例如 `shop.example` 的頁面裡嵌了 `widget.other.example` 的 iframe。這類 cookie 正在被各瀏覽器限制：Safari 預設封鎖、Firefox 預設依頂層網站分區儲存；Chrome 的計畫幾經調整，以 Chrome 官方公告為準。

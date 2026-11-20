@@ -93,6 +93,8 @@ Pod 的 `/etc/resolv.conf` 由 kubelet 產生，搜尋清單裡有自己的 name
 
 DNS 與下一節的 NetworkPolicy 直接相關：每個用名稱連線的 Pod，第一步都是連到 `kube-system` 的 DNS Pod 的 UDP 53（回應太大時改用 TCP 53）。
 
+:::stop 停靠點 1：叢集內的連線。交付一份紀錄：從另一個 Pod 用 `<svc>.<ns>.svc.cluster.local` 連到 api，附上 `kubectl get endpointslices` 列出的 Pod 位址；再把 selector 故意改錯一次，記下 ENDPOINTS 變空與連線失敗的樣子。做到這裡，叢集內連不到的問題就能自己查。
+
 ## 從院內連進叢集：地端沒有雲端的負載平衡器
 
 院內的使用者要連到 `clinic-web`，流量要從叢集外進來。在雲端，`type: LoadBalancer` 會自動建立一個雲端負載平衡器；地端叢集沒有對應的元件，`EXTERNAL-IP` 會一直停在 `<pending>`（[導入 Kubernetes 前要準備什麼](#/skill/k8s-readiness) 有實際輸出）。補上它有兩條路。
@@ -429,6 +431,8 @@ check("api", "informix", 9088, step4 + [API_TO_HIS])
 
 幾個要看的地方：② 的 `job → db` 是「出」放行、「進」擋下，`reports` 沒有任何 policy，擋下它的是 `db` 這一端的 ingress。③ 的 api 連得到 db 的 IP，但實際的程式要先查 DNS，那一行是擋下，所以使用者看到的是名稱解析失敗。⑤ 的除錯 Pod 在 AND 寫法下被擋、在 OR 寫法下放行。⑥ 只代表叢集這一側放行了，封包出了叢集還要過舊系統的防火牆，那是下一節的事。
 
+:::stop 停靠點 2：叢集的邊界。交付一組 NetworkPolicy（default deny、放行 DNS、放行 api 到 db）與三條連線的結果：api 到 db 通、web 到 db 逾時、名稱解析正常；再拿掉 DNS 那一條，記下程式印出的錯誤。院內要連進叢集時，另外寫下 `EXTERNAL-IP` 由哪個元件配發。
+
 ## 連到叢集外：舊系統看到的是節點的 IP
 
 ### 為什麼舊系統的防火牆擋掉了 API
@@ -575,6 +579,8 @@ requests.exceptions.SSLError: HTTPSConnectionPool(host='his-api.example.org', po
 ```
 
 這個檔案要包含公開 CA 加上院內 CA 的完整清單；只放院內根憑證時，程式改用這個檔案後就不再信任公開網站。拉 image 的信任設定在節點上，和這裡是兩件事（見 [導入 Kubernetes 前要準備什麼](#/skill/k8s-readiness)）。namespace 多了以後，cert-manager 專案的 trust-manager 可以把同一份 CA 清單同步到各個 namespace。
+
+:::stop 停靠點 3：連到院內的舊系統。交付一份給網路組的放行申請：來源是節點網段、專用節點還是 egress gateway 的哪個 IP，節點增減時由誰更新規則；附上從 Pod 連到叢集外的伺服器時，對方 log 印出的來源位址。
 
 ## 雲端代管的差異
 

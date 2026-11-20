@@ -177,7 +177,7 @@ SELECT job_name, scheduled_for, host, status FROM job_runs;
 
 - **systemd timer**：`Persistent=true` 會記錄上次執行時間，開機後發現錯過就補跑一次。
 - **anacron**：給不一定一直開機的機器跑每日、每週工作，開機後補跑。
-- **Kubernetes CronJob**：控制器會檢查錯過的排定時間；設了 `startingDeadlineSeconds`，就只在排定時間後的這段時間內補啟動，超過就算錯過。文件也提到錯過的次數太多（超過 100 次）時，控制器不會啟動 Job，而是記錄錯誤。
+- **Kubernetes CronJob**：控制器會檢查錯過的排定時間；設了 `startingDeadlineSeconds`，就只在排定時間後的這段時間內補啟動，超過就算錯過。錯過的次數超過 100 次時，控制器記一筆 `TooManyMissedTimes` 的警告事件（訊息是 `too many missed start times. Set or decrease .spec.startingDeadlineSeconds or check clock skew`），只替最近的那一次排定時間啟動 Job，更早錯過的都不補（2026 年 11 月對照 Kubernetes 官方文件；較早的文件版本寫的是不啟動 Job）。
 
 比起依賴觸發機制補跑，更穩的是讓工作本身能**自我修復**：
 
@@ -194,6 +194,8 @@ SELECT job_name, scheduled_for, host, status FROM job_runs;
 - **用排定時間決定處理範圍**。11 月 1 日 02:00 的月報處理的是「10 月」，這要從排定時間推算，不是從 `now()`：補跑發生在 11 月 3 日時，用 `now()` 會算成錯的月份。
 - **結果用 upsert 寫入**：`INSERT … ON CONFLICT (customer_id, period) DO UPDATE`，重跑只會覆寫同一份報表。
 - **副作用要記錄**：寄信、扣款、呼叫外部 API 前，先寫入 (對象, 期間) 的紀錄並設唯一約束，已經有紀錄就跳過。這和 [訊息佇列與背景工作](#/skill/queues-workers) 裡冪等消費者的做法相同。
+
+:::stop 讀到這裡可以先停：會讀 cron 表達式、讓多個副本只有一個執行、決定錯過的執行要不要補跑，並讓工作重跑也不會重複寫入。後面的時區、夏令時間與長時間工作，在排程對象跨時區或工作會跑超過一個週期時再回來讀。
 
 ## 時區與夏令時間
 
@@ -262,7 +264,7 @@ def main():
 | 工作在錯的時間跑，剛好差 8 小時 | 主機是 UTC，表達式是照台灣時間寫的 | 改用 UTC 寫，或用平台的時區設定（CronJob 的 `timeZone`） |
 | 工作的輸出不知道去哪了 | cron 預設把輸出寄到本機信箱（`MAILTO`），通常沒有人看 | 輸出導到 log（`>> /var/log/app/job.log 2>&1`）或讓工作自己寫結構化 log |
 | 每個客戶收到兩三封一樣的信 | 排程在多個副本裡觸發，或工作重試時沒有冪等 | 只在一處觸發、加執行紀錄表、副作用記錄防重送 |
-| Kubernetes 的事件出現錯過太多次排程、無法判斷是否要啟動的訊息 | CronJob 停用或控制器異常一段時間後，錯過的排程超過上限 | 設定 `startingDeadlineSeconds`；確認 CronJob 沒有被 `suspend` |
+| Kubernetes 的事件出現 `TooManyMissedTimes`（`too many missed start times`） | 控制器異常或時鐘偏差一段時間後，錯過的排程超過 100 次；只有最近的一次會被啟動 | 設定 `startingDeadlineSeconds` 縮小計算範圍；檢查控制平面的時鐘；需要補跑的工作自己依執行紀錄補 |
 | 什麼都沒發生 | 主機停機、排程被停用、工作在啟動前就失敗 | heartbeat 監控 |
 
 ## 動手

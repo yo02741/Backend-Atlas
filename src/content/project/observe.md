@@ -210,3 +210,21 @@ TypeError: Object of type datetime is not JSON serializable
 **計數器**：累加與查詢；負數與標籤不符時 `ValueError`；`render()` 的 HELP、TYPE、標籤順序、排序、整數格式、結尾換行；沒有標籤的寫法；標籤值的跳脫。
 
 追蹤需要 OpenTelemetry SDK 與收集端，不在瀏覽器驗收範圍內。到這裡，系統從資料表、規則、介面、權限、並行、快取限流、打包部署，到上線後看得見自己的狀態，都接起來了。後面兩個階段再往外接：給 agent 的唯讀查詢介面，以及部署到 Kubernetes。
+
+## 串接驗收
+
+**1. 帶自己的 request ID 打一次。** 在後端參考專案（`companion/clinic-api`）用 `patient1` 對已經掛過的診次再掛一次（會 409），請求帶 `X-Request-ID: demo-trace-001`：
+
+```bash
+curl -si -X POST "$BASE/sessions/1/appointments" -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -H 'X-Request-ID: demo-trace-001' -d '{}' | grep -i '^x-request-id'
+docker compose logs api --no-log-prefix | grep demo-trace-001
+```
+
+先預測日誌有幾行、哪幾行有 `status`、會不會出現病患姓名。預期：回應標頭原樣帶回 `demo-trace-001`；同一個 `request_id` 至少有兩行：`request rejected`（`reason` 是 `already-booked`）與這次請求的存取紀錄；沒有姓名。
+
+**2. 不合格的 ID 會被換掉。** 把標頭改成 `X-Request-ID: bad id;drop` 再送一次。預期：回應的 `X-Request-ID` 變成 `req-` 開頭的新值。外部傳進來的值先檢查格式才寫進日誌與標頭（`clinic/api/middleware.py` 的 `SAFE_REQUEST_ID`）。
+
+**3. 從畫面追到服務。** 在前端[登入](#/project/fe-login)的 `apiFetch` 把 `res.headers.get('X-Request-ID')` 存進 `ApiError`，[掛號表單](#/project/fe-booking)的 409 alert 後面顯示「查詢代碼：…」。在瀏覽器重複掛號一次，用畫面上的代碼 grep 日誌。預期：找到和步驟 1 同樣的兩行。前端經由 Vite proxy 或 nginx 同源呼叫時讀得到這個標頭；跨來源呼叫時，後端要加 `Access-Control-Expose-Headers: X-Request-ID`，否則 `get()` 回 `null`。
+
+**4. 指標對得上日誌。** 步驟 1 前後各執行一次 `curl -s $BASE/metrics | grep appointments_booked_total`。預期：`result="dup"` 加 1，其他標籤不變。[第 10 階段](#/project/k8s)上線後的確認，看的就是這組計數與 5xx 比例。

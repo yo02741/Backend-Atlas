@@ -4,6 +4,7 @@ import { findSkill, domainsOf, displayNo } from '../content/roadmap.js'
 import { findTrack } from '../content/tracks.js'
 import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
 import { LabIcon, LabEmbed } from '../components/bits.jsx'
+import { skillsWithLab } from '../counts.js'
 
 /* 實驗室總覽：依路線（?track=）與領域分段 */
 export default function Labs({ track: rawTrack = '' }) {
@@ -32,7 +33,10 @@ export default function Labs({ track: rawTrack = '' }) {
                   <div className="lcard-icon"><LabIcon name={name} color={color} /></div>
                   <h4>{LAB_META[name].title}</h4>
                   <p>{LAB_META[name].blurb}</p>
-                  <span className="pill">{findSkill(LAB_META[name].skill)?.title}</span>
+                  <span className="lcard-pills">
+                    <span className="pill">{findSkill(LAB_META[name].skill)?.title}</span>
+                    {skillsWithLab(name).length > 1 && <span className="pill lab-shared">{skillsWithLab(name).length} 課共用</span>}
+                  </span>
                 </a>
               ))}
             </div>
@@ -49,6 +53,8 @@ export function LabPage({ name }) {
   useEffect(() => { window.scrollTo({ top: 0 }) }, [name])
   if (!meta) return <p className="status-msg">找不到實驗室：{name}</p>
   const skill = findSkill(meta.skill)
+  // 多課共用同一個實驗室時，每一課都列出來（主要的那課在前）
+  const lessons = [skill, ...skillsWithLab(name).filter((x) => x.id !== skill?.id)].filter(Boolean)
   const i = LAB_NAMES.indexOf(name)
   const prev = i > 0 ? LAB_NAMES[i - 1] : null
   const next = i < LAB_NAMES.length - 1 ? LAB_NAMES[i + 1] : null
@@ -59,8 +65,8 @@ export function LabPage({ name }) {
       </p>
       <LabEmbed name={name} />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', marginTop: 18 }}>
-        {skill && <a className="btn" href={`#/skill/${skill.id}`}>讀這一課：{skill.title} →</a>}
-        <span className="muted" style={{ fontSize: '0.85rem' }}>{skill?.domain.title}</span>
+        {lessons.map((x, k) => <a key={x.id} className={`btn${k ? ' ghost' : ''}`} href={`#/skill/${x.id}`}>讀這一課：{x.title} →</a>)}
+        <span className="muted" style={{ fontSize: '0.85rem' }}>{lessons.length > 1 ? `${lessons.length} 課共用` : skill?.domain.title}</span>
       </div>
       <nav className="lesson-nav">
         {prev ? <a href={`#/lab/${prev}`}><small>上一個實驗室</small>← {LAB_META[prev].title}</a> : <span />}

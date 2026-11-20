@@ -30,7 +30,7 @@ export default function Domain({ id }) {
         </h1>
         <p className="lede">{d.tagline}</p>
         <p className="muted" style={{ marginTop: 10, fontSize: '0.85rem' }}>
-          {d.skills.length} 個技能 · {d.skills.filter((s) => s.lab).length} 個實驗室 · 已完成 {doneN}
+          {d.skills.length} 個技能 · {d.skills.filter((s) => s.lab).length} 個實驗室 · 讀過 {doneN}
         </p>
       </header>
       <ul className="skill-list" style={{ marginTop: 20 }}>

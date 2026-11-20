@@ -210,6 +210,8 @@ const cancel = useMutation({
 
 登出時呼叫 `queryClient.clear()` 清掉所有快取，下一個登入的人不會先看到上一個人的資料。
 
+:::stop 讀到這裡可以先停：會用查詢 key 存快取、分清兩種載入中，並用 TanStack Query 讓改過的資料失效。後面的 Pinia Colada 寫法，在專案選了它時再回來讀。
+
 ### Pinia Colada 的寫法
 
 Pinia Colada 是 Vue 生態系的查詢快取，用 Pinia 存放快取，API 名稱不同、概念相同：

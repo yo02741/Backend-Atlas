@@ -80,6 +80,8 @@ echo "還原花了 $(( $(date +%s) - start )) 秒"   # 這就是你的 RTO 下�
 
 誤刪單一張表時，常見做法是還原到另一個資料庫（`pg_restore -t orders` 只還原一張表），再把需要的列複製回去，而不是覆蓋整個正式資料庫。
 
+:::stop 讀到這裡可以先停：會分辨邏輯備份、實體備份與 PITR，也排得出一次還原演練。後面的連線池、慢查詢與 VACUUM，在出現 too many connections、查詢變慢或表膨脹時再回來讀。
+
 ## 連線：max_connections 與連線池
 
 PostgreSQL 為每個連線開一個後端程序（process），每個都要記憶體，排序或 hash 時還依 `work_mem` 再要更多；連線多到某個程度，程序切換與鎖競爭會讓整體吞吐量下降。`max_connections` 預設是 100，正式環境通常也只設到幾百。

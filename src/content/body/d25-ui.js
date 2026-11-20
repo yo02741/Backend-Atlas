@@ -45,6 +45,17 @@ export default {
       { label: 'W3C：Understanding SC 2.4.7 Focus Visible', url: 'https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html' },
       { label: 'W3C：Understanding SC 1.4.11 Non-text Contrast', url: 'https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html' },
     ],
+    challenge: {
+      task: '「確認掛號」按鈕會遇到三個條件：必填欄位沒填完（停用）、請求送出中（忙碌）、上一次送出失敗（錯誤）。先畫一張組合表，寫出每兩個條件能不能同時成立、同時成立時畫面以哪個為準、焦點在哪。再做 [程式題：送出中停用按鈕](#/exercise/ui-states-1)，在 [互動狀態實驗室](#/lab/UiStatesLab) 選「按鈕」逐一切過 loading、disabled、error，核對表格。',
+      deliver: '一張停用、忙碌、錯誤的組合表（每格：能否同時成立、畫面以誰為準、焦點位置），加一句表格和課文優先順序不同的地方',
+      check: [
+        '每一格都填了；寫「不能同時成立」的格子附理由（例如送出前就擋下了必填檢查）',
+        '忙碌那一列寫明再點擊不會送出第二次，程式題的連點測試通過',
+        '錯誤出現後按鈕回到可按，焦點位置和表格寫的一致',
+        '優先順序和課文的 disabled > loading > error 不同時，寫出改的理由',
+      ],
+      twist: '需求改成送出中要有一顆「取消送出」。先預測組合表哪幾格會變、請求被取消時伺服器可能已經建立掛號，畫面該寫什麼。',
+    },
   },
   'feedback': {
     map: {
@@ -92,6 +103,17 @@ export default {
       { label: 'W3C：Understanding SC 4.1.3 Status Messages', url: 'https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html' },
       { label: 'web.dev：Cumulative Layout Shift (CLS)', url: 'https://web.dev/articles/cls' },
     ],
+    challenge: {
+      task: '演唱會票務的「我的訂單」頁同時發生三件事：一張票退票成功（10 秒內可以復原）、另一張退票失敗（已過退票期限）、清單在背景重新整理時失敗。在 [Playground](#/playground?lang=vue) 用假 API 重現：`api.get(路徑, 回應)`、`api.post(路徑, 回應)` 會新增或蓋過假 API 的路由，回應寫成 `{ status, body, headers, delay }`，寫成陣列就依序回應。替三件事各選 Toast、inline Alert 或 Banner，寫出停留時間、`role` 與焦點，再實作。最後列出哪些規則可以從門診的取消預約照搬、哪些要跟票務業務重新確認。',
+      deliver: '三則回饋的元件、停留時間、role 與焦點說明，一張畫面截圖，加一份「可沿用／要確認」清單',
+      check: [
+        '退票失敗的訊息留在那一筆旁邊，不會自己消失',
+        'Toast 不搶焦點，「復原」用 Tab 走得到，滑鼠移上去或焦點移進去時暫停倒數',
+        '背景重新整理失敗時舊清單還在，畫面沒有變成「沒有訂單」',
+        '「要確認」至少兩條業務規則，例如退票期限怎麼算、復原期間那個座位能不能被別人買走',
+      ],
+      twist: '業務改成退票要二次確認。先預測哪一則回饋會改成確認 Dialog，Dialog 開著時推播的 Toast 點不點得到，再到 [浮層疊放實驗室](#/lab/OverlayLab) 驗證。',
+    },
   },
   'buttons-inputs': {
     map: {
@@ -142,6 +164,17 @@ export default {
       { label: 'W3C：Understanding SC 2.5.8 Target Size (Minimum)', url: 'https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html' },
       { label: 'MDN：HTML autocomplete attribute', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete' },
     ],
+    challenge: {
+      task: '餐廳訂位表單有「人數」「電話」「日期」「回上一步」與「確認訂位」。在 [Playground](#/playground?lang=html) 寫出這張表單，用 `api.post(\'/api/bookings\', { status: 201, body: { id: 1 }, delay: 2000 })` 讓送出要等 2 秒。用三種方式送出：連點按鈕三次、在電話欄按 Enter 三次、點一下按鈕再立刻按 Enter；每種方式做完用 `api.calls.forEach((c) => console.log(c.method, c.url, c.status, c.ms, c.aborted))` 數 POST 的筆數。最後列出哪些規則可以從門診掛號表單沿用、哪些要跟訂位業務重新確認。',
+      deliver: '三種送出方式各自的 POST 筆數，擋住重複送出的是哪個事件的哪一行，加一份「可沿用／要確認」清單',
+      check: [
+        '三種方式都只有一筆 POST',
+        '擋重複的判斷寫在 `<form>` 的 `submit` 事件裡，不是只綁在按鈕的 `click`',
+        '電話欄是 `type="tel"`，有看得見的 `<label>` 與 `autocomplete="tel"`；「回上一步」寫了 `type="button"`',
+        '「要確認」至少兩條，例如同一支電話同一時段能不能訂兩筆、人數上限依桌型還是依時段',
+      ],
+      twist: '加一顆「再訂一筆」，成功後清空表單讓人繼續訂。先預測：沿用同一個送出中旗標時第二筆會不會被擋、冪等鍵要不要換新，再實測。',
+    },
   },
   'select-combobox': {
     map: {
@@ -191,6 +224,17 @@ export default {
       { label: 'WAI-ARIA APG：Date Picker Dialog Example', url: 'https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/' },
       { label: 'MDN：<select>', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select' },
     ],
+    challenge: {
+      task: '把課文的醫師 Combobox 改寫成 [Playground](#/playground?lang=vue) 用的元件物件，傳入五位醫師，至少兩位姓名開頭相同（例如「林志明」「林志玲」）。用注音輸入「林志」，逐鍵記錄 `query` 的值、清單筆數與 `aria-expanded`。接著在清單開著、有反白選項時用 Enter 選字，看有沒有連帶選走反白的醫師；把 `onKeydown` 第一行的組字判斷拿掉，再測一次。',
+      deliver: '一張逐鍵紀錄表（按鍵、query、清單筆數、aria-expanded），註明瀏覽器與輸入法，加一句拿掉組字判斷前後的差異',
+      check: [
+        '紀錄表顯示 `query` 在選字完成之後才改變，組字中的注音符號沒有拿去篩選',
+        '有組字判斷時，選字的 Enter 不會選走醫師',
+        'Esc 只關清單，已選的醫師不變',
+        '結果和課文不同時寫出瀏覽器版本，不直接下「一定會」的結論',
+      ],
+      twist: '改成 Autocomplete：`query` 一改就查 API，debounce 250 ms。先預測輸入「林志」會送出幾個請求、注音的聲調鍵會不會觸發請求，再用 `api.calls` 驗證。',
+    },
   },
   'overlays': {
     map: {
@@ -242,6 +286,16 @@ export default {
       { label: 'W3C：Understanding SC 1.4.13 Content on Hover or Focus', url: 'https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus.html' },
       { label: 'MDN：Popover API', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Popover_API' },
     ],
+    challenge: {
+      task: '在 [浮層疊放實驗室](#/lab/OverlayLab) 選「原生（top layer）」：按頁首的「選單」開 Drawer，再按 Drawer 裡的「登出」開第二層確認，然後按兩次「按 Esc」。每一步記下最上層是哪個浮層、焦點在哪個元素、背景是否 inert。切到「div + z-index」重做一次。最後在 [Playground](#/playground?lang=html) 用兩個 `<dialog>` 自己重現原生的那一組，Console 印出每一步的 `document.activeElement`。',
+      deliver: '兩種做法各一張步驟表（操作、最上層、焦點、背景是否 inert），加自己重現版本的 Console 輸出',
+      check: [
+        '原生做法：第一次 Esc 只關登出確認，焦點回到 Drawer 的「登出」；第二次關 Drawer，焦點回到「選單」',
+        'div 做法的步驟表指出 Esc 沒反應、Tab 走得到被遮住的背景',
+        '自己重現的 Console 輸出和實驗室的步驟表一致；不一致的地方寫出原因',
+      ],
+      twist: '「確定登出」改成直接導向登入頁，Drawer 和觸發按鈕都會消失。先預測焦點會落在哪裡，再寫出規格該把焦點指定到哪個元素。',
+    },
   },
   'navigation-ui': {
     map: {
@@ -291,6 +345,16 @@ export default {
       { label: 'WAI-ARIA APG：Feed Pattern', url: 'https://www.w3.org/WAI/ARIA/apg/patterns/feed/' },
       { label: 'MDN：aria-current', url: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-current' },
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 選「Pinia 與 Vue Router」範例，改成預約清單：頁碼放 `?page=`、狀態 Tabs（預約、已報到）放 `?tab=`，加一顆呼叫 `router.back()` 的「上一頁」（沙箱用 `createMemoryHistory()`，沒有瀏覽器的上一頁）。依序操作：第 1 頁 → 第 3 頁 → 切到「已報到」→ 上一頁 → 上一頁。每一步記下 `route.fullPath`、畫面上的頁碼與 Tab，以及帶 `aria-current="page"` 與 `aria-selected="true"` 的元素。',
+      deliver: '一張五步的紀錄表（fullPath、畫面標示、aria-current 所在、aria-selected 所在）',
+      check: [
+        '每一步畫面上的頁碼、Tab 都和 fullPath 一致',
+        '分頁列剛好一個 `aria-current="page"`，不是每個頁碼連結都帶（見課文 RouterLink 不比 query 的說明）',
+        '上一頁回到 `?page=3` 時，頁碼與 Tab 都還原，不是回到第 1 頁',
+      ],
+      twist: 'Tab 切換改成 `router.replace`。先預測按兩次上一頁分別回到哪裡，再實測。',
+    },
   },
   'data-display': {
     map: {
@@ -341,6 +405,17 @@ export default {
       { label: 'MDN：aria-sort', url: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-sort' },
       { label: 'W3C：Understanding SC 1.4.10 Reflow', url: 'https://www.w3.org/WAI/WCAG22/Understanding/reflow.html' },
     ],
+    challenge: {
+      task: '物流的「今日待出貨」表格依預計出貨時間排序。按課文排序程式的「在 Playground 開啟」，把資料換成六筆貨件：兩筆時間相同、一筆沒有時間（待排車）、一筆收件地址超過 60 個字。先預測降冪排序的順序，再執行；接著加一個決勝鍵（貨件編號），讓相同時間的兩筆不論原始順序都排得一樣。再到 [Playground](#/playground?lang=html) 把這六筆排成表格，預覽寬度切 390，看長地址會不會撐寬整頁。最後列出哪些規則可以從門診預約表沿用、哪些要跟物流業務重新確認。',
+      deliver: '降冪排序的預測與實際結果並排、加了決勝鍵的比較函式、390px 的 `scrollWidth` 檢查結果，加一份「可沿用／要確認」清單',
+      check: [
+        '沒有時間的那筆在升冪與降冪都排在同一端（照業務確認的規則），沒有被當成字串 `"null"` 排進中間',
+        '把相同時間那兩筆的原始順序對調後重跑，結果不變；比較函式裡看得到決勝鍵',
+        '390px 時 `document.documentElement.scrollWidth > innerWidth` 為 `false`，長地址在格子裡換行',
+        '「要確認」至少兩條，例如待排車的貨排最前還是最後、同時間的貨依什麼先出',
+      ],
+      twist: '排序改由 API 做（`?sort=time&order=desc`）。先預測前端的決勝鍵還有沒有作用，以及要跟後端約定什麼。',
+    },
   },
   'design-tokens': {
     map: {
@@ -389,6 +464,17 @@ export default {
       { label: 'Design Tokens Technical Reports 2025.10', url: 'https://www.designtokens.org/tr/2025.10/' },
       { label: 'W3C：Understanding SC 1.4.3 Contrast (Minimum)', url: 'https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html' },
     ],
+    challenge: {
+      task: '品牌主色從藍 `#1d4ed8` 改成橘 `#f97316`。在 [程式題：語意 token 與暗色主題](#/exercise/design-tokens-1) 通過之後，只改基礎色票，元件的 CSS 一行不動。先預測哪幾組顏色會掉到標準以下，再用課文的對比程式算主按鈕白字、文字連結、焦點外框在亮暗兩個主題的對比；不夠的組合改語意 token 指向的色階。最後在 Rendering 分頁的 `Emulate vision deficiencies` 選 `Achromatopsia (no color)`，看 hover、選取、錯誤還分不分得出來。',
+      deliver: '一張「token × 主題 × 對比值 × 通過與否」的表、改過的語意 token 對應，加一句灰階模擬下的觀察',
+      check: [
+        '元件的 CSS 沒有出現新的色碼，改動只在基礎色票與語意 token',
+        '白字按鈕與文字連結至少 4.5:1、焦點外框至少 3:1，亮暗兩個主題都算過',
+        '預測和實際不同的那幾組寫出原因',
+        '灰階模擬下，選取與錯誤靠圖示、色條或文字仍分得出來',
+      ],
+      twist: '再加一個高對比主題。先預測要新增幾個 token、有沒有元件得改 CSS，再動手。',
+    },
   },
   'element-plus': {
     map: {
@@ -441,6 +527,16 @@ export default {
       { label: 'Element Plus：CHANGELOG', url: 'https://github.com/element-plus/element-plus/blob/dev/CHANGELOG.en-US.md' },
       { label: 'unplugin-vue-components', url: 'https://github.com/unplugin/unplugin-vue-components' },
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 載入 Element Plus（課文「在瀏覽器裡看主題變數與語系」那段可以當起點），並排兩個「科別」選擇：一個是 `el-select`，一個是 `div` 加 `@click` 做的下拉。只用鍵盤各操作一次：Tab 進入、開啟、↓ 移動、Enter 選取、Esc 關閉、Shift+Tab 離開。每一步記下焦點位置，並在 Elements 分頁的 Accessibility 窗格記下 Role、Name 與 `aria-expanded`。',
+      deliver: '兩個元件的鍵盤步驟對照表，加 Accessibility 窗格的 Role、Name、aria-expanded',
+      check: [
+        '每一步兩邊都有實際結果，沒有「應該可以」的推測',
+        '指出自製版本至少兩個鍵盤或 ARIA 的缺口',
+        '寫出 `el-select` 的 Name 從哪裡來（label、aria-label 或沒有）；沒有時寫出怎麼補',
+      ],
+      twist: '設計要求每個選項顯示醫師照片與專長。先預測改用 `el-option` 的自訂內容後，鍵盤操作與念出的 Name 會不會變、哪幾步要重驗。',
+    },
   },
   'layout-patterns': {
     map: {
@@ -491,6 +587,17 @@ export default {
       { label: 'W3C：Understanding SC 2.4.11 Focus Not Obscured (Minimum)', url: 'https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html' },
       { label: 'W3C：Understanding SC 1.4.10 Reflow', url: 'https://www.w3.org/WAI/WCAG22/Understanding/reflow.html' },
     ],
+    challenge: {
+      task: '倉儲後台的「庫存清單」用 app shell：頁首、側欄、主內容裡的商品卡片網格。從 [程式題：門診後台的 app shell](#/exercise/layout-patterns-1) 通過的答案出發，把卡片內容換成真實資料裡最長的值：48 個字的商品名稱、SKU `WH-TPE-2026-000123-A`、儲位「B2-14-03（冷藏）」。在 390、768、1024、1280 各看一次，記下哪一格壞掉、為什麼；767、768、1023、1024 這四個邊界用 DevTools 的裝置模式量。最後列出哪些斷點規則可以從門診後台沿用、哪些要跟倉儲業務重新確認。',
+      deliver: '一張四欄的斷點表（每格寫實際樣子），標出壞掉的格子與修法，加一份「可沿用／要確認」清單',
+      check: [
+        '四個寬度 `document.documentElement.scrollWidth > innerWidth` 都是 `false`',
+        '長 SKU 沒有撐寬卡片或軌道（`minmax(0, 1fr)`、`min-width: 0` 或 `overflow-wrap`）',
+        '767、768、1023、1024 都看得到導覽',
+        '「要確認」至少兩條，例如手持掃描器的螢幕寬度、手機上哪些欄位可以藏',
+      ],
+      twist: '倉儲人員改用 360px 寬的手持裝置。先預測斷點表要不要加一欄、哪幾格會變。',
+    },
   },
   'screen-spec': {
     map: {
@@ -538,5 +645,16 @@ export default {
       { label: 'W3C：Web Content Accessibility Guidelines (WCAG) 2.2', url: 'https://www.w3.org/TR/WCAG22/' },
       { label: 'OpenAPI Specification', url: 'https://spec.openapis.org/oas/latest.html' },
     ],
+    challenge: {
+      task: '替 [API 狀態實驗室](#/lab/ApiStatesLab) 裡的預約清單寫一頁十節的規格。寫完交給另一個人，或另開一個沒有任何上下文的 AI 對話，只給規格請對方實作，並要求把每個「規格沒寫、我自己決定」的地方列出來。拿回對方的清單後，逐條對到規格的哪一節、改成什麼文字，再交一次。',
+      deliver: '規格本身、對方列出的歧義清單、每條歧義對應的規格節與修改後的文字',
+      check: [
+        '十節都在，狀態表與斷點表沒有空格（不適用的寫「—」）',
+        '每條驗收條件都附檢查方法',
+        '每條歧義都對到規格的某一節，並附修改後的文字',
+        '第二次交出去，同樣的歧義沒有再出現',
+      ],
+      twist: '後端說醫師姓名下週才會加進回應。先預測規格哪幾節要改、哪幾條驗收要標成這次不驗。',
+    },
   },
 }

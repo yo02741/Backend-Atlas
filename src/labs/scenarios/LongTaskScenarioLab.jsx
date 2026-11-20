@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Stats, Stat, useReducedMotion, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Stats, Stat, useReducedMotion, useWidth, Measure } from '../ui.jsx'
 
 /* 長任務情境模擬器：
    一批人同時按「匯出」，三種做法下「客戶端 / API worker 池 / 背景 worker」三條泳道各自發生什麼。
@@ -118,10 +118,10 @@ export default function LongTaskScenarioLab() {
             <Stat label="t" value={fmt(at)} />
             <Stat label="逾時 504" value={m.timeouts} tone={m.timeouts ? 'bad' : ''} />
             <Stat label="拿到結果" value={m.done} unit={`/ ${users}`} tone="ok" />
-            <Stat label="API worker 占用" value={`${m.util}%`} tone={m.util > 70 ? 'bad' : ''} />
+            <Stat label="API worker 占用" value={<Measure kind="set" value={`${m.util}%`} />} tone={m.util > 70 ? 'bad' : ''} />
             {mode === 'sync' && <Stat label="白做" value={fmt(m.waste)} tone={m.waste ? 'bad' : ''} />}
             {mode === 'poll' && <Stat label="輪詢次數" value={m.polls} />}
-            <Stat label={`最後一人${mode === 'sync' && m.timeouts ? '得到回應' : '拿到檔案'}`} value={fmt(last)} />
+            <Stat label={`最後一人${mode === 'sync' && m.timeouts ? '得到回應' : '拿到檔案'}`} value={<Measure kind="set" value={fmt(last)} />} />
           </Stats>
           <div className="lt-tablewrap">
             <JobsTable sim={sim} at={at} />

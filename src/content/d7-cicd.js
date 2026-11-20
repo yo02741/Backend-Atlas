@@ -18,6 +18,7 @@ export default {
       example: { primary: 'Trunk-based（短分支 + PR）', alts: ['GitHub Flow', 'Git Flow（release 分支，較重）'] },
       keywords: ['GitHub Actions', 'GitLab CI'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'ci-pipeline',
@@ -28,6 +29,7 @@ export default {
       example: { primary: 'GitHub Actions', alts: ['GitLab CI', 'CircleCI', 'Jenkins'] },
       keywords: ['GitHub Actions', 'GitLab CI', 'Docker', 'uv'],
       lab: 'PipelineLab',
+      reviewed: '2026-11',
     },
     {
       id: 'environments-secrets',
@@ -38,6 +40,7 @@ export default {
       example: { primary: 'GitHub Environments + secrets', alts: ['GitLab environments + protected variables'] },
       keywords: ['GitHub Actions', 'GitLab CI', 'Docker'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'cd-strategies',
@@ -48,6 +51,7 @@ export default {
       example: { primary: 'Rolling + 可回滾的 migration', alts: ['Blue-green', 'Canary + feature flag'] },
       keywords: ['Docker', 'PostgreSQL', 'GitHub Actions'],
       lab: 'DeployStrategyLab',
+      reviewed: '2026-11',
     },
     {
       id: 'observability',

@@ -4,7 +4,6 @@ import { findTrack } from '../content/tracks.js'
 import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
 import { useProgress } from '../progress.js'
 import { Level } from '../components/bits.jsx'
-import { assessmentFor } from '../assess.js'
 
 /* 技能盤點：領域 + 技能列表，可依路線 / 關鍵字 / 難度 / 搜尋過濾。路線與關鍵字在網址上（?track=&kw=） */
 export default function Roadmap({ initialKw = '', track: rawTrack = '' }) {
@@ -74,7 +73,7 @@ export function DomainBlock({ domain: d, skills, isDone, kw, showDesc = true, pr
         <span className="kicker tinted">{showTrack && `${findTrack(d.track).title} `}{displayNo(d)}</span>
         <h2><a href={`#/domain/${d.id}`} style={{ textDecoration: 'none' }}>{d.title}</a></h2>
         <span className="en">{d.en}</span>
-        <span className="count">{doneN} / {d.skills.length} 完成</span>
+        <span className="count">讀過 {doneN} / {d.skills.length}</span>
       </div>
       {showDesc && <p className="desc">{d.tagline}</p>}
       <ul className="skill-list">
@@ -85,11 +84,10 @@ export function DomainBlock({ domain: d, skills, isDone, kw, showDesc = true, pr
 }
 
 export function SkillRow({ skill: s, done, kw, progress }) {
-  const assess = progress ? assessmentFor(s.id, progress) : null
   return (
     <li>
       <a href={`#/skill/${s.id}`} className={`skill-row${done ? ' done' : ''}`}>
-        <span className="check" aria-hidden="true">✓</span>
+        <span className="check" aria-hidden="true" title={done ? '讀過' : undefined}>✓</span>
         <div>
           <h3>{s.title}<span className="en">{s.en}</span></h3>
           <p>{s.summary}</p>
@@ -99,7 +97,7 @@ export function SkillRow({ skill: s, done, kw, progress }) {
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <Level level={s.level} />
             {s.lab && <span className="pill tint" style={{ '--tint': 'var(--tint)' }}>實驗室</span>}
-            {assess?.complete && <span className="pill assess-ok">✓ 驗收</span>}
+            {progress?.quizzes?.[s.id] === 'pass' && <span className="pill assess-ok">✓ 測驗通過</span>}
           </div>
           {s.keywords.length > 0 && (
             <div className="kw">{s.keywords.map((k) => <span key={k} className={k === kw ? 'hit' : ''}>{k}</span>)}</div>

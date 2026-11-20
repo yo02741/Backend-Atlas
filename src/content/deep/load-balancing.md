@@ -125,6 +125,8 @@ print(f"\n3 台變 4 台：hash % N 搬動 {moved_mod / len(keys):.0%} 的 key�
 
 少了第 2 步，負載平衡器在發現之前仍會把請求送給已經不接請求的程序。
 
+:::stop 讀到這裡可以先停：分得出 L4 與 L7，依負載特性選分配演算法，設好健康檢查與部署時的連線排空。後面的 sticky session、TLS 終結與真實來源 IP，在要決定 session 放哪、憑證放哪一層或後端拿到的 IP 不對時再回來讀。
+
 ## sticky session 的代價
 
 sticky session（黏著，session affinity）讓同一個使用者固定送到同一台後端，通常用 cookie 或 IP hash 實作。它可以讓「session 存在記憶體」的程式在多台主機下勉強運作，代價是：

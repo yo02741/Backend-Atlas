@@ -953,3 +953,121 @@ h1.display, h2.section-title, .lesson-head h1, .domain-block-head h2, .track-tab
 .pg-api label { display: inline-flex; align-items: center; gap: 6px; }
 .pg-api input[type=range] { width: 110px; accent-color: var(--ink-1); }
 .pg-api .mono { min-width: 4.5em; color: var(--ink-1); }
+
+/* ── Playground：狀態列、範例復原、鍵盤提示、假 API 固定情境 ── */
+.pg-statusbar { display: flex; align-items: center; min-height: 28px; margin: -6px 0 10px; min-width: 0; }
+.pg-statusbar .rt-status { flex-wrap: wrap; row-gap: 2px; }
+.rt-activity { color: var(--ink-2); }
+.rt-activity.busy { color: var(--ink-1); }
+.rt-activity.ok { color: var(--ink-1); font-weight: 600; }
+.rt-activity.error { color: var(--critical); font-weight: 600; }
+.pg-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.pg-sample-note { font-size: 0.74rem; color: var(--ink-3); }
+.pg-undo { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 8px; padding: 6px 10px; font-size: 0.8rem; color: var(--ink-1); border: 2px solid var(--line); border-radius: var(--radius); background: color-mix(in srgb, var(--st-yellow) 22%, var(--surface-1)); }
+.pg-keys { margin: 6px 0 0; font-size: 0.74rem; color: var(--ink-3); }
+.pg-keys kbd { font-family: var(--mono); font-size: 0.7rem; padding: 0 5px; border: 1px solid var(--hairline); border-radius: 4px; background: var(--surface-2); color: var(--ink-2); }
+.pg-output:focus { outline: none; }
+.pg-output:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.pg-output { min-width: 0; }
+.pg-scen { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 10px; font-size: 0.8rem; }
+.pg-scen-label { color: var(--ink-2); margin-right: 4px; }
+.pg-scen .chip { padding: 2px 10px; font-size: 0.78rem; cursor: pointer; }
+.pg-scen .pg-scen-off { border-style: dashed; }
+.pg-api input[type=range]:disabled { opacity: 0.4; }
+@media (max-width: 480px) {
+  .pg-toolbar .spacer { display: none; }
+  .pg-sample { flex-wrap: wrap; max-width: 100%; }
+  .pg-sample select { max-width: 100%; min-width: 0; }
+}
+/* ============ 評閱調整（P19）：進度狀態、進階驗收、停靠點、判分說明、數量口徑、觀察任務、數字標籤、換方案、跨課作業 ============ */
+/* 課頁的三個進度狀態：讀過（按鈕）、能自行解釋、測驗通過 */
+.lesson-states { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.lesson-state { font-size: 0.78rem; font-weight: 700; padding: 3px 10px; border: 1.5px dashed var(--line); border-radius: 999px; color: var(--ink-2); text-decoration: none; background: var(--surface-1); white-space: nowrap; }
+.lesson-state:hover { color: var(--ink-1); }
+.lesson-state.on { border-style: solid; background: var(--st-mint); color: var(--on-sticker); }
+
+/* 深入內容的停靠點 */
+.md-stop { display: grid; gap: 4px; margin: 26px 0; padding: 12px 16px; border: 2px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--st-yellow) 30%, var(--surface-1)); box-shadow: 4px 4px 0 var(--shade); scroll-margin-top: 120px; }
+.md-stop-tag { justify-self: start; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; padding: 1px 10px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--st-yellow); color: var(--on-sticker); }
+.lesson-body .md-stop p, .md-stop p { margin: 0; color: var(--ink-1); font-size: 0.95rem; line-height: 1.7; }
+
+/* 進階驗收（課與情境共用）與跨課作業的步驟 */
+.challenge, .asg-step { border: 2px solid var(--line); border-radius: 14px; background: var(--surface-1); box-shadow: 4px 4px 0 var(--shade); padding: 14px 18px 16px; margin: 22px 0; min-width: 0; }
+.challenge .ex-title, .asg-step .ex-title { scroll-margin-top: 150px; }
+.challenge-task { font-size: 0.93rem; color: var(--ink-2); line-height: 1.7; }
+.challenge-task p, .challenge-twist .mdoc p { margin: 0 0 8px; }
+.challenge-deliver { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; margin: 10px 0 6px; padding: 8px 12px; border-left: 3px solid var(--tint, var(--accent)); background: var(--surface-2); border-radius: 0 var(--radius) var(--radius) 0; font-size: 0.9rem; color: var(--ink-1); }
+.lesson-body .challenge-deliver { margin: 10px 0 6px; max-width: none; }
+.challenge-deliver b { font-size: 0.76rem; letter-spacing: 0.08em; color: var(--ink-3); }
+.challenge-check { margin: 6px 0 0; }
+.challenge code, .asg-step code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 1px 6px; border-radius: 3px; color: var(--ink-1); overflow-wrap: anywhere; }
+.challenge-check input:checked + span { text-decoration: none; color: var(--ink-1); }
+.challenge-twist { margin-top: 10px; border: 1.5px dashed var(--line); border-radius: 10px; padding: 6px 12px; background: var(--surface-1); }
+.challenge-twist summary { cursor: pointer; font-weight: 700; font-size: 0.88rem; color: var(--ink-1); }
+.challenge-twist[open] summary { margin-bottom: 6px; }
+.challenge-twist .mdoc { font-size: 0.92rem; color: var(--ink-2); }
+
+/* 判分說明 */
+.ex-verifies { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin: 0; font-size: 0.84rem; color: var(--ink-2); }
+.ex-verifies b { font-size: 0.74rem; letter-spacing: 0.06em; padding: 0 8px; border: 1.5px solid var(--line); border-radius: 999px; color: var(--ink-1); background: var(--surface-2); }
+
+/* 數量口徑：主線 / 選讀 */
+.track-card-meta b { font-weight: 800; margin-right: 6px; }
+.hero-stats { align-items: flex-end; }
+.stat-group { display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 18px 14px 8px; border: 1.5px solid var(--line); border-radius: 12px; position: relative; min-width: 0; }
+.stat-group-label { position: absolute; top: -0.7em; left: 10px; padding: 0 6px; background: var(--page); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; color: var(--ink-2); }
+.lcard-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.lcard-pills .pill { margin-top: 0; }
+.pill.lab-shared { background: var(--surface-2); }
+
+/* 實驗室上方的觀察任務 */
+.lab-task { border: 2px solid var(--line); border-radius: 14px; background: var(--surface-1); box-shadow: 4px 4px 0 var(--shade); padding: 12px 16px; margin: 0 0 14px; min-width: 0; }
+.lab-task-steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; counter-reset: labtask; }
+.lab-task-steps > li { display: grid; grid-template-columns: minmax(5.5em, auto) 1fr; gap: 4px 14px; align-items: start; font-size: 0.9rem; color: var(--ink-2); line-height: 1.6; }
+.lab-task-k { font-size: 0.78rem; font-weight: 800; color: var(--ink-1); padding-top: 2px; }
+.lab-task-steps p { margin: 0; }
+.lab-task-ops { margin: 0; padding-left: 1.3em; display: grid; gap: 2px; }
+.lab-task-guess { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 0.88rem; color: var(--ink-1); background: var(--surface-2); border: 1.5px solid var(--line); border-radius: 8px; padding: 6px 10px; resize: vertical; min-width: 0; }
+.lab-task-preset { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; margin: 10px 0 0; padding-top: 8px; border-top: 1px solid var(--hairline); font-size: 0.86rem; color: var(--ink-2); }
+@media (max-width: 520px) { .lab-task-steps > li { grid-template-columns: 1fr; } }
+
+/* 數字的來源標籤（src/labs/ui.jsx 的 Measure） */
+.measure { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 2px 6px; }
+.measure-k { font-family: var(--sans); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.02em; line-height: 1.5; padding: 0 6px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-1); background: var(--surface-1); white-space: nowrap; }
+.measure.set .measure-k { border-style: dashed; }
+.measure.local .measure-k { background: var(--st-mint); color: var(--on-sticker); }
+.measure.env .measure-k { background: var(--st-yellow); color: var(--on-sticker); }
+
+/* 情境：哪個條件改變會換方案、第二方案（各段錨點不被黏住的目錄列蓋住） */
+.lab-full[id] { scroll-margin-top: 130px; }
+.scen-switch-list { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 10px; }
+.scen-switch-list li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 6px 18px; padding: 12px 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface-1); }
+.scen-switch-when { font-weight: 700; color: var(--ink-1); font-size: 0.92rem; }
+.scen-switch-then { font-size: 0.9rem; color: var(--ink-2); display: grid; gap: 6px; justify-items: start; }
+.scen-alt { padding: 12px 16px; border: 2px dashed var(--line); border-radius: 12px; background: var(--surface-1); display: grid; gap: 4px; font-size: 0.9rem; color: var(--ink-2); }
+.scen-alt h3 { font-family: var(--serif); font-size: 1.1rem; font-weight: 800; color: var(--ink-1); }
+.scen-alt-k { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.06em; color: var(--ink-3); margin-top: 4px; }
+@media (max-width: 640px) { .scen-switch-list li { grid-template-columns: 1fr; } }
+
+/* 複習頁：紀錄存在哪裡 */
+.rv-sync { margin-top: 22px; padding: 14px 18px; border: 2px solid var(--line); border-radius: 14px; background: var(--surface-1); }
+.rv-sync h2 { font-family: var(--serif); font-size: 1.05rem; font-weight: 800; margin: 0 0 8px; }
+.rv-sync-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px 24px; }
+.rv-sync h3 { font-size: 0.8rem; font-weight: 800; color: var(--ink-1); margin: 0 0 4px; }
+.rv-sync ul { margin: 0; padding-left: 1.2em; font-size: 0.86rem; color: var(--ink-2); display: grid; gap: 2px; }
+
+/* 跨課作業 */
+.asg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-top: 20px; }
+.asg-card { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border: var(--bw) solid var(--line); border-radius: 16px; box-shadow: 5px 5px 0 var(--shade); background: color-mix(in srgb, var(--tint) 14%, var(--surface-1)); color: var(--ink-1); text-decoration: none; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+.asg-card:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--shade); }
+.asg-card h3 { font-family: var(--serif); font-size: 1.12rem; font-weight: 800; line-height: 1.3; }
+.asg-card p { font-size: 0.86rem; color: var(--ink-2); line-height: 1.6; }
+.asg-meta { font-size: 0.78rem; color: var(--ink-3); margin-top: auto; }
+.asg-empty { margin-top: 20px; }
+.asg-links { margin: 4px 0 8px; }
+.asg-kind { font-size: 0.7rem; font-weight: 800; color: var(--ink-3); margin-right: 6px; }
+.asg-steps { list-style: none; padding: 0; margin: 0; }
+.asg-step .ex-title { display: flex; align-items: center; gap: 10px; }
+.asg-no { display: inline-grid; place-items: center; width: 1.8em; height: 1.8em; flex: none; border: 2px solid var(--line); border-radius: 50%; background: var(--st-yellow); color: var(--on-sticker); font-size: 0.85rem; }
+.asg-twist { margin: 4px 0 0; }
+@media (max-width: 640px) { .challenge, .asg-step { padding: 12px 14px 14px; } }

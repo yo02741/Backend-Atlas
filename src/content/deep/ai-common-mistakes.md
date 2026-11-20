@@ -168,6 +168,8 @@ const upper = (s) => s.toUpperCase()
 4. **跑起來操作**：每個狀態切一遍（loading、empty、error），三個寬度，只用鍵盤；同時開著 Console 與 Network 分頁。
 5. **對照描述**：每一段描述與驗收條件都有對應的實作，見 [把畫面描述成文字](#/skill/describe-ui)。
 
+:::stop 讀到這裡可以先停：會先讓 lint 與型別檢查抓一輪，再照固定順序審一段 AI 產出。後面的錯誤訊息對照，在 Console 或 lint 出現看不懂的警告時再回來查。
+
 ## 常見錯誤與錯誤訊息
 
 | 訊息或現象 | 原因 | 修法 |

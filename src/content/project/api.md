@@ -184,3 +184,11 @@ paths:
 - 每一個錯誤 body 都有 `type`、`title`、`status`，且 `status` 和狀態碼一致
 
 標頭（`Location`、`Content-Type`）不在驗收範圍內。下一階段讓 `user` 參數真正發揮作用：同一個請求，不同角色會得到不同的結果。
+
+## 串接驗收
+
+**1. 存一份錯誤回應當契約。** 在 Playground 執行「關鍵程式」，把 `session-full` 與 422 兩個 body 各存成一個 JSON 檔（例如 `contract/problems/session-full.json`、`validation-error.json`），放進前端專案的測試資料。預期：兩個檔都有 `type`、`title`、`status`，`status` 和狀態碼一致；422 多一個 `errors`。
+
+**2. 讓前端的轉換函式吃這份檔。** 把[掛號表單](#/project/fe-booking)的 `toFormErrors` 貼進 Playground 的 JavaScript 模式（拿掉 `export`），用存下的 422 body 呼叫 `toFormErrors(body, ['patient_id', 'note'])`。預期：`{ fields: { patient_id: '必填，且必須是整數' }, form: [] }`。把檔裡的 `field` 改成 `patientId` 再執行，預期訊息改落到 `form`，畫面會把它顯示在表單上方而不是欄位下。後端改欄位名稱時，這個測試會先失敗。
+
+**3. 用真的服務核對。** 後端參考專案（`companion/clinic-api`，照它的 README 三步驟啟動並 seed）用 README 的 curl 範例重複掛號一次，把回應和步驟 1 的檔比對。預期：欄位名稱與 `type` 相同，`detail` 的文字可以不同。契約測試比欄位與 `type`，不比 `detail` 的措辭。下一階段讓同一個請求依角色得到不同的結果。

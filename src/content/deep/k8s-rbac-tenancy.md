@@ -210,6 +210,8 @@ configmaps         []                  []               [get create patch]
 | namespace 的 `patch` | 改 namespace 的標籤，把 Pod Security 的等級調低 |
 | 規則裡的 `*` | 涵蓋現在與以後的所有動詞或資源，之後裝的 CRD 也算；`resources` 與 `verbs` 都寫 `*`，上面每一項都在內 |
 
+:::stop 停靠點 1：角色。交付一組 Role 與 RoleBinding，加上 `kubectl auth can-i --as` 的輸出，證明那個身分能做該做的事、不能讀 secrets、不能 exec。做到這裡就能審一份 binding 有沒有給出危險的權限。
+
 ## CI 的部署帳號
 
 每個環境一個 ServiceAccount，只綁它要部署的 namespace，動作只給 `kubectl apply`、`rollout status`、`wait` 用得到的：
@@ -299,6 +301,8 @@ current-context: prod-clinic
 ```
 
 這個 token 外流時，影響範圍是一個 namespace 的部署動作，最多 30 天。
+
+:::stop 停靠點 2：CI 部署帳號的邊界。交付一個只綁在 staging namespace 的 ServiceAccount 與有期限的 token，用 `can-i` 證明它在 production namespace 什麼都不能做，kubeconfig 只放在 protected 的 File 型變數裡。
 
 ## 多租戶：namespace、配額與 Pod Security
 
@@ -392,6 +396,8 @@ namespace 是權限與配額的邊界，不是安全隔離的邊界。不同 nam
 | 分叢集 | 各自的控制平面與節點 | 網路與機房 |
 
 正式與測試分叢集。資料敏感程度差很多的系統（病歷與院內公告），或讓外部廠商自己部署的系統，也值得分叢集，至少分節點。
+
+:::stop 停靠點 3：配額與 Pod Security。交付一個 namespace 的 ResourceQuota、LimitRange 與 Pod Security 標籤，附上三次套用的結果：超過配額被拒、沒寫 resources 的容器補上預設值、特權容器被 `restricted` 擋下。後面的 Secret 保護與稽核日誌，在要回答稽核「誰讀了什麼、誰做了什麼」時再回來讀。
 
 ## Secret 的保護
 

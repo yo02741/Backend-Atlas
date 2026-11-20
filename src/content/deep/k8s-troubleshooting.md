@@ -159,6 +159,8 @@ kubectl get pods -n booking -l app=export-api --show-labels -o wide
 
 確認問題在哪一層的方法，是跳過前面的層直接連後面：用 `port-forward` 直接連 Service 或 Pod，通了就表示問題在 Ingress 這一層。再往外還有 DNS、憑證與外部負載平衡器，排查方式見 [網路通不通：從 DNS 到防火牆](#/skill/network-troubleshooting)。
 
+:::stop 讀到這裡可以先停：會照 get、describe、logs、events 的順序，從 Pod 的狀態找到下一個指令與要看的線索。後面的模擬程式與 exec、port-forward、debug，在線索不夠、要進到容器裡查時再回來讀。
+
 ## 用程式走一遍排查順序
 
 下面把開頭那六個 Pod 的狀態、上一次的結束資訊與 Events 寫成資料，照「狀態 → 上一次的結束原因 → Events」的順序判斷：

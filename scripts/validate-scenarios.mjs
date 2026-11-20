@@ -1,7 +1,9 @@
-// 設計情境結構校驗：id 唯一、group / skills 存在、options 與 decisions 對得上、lab 檔案存在、不含超連結
+// 設計情境結構校驗：id 唯一、group / skills 存在、options 與 decisions 對得上、lab 檔案存在、不含超連結、
+// switchIf / alternative / challenge（選填）的格式
 import { readdirSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { challengeErrors } from './check-challenge.mjs'
 const here = dirname(fileURLToPath(import.meta.url))
 const { DOMAINS } = await import(pathToFileURL(resolve(here, '../src/content/roadmap.js')).href)
 const skillIds = new Set(DOMAINS.flatMap((d) => d.skills.map((s) => s.id)))
@@ -55,6 +57,22 @@ for (const f of readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'index
     answers.add(d.answer)
   }
   if ((s.decisions || []).length >= 3 && answers.size === 1) errors.push(`${tag}: 所有決策題正解都一樣，請設計不同情境`)
+  // 哪個條件改變會換方案：1–3 條 { when, then }，then 要用 options 的 id 指出改選哪個做法
+  const str = (v) => typeof v === 'string' && v.trim() !== ''
+  const mentions = (text) => [...optIds].some((id) => new RegExp(`(^|[^\\w-])${id}($|[^\\w-])`).test(text))
+  if (s.switchIf !== undefined) {
+    if (!Array.isArray(s.switchIf) || s.switchIf.length < 1 || s.switchIf.length > 3) errors.push(`${tag}: switchIf 要 1–3 條`)
+    for (const [k, x] of (Array.isArray(s.switchIf) ? s.switchIf : []).entries()) {
+      if (!str(x?.when) || !str(x?.then)) errors.push(`${tag}: switchIf 第 ${k + 1} 條要有 when 與 then`)
+      else if (!mentions(x.then)) errors.push(`${tag}: switchIf 第 ${k + 1} 條的 then 要用 options 的 id（${[...optIds].join(' / ')}）指出改選哪個做法`)
+    }
+  }
+  // 第二方案：指到存在的做法，寫出成立條件
+  if (s.alternative !== undefined) {
+    if (!optIds.has(s.alternative?.option)) errors.push(`${tag}: alternative.option "${s.alternative?.option}" 不是 options 裡的 id`)
+    if (!str(s.alternative?.holdsWhen)) errors.push(`${tag}: alternative.holdsWhen 必填（這個第二方案在什麼條件下也可以接受）`)
+  }
+  if (s.challenge !== undefined) errors.push(...challengeErrors(s.challenge, tag))
   for (const c of s.implementation || []) if (!c.title || !c.lang || !c.code) errors.push(`${tag}: implementation 每項需 title / lang / code`)
   // 落地程式碼（implementation[].code）本來就會出現 http:// （nginx proxy_pass、範例 URL），不算超連結；其餘欄位一律不可
   const text = JSON.stringify({ ...s, refs: undefined, implementation: (s.implementation || []).map((c) => ({ ...c, code: undefined })) })

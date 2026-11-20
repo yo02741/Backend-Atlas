@@ -13,6 +13,17 @@ export default {
       '能說出 view、edit、admin、cluster-admin 各給到哪裡，以及為什麼能建立 Pod 就等於能讀這個 namespace 的 Secret',
       '能替一個 namespace 設定 ResourceQuota、LimitRange 與 Pod Security 標籤，並說明 etcd 靜態加密與 API server 稽核日誌各自回答稽核的哪個問題',
     ],
+    challenge: {
+      task: '對應深入內容的三個停靠點，在 kind 叢集（[本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)）做三張獨立的驗收單。角色：先做 [替 CI 的部署帳號收斂權限](#/exercise/k8s-rbac-tenancy-1)，把結果套上叢集。租戶邊界：建 `clinic-staging` 與 `clinic-prod` 兩個 namespace，部署帳號只綁 staging。配額：替 staging 設 ResourceQuota、LimitRange 與 Pod Security 的 `restricted`。每張單子的證據都要是指令輸出。',
+      deliver: '三張驗收單，每張列出驗收項目、指令與實際輸出',
+      check: [
+        '角色單：`kubectl auth can-i --as=system:serviceaccount:<ns>:<name>` 對 get secrets、create pods/exec、delete deployments 回 no，對 patch deployments 回 yes',
+        '邊界單：同一個身分在 `clinic-prod` 的任何動作都回 no',
+        '配額單：超過配額的 Deployment，ReplicaSet 的 Events 出現 `exceeded quota`；特權容器被 Pod Security 擋下並印出違反的項目',
+        '三張單子可以各自重跑，不依賴另外兩張的狀態',
+      ],
+      twist: '有人在部署帳號的 Role 加了一條 create pods，理由是「CI 要跑 migration」。先預測角色單裡 `can-i get secrets` 會不會變，以及這張單子實際上還守不守得住，再寫出怎麼證明風險、改用什麼做法跑 migration。',
+    },
     refs: [
       { label: 'Kubernetes：Using RBAC Authorization', url: 'https://kubernetes.io/docs/reference/access-authn-authz/rbac/' },
       { label: 'Kubernetes：Role Based Access Control Good Practices', url: 'https://kubernetes.io/docs/concepts/security/rbac-good-practices/' },

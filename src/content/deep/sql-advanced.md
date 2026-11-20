@@ -251,6 +251,8 @@ SELECT user_id, id, status, amount FROM latest WHERE rn = 1 ORDER BY user_id;
 | `DISTINCT ON`（只能取 1 筆） | PostgreSQL 專屬、最短，見 [SQL 基礎](#/skill/sql-basics) |
 | `LATERAL (… ORDER BY … LIMIT N)` | 對每個分組跑一次子查詢；有合適的複合索引、而且分組數不多時很快，見 [JOIN](#/skill/sql-joins) |
 
+:::stop 讀到這裡可以先停：會用 CTE 把查詢拆成步驟，用視窗函數做排名、累計與每組前 N 名。後面的 UPSERT 與 RETURNING，在要匯入去重或寫入後立刻拿到結果時再回來讀。
+
 ## UPSERT：INSERT … ON CONFLICT
 
 購物車：「加入購物車」時，商品不在車裡就新增一列，已經在車裡就把數量加上去。先查再決定 INSERT 或 UPDATE 的寫法，在兩個請求同時加同一個商品時會撞在一起：兩邊都查到「不存在」，第二個 INSERT 違反主鍵（或在沒有唯一約束時產生兩列）。`INSERT … ON CONFLICT` 把判斷交給資料庫，在一句裡原子地完成：

@@ -159,6 +159,8 @@ SELECT * FROM mart_dept_total ORDER BY dept_code;
 - **邏輯改變要講清楚範圍**。全部歷史重算，還是從某一天開始生效？重算會改變已經發布的數字，要先讓使用報表的人知道。
 - **由上游往下游**，並且分批、避開尖峰，見 [從舊資料庫同步資料](#/skill/legacy-data-sync) 的回補一節。
 
+:::stop 讀到這裡可以先停：會用分區覆寫或 upsert 讓批次可以重跑、把排定日期當參數，並用同一支程式回補。後面的分層、品質檢查與排程工具，在管線要供下游報表使用、需要擋住壞資料時再回來讀。
+
 ## 分層：raw、staging、mart
 
 [資料治理](#/skill/data-governance) 提過，一個 PostgreSQL 分成 `raw`、`staging`、`mart` 三個 schema 就是 ELT 的雛形。三層各自的責任：

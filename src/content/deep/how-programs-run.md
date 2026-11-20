@@ -134,6 +134,8 @@ for f in leaked:
 
 HTTP client 也一樣：`httpx.Client`、`requests.Session` 背後有連線池，每條保持中的連線是一個 fd。正確用法是整個應用共用一個 client（啟動時建立、關閉時 `close()`），不要每個請求新建一個又不關。
 
+:::stop 讀到這裡可以先停：會分辨行程與執行緒、stack 與 heap，查得出一個行程開了哪些 fd。後面的系統呼叫、GIL 與 ps／top，在服務卡在 I/O 或 CPU 用不滿時再回來讀。
+
 ## 系統呼叫：程式和核心之間的門
 
 讀檔、寫 socket、開連線、配置大塊記憶體、建立行程，這些事程式自己做不到，要請核心代勞，這個請求就是**系統呼叫**（system call）：`openat`、`read`、`write`、`socket`、`connect`、`accept`、`epoll_wait`、`mmap`、`clone`。
@@ -209,7 +211,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 def work(n):
     return sum(i * i for i in range(n))
 
-if __name__ == "__main__":          # 多行程在某些平台會重新匯入主模組，一定要有這行
+if __name__ == "__main__":          # spawn 與 forkserver（3.14 起 Linux 的預設）會重新匯入主模組，一定要有這行
     jobs = [5_000_000] * 4
     for pool_cls in (ThreadPoolExecutor, ProcessPoolExecutor):
         t = time.perf_counter()

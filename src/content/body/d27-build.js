@@ -39,6 +39,16 @@ export default {
       '能判斷一次存檔觸發的是 HMR 還是整頁重載',
       '能分辨一段 Vite 設定是 Vite 6 還是 Vite 8 的寫法',
     ],
+    challenge: {
+      task: '用 `npm create vite@latest clinic-lab -- --template vue-ts` 建一個 Vite 8 專案，依序造出三種故障，每一種先預測 `npm run dev`、`npx vue-tsc --noEmit`、`npm run build` 哪幾個會報錯，再實際跑：(1) 一個元件 import `./Components/Card.vue`，實際資料夾叫 `components`；(2) 模板讀 `appt.patientNmae`，型別裡只有 `patientName`；(3) `vite.config.ts` 寫 `build.rollupOptions.output.manualChunks: { vendor: [\'vue\'] }`。',
+      deliver: '一張 3×3 的表：三種故障 × 三個指令，每格寫預測與實際結果（成功，或錯誤訊息的第一行），再寫下自己的作業系統',
+      check: [
+        '每格的實際結果是終端機輸出的第一行，不是轉述',
+        '指出三種故障各自是哪個指令最先擋下',
+        '說明大小寫那一項在 macOS、Windows 與 Linux 上結果為什麼可能不同',
+      ],
+      twist: '把 `package.json` 的 Vite 改回 6 重新安裝，只重跑第三種故障。先預測 build 會不會失敗、`dist/assets` 裡有沒有 vendor chunk。',
+    },
     refs: [
       { label: 'Vite：Getting Started', url: 'https://vite.dev/guide/' },
       { label: 'Vite：Why Vite', url: 'https://vite.dev/guide/why' },
@@ -86,6 +96,17 @@ export default {
       '能說出 `.env`、`.env.[mode]`、`.local` 的載入順序與 mode 的作用',
       '能在 `dist/` 裡找出寫進 bundle 的值，確認沒有秘密',
     ],
+    challenge: {
+      task: '情境換成售票前端 `tickets.example`：測試站與正式站的 `apiBase`、`paymentReturnUrl` 不同。把專案改成啟動時讀 `/config.js`，只建置一次，把 `dist/` 複製成兩份、各放一份 `config.js`，用兩個 `vite preview --outDir` 在不同的埠送出。兩邊各操作一次，在 Network 分頁看 API 請求打到哪裡。',
+      deliver: '兩份 `dist/assets` 的 `sha256sum` 輸出、兩份 `config.js`、兩張 Network 截圖與一段說明',
+      check: [
+        '兩份 assets 的雜湊完全相同，只有 `config.js` 不同',
+        '兩邊的 API 請求各自打到自己的 `apiBase`',
+        '`grep -r` 搜尋 `dist/` 找不到任何一個環境的網址',
+        '列出哪些條件從門診案例沿用（例如前端沒有秘密），哪些要跟售票業務重新確認（例如付款回跳網址能不能在執行時換、要不要白名單）',
+      ],
+      twist: '業務要求「正式站的付款按鈕上線當天才打開」。先預測：用 `VITE_` 變數與用 `config.js` 的開關，各要不要重建、兩份產物的雜湊還會不會相同。',
+    },
     refs: [
       { label: 'Vite：Env Variables and Modes', url: 'https://vite.dev/guide/env-and-mode' },
       { label: 'Vite：Configuring Vite（在設定檔裡用環境變數）', url: 'https://vite.dev/config/' },
@@ -132,6 +153,16 @@ export default {
       '能讀懂 `vite build` 的輸出清單，找出變大的 chunk',
       '能說出內容 hash 與長效快取的關係，以及 `index.html` 為什麼不能長效快取',
     ],
+    challenge: {
+      task: '在有路由懶載入的專案跑 `npm run build && npm run preview`，打開首頁後不要重新整理。改一行報表頁的程式再建置一次（preview 繼續開著），回到舊分頁點報表頁。動手前先寫下預測：舊分頁會要哪個檔名、拿到什麼。檔名的變化可以先在 [BundleLab](#/lab/BundleLab) 對照。',
+      deliver: '預測與實際的對照：舊分頁要求的 chunk 檔名、狀態碼、`Content-Type`、Console 的錯誤訊息',
+      check: [
+        '寫出舊分頁要求的 chunk 檔名，並確認它已經不在新的 `dist/assets` 裡',
+        '說明 preview 為什麼回 200 與 `text/html`，而不是 404',
+        '指出入口 chunk 的檔名這次有沒有變、為什麼',
+      ],
+      twist: '把報表頁改回在 `main.js` 靜態 import，再做一次同樣的發版。先預測舊分頁點報表時還會不會出錯、首頁的入口 chunk 大小怎麼變。',
+    },
     refs: [
       { label: 'Vite：Building for Production', url: 'https://vite.dev/guide/build' },
       { label: 'Vue Router：Lazy Loading Routes', url: 'https://router.vuejs.org/guide/advanced/lazy-loading.html' },
@@ -179,6 +210,17 @@ export default {
       '能說出 SPA 對伺服器的要求：頁面 fallback、assets 回 404、兩種快取標頭',
       '能用 `vite:preloadError` 處理部署後的 chunk 載入失敗，並在 Console 認出這類錯誤',
     ],
+    challenge: {
+      task: '情境換成餐廳訂位前端，部署在 `book.example/reserve/`。用程式題 [子路徑上的 SPA](#/exercise/spa-deploy-1) 的 nginx 設定（改成 `/reserve/`）起一個容器，另加一條 `location /reserve/api/` 轉到一個沒有在跑的後端。動手前先寫下三條網址預期的狀態碼、`Content-Type` 與 `Cache-Control`，再用 `curl -sI` 驗：深層路由 `/reserve/bookings/88`、遺失的資產 `/reserve/assets/old-abc123.js`、API `/reserve/api/bookings`。',
+      deliver: '三條網址的預測與 `curl -sI` 實際輸出的對照表',
+      check: [
+        '深層路由回 200 的 `text/html`，`Cache-Control` 是 `no-cache`',
+        '遺失的資產回 404，不是 200 的 `index.html`',
+        'API 失敗回 5xx，沒有被 fallback 成 `index.html`',
+        '列出從門診案例沿用的規則，以及要跟訂位業務重新確認的事（例如確認信裡的深層連結要能開多久、改版後舊連結怎麼辦）',
+      ],
+      twist: '業務要把網站搬到根目錄 `book.example/`。先預測要改哪三個地方，以及三條 `curl` 裡哪一條的結果會最先變。',
+    },
     refs: [
       { label: 'Vite：Deploying a Static Site', url: 'https://vite.dev/guide/static-deploy' },
       { label: 'Vite：Building for Production', url: 'https://vite.dev/guide/build' },
@@ -226,6 +268,16 @@ export default {
       '能用「檢視原始碼」與停用 JavaScript 判斷一個頁面是哪一種渲染方式',
       '能從 hydration mismatch 的警告找出不一致的值，改成只在瀏覽器計算',
     ],
+    challenge: {
+      task: '挑兩個頁面：本站任一課頁，以及一個 SSR 或 SSG 的公開頁面（例如 Vue 或 Nuxt 的官方文件）。動手前先預測每一頁關掉 JavaScript 後看得到哪些文字。接著各做三件事：Ctrl+U 存下初始 HTML 的一段、DevTools 執行 `Disable JavaScript` 後重新整理截圖、打開 JavaScript 操作一次互動後截圖。',
+      deliver: '每頁三份證據（初始 HTML 片段、關掉 JS 的截圖、互動後的截圖）與一句判斷：CSR、SSR 或 SSG',
+      check: [
+        '判斷依據引用初始 HTML 裡有沒有主要內容的文字',
+        '指出關掉 JS 時看得到、但點了沒反應的元素',
+        '說明哪一頁可以放進共用快取、哪一頁不行，各一個理由',
+      ],
+      twist: '假設其中那個 SSR 頁面加上「目前登入者姓名」。先預測它的初始 HTML 該不該含姓名、回應的 `Cache-Control` 該是什麼。',
+    },
     refs: [
       { label: 'Vue：Server-Side Rendering (SSR)', url: 'https://vuejs.org/guide/scaling-up/ssr.html' },
       { label: 'Vue：Ways of Using Vue', url: 'https://vuejs.org/guide/extras/ways-of-using-vue.html' },
@@ -273,6 +325,17 @@ export default {
       '能讀懂 MDN 的 Baseline 標示與 Can I use 的支援表，說出最低支援版本',
       '能說出 Vite 6 與 Vite 8 的預設 `build.target`，並依支援範圍設定它',
     ],
+    challenge: {
+      task: '情境換成倉庫揀貨用的舊 iPad（Safari 15.6，假設還不能換）。在專案寫兩個功能：用 `Object.groupBy` 依揀貨區分組、用 `:has()` 標出缺貨的列。先依 Vite 8 預設的 target 建置，在 `dist/assets` 搜尋 `groupBy(`；再設 `build.target: [\'safari15\']` 建置一次比較。查兩個功能的最低支援版本，預測它們在 Safari 15.6 能不能用，再替不能用的那個寫退路。手邊沒有舊裝置時，寫明用什麼替代證據、哪些沒驗到。',
+      deliver: '兩次建置的搜尋結果、兩個功能的預測與依據（最低版本與來源），以及退路的程式',
+      check: [
+        '說明改了 `build.target` 之後 `groupBy(` 還在不在產物裡、為什麼',
+        '每個功能的判斷都附最低支援版本與來源（MDN、Can I use 或 web-features）',
+        '不支援時畫面仍然能用，不是白畫面或整頁 `TypeError`',
+        '列出從門診案例沿用的條件，以及要跟倉儲業務重新確認的事（平板能不能升級、哪天換機）',
+      ],
+      twist: '業務說平板下個月全換成 iPadOS 17.0。先預測哪一個退路可以刪、哪一個還要留，再查證。',
+    },
     refs: [
       { label: 'Vite：Building for Production（Browser Compatibility）', url: 'https://vite.dev/guide/build' },
       { label: 'Vite：Build Options（build.target）', url: 'https://vite.dev/config/build-options' },
@@ -321,6 +384,16 @@ export default {
       '能從 CI 的錯誤訊息分辨是 lock 檔、Node 版本、型別還是測試的問題',
       '能為 PR 設定預覽部署與必要檢查',
     ],
+    challenge: {
+      task: '在練習用的 repo 開一個「本機綠、CI 紅」的 PR：把一個 import 的大小寫改得和檔名不同，並在 `package.json` 手動改一個套件的版本範圍、不更新 lock 檔。推上 GitHub，讓程式題 [PR 上跑 npm ci、lint、型別檢查、測試與建置](#/exercise/frontend-ci-1) 那份 workflow 執行。從 log 找出第一個讓管線失敗的步驟與訊息，修好一個再推一次。',
+      deliver: '兩輪 CI 各自的失敗步驟、第一行有效的錯誤訊息，以及一句「本機為什麼沒發現」',
+      check: [
+        '第一輪指出 `npm ci` 的 lock 檔不同步，不是後面步驟的連帶錯誤',
+        '第二輪指出 build 的 `Could not resolve` 與出錯的檔名',
+        '說明本機用 `npm install` 與不分大小寫的檔案系統怎麼藏起這兩個錯',
+      ],
+      twist: '把 workflow 的 `npm ci` 換成 `npm install` 再跑第一輪。先預測會在哪一步失敗，還是整條變綠。',
+    },
     refs: [
       { label: 'GitHub：actions/setup-node', url: 'https://github.com/actions/setup-node' },
       { label: 'GitHub：actions/checkout', url: 'https://github.com/actions/checkout' },

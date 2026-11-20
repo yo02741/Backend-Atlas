@@ -227,6 +227,8 @@ const emit = defineEmits(['check-in', 'retry'])
 
 `AppointmentTable` 沒有 import 任何 API、router 或 store。它的元件測試只要給 `items` 與 `status`，檢查畫面與 `check-in` 事件的 payload。
 
+:::stop 讀到這裡可以先停：會由外到內拆出元件樹、寫出介面表，分清頁面元件與展示元件。後面的常見錯誤，在拆完的元件又開始變大或互相牽動時再回來對照。
+
 ## 常見錯誤
 
 | 現象 | 原因 | 修法 |

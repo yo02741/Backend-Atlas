@@ -71,6 +71,8 @@ review prompt 的 diff 和 review 程式碼不太一樣，要特別看：
 
 什麼時候跑跨模型回歸：換模型版本、供應商宣布舊版退役、路由表要加備援模型（見 [AI Gateway](#/skill/ai-gateway)：沒在備援模型上跑過評測，就不要設備援）。
 
+:::stop 讀到這裡可以先停：會把 prompt、skill、工具定義、模型設定放進版控，建評測集並標出必過案例，看懂跨模型的對照表。後面的 CI 設定、評測腳本與金絲雀，在要把評測接進 pipeline 或上線新版 prompt 時再回來讀。
+
 ## CI：評測是品質閘門
 
 ### pipeline 的形狀

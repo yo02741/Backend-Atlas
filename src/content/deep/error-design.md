@@ -235,6 +235,8 @@ async def validation_handler(request: Request, exc: RequestValidationError):
 
 `request.state.request_id` 假設有一個 middleware 先產生或沿用 `X-Request-ID`（見 [日誌、錯誤處理與設定](#/skill/logging-config)）。未預期例外的處理器可以註冊在 `Exception` 上；它在 middleware 堆疊的哪一層執行、回應之後例外是否還會往上交給伺服器記錄，依 Starlette 版本而定，上線前實際觸發一次 bug，確認 log 只出現一次、內容完整。
 
+:::stop 讀到這裡可以先停：會設計例外階層、在邊界轉成 Problem Details。後面的 request id 與日誌，在要把使用者的回報對上伺服器紀錄時再回來讀。
+
 ## 錯誤與日誌：用 request id 串起來
 
 使用者看到的只有「伺服器錯誤」，維運要能從這一句找到原因。做法是讓每個請求有一個 **request id**：

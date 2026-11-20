@@ -173,6 +173,8 @@ const { name, phone } = toRefs(form)   // name、phone 是 ref，和 form.name�
 
 圖表或地圖套件的實例、上萬筆的唯讀資料，不需要被轉成深層 Proxy：實例用 `markRaw()` 標記或放進 `shallowRef()`，大量唯讀資料用 `shallowRef()`，只在整個換掉 `.value` 時觸發更新。
 
+:::stop 讀到這裡可以先停：知道 Vue 在讀取時追蹤、寫入時通知，會選 `ref`、`reactive` 或 `computed`，也認得失去響應式的寫法。後面的 React 對照與錯誤訊息表，在比較兩個框架或畫面不更新時再回來讀。
+
 ## React 對照
 
 | Vue 3.5 | React 19 |

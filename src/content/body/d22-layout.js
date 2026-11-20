@@ -41,6 +41,17 @@ export default {
       '能為表單的每個欄位選對 `label`、`type`、`inputmode`、`autocomplete`，並說出 `button` 在 `form` 裡的預設 `type`',
       '能只用鍵盤走完一個表單，並用 Accessibility 分頁與 Lighthouse 找出沒有名稱的欄位與按鈕',
     ],
+    challenge: {
+      task: '把深入內容的掛號表單貼進 [Playground](#/playground?lang=html)，只用 Tab、Shift+Tab、方向鍵、Space、Enter 填完並送出。每停一個地方，到 Elements 的 Accessibility 分頁（或勾 `Enable full-page accessibility tree`）記下 Role 與 Name。最後故意弄壞一處（例如把「送出掛號」換成 `div`、拿掉一個 `label`），再走一次。',
+      deliver: '焦點順序表（每一步的元素、Role、Name），加上弄壞前後的對照',
+      check: [
+        '每個欄位與按鈕都停得到，Name 都不是空的',
+        '三個看診時段在同一組裡用方向鍵移動，Tab 只停一次',
+        '在欄位裡按 Enter 只送出一次',
+        '弄壞的那一處寫出 Role 或 Name 變成什麼、鍵盤哪一步做不到',
+      ],
+      twist: '把「清除」改回沒寫 `type` 的 `button`，放在「送出掛號」前面，然後在姓名欄按 Enter。先預測哪一顆按鈕的 click 會被觸發、表單會不會送出，再試。',
+    },
     refs: [
       { label: 'MDN：<button>', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button' },
       { label: 'MDN：<label>', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/label' },
@@ -89,6 +100,17 @@ export default {
       '能說明 `flex: 1`、`flex: auto`、`flex: none` 的差別，並用其中一個讓搜尋框吃掉剩餘空間',
       '能找出 flex 子項撐破容器的原因，並用 `min-width: 0` 或 `flex-wrap` 修好',
     ],
+    challenge: {
+      task: '物流追蹤頁的頂端列有倉庫名稱「桃園大園第三物流中心（冷鏈）」、搜尋框與「重新整理」按鈕。在 [Playground](#/playground?lang=html) 用 `display: flex` 寫出來，預覽切到 390，重現按鈕被擠出畫面；用 Computed 記下三個子項的寬度，改到 390、768、1280 都不溢出。動手前可以先在 [Flexbox 實驗室](#/lab/FlexboxLab) 拉容器寬度與 `flex-shrink`，預測結果。',
+      deliver: '修前與修後在 390 的截圖，加上三個子項在三種寬度的寬度表',
+      check: [
+        '三種寬度都沒有橫向捲軸',
+        '按鈕在三種寬度都一樣寬',
+        '名稱被截斷時，使用者還有地方讀到完整名稱',
+        '列出哪些條件和門診看板一樣可以沿用，哪些要跟業務確認（名稱能不能截斷、手機上搜尋框能不能收成圖示）',
+      ],
+      twist: '業務說倉庫名稱不能截斷，要完整顯示。先預測頂端列在 390 會變成幾行、按鈕會對齊在哪裡、要改哪幾個屬性，再改。',
+    },
     refs: [
       { label: 'MDN：flex', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex' },
       { label: 'MDN：justify-content', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/justify-content' },
@@ -137,6 +159,17 @@ export default {
       '能用 mobile-first 的 `min-width` media query 寫出 390、768、1280 三種版面',
       '能判斷一個元件該用 media query 還是 container query，並在裝置模式找出橫向捲軸的來源',
     ],
+    challenge: {
+      task: '倉庫的庫存表有七欄：品號、品名、倉別、在庫、安全量、在途、最後異動。把它寫成一個本機的 HTML 檔（要有 viewport meta），用 DevTools 裝置模式的 `Responsive` 從 1280 慢慢拖窄，記下內容開始溢出（出現橫向捲軸，或品名被擠成一字一行）的寬度，用它當斷點，窄於斷點時每列改成一張卡。最後對照裝置選單裡幾款手機與平板的預設寬度。',
+      deliver: '斷點的寬度與觀察到的溢出、斷點兩側各一張截圖、和裝置預設寬度的對照',
+      check: [
+        '斷點來自觀察到的溢出，不是照抄某款裝置的寬度',
+        '390、768、1280 都沒有橫向捲軸',
+        '用 mobile-first 的 `min-width` 寫',
+        '列出哪些條件和門診表格一樣可以沿用，哪些要跟倉管確認（手機上哪些欄可以藏、在途要不要顯示）',
+      ],
+      twist: '同一張表要放進 1280 頁面裡 600px 寬的主欄。先預測你的 media query 在這裡會選到哪個版面、對不對，再改成 container query。',
+    },
     refs: [
       { label: 'MDN：viewport meta', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/meta/name/viewport' },
       { label: 'MDN：Using media queries', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Media_queries/Using' },
@@ -184,6 +217,16 @@ export default {
       '能用 `@layer` 或調整順序解決衝突，並說出 `!important` 在層之間怎麼排',
       '能在 Styles 與 Computed 分頁找出被劃掉的宣告與值的來源，判斷 scoped 樣式為什麼沒套上',
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=html) 對同一個標題寫四組衝突：元件庫的 `.ui-theme .ui-card .ui-card__header .ui-card__title` 對上 `.is-missed .ui-card__title[data-v-x]`；同一組，但元件庫放進 `@layer vendor`；兩邊都加 `!important`；樣式表的 `!important` 對上 `style` 屬性。每組先寫下預測的顏色與「在比較順序第幾項分出勝負」，再看 Styles 的刪除線與 Computed 展開的來源。',
+      deliver: '四組各一張 Computed 截圖，加一句勝因',
+      check: [
+        '預測在執行前寫好',
+        '每組的勝因對到比較順序的一項（重要性、inline、層、權重、出現順序）',
+        '至少一組是權重高的規則因為層而輸',
+      ],
+      twist: '把元件庫那條改成 `!important` 並留在 `@layer vendor`，專案那條也加 `!important` 但不放進層。先預測誰勝出、為什麼，再驗證。',
+    },
     refs: [
       { label: 'MDN：Specificity', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Cascade/Specificity' },
       { label: 'MDN：@layer', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@layer' },
@@ -233,6 +276,16 @@ export default {
       '能說出 margin 合併發生的情況，並用 padding、`display: flow-root` 或 `gap` 避開',
       '能用盒模型圖與 Styles 分頁的提示，找出溢出、多出的空白與沒作用的 `width`',
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=html) 做一個 `width: 358px` 的清單，裡面放卡片。下面五種寫法各先寫下預測的實際寬度，再到 Computed 的盒模型圖量：`width: 100%; padding: 16px`；再加 `border: 1px solid`；再加 `box-sizing: border-box`；改成不寫 `width`、加 `margin: 0 8px`；把卡片換成 `span` 寫 `width: 200px`。預覽切到 390，看哪幾種出現橫向捲軸。',
+      deliver: '五列的預測與實測對照表，加上出現橫向捲軸的截圖',
+      check: [
+        '預測在量之前寫好，實測和預測差超過 1px 的寫出原因',
+        '指出哪幾種撐破 358px 的欄',
+        '`span` 那一列說明 `width` 為什麼沒作用、改成什麼才有',
+      ],
+      twist: '清單改成 `display: flex; flex-direction: column`，卡片之間是 `margin-bottom: 24px` 與 `margin-top: 16px`。先預測卡片之間的距離，以及第 1、第 4 種寫法的寬度會不會變，再量。',
+    },
     refs: [
       { label: 'MDN：box-sizing', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/box-sizing' },
       { label: 'MDN：Mastering margin collapsing', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Box_model/Margin_collapsing' },
@@ -282,6 +335,16 @@ export default {
       '能寫出依容器寬度自動換欄數的卡片網格，並說出 `auto-fill` 與 `auto-fit` 的差別',
       '能用 `grid-template-areas` 寫出整頁版面，並用 DevTools 的格線疊加檢查欄數與區域',
     ],
+    challenge: {
+      task: '在 [Grid 實驗室](#/lab/GridLab) 把卡片數設成 7 張、容器寬度 900px，比較 `auto-fill` 與 `auto-fit`；再到 [Playground](#/playground?lang=html) 寫 Flexbox 的 `flex: 1 1 240px` 版本。三種寫法都記下最後一列那張卡片的寬度、空白在哪裡。接著把卡片數改成 2 張，再比一次。',
+      deliver: '三種寫法 × 兩種卡片數的寬度表或截圖，加一句卡片牆要選哪一種',
+      check: [
+        '7 張時指出 Flexbox 的最後一張被拉寬，Grid 的最後一張和上面同寬',
+        '2 張時指出 `auto-fill` 與 `auto-fit` 的差別，並附 computed 的 `grid-template-columns`',
+        '選擇的理由提到卡片數變少時的樣子',
+      ],
+      twist: '同一面卡片牆放進只有 200px 寬的側欄。先預測三種寫法各會怎樣（溢出多少、排幾欄），再驗證，並寫出修正後的 `grid-template-columns`。',
+    },
     refs: [
       { label: 'MDN：grid-template-columns', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/grid-template-columns' },
       { label: 'MDN：repeat()', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/repeat' },
@@ -331,6 +394,16 @@ export default {
       '能找出 `z-index` 很大卻被蓋住的原因，指出是哪個祖先建立了 stacking context',
       '能判斷一個浮層該用 `absolute`、`fixed` 還是 `popover`／`<dialog>`，並說出 sticky 失效的常見原因',
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=html) 做兩個壞掉的「更多」選單：一個在 `overflow: hidden` 的卡片裡（被裁切），一個在有 `transform` 的清單裡、往上會碰到 `position: sticky; z-index: 10` 的頂端列（被覆蓋）。修之前，在 Elements 從選單一路往上看每個祖先的 Computed（`overflow`、`transform`、`position`、`z-index`），找出造成問題的那一個。',
+      deliver: '兩個症狀各一段：哪個祖先、DevTools 裡的證據、修法、修後截圖',
+      check: [
+        '分得出被裁切（選單的盒子超出祖先的邊界就看不到）與被覆蓋（選單有畫，只是在別的元素下面）',
+        '被裁切的修法不是調 `z-index`，被覆蓋的修法不是把 `z-index` 調得更大',
+        '證據指名到具體的祖先與屬性值',
+      ],
+      twist: '兩個選單都改成 `popover`。先預測裁切與覆蓋還會不會發生、選單會出現在畫面的哪裡，再試。',
+    },
     refs: [
       { label: 'MDN：position', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/position' },
       { label: 'MDN：z-index', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/z-index' },
@@ -381,6 +454,17 @@ export default {
       '能用 `width`、`height`、`aspect-ratio` 與 `object-fit` 讓圖片載入時版面不跳',
       '能判斷哪些圖該 `loading="lazy"`，並為內容圖、裝飾圖與圖示按鈕寫出合適的 `alt` 或 `aria-label`',
     ],
+    challenge: {
+      task: '售票網站的活動頁有一張主視覺與 12 張場次縮圖。在自己的 Vite 專案（`vite preview`）用三種寫法放縮圖：只有 `src`；加上 `width` 與 `height`；再加 `srcset` 與 `sizes`。Network 設 `Slow 4G` 並勾 `Disable cache`，裝置模式分別用 390px（DPR 3）與 1280px（DPR 1）重新整理，記下 Size 欄與實際下載的檔名，並用 Performance 的 Layout shifts 軌或 Lighthouse 看版面位移。',
+      deliver: '三種寫法 × 兩種裝置的表：下載的檔案、大小、版面位移',
+      check: [
+        '有 `srcset` 的那一列，下載的檔案和本課表格的算法對得上',
+        '加了寬高之後，圖片造成的版面位移消失',
+        '主視覺沒有 `loading="lazy"`',
+        '列出哪些條件和醫師介紹頁一樣可以沿用，哪些要跟業務確認（縮圖要不要換構圖、售完的場次要不要換圖）',
+      ],
+      twist: '主視覺被加上 `loading="lazy"`。先預測 Network 的 `Priority` 欄、開始下載的時間點與 LCP 會怎麼變，再驗證。',
+    },
     refs: [
       { label: 'MDN：<img>', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img' },
       { label: 'MDN：Using responsive images in HTML', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Guides/Responsive_images' },
@@ -432,6 +516,16 @@ export default {
       '能寫出不帶單位的行高與 `clamp()` 字級，並在使用者放大字型後檢查版面',
       '能用 Computed 分頁的 `Rendered fonts` 與 Network 分頁確認網頁字型有載入、用的是哪個字型',
     ],
+    challenge: {
+      task: '把深入內容開頭的候診清單（`px` 字級、`line-height: 20px`、`height: 48px`）貼進 [Playground](#/playground?lang=html)。在 Chrome 的字型設定把字型大小調成「非常大」截一張，恢復後改用縮放 200% 再截一張，記下哪些文字沒變大、哪裡疊在一起或被切掉。改成 `rem`、不帶單位的行高與 `min-height` 後，兩種放大方式再各截一張。',
+      deliver: '改前改後 × 字型設定與縮放的四張截圖，每個問題對到一個單位',
+      check: [
+        '指出字型設定調大時 `px` 的文字不變',
+        '改後兩種放大方式都沒有文字重疊或被切掉，閱讀順序不變',
+        '每個問題寫出是哪個單位、以什麼為基準',
+      ],
+      twist: '標題改成 `font-size: 5vw`。先預測縮放 200% 時標題變大、變小還是不變，字型設定調大時又如何，再試。',
+    },
     refs: [
       { label: 'MDN：<length>（CSS 長度單位）', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/length' },
       { label: 'MDN：line-height', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/line-height' },
@@ -482,6 +576,16 @@ export default {
       '能在 Elements 分頁從選擇器判斷一個元件用的是哪種做法，以及樣式有沒有範圍',
       '能找出 CSS Modules 名字對不上、Tailwind 動態 class 沒產生這兩種「沒有錯誤訊息」的問題',
     ],
+    challenge: {
+      task: '側欄選單與分頁籤都用 `.is-active` 標示目前那一項。在 [Playground](#/playground?lang=html) 用三種寫法各做一次：全域的 `.is-active`；BEM 的 `.nav__item--active` 與 `.tabs__tab--active`；`@scope (.tabs) { .is-active { … } }`。每種寫法只改分頁籤的選中色，確認側欄有沒有跟著變，並在 Elements 選取那條規則套到的元素，數一數有幾個。',
+      deliver: '三種寫法各一張修改後的截圖，加上那條規則套到的元素數',
+      check: [
+        '全域寫法示範出側欄被波及',
+        '另外兩種寫法只改到分頁籤',
+        '寫出團隊要選哪一種，以及寫進專案規範的那一句',
+      ],
+      twist: 'AI 產生的新元件加了一條全域的 `.is-active { color: red !important }`。先預測三種寫法裡，側欄與分頁籤各有哪些會變紅，再加進去驗證。',
+    },
     refs: [
       { label: 'Vue：SFC CSS Features（scoped、module、v-bind）', url: 'https://vuejs.org/api/sfc-css-features.html' },
       { label: 'Vite：CSS Modules', url: 'https://vite.dev/guide/features.html#css-modules' },
@@ -533,6 +637,17 @@ export default {
       '能把依狀態切換的 class 寫成 Tailwind 產生得出來的形式，並在 build 出的 CSS 裡確認',
       '能說出 Tailwind 與 scoped CSS、`@apply` 寫的樣式衝突時誰勝出，以及怎麼用 `@layer` 與 `cn()` 處理',
     ],
+    challenge: {
+      task: '審一段 PR 的模板，class 清單裡有：出現在三個元件的 `bg-[#2f6fd6]`、`p-[13px]`、`text-[15px]`、`rounded-[999px]`、`w-[358px]`，以及只用在頭像列的 `grid-cols-[96px_1fr]`。逐一決定改成 `@theme` 的 token、換成既有的刻度，還是保留任意值。再到 [Playground](#/playground?lang=html) 用 `<style type="text/tailwindcss">` 寫出你的 `@theme`，證明改寫前後 computed 的值相同，或寫出刻意改變的地方。',
+      deliver: '一段 PR 評語（每個值一行：怎麼改、理由），加上改寫前後 computed 值的對照',
+      check: [
+        '重複出現的顏色改成 token；只出現一次的版面值，保留或改寫都有理由',
+        '刻度以外的 13px、15px 寫成要問設計師的問題，或對到既有刻度並說明差多少',
+        '指出 `w-[358px]` 是把「填滿父層」寫死成固定寬',
+        'Playground 的 computed 值有截圖',
+      ],
+      twist: '暗色主題要上線，主色在暗色時換成較亮的藍。先預測你的改法裡哪些 class 不用改就會跟著變、哪些得一個個找出來改，再用 `data-theme` 切換驗證。',
+    },
     refs: [
       { label: 'Tailwind CSS：Installing with Vite', url: 'https://tailwindcss.com/docs/installation/using-vite' },
       { label: 'Tailwind CSS：Hover, focus, and other states', url: 'https://tailwindcss.com/docs/hover-focus-and-other-states' },
@@ -583,6 +698,17 @@ export default {
       '能說出 Vue `<Transition>` 的六個 class 在進場與離場時的套用順序，以及為什麼離場沒寫 transition 時元素直接消失',
       '能為一個動畫寫出 `prefers-reduced-motion` 的替代，並用 Rendering 分頁模擬驗證',
     ],
+    challenge: {
+      task: '物流站的到站看板：包裹到站時從右側滑入提示「包裹 A1027 已到 3 號月台」，清單同時依到站時間重新排序。在 [Playground](#/playground?lang=vue) 用 `<Transition>` 與 `<TransitionGroup>` 做出提示（只動 `transform` 與 `opacity`）與排序動畫，再用 DevTools 的 Rendering 面板把 `prefers-reduced-motion` 模擬成 `reduce`，重跑同一段流程。',
+      deliver: '兩種設定各三張連續截圖（或一段錄影），加上每個狀態變化在 reduce 下怎麼被看見',
+      check: [
+        'reduce 下沒有位移與縮放',
+        '提示出現、提示消失、清單換順序，在 reduce 下仍然看得出來（淡入、顏色或直接切換加上醒目的標示）',
+        '一般設定下錄 Performance，動畫期間沒有 `Layout`',
+        '列出哪些條件和門診叫號一樣可以沿用，哪些要跟站務確認（提示停留多久、月台號要不要另外標示）',
+      ],
+      twist: '看板整天掛在牆上，公告每 3 秒自動輪播一則。先預測 WCAG 2.2.2 對這個輪播要求什麼、reduce 設定下輪播要不要停，再補上需要的控制項。',
+    },
     refs: [
       { label: 'MDN：transition', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/transition' },
       { label: 'MDN：@keyframes', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@keyframes' },
@@ -635,6 +761,17 @@ export default {
       '能從設計稿整理出 token 表，指出刻度以外的值，並列出設計稿沒畫、需要問的狀態與寬度',
       '能在 390 與 1280 用 DevTools 量出尺寸與間距，說出和設計稿差在哪個區塊',
     ],
+    challenge: {
+      task: '把程式題 [design-to-code-1](#/exercise/design-to-code-1) 的解答（或深入內容的時段卡片）改成餐廳訂位的時段卡片，換四組資料：一般、很長的分店名稱「信義威秀旗艦店（靠窗包廂區）」、徽章「候補中（12）」、當天沒有任何時段。預覽分別切到 390、768、1280，不只比一張截圖。',
+      deliver: '四組資料 × 三種寬度的截圖格，每格標出符不符合規則，加上要問設計師的問題清單',
+      check: [
+        '每一格都沒有溢出或被截斷的字（規格允許省略的除外）',
+        '徽章跟著文字變寬，按鈕寬度維持設計稿的規則',
+        '沒有時段時有空狀態，不是一片空白',
+        '問題清單每題都具體（寬度、狀態或內容），並分出哪些條件和門診時段卡片一樣可以沿用、哪些要跟店家確認',
+      ],
+      twist: '英文版上線，「預約」變成「Reserve a table」，徽章變成「Waitlist (12)」。先預測 390 寬時哪個元素最先出問題、為什麼，再換字驗證。',
+    },
     refs: [
       { label: 'MDN：flex', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex' },
       { label: 'MDN：Using CSS custom properties', url: 'https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties' },

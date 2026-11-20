@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useTicker, Stats, Stat, LineChart, Caption, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, useTicker, Stats, Stat, LineChart, Caption, fmtN, Measure } from '../ui.jsx'
 
 /* 舊系統替換情境模擬器：同一套舊系統（N 個功能模組），三種換法逐月推演。
    看已替換比例、切換日停機、行為差異在上線前還是上線後被發現、算錯的掛號、能不能回退、雙軌維護人力。
@@ -238,7 +238,7 @@ export default function LegacyReplacementScenarioLab() {
           </LabStage>
           <Stats min={132}>
             <Stat label="已替換" value={pct(r.live / n)} note={`${r.live} / ${n} 塊${r.partial ? `，另 ${r.partial} 塊過渡中` : ''}`} tone={r.live === n ? 'ok' : ''} />
-            <Stat label="切換日停機" value={sim.downtime ? `${sim.downtime} h` : '0'} note={sim.downtime ? `第 ${sim.cut} 個月的週末，一次` : '每次切換只改路由'} tone={sim.downtime ? 'warn' : 'ok'} />
+            <Stat label="切換日停機" value={<Measure kind="set" value={sim.downtime ? `${sim.downtime} h` : '0'} />} note={sim.downtime ? `第 ${sim.cut} 個月的週末，一次` : '每次切換只改路由'} tone={sim.downtime ? 'warn' : 'ok'} />
             <Stat label="差異：上線前發現" value={`${r.pre} 件`} note={`沒文件的行為共約 ${sim.total} 件`} />
             <Stat label="差異：上線後發現" value={`${r.post} 件`} note={POST_NOTE[mode]}
                   tone={r.post > sim.total * 0.3 ? 'bad' : r.post > 0 ? 'warn' : 'ok'} />

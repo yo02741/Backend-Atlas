@@ -268,3 +268,20 @@ async function onSubmit() {
 **token 與換頁**：假 API 設了 `api.auth = true`，診次與我的掛號沒帶 Bearer token 就回 401。登入後換到診次頁並列出資料；`localStorage`、`sessionStorage` 裡沒有任何東西；我的掛號頁收到 401 時回到登入頁、顯示「登入已過期」，重新登入後回到我的掛號；403 留在原頁顯示「沒有權限查看這個頁面」，換到別頁時 token 還能用；登出後不帶 token 的請求回 401。
 
 redirect 在題目裡只是頁面名稱的白名單，網址形式的 `safeRedirect` 在上面的程式裡。下一階段做第一個需要登入的清單：診次清單的四種狀態，與放在網址上的篩選條件。
+
+## 串接驗收
+
+前端的串接驗收接在後端參考專案上（`companion/clinic-api`，照它的 README 啟動並 seed；密碼是 seed 時給的 `SEED_PASSWORD`）。參考專案的路徑沒有 `/api` 前綴，Vite 的 proxy 要去掉它：
+
+```js
+// vite.config.js 的 server
+proxy: { '/api': { target: 'http://127.0.0.1:8000', rewrite: (p) => p.replace(/^\/api/, '') } },
+```
+
+**1. 接上真的後端。** 用 `patient1` 登入一次、用錯的密碼登入一次。預期：Network 裡 `POST /api/auth/login` 先回 200，body 有 `access_token`、`token_type` 是 `Bearer`；錯的密碼回 401，畫面顯示 `detail`、密碼清空、帳號保留。DevTools 的 Application 面板裡 Local Storage 與 Session Storage 都是空的。
+
+**2. 深層網址。** 沒登入時直接打開 `http://localhost:5173/sessions?date=<seed 印出的日期>&doctor_id=1`（設了 `base` 時網址前面多一段 `/clinic`），先預測網址怎麼變。預期：先到 `/login?redirect=…`，登入後回到原本的網址、query 還在，按上一頁不會回到登入頁。再打開 `/login?redirect=//evil.example/` 登入，預期停在 `/sessions`。
+
+**3. 登出後不留上一個人的資料。** `patient1` 先掛一筆，打開「我的掛號」，登出；在 DevTools 把網路節流調慢（例如 3G），換 `patient2` 登入再打開「我的掛號」，盯著第一個畫面。預期：第一個畫面是載入中，不會先閃出 `patient1` 的清單。閃出來的話，找出登出時沒清掉的 store 或模組層級的變數；登出與 401 都要清。
+
+**4. token 過期。** 參考專案的 token 預設 15 分鐘。在本機的 `compose.yaml` 替 api 加 `TOKEN_TTL_SECONDS: "60"`，`docker compose up -d` 之後登入，等一分鐘再換到「我的掛號」。預期：回到登入頁並顯示「登入已過期」，重新登入後回到我的掛號。下一階段的診次清單沿用這組接線。

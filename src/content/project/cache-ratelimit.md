@@ -187,3 +187,28 @@ print("6 秒後：", post_appointment("u2"))
 **token bucket**：一開始能連發 `capacity` 次；依經過時間補充，含小數累積（0.25 秒補 0.5 個、再 0.25 秒湊滿 1 個）；閒置很久也不超過容量；被拒絕的請求不扣 token；`retry_after()` 的值；不同使用者互不影響。
 
 兩題都用注入的時鐘，所以測試不需要真的等待。Redis 版本的實作（Lua 腳本、`SET NX` 鎖）不在驗收範圍內。下一階段把整個服務打包成映像，並讓每次 push 自動跑測試。
+
+## 串接驗收
+
+**1. 失效後連讀兩次。** 在 Playground 執行「關鍵程式」，最後補上：
+
+```python
+before = len(db_reads)
+print("掛號：", post_appointment("u3"))
+print(cache.get(3, "2026-11-02"), cache.get(3, "2026-11-02"))
+print("這一輪讀資料庫：", len(db_reads) - before)
+```
+
+先預測兩次 `get` 各是 hit 還是 miss、兩次的 `left` 是否相同、資料庫讀幾次。預期：miss 然後 hit、`left` 相同、資料庫讀 1 次。單一執行緒依序執行，第二次一定命中，所以這段測不出「同時」。
+
+**2. 真的同時讀。** 在後端參考專案（`companion/clinic-api`）先查一次診次清單讓快取有值，掛號一次讓它失效，接著同時送兩個 `GET /sessions`，前後各抓一次指標（`$TOKEN`、`$DAY` 照 README 的 curl 範例設定）：
+
+```bash
+curl -s $BASE/metrics | grep '^cache_requests_total'
+for i in 1 2; do curl -s -o /dev/null "$BASE/sessions?doctor_id=1&date=$DAY" -H "Authorization: Bearer $TOKEN" & done; wait
+curl -s $BASE/metrics | grep '^cache_requests_total'
+```
+
+預期：兩個回應的 `remaining` 相同、等於掛號後的值；`result="miss"` 增加 1 或 2。增加 2 代表兩個請求都在第一個寫回快取之前查了資料庫；熱門的 key 過期時，同一件事會放大成幾百個請求（[快取到期的瞬間](#/scenario/edge-cache)）。重複 5 次，記下 1 與 2 各出現幾次。
+
+**3. 對回前端。** 寫下清單顯示「剩 1」、按下掛號卻回 409 `session-full` 會在哪些情況發生，以及[掛號表單](#/project/fe-booking)怎麼呈現。預期至少兩種：別人剛掛走，而你的清單在那之前就載入了；Redis 刪除失敗，舊值留到 TTL（30 秒）到期。能不能掛以掛號的回應為準，清單的 `remaining` 只供顯示；按「選擇其他診次」回到[診次清單](#/project/fe-sessions)時重新載入。

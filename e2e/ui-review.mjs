@@ -1,5 +1,5 @@
 // 複習頁 UI 端到端：固定 seed 抽題可重現；作答、交卷、分數與解析；錯題記進 localStorage、答對後移除；
-// 「上次答錯的題」「已完成的課」「選領域」各範圍；localStorage 壞掉或被停用時頁面照常運作；入口連結；390px 不橫向溢出。
+// 「上次答錯的題」「讀過的課」「選領域」各範圍；localStorage 壞掉或被停用時頁面照常運作；入口連結；390px 不橫向溢出。
 // 前置：npm run build && npm run preview
 import { chromium } from 'playwright'
 import { mkdirSync } from 'node:fs'
@@ -53,7 +53,7 @@ let page = await open('#/review?seed=42')
 await page.waitForSelector('.rv-setup')
 t('page title', await page.title() === '複習 · u kinda should know', await page.title())
 t('nav still has 6 links, none to review', await page.$$eval('.topnav-links a', (as) => as.length === 6 && !as.some((a) => a.getAttribute('href').includes('review'))))
-t('「已完成的課」disabled without finished lessons, with a reason', await page.$eval(scopeInput('done'), (i) => i.disabled) && (await page.textContent('.rv-scope:has(input[value="done"])')).includes('還沒有完成的課'))
+t('「讀過的課」disabled without read lessons, with a reason', await page.$eval(scopeInput('done'), (i) => i.disabled) && (await page.textContent('.rv-scope:has(input[value="done"])')).includes('還沒有標記讀過的課'))
 t('「上次答錯的題」disabled without records, with a reason', await page.$eval(scopeInput('wrong'), (i) => i.disabled) && (await page.textContent('.rv-scope:has(input[value="wrong"])')).includes('沒有答錯紀錄'))
 t('default scope is 全部', await page.$eval(scopeInput('all'), (i) => i.checked))
 t('local-only note shown', (await page.textContent('.rv-setup .rv-note')).includes('只存在這個瀏覽器'))
@@ -146,10 +146,10 @@ await page.waitForSelector('.rv-setup')
 t('「上次答錯的題」disabled again', await page.$eval(scopeInput('wrong'), (i) => i.disabled))
 await page.context().close()
 
-/* ── 已完成的課 ── */
+/* ── 讀過的課 ── */
 page = await open('#/review?seed=7', { init: () => { localStorage.setItem('atlas-progress-v1', JSON.stringify({ done: ['sql-joins', 'jwt'] })) } })
 await page.waitForSelector('.rv-setup')
-t('「已完成的課」enabled and preselected when lessons are done', await page.$eval(scopeInput('done'), (i) => !i.disabled && i.checked))
+t('「讀過的課」enabled and preselected when lessons are read', await page.$eval(scopeInput('done'), (i) => !i.disabled && i.checked))
 const dn = await start(page)
 t('done scope: only questions from finished lessons (2 課 × 3 題, fewer than 10 → all)', dn.length === 6 && dn.every((id) => ['sql-joins', 'jwt'].includes(id.split('#')[0])), dn.join(','))
 
@@ -218,7 +218,7 @@ t('entry card opens the review page', (await page.evaluate(() => location.hash))
 t('Review chunk loaded on demand', [...loaded].some((n) => /^Review-/.test(n)) && loaded.size > homeJs)
 await page.goto(base + '#/skill/sql-joins', { waitUntil: 'networkidle' })
 await page.waitForSelector('.quiz')
-t('skill page: link under the quiz opens review for its track', await page.$eval('.quiz + .rv-after a', (a) => a.getAttribute('href')) === '#/review?track=backend')
+t('skill page: link under the quiz opens review for its track', await page.$eval('.quiz ~ .rv-after a', (a) => a.getAttribute('href')) === '#/review?track=backend')
 await ctx.close()
 
 /* ── 390px：設定畫面、作答中、交卷後都不橫向溢出 ── */

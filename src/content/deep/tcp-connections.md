@@ -105,7 +105,7 @@ keep-alive 有一個常見的坑：**閒置逾時不一致**。伺服器會關�
 - 後端應用程式的 keep-alive 逾時要**長於**前面負載平衡器的閒置逾時，否則負載平衡器會偶發 502。
 - 只有冪等請求適合自動重試這種錯誤（見 [呼叫外部服務的韌性](#/skill/resilience)）。
 
-nginx 當反向代理時，預設用 HTTP/1.0 連後端、每個請求一條新連線。要讓 nginx 到後端也重用連線，要三件事一起設：
+nginx 當反向代理時，1.29.7（穩定版 1.30.0）以前預設用 HTTP/1.0 連後端、送 `Connection: close`，每個請求一條新連線。1.29.7 起預設改成 HTTP/1.1、清掉 `Connection` 標頭，並對設定檔裡定義的 `upstream` 自動啟用 keepalive（只在同一個 location 內重用）。要讓舊版也重用連線，或在新版明確指定池子大小，三件事一起設：
 
 ```nginx
 upstream app {
@@ -174,6 +174,8 @@ engine = create_engine(
 這個數字要小於資料庫的 `max_connections` 扣掉保留給管理、遷移、監控的連線。開頭的例子把每池改成 `pool_size=3, max_overflow=1`，6 × 4 × 4 = 96 條，剛好卡在邊緣；更穩的做法是在中間放 **PgBouncer** 這類連線池代理：應用程式開幾百條到 PgBouncer，PgBouncer 只用幾十條連資料庫。PgBouncer 的 transaction 模式會讓不同交易共用同一條資料庫連線，依賴 session 狀態的功能（`SET`、advisory lock、某些 prepared statement 用法）要另外確認，支援程度隨版本不同。
 
 連線池也不是越大越好。資料庫同時能有效執行的查詢數受 CPU 核心數與磁碟限制，池子開到 200 條，多出來的只是在資料庫裡排隊、互搶鎖。池子用完就排隊等待，在應用程式這端反而比較好觀察與限制。
+
+:::stop 讀到這裡可以先停：會估算握手成本、設定 keep-alive 與連線池，算得出總連線數。後面的 `ss -tan`，在看到大量 TIME-WAIT、CLOSE-WAIT 或資料庫拒絕連線時再回來讀。
 
 ## 用 `ss -tan` 看連線狀態
 

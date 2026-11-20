@@ -78,6 +78,8 @@ scrollTop = 24,000px → 第一筆可見的是第 500 筆
 
 Vue 官方文件列出 vue-virtual-scroller、vue-virtual-scroll-grid、vueuc 的 VVirtualList；另外常見的有 @tanstack/vue-virtual 與 VueUse 的 `useVirtualList`。
 
+:::stop 讀到這裡可以先停：會用 Performance 分頁找長任務，判斷子元件為什麼重新渲染，在分頁與虛擬捲動之間選一個。後面的 `shallowRef`、debounce、observer 與完整程式，在資料量大或事件觸發太頻繁時再回來讀。
+
 ### 大量唯讀資料不需要深層響應式
 
 `ref([...3000 筆])` 預設是深層響應式：每一筆、每個欄位都包成 Proxy，渲染時每讀一個欄位都要記錄依賴。從 API 拿回來、只會整批換掉的資料，用 `shallowRef`：

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Status, Stats, Stat, Caption, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Status, Stats, Stat, Caption, fmtN, Measure } from '../ui.jsx'
 
 /* 大表格情境模擬器：同一份假的看診紀錄，三種呈現方式真的畫在瀏覽器裡。
    前端分頁只畫一頁、虛擬捲動只畫視窗內的列、伺服器分頁每個動作等一次（示意）延遲。
@@ -164,9 +164,9 @@ export default function BigTableScenarioLab() {
         </div>
         <div className="lab-stack">
           <Stats min={118}>
-            <Stat label="第一次下載（估計）" value={bytes(download)} tone={download > 5e6 ? 'bad' : download > 1e6 ? 'warn' : 'ok'} note={mode === 'server' ? '只有一頁' : `${fmtN(n)} 筆 JSON，未壓縮`} />
+            <Stat label="第一次下載（估計）" value={<Measure kind="set" value={bytes(download)} />} tone={download > 5e6 ? 'bad' : download > 1e6 ? 'warn' : 'ok'} note={mode === 'server' ? '只有一頁' : `${fmtN(n)} 筆 JSON，未壓縮`} />
             <Stat label="DOM 裡的資料列" value={fmtN(domRows)} note={`共 ${fmtN(total)} 列`} />
-            <Stat label="排序與篩選" value={mode === 'server' ? `${LATENCY} ms` : `${view.ms.toFixed(1)} ms`} note={mode === 'server' ? '一次來回（示意）' : '這台電腦實測'} tone={mode === 'server' ? 'warn' : 'ok'} />
+            <Stat label="排序與篩選" value={mode === 'server' ? <Measure kind="set" value={LATENCY} unit="ms" /> : <Measure kind="local" value={view.ms.toFixed(1)} unit="ms" />} note={mode === 'server' ? '一次來回' : '這台電腦的瀏覽器'} tone={mode === 'server' ? 'warn' : 'ok'} />
             <Stat label="已選" value={fmtN(selCount)} unit="筆" note={allMatching ? '全部符合條件' : mode === 'virtual' && headChecked ? '含畫面外的列' : sel.size ? '這一頁勾的' : ''} />
           </Stats>
           <Caption>這份假資料每列約 {Math.round(perRow)} bytes（UTF-8）；gzip 後傳輸量小很多，解析與記憶體成本不變</Caption>

@@ -142,6 +142,8 @@ for a, b, overlap in conflicts:
 - **把共用的部分移到介面票**：路由註冊先在介面票裡加好兩條空的路由，兩個 agent 各自只改自己的 handler 檔。
 - **指定唯一擁有者**：某些檔案只允許一個 agent 改，其他人需要改時提出來，由擁有者處理。
 
+:::stop 讀到這裡可以先停：會替每個 agent 開分支與 worktree，在分派前用檔案清單找出重疊，決定排先後或先做介面票。後面的熱點檔案與合併順序，在要把多條分支合回 main 時再回來讀。
+
 ### 3. 認得幾個常見的熱點
 
 | 檔案 | 為什麼常衝突 | 做法 |
@@ -159,7 +161,7 @@ for a, b, overlap in conflicts:
 
 | 訊息或狀況 | 原因 | 處理 |
 |---|---|---|
-| `fatal: 'agent/api' is already checked out at '/work/wt-api'`（新版 git 措辭是 already used by worktree） | 同一條分支已經在另一個 worktree 被 checkout | 每個 agent 開自己的分支 |
+| `fatal: 'agent/api' is already used by worktree at '/work/wt-api'`（較舊的 git 措辭是 is already checked out at） | 同一條分支已經在另一個 worktree 被 checkout | 每個 agent 開自己的分支 |
 | `fatal: '../wt-api' already exists` | 目標目錄已存在 | 換目錄名，或先確認舊的 worktree 是否還在用 |
 | `fatal: '../wt-api' contains modified or untracked files, use --force to delete it` | 要移除的 worktree 還有沒 commit 的改動 | 先確認那些改動是否需要保留，再決定要不要 `--force` |
 | 手動 `rm -rf` 了 worktree 目錄後，分支刪不掉或 `git worktree list` 還列著它 | git 的 worktree 紀錄還在 | `git worktree prune` |

@@ -92,6 +92,8 @@ expect(await screen.findByRole('status')).toHaveTextContent(...)   ← 一直重
 
 不要用 `setTimeout` 等固定時間：太短會在慢的 CI 機器上失敗，太長讓每個測試都變慢。
 
+:::stop 讀到這裡可以先停：會用 `getByRole` 找元素、用 user-event 操作、用 `findBy` 等非同步的結果。後面的 MSW、Pinia 與 Router 的替身和完整測試檔，在元件會呼叫 API 或依賴 store 時再回來讀。
+
 ### mock API：MSW 在網路層攔截
 
 Mock Service Worker（MSW）在 Node 裡攔截 `fetch` 與 `XMLHttpRequest`，交給 handler 決定回應：

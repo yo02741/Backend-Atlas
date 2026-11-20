@@ -78,6 +78,8 @@ ARIA 屬性（`role`、`aria-*`）只改無障礙樹上的角色與狀態，不�
 
 **`button` 的三種 `type`**：`submit`（預設）、`button`、`reset`。`submit` 會觸發表單的 `submit` 事件，沒有攔截時瀏覽器照 `action` 送出並載入新頁。在任一欄位裡按 Enter，瀏覽器也會找表單裡的送出鈕觸發送出（implicit submission）。
 
+:::stop 讀到這裡可以先停：會用原生元素取得角色與鍵盤行為、替欄位接上 `label`、分清 `button` 的三種 `type`。後面的手機鍵盤、`autocomplete` 與完整表單，在要做會在手機上填的表單時再回來讀。
+
 **`type`、`inputmode` 與手機鍵盤**：
 
 | 寫法 | 手機上通常的鍵盤 | 內建檢查 | 適合 |

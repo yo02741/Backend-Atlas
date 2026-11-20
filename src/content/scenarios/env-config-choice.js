@@ -57,6 +57,21 @@ export default {
     { id: 'static-site', situation: '公開的衛教網站：只有一個正式環境，放在只能放靜態檔的託管上，API 網址一年改不到一次。', options: ['build-time', 'config-js', 'server-inject'], answer: 'build-time',
       explain: '只有一個環境，「同一份建置跑多個環境」的好處用不上；值幾乎不變，重建一次的成本可以接受。靜態託管沒有伺服器可以改 HTML；`config.js` 做得到，但多一個請求、多一個要記得設快取的檔案，換不到什麼。' },
   ],
+  switchIf: [
+    { when: '頁尾要顯示版本號與 git commit', then: '這個值用 `build-time`：它屬於這一份建置，建置時寫死才對得上產物。' },
+    { when: '已經有 Node BFF 在送 `index.html`，同一套部署依網域服務兩家院區，首頁不想多一個請求', then: '改用 `server-inject`：BFF 依網域把設定寫進 JSON 資料區塊，沒有多的請求，CSP 也不受影響。' },
+  ],
+  alternative: { option: 'server-inject', holdsWhen: '送 `index.html` 的是你能改的伺服器（BFF，或能做字串替換的 nginx），而且 `index.html` 不被 CDN 長期快取時。設定放在 `<script type="application/json">` 資料區塊裡，瀏覽器不執行它，`script-src` 不會擋。' },
+  challenge: {
+    task: '「正式跑的是測試過的那份」要拿得出證據。先在本頁模擬器選「執行時：config.js」，按「▶ 跑一次 CI 與部署」，記下每個環境的建置識別碼；用「瀏覽器收到的設定」切換測試與正式，記下兩邊的設定差異。再切到「建置時（VITE_）」，「每個環境各建一次」關掉與打開各跑一次，比較識別碼與「設定正確的環境」。最後寫出自己的專案怎麼拿到同樣的證據：識別碼放在哪裡（例如 `index.html` 的 meta、`/version.json`、映像的 digest）、從哪裡讀。',
+    deliver: '一張表：兩個環境的建置識別碼與設定差異（config.js 一份、VITE_ 兩份），以及自己專案的取證方式',
+    check: [
+      'config.js 做法下兩個環境的識別碼相同，設定只有預期的幾個值不同',
+      'VITE_ 做法寫出兩種結果：各建一次時識別碼不同（正式跑的不是測試過的那份），只建一次時識別碼相同但設定錯了',
+      '取證方式有一個不必登入伺服器就查得到的位置（頁面原始碼或 `/version.json`）',
+    ],
+    twist: '合作醫院回報：「線上掛號關不掉。」先預測三個可能原因哪個最像：config.js 被快取、`\'false\'` 被當成字串、config.js 404 後用了預設值。再用模擬器上的開關重現你覺得最像的那個。',
+  },
   implementation: [
     { title: 'index.html：config.js 放在 module script 之前；程式只從一個模組讀設定', lang: 'html', code: `<!doctype html>
 <html lang="zh-Hant-TW">

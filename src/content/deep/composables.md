@@ -149,6 +149,8 @@ const { data: slots, error, loading, refresh } = useFetch<{ id: number; time: st
 
 很多常見需求不用自己寫。VueUse（`@vueuse/core`，2026-09 發布 15.0）有 `useLocalStorage`、`useEventListener`、`useDebounceFn`、`watchDebounced`、`useWindowSize` 等，元件卸載時都會自己清理；它也有自己的 `useFetch`，選項比上面這個多。
 
+:::stop 讀到這裡可以先停：會把重複的狀態與副作用抽成 composable，回傳 ref 組成的物件，參數接受 getter。後面的 React 對照與錯誤訊息表，在讀自訂 hook 時再回來讀。
+
 ## React 對照
 
 | Vue 3.5 composable | React 19 自訂 hook |

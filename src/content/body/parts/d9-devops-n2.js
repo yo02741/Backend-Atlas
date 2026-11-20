@@ -13,6 +13,17 @@ export default {
       '能依副本數與是否共用資料，在 RWO、RWX、ReadWriteOncePod 與物件儲存之間做選擇，並說明 Deployment 掛 RWO 時遇到 Multi-Attach 的原因',
       '能把需要固定名稱與各自資料的服務寫成 StatefulSet 加 headless Service，並說明縮減副本、節點故障時 PVC 與 Pod 會怎樣',
     ],
+    challenge: {
+      task: '先做 [修好報表服務的 PVC 與 Deployment](#/exercise/k8s-storage-1)。再照 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 建 kind 叢集，用預設的 StorageClass 建一個 PVC 與單一副本的 Deployment，往 volume 寫一個帶時間戳的檔案，然後依序：刪 Pod、刪掉 Deployment 再重建、刪掉 PVC 再重建。每一步之後檢查檔案還在不在，並記下 `kubectl get pv` 的 STATUS 與 RECLAIM POLICY。',
+      deliver: '三步各一列：操作、檔案在不在、PV 的 STATUS 與 RECLAIM POLICY',
+      check: [
+        '刪 Pod 與重建 Deployment 之後檔案都還在，並說明是因為 PVC 沒變',
+        '刪 PVC 之後檔案消失，並從 `kubectl get pv` 或 StorageClass 看出 reclaimPolicy 是 Delete',
+        '寫出要讓第三步保住資料的設定（`reclaimPolicy: Retain`），以及之後要手動處理的事',
+        '說明這三步為什麼都不能取代備份',
+      ],
+      twist: '用指南的多個 worker 的叢集，把副本數改成 2。先預測第二個 Pod 會停在 ContainerCreating 並出現 Multi-Attach error、停在 Pending，還是和第一個排到同一個節點，再用 `kubectl get pods -o wide` 與 `describe` 驗證，說明 kind 的預設儲存和需要 attach 的區塊儲存差在哪裡。',
+    },
     refs: [
       { label: 'Kubernetes：Volumes', url: 'https://kubernetes.io/docs/concepts/storage/volumes/' },
       { label: 'Kubernetes：Persistent Volumes', url: 'https://kubernetes.io/docs/concepts/storage/persistent-volumes/' },

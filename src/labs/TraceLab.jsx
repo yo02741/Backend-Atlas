@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Callout, Stats, Stat, LineChart, Caption, useWidth, fmtN, fmtMs } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Callout, Stats, Stat, LineChart, Caption, useWidth, fmtN, fmtMs, Measure } from './ui.jsx'
 
 /* ============================================================
    可觀測性：用 trace id 把 metrics、trace、log 串起來
@@ -168,7 +168,7 @@ export default function TraceLab() {
             <SpanInfo span={picked} tr={tr} all={all} />
           </LabStage>
           <Stats min={130}>
-            <Stat label="這個請求總耗時" value={fmtMs(total)} tone={total > 1000 ? 'bad' : 'ok'} note={`trace ${tr.id}`} />
+            <Stat label="這個請求總耗時" value={<Measure kind="set" value={fmtMs(total)} />} tone={total > 1000 ? 'bad' : 'ok'} note={`trace ${tr.id}`} />
             <Stat label="最慢的 span" value={slow.name.replace(/（.*）/, '')} note={`${SVC[slow.svc].name} · 自身 ${fmtN(selfMs(slow, tr.spans))} ms`} tone={total > 1000 ? 'warn' : ''} />
             <Stat label="span 數" value={tr.spans.length} unit="個" note={tr.orphan ? `另有 ${tr.orphan.length} 個在別條 trace` : '都在同一條 trace'} tone={tr.orphan ? 'bad' : ''} />
             <Stat label="有帶 trace id 的日誌" value={`${Math.round((tagged.length / mine.length) * 100)}%`} note={`這個請求 ${mine.length} 行裡的 ${tagged.length} 行`} tone={tagged.length < mine.length ? (tr.orphan ? 'bad' : 'warn') : 'ok'} />

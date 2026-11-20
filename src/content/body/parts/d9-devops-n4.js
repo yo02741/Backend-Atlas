@@ -13,6 +13,17 @@ export default {
       '能從 `kubectl get pdb` 與 drain 的輸出判斷 drain 會不會卡住、卡在哪個 PDB，以及該改副本數、PDB 還是排程容量',
       '能寫出 etcd 快照與 kubeadm 憑證檢查、更新的步驟，並說明還原演練要驗證什麼、哪些東西不在 etcd 快照裡',
     ],
+    challenge: {
+      task: '在 kind 叢集（[本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)）練一次「備份 → 弄壞 → 還原」：部署 clinic-api 與資料庫並 seed 資料，記下一筆查得到的資料；匯出 namespace 的資源定義、另外 dump 資料庫；刪掉整個 namespace；照你寫的步驟還原。演練的完成條件是用 API 查回那筆資料。最後做 [這次 drain 會不會被 PDB 擋住](#/exercise/k8s-operations-1)。',
+      deliver: '一份演練紀錄：備份了什麼、還原的步驟與耗時、還原後用 API 查回那筆資料的輸出',
+      check: [
+        '完成的證據是 API 查回刪除前記下的那筆資料，不是還原指令沒有報錯',
+        '紀錄寫出還原的總耗時，並和自己訂的 RTO 比較',
+        '列出這次沒備份到、還原時要另外補的東西（例如 Secret、PVC 的內容、叢集層級的物件）',
+        '寫出下一次升級前要重跑的同一套步驟',
+      ],
+      twist: '還原用的 YAML 裡有一份是從更舊的叢集留下來的，用著已被移除的 apiVersion（例如 `policy/v1beta1` 的 PodDisruptionBudget）。先預測還原會在哪一步失敗、錯誤訊息長什麼樣，再對照 [升級前找出已被移除的 apiVersion](#/exercise/k8s-operations-2) 寫出事前找出這類檔案的方法。',
+    },
     refs: [
       { label: 'Kubernetes：Releases', url: 'https://kubernetes.io/releases/' },
       { label: 'Kubernetes：Version Skew Policy', url: 'https://kubernetes.io/releases/version-skew-policy/' },

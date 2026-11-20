@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, Flow, Caption, Code, useTicker } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, Flow, Caption, Code, useTicker, Measure } from '../ui.jsx'
 
 /* 多環境設定情境模擬器：同一條 CI → 測試 → 預備 → 正式 → 合作醫院的部署線，三種放設定的方法。
    ① 跑一次部署：每個環境跑的是哪一份建置、SSO 連到哪裡、CSP 有沒有擋下設定
@@ -220,7 +220,7 @@ export default function EnvConfigScenarioLab() {
             <Stat label="建置次數" value={builds} />
             <Stat label="正式跑的是測試過的那份" value={prodTested ? '是' : '否'} tone={prodTested ? 'ok' : 'warn'} />
             <Stat label="設定正確的環境" value={`${okCount} / ${ENVS.length}`} tone={okCount === ENVS.length ? 'ok' : 'bad'} />
-            <Stat label="關掉功能要多久" value={`${total} 分`} tone={total <= 5 ? 'ok' : 'bad'} />
+            <Stat label="關掉功能要多久" value={<Measure kind="set" value={total} unit="分" />} tone={total <= 5 ? 'ok' : 'bad'} />
             <Stat label="首頁多的請求" value={opt === 'config-js' ? 1 : 0} note={opt === 'config-js' ? '同步的 config.js' : ''} />
             <Stat label="CSP script-src 'self'" value={cspOk ? '通過' : '擋下'} tone={cspOk ? 'ok' : 'bad'} />
           </Stats>

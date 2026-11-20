@@ -157,6 +157,8 @@ ORDER BY dept_code, how;
 - 指標清單和 view 要一起改、一起審查。放在 git 裡，透過 merge request 修改，就有版本與核准紀錄。
 - 給 agent 的資料庫帳號只授權 `SELECT` 指標 view 與 `metrics` 表（`GRANT SELECT ON m_registrations, metrics TO agent_ro;`），原始表不給。
 
+:::stop 讀到這裡可以先停：會替一個指標寫出完整定義，用 view 實作並讓 agent 只查 view。後面的定義檔格式、現成工具與常見錯誤，在指標多到要版控或要評估 dbt、Cube 時再回來讀。
+
 ### 定義怎麼寫成檔案
 
 很多團隊把定義寫成 YAML，再由工具或腳本產生 view 與文件。格式沒有標準，但欄位要齊全：
@@ -179,7 +181,7 @@ metrics:
 | 工具 | 定位 |
 |---|---|
 | 資料庫 view + 指標清單 | 最小做法；適合指標少、使用者集中在同一個資料庫 |
-| dbt 的 semantic layer（metrics） | 指標定義寫在 dbt 專案裡，跟轉換模型一起版控，由查詢服務產生 SQL |
+| dbt Semantic Layer（MetricFlow） | 指標定義寫在 dbt 專案裡，跟轉換模型一起版控，由 MetricFlow 產生 SQL。舊的 `dbt_metrics` 套件從 dbt-core 1.6（2023 年 7 月）起不再維護，網路上的舊範例多半是它 |
 | Cube | 獨立的語意層服務，對外提供查詢 API、權限與快取，多個前端與工具共用 |
 
 這些工具解決的都是「定義只寫一份、到處一致」。它們不會替你決定作廢單算不算掛號，那仍是負責人要定下來的事。工具的版本與功能變動很快，導入前以官方文件為準。

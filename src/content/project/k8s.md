@@ -414,3 +414,19 @@ manifest 加 `runAsUser: 10001`，或 Dockerfile 改成 `USER 10001`。
 2. 執行 manifest 檢查那段，把 Deployment 的 `matchLabels` 改成 `{"app": "clinic"}`，看多出哪一條。
 3. 做下面三道驗收題。
 4. 有 Docker 的話，照參考專案的 [在本機的 Kubernetes 叢集跑 clinic-api](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)，用 kind 把這一階段的 manifest 在真的叢集上套用一次、做一次滾動更新，再故意弄壞六次，照排錯課的順序查出原因。
+
+## 串接驗收
+
+**1. 準備一個在跑的版本。** 照後端參考專案的 [在本機的 Kubernetes 叢集跑 clinic-api](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md)，用 `scripts/kind-up.sh` 建好叢集，`kubectl -n clinic port-forward service/clinic-api 8000:80` 之後跑 `scripts/smoke.sh`。另開一個終端機持續打 `/ready`，數失敗的次數：
+
+```bash
+fail=0; while true; do curl -sf -o /dev/null http://127.0.0.1:8000/ready || fail=$((fail+1)); echo "失敗 $fail"; sleep 0.5; done
+```
+
+預期：smoke 每一行都是 `ok`，失敗次數 0。
+
+**2. 發一個壞版本。** 照那份文件的練習 5 把 readiness 的路徑改成 `/readyz`。先預測：有幾個舊 Pod 繼續服務、失敗次數會不會增加、`kubectl -n clinic rollout status deployment/clinic-api --timeout=60s` 怎麼結束。預期：兩個舊 Pod 都還是 Ready、失敗次數不變、`rollout status` 逾時後以非 0 的結束碼退出。放在 CI 裡，這就是 deploy job 失敗的那一刻。
+
+**3. 回退並確認。** 執行 `kubectl -n clinic rollout undo deployment/clinic-api`，再跑一次 `rollout status` 與 `smoke.sh`。預期：`successfully rolled out`、smoke 全部 `ok`；`kubectl -n clinic get rs` 裡壞掉的那個 ReplicaSet 副本數是 0；整段期間失敗次數仍是 0。
+
+**4. undo 救不了的情況。** 寫下一個會讓步驟 3 失效的 migration，對照「上線順序」那張表說明要怎麼拆。預期：同一版刪欄位或改名時，退回去的舊版查不到欄位；要拆成先 expand、確定不回滾之後下一版再 contract。對照[第 7 階段](#/project/ship)：回退的單位是映像 tag（commit SHA），舊的 tag 要還留在 registry 裡。

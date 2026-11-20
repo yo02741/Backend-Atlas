@@ -135,6 +135,8 @@ CMD ["uv", "run", "--no-sync", "uvicorn", "main:app", "--host", "0.0.0.0"]
 
 `--no-dev` 不裝 dev 群組；`--no-install-project` 先只裝依賴、不裝專案本身，讓依賴那一層的快取不受程式碼變動影響。正式環境建議把 uv 映像的標籤釘成特定版本，而不是 `latest`；Dockerfile 的分層快取細節見 [幫 Python 專案寫好 Dockerfile](#/skill/dockerfile-python)。
 
+:::stop 讀到這裡可以先停：會從零建專案，在 CI 與 Docker 用 lock 裝出同一組版本。後面的版本比對與沒有 lock 時的解析差異，在版本範圍解出意外的結果時再回來讀。
+
 ### 在瀏覽器裡看版本規格怎麼比對
 
 ```python run

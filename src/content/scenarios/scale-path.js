@@ -63,6 +63,22 @@ export default {
     { id: 'budget', situation: '預算只夠做一件事。單機 API 的 CPU 已經 90%，DB 只有 20%，活動尖峰只有 3 小時。', options: ['vertical', 'horizontal', 'cache', 'db'], answer: 'horizontal',
       explain: '瓶頸明確在 API 的 CPU，DB 還很閒，快取與 DB 層都不是對症。升級機器有天花板而且 3 小時後退不掉；水平擴展在活動時開 10 台、結束縮回 1 台，只付 3 小時的錢。前提是先把 session 搬到 Redis，這正是那「一件事」。' },
   ],
+  switchIf: [
+    { when: '量測顯示 API 實例的 CPU 不到一半，PostgreSQL 的讀已經到頂，讀占 95% 以上', then: '先做 `cache`：瓶頸在讀，多開 API 實例只會讓更多請求打到同一台資料庫。' },
+    { when: '尖峰只到 1,000 QPS 左右，單機 CPU 是唯一吃緊的資源', then: '只做 `vertical`：多開 uvicorn worker 就夠，無狀態化與負載平衡等流量真的到了再做。' },
+    { when: '寫入比例升到三成以上，主庫的 commit 與 fsync 先開始排隊', then: '先做 `db`：寫入走佇列批次落地、pgbouncer 收斂連線；快取擋不了寫。' },
+  ],
+  alternative: { option: 'horizontal', holdsWhen: 'session 與上傳檔案已經不在本機、資料庫還有餘裕，而且預算允許活動期間多開機器時。它最快拉開 API 這一層的上限，但「實例數 × 每台連線池大小」要算進 `max_connections`。' },
+  challenge: {
+    task: '用本頁的模擬器從「起點」擴充到 10 萬 QPS，每一步之前先拿出瓶頸證據：把「QPS（對數）」拉到目前配置撐不住的位置，記下六張元件卡片裡使用率最高的是哪一個、數字多少，再決定動哪個控制項（API 實例數、升級機器、快取命中率、pgbouncer 連線池、讀取副本數、寫入走佇列）。不照 ①–⑦ 的按鈕順序走，順序自己決定。',
+    deliver: '一張表：每一步的「證據（元件與使用率）→ 動作 → 動作後撐到多少 QPS」',
+    check: [
+      '每一列的動作都對應到上一列證據裡使用率最高的元件',
+      '至少一列記到「連線數超過 max_connections」，並寫出是哪個控制項造成的',
+      '最後一列在 10 萬 QPS 下撐得住，並寫出這組配置的每月示意成本',
+    ],
+    twist: '把「讀的比例」從 90% 拉到 70%。先預測你最後那組配置第一個爆的元件會換成誰、要再動哪個控制項，再到模擬器驗證。',
+  },
   implementation: [
     { title: '無狀態化檢查清單（水平擴展的前提）', lang: 'yaml', code: `session:         # 放 Redis，不放程序記憶體；cookie 只帶 session id
   store: redis

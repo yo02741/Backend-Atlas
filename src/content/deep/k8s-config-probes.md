@@ -200,6 +200,8 @@ A 是 readiness 的正常用途：一個 Pod 出問題，它被移出、恢復�
 - **QoS 類別**由這些數字決定，共三種：`Guaranteed`（每個容器的 CPU 與記憶體都有 requests，而且等於 limits）、`Burstable`（有設定但不符合 Guaranteed）、`BestEffort`（完全沒設定）。節點記憶體不足時的驅逐順序見容量規劃那一課。
 - namespace 設了 ResourceQuota 限制 CPU 或記憶體時，沒寫對應 requests、limits 的 Pod 會被拒絕建立；管理者可以用 LimitRange 給預設值。
 
+:::stop 讀到這裡可以先停：會用 ConfigMap 與 Secret 注入設定、替三種探針選端點、寫出 requests 與 limits。後面的 HPA、優雅關機與非 root 執行，在服務要上正式環境、需要自動擴展或更新時不掉請求時再回來讀。
+
 ## HPA：依指標調整副本數
 
 ```yaml
@@ -290,7 +292,7 @@ for current, usage, request in cases:
                 command: ["sleep", "5"]     # 映像裡要有 sleep 這個指令
 ```
 
-較新的 Kubernetes 版本另有內建的 sleep 動作，不需要映像裡有 `sleep`，使用前先確認叢集版本支援。
+Kubernetes 另有內建的 sleep 動作，寫成 `preStop: { sleep: { seconds: 5 } }`，不需要映像裡有 `sleep`：1.29 是 alpha、1.30 起是預設開啟的 beta、1.34 起是正式功能（2026 年 11 月依 Kubernetes 的 feature gate 文件核對）。叢集比 1.30 舊時用上面的 `exec` 寫法。
 
 另外兩個條件：程式本身要處理 SIGTERM；容器的主程序（PID 1）要是應用程式本身，訊號才送得到。Dockerfile 的 `ENTRYPOINT` 用 shell form 時，PID 1 是 shell，訊號不會轉給程式，見 [幫 Python 專案寫好 Dockerfile](#/skill/dockerfile-python)。
 

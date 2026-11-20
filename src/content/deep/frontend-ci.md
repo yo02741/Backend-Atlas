@@ -209,6 +209,8 @@ export default defineConfig({
 })
 ```
 
+:::stop 讀到這裡可以先停：會寫一份跑 `npm ci`、lint、型別檢查、測試與建置的 workflow，從 exit code 判斷哪一步該擋。後面的大小檢查與錯誤訊息，在 CI 穩定、要加新的關卡時再回來讀。
+
 ### 再加一道：首頁 JS 的大小
 
 [bundle、chunk 與 hash](#/skill/bundles-chunks) 談過首頁該下載多少。可以在 `build` 之後加一步，超過預算就失敗：

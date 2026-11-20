@@ -279,6 +279,8 @@ print("全部測試通過")
 
 這不代表資料層不用測：`PostgresCouponRepository` 本身要用實際的 PostgreSQL 做整合測試（SQL 寫錯、約束、交易，fake 都測不到），見 [測試金字塔與 pytest](#/skill/testing)。分層之後，這兩種測試各自變得小而清楚。
 
+:::stop 讀到這裡可以先停：會把 handler、service、repository 拆開，用 Protocol 換上記憶體版 repository 測試。後面的代價與界線，在小專案猶豫要不要分層時再回來讀。
+
 ## 分層的代價與界線
 
 分層不是越多越好：

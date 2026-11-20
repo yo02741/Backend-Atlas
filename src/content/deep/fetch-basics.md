@@ -136,6 +136,8 @@ const req = new Request('https://api.example.com/appointments', { method: 'POST'
 console.log('物件當 body →', req.headers.get('Content-Type'), await req.text())
 ```
 
+:::stop 讀到這裡可以先停：會判斷 fetch 什麼時候 reject、送 JSON 要設什麼、怎麼讀回應與設逾時。後面的 apiFetch 把錯誤分成三類，在專案要統一處理所有請求時再回來讀。
+
 ### 一個分類清楚的 apiFetch
 
 專案裡所有請求都經過同一個函式，畫面只需要處理三類錯誤：回應不是 2xx（`ApiError`，帶狀態碼與 Problem Details）、逾時、網路錯誤。下面用假的 fetch 模擬六種回應，`apiFetch` 本身的寫法和真的專案相同（把 `fakeFetch` 換成 `fetch`）：

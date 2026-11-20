@@ -161,3 +161,21 @@ const staleText = computed(() => {
 **失敗時的處理**：`POLL_MS` 題目設 100 ms、`MAX_MS` 1600 ms，假 API 依序回「成功、503、503、503、成功、成功」。503 時清單留著、`role="status"` 出現「更新失敗」；第 3 次連續失敗後的等待至少 350 ms，而且至少是第 1 次失敗後的兩倍（抖動乘上 0.5 到 1 時這個比例仍然成立）；成功後的下一次間隔小於 250 ms、提示清空；403 時出現 `role="alert"`，之後不再送出請求。
 
 下一階段回頭整理前面的畫面：鍵盤操作、焦點、螢幕閱讀器，以及手機與桌機的版面。
+
+## 串接驗收
+
+後端參考專案沒有 `/api/board`，這一段在 Playground 的 Vue 模式做：貼上 `usePolling`（拿掉 `export`），寫一個最小的看板，`interval: 1000, maxInterval: 8000`，fetcher 用 `fetch('/api/board')`，非 2xx 時丟出帶 `status` 的錯誤。在 `createApp` 之前加：
+
+```js
+api.get('/api/board', [
+  { body: [{ room: '101', doctor: '林醫師', current_no: 3, waiting: 5 }] },
+  { network: true }, { network: true }, { network: true },
+  { body: [{ room: '101', doctor: '林醫師', current_no: 7, waiting: 2 }] },
+])
+```
+
+**1. 斷線時保留舊資料。** 先預測：斷線的那三次畫面顯示幾號、恢復後顯示幾號、中間會不會出現 4、5、6 號。預期：斷線時一直是 3 號，並標出「更新失敗，顯示的是 … 的資料」；恢復後直接是 7 號，4 到 6 號不會出現。
+
+**2. 恢復要等多久。** 用 `backoff` 的公式算出第 3 次失敗之後最多要等幾毫秒，再在 fetcher 裡 `console.log(Date.now())` 對照實際的間隔。預期：第 n 次失敗後等 `min(maxInterval, interval × 2^n)` 的 0.5 到 1 倍，第 3 次是 4000 到 8000 ms。換成正式的設定（10 秒、上限 120 秒），連續失敗 3 次之後最久 80 秒才再試；候診區等不了這麼久的話，調低上限，或在 `online` 事件時呼叫 `refresh()`。
+
+**3. 什麼時候才要補號。** 這個看板每次拿到的是完整快照，漏掉的中間狀態不用補。寫下看板加上「最近叫過的 5 個號碼」時快照要多帶什麼，以及改用 SSE 時斷線重連怎麼補。預期：快照多帶 `recent: [3, 4, 5, 6, 7]` 就不用補；SSE 要靠事件 id 與重連時送出的 `Last-Event-ID`，由伺服器重送漏掉的事件（[報到看板的即時更新](#/scenario/realtime-board)）。下一階段用鍵盤與螢幕閱讀器重走前面五個畫面。

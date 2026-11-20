@@ -182,6 +182,8 @@ queueMicrotask(step)
 await new Promise((r) => setTimeout(r, 100))
 ```
 
+:::stop 讀到這裡可以先停：排得出同步程式、microtask 與 task 的順序，知道 `await` 之後的程式何時執行。後面的切段執行與 Vue 元件寫法，在按下按鈕畫面卡住或 Performance 出現長 task 時再回來讀。
+
 ### 一次跑完與切段執行
 
 ```js run

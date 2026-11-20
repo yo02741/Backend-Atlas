@@ -181,6 +181,8 @@ const text = computed(() =>
 
 `<script setup generic="…">` 是 Vue 3.3 起的泛型元件寫法，讓 `columns` 的 `key` 只能是 `Row` 的欄位名。用 TypeScript 時可以再加 `defineSlots<{ … }>()` 宣告每個 slot 的參數型別。
 
+:::stop 讀到這裡可以先停：會用具名與作用域 slot 讓頁面決定一塊畫面，用 provide／inject 傳跨層的設定。後面的 React 對照與錯誤訊息表，在讀 React 的 children 與 Context 時再回來讀。
+
 ## React 對照
 
 | Vue 3.5 | React 19 |

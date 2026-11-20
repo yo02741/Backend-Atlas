@@ -220,6 +220,8 @@ db.orders.find({ status: "paid", created_at: { $gte: ISODate("2026-09-01") } })
 
 不同版本的 explain 輸出排列不完全一樣（例如啟用 slot-based 執行引擎時，計畫的結構會不同），但 stage 名稱與 executionStats 這幾個數字的意義相同。aggregation 也可以 explain：`db.orders.explain("executionStats").aggregate([...])`，看開頭的 `$match` / `$sort` 有沒有變成 IXSCAN。
 
+:::stop 讀到這裡可以先停：會寫查詢運算子與 aggregation pipeline，依 ESR 排複合索引，並用 explain 的三個數字確認。後面的交易、writeConcern 與讀取偏好，在跨文件寫入或用到 replica set 時再回來讀。
+
 ## 交易、writeConcern 與讀取偏好
 
 ### 多文件交易

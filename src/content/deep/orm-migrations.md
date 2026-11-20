@@ -22,7 +22,7 @@ SELECT users.id, users.name FROM users WHERE users.id = 42
 
 ## ORM 做了什麼
 
-ORM（Object-Relational Mapping）把資料表映射成類別、把列映射成物件。以 SQLAlchemy 2.0 為例：
+ORM（Object-Relational Mapping）把資料表映射成類別、把列映射成物件。以 SQLAlchemy 2.0 起的寫法為例（2026 年 11 月核對時最新是 2.1 版，本課用到的 API 在 2.1 相同）：
 
 | 機制 | 做什麼 |
 |---|---|
@@ -219,6 +219,8 @@ def downgrade() -> None:
 
 - 欄位 `name` 改名成 `full_name`，它看到的是少了一欄、多了一欄，產生**刪欄 + 加欄**，套用下去資料就沒了。改名要自己處理，而且通常不能直接改名（見下一節）。
 - 有些變更偵測不到或不完整，以 Alembic 文件列出的限制為準；它也不會替你考慮鎖與大表。
+
+:::stop 讀到這裡可以先停：會從 SQL log 認出 N+1 並改用 eager loading，也知道 migration 怎麼記錄版本。後面的安全上線做法與部署順序，在要改一張已有資料的表時再回來讀。
 
 ## 可安全上線的 migration
 

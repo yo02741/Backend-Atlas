@@ -49,6 +49,7 @@ export default {
       example: { primary: 'python:3.12-slim + uv', alts: ['distroless', 'alpine（小心 musl 相容性）'] },
       keywords: ['Docker', 'Python', 'uv'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'container-registry',
@@ -70,6 +71,7 @@ export default {
       example: { primary: 'Docker Compose v2', alts: ['Tilt / Skaffold（k8s 本機）', 'devcontainer'] },
       keywords: ['docker-compose', 'Docker', 'nginx', 'PostgreSQL'],
       lab: 'ComposeLab',
+      reviewed: '2026-11',
     },
     {
       id: 'nginx',
@@ -80,6 +82,7 @@ export default {
       example: { primary: 'nginx', alts: ['Caddy（自動 TLS）', 'Traefik（容器導向）', '雲端負載平衡器'] },
       keywords: ['nginx', 'Docker'],
       lab: 'NginxLab',
+      reviewed: '2026-11',
     },
     {
       id: 'spa-containers',
@@ -132,6 +135,7 @@ export default {
       example: { primary: 'S3 相容 API（boto3）', alts: ['Google Cloud Storage', 'Cloudflare R2', 'Azure Blob Storage', '地端自建（MinIO、Ceph RGW）'] },
       keywords: ['Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'cloud-basics',
@@ -142,6 +146,7 @@ export default {
       example: { primary: '容器平台 + 受管 PostgreSQL + 物件儲存', alts: ['VM + docker compose（小專案）', 'Serverless（事件驅動）', 'Kubernetes（多服務、大團隊）'] },
       keywords: ['Docker'],
       lab: null,
+      reviewed: '2026-11',
     },
   ],
 }

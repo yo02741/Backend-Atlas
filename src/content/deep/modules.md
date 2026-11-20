@@ -194,6 +194,8 @@ import BarChart from '@/components/BarChart.vue'           // .vue 檔：預設�
 
 具名匯出讓每個檔案用同一個名字，編輯器的自動匯入與重新命名也比較準。很多團隊的慣例是「元件用預設匯出，其他都用具名匯出」。
 
+:::stop 讀到這裡可以先停：會對上具名與預設匯出、讀懂 `package.json` 與 lock 檔、用 `import()` 拆出頁面。後面的 alias、新增套件的步驟與錯誤表，在設定路徑別名或加新套件時再回來讀。
+
 ### `vite.config.js` 的 alias
 
 ```js

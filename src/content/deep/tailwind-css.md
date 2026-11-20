@@ -161,6 +161,8 @@ const statusClass = {
 
 `bg-(--badge-bg)` 是 v4 的寫法，產生 `background-color: var(--badge-bg)`。
 
+:::stop 讀到這裡可以先停：會讀一個 class、用 `@theme` 定 token，寫出掃描得到的完整 class 字串。後面的層與 class 順序，在呼叫端傳的 class 蓋不過元件的預設樣式時再回來讀。
+
 ### 層：誰蓋過誰
 
 Tailwind 產出的 CSS 開頭是：

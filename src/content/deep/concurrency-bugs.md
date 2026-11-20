@@ -44,7 +44,7 @@ lost update 是 read-modify-write 的結果；用庫存扣減說明 lost update 
 
 在同一個程序裡，多個執行緒或多個 async task 共用記憶體。
 
-**執行緒**：CPython 有 GIL（全域直譯器鎖），但 GIL 只保證「一次只有一個執行緒在跑 bytecode」，不保證你的一行程式是原子的。`counter += 1` 會被拆成「讀 counter、加一、寫回」幾個 bytecode，執行緒可能在中間被切換。Python 3.13 起還有實驗性的 free-threaded 版本（沒有 GIL），共用狀態沒有加鎖的問題只會更明顯。
+**執行緒**：CPython 有 GIL（全域直譯器鎖），但 GIL 只保證「一次只有一個執行緒在跑 bytecode」，不保證你的一行程式是原子的。`counter += 1` 會被拆成「讀 counter、加一、寫回」幾個 bytecode，執行緒可能在中間被切換。Python 3.13 起另有 free-threaded 版本（沒有 GIL；3.13 標為實驗性，3.14 起列為正式支援，但仍是另外安裝的版本，不是預設），在這種版本上，共用狀態沒有加鎖的問題只會更明顯。
 
 ```python
 import threading
@@ -178,6 +178,8 @@ SELECT * FROM coupon_claims;
 Redis 的 `SET lock:job value NX PX 30000` 可以當作跨主機的鎖，但它有一個根本的問題：鎖有到期時間。持有鎖的程序如果卡住（GC 暫停、網路延遲、主機暫停）超過 30 秒，鎖自動到期、另一個程序拿到鎖，原本的程序醒來後並不知道自己已經失去鎖，兩個程序同時在做。要靠它保證正確性，被保護的資源還得檢查一個遞增的 fencing token，拒絕舊持有者的寫入。
 
 所以順序是：能用唯一約束或條件更新解決的，就不要用分散式鎖。分散式鎖適合「重複做只是浪費、不會出錯」的場合，例如避免兩台主機同時重建同一份快取。
+
+:::stop 讀到這裡可以先停：會認出 check-then-act 與 lost update，用 asyncio 重現再用鎖修好，並把「不能重複」交給唯一約束與條件更新。後面的死結，在看到 `deadlock detected` 或要同時鎖兩列時再回來讀。
 
 ## 死結
 

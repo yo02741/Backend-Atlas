@@ -192,7 +192,7 @@ build-image:
 
 deploy-production:
   stage: deploy
-  image: alpine:3.20
+  image: alpine:3.22
   script:
     - ./deploy.sh "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" "$DEPLOY_TOKEN"
 `,
@@ -211,7 +211,7 @@ build-image:
 
 deploy-production:
   stage: deploy
-  image: alpine:3.20
+  image: alpine:3.22
   needs: [build-image]
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

@@ -178,6 +178,8 @@ deployment.apps/booking-web rolled back
 
 新版的 readiness 一直不通過時，滾動更新會停住，舊版 Pod 繼續服務。資料庫 schema 變更要讓新舊版本能同時運作，見 [部署策略與資料庫遷移](#/skill/cd-strategies)。
 
+:::stop 讀到這裡可以先停：會畫出 web 加 DB 系統用到的物件，說出 readiness 與 liveness 在滾動更新時各做什麼。後面的地端自建、雲端代管與團隊要先具備的能力，在要決定叢集放哪裡、評估要不要導入時再回來讀。
+
 ## 地端自建：要自己補的東西
 
 Kubernetes 本身只包含控制平面（API server、scheduler、controller manager、etcd）與節點上的 kubelet。雲端代管服務把周邊的整合都做好了；地端自建時，下面這些都要自己選、自己裝、自己維運：

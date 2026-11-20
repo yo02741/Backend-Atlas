@@ -90,10 +90,27 @@ export function TestResults({ results }) {
   )
 }
 
-/* 執行環境載入狀態（Python / PostgreSQL / 沙箱 iframe 的 Vue） */
+/* 判分說明：這題驗了什麼。題目的 verifies（字串）優先，否則用題型的預設 */
+export const VERIFIES = {
+  config: '只檢查設定檔的文字，沒有啟動服務。',
+  sql: '比對查詢結果與預期資料表。',
+  python: '執行測試清單。',
+  js: '執行測試清單。',
+  html: '在沙箱裡照測試操作畫面並量測。',
+  css: '在沙箱裡照測試操作畫面並量測。',
+  vue: '在沙箱裡照測試操作畫面並量測。',
+}
+export function Verifies({ exercise: ex }) {
+  const text = typeof ex.verifies === 'string' && ex.verifies.trim() ? ex.verifies : VERIFIES[ex.kind]
+  if (!text) return null
+  return <p className="ex-verifies"><b>這題驗了什麼</b><span>{text}</span></p>
+}
+
+/* 執行環境載入狀態（Python / PostgreSQL / 沙箱 iframe 的 Vue）。
+   activity（選填，Playground 用）：{ tone: 'info' | 'busy' | 'ok' | 'error', text } 接在後面，同一列顯示切換語言、執行中、預覽就緒等狀態 */
 const NOOP_SUB = () => () => {}
 const READY = () => 'ready'
-export function RuntimeStatus({ kind, tailwind = false, elementPlus = false }) {
+export function RuntimeStatus({ kind, tailwind = false, elementPlus = false, activity = null }) {
   // html、css 題不需要下載任何東西；vue 題第一次執行時下載自架的 Vue（import pinia、vue-router 時另外下載，各幾十 KB）；
   // 用到 Tailwind 的 html、vue 題（tailwind）第一次執行時下載 @tailwindcss/browser（約 0.3 MB）；
   // import element-plus 的 vue 題另外下載 Element Plus（JS 約 0.9 MB，樣式約 0.36 MB）
@@ -111,6 +128,7 @@ export function RuntimeStatus({ kind, tailwind = false, elementPlus = false }) {
   return (
     <span className={`rt-status ${s}`} title={`${label}：${text}`}>
       <i aria-hidden="true" /> {label} · {text}
+      {activity?.text && <span className={`rt-activity ${activity.tone || 'info'}`}> · {activity.text}</span>}
     </span>
   )
 }

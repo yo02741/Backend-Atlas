@@ -63,6 +63,21 @@ export default {
     { id: 'public-paid', situation: '對外公開 API，付費合作夥伴幾十家、各家整合時程不同，每年會累積好幾個破壞性變更。', options: ['additive', 'path', 'header', 'expand-contract'], answer: 'path',
       explain: '夥伴需要一條清楚的線：`/v1` 到某天為止、`/v2` 從某天開始，文件、SDK、Sunset 標頭都對得上。expand–contract 靠「舊欄位用量歸零」收尾，幾十家外部客戶的節奏你控制不了。標頭版本也可行，但夥伴在瀏覽器、curl、日誌裡看不到版本，支援成本高。' },
   ],
+  switchIf: [
+    { when: '舊欄位可以一直留著，合作夥伴的整合程式沒人維護、也不會再改', then: '改選 `additive`：只加不改，舊客戶端永遠安全；接受 `customer_name` 這類欄位刪不掉。' },
+    { when: '對外公開的付費 API，幾十家合作夥伴各自的時程，每年累積好幾個破壞性變更', then: '改選 `path`：`/v2` 讓每家自己排切換時間，`/v1` 原樣維持到 Sunset 日，版本在 URL 上也好除錯與快取。' },
+  ],
+  alternative: { option: 'path', holdsWhen: '合作夥伴偏好一次切到新格式、能在 90 天內改完，而團隊願意把 `/v1` 維護到 iOS 舊版退場時。' },
+  challenge: {
+    task: '部署當下還有一種模擬器沒畫的客戶端：昨天打開、一直沒重新整理的 Web 分頁，它跑舊版 JavaScript，讀 `status` 字串與 `customer_name`。在上方模擬器打開「拆欄位」與「改型別」，先預測五種做法下這個舊分頁在後端上線那一刻會不會壞；再看各做法回給舊客戶端的回應 body 對照（「/v2 路徑」與「標頭選版」切「看哪個版本的回應」，「Expand–contract」逐階段按）。最後寫出 Expand–contract 的第 ④ 階段要排在 Web 上線後多久，以及你怎麼確認舊分頁已經不在。',
+    deliver: '一張五種做法的「舊分頁會不會壞」預測與實際對照，加一段五行內的部署順序（含確認舊分頁消失的訊號）',
+    check: [
+      '「直接改」那一列預測會壞，並指出舊分頁讀不到哪個欄位、畫面上會出現什麼',
+      '第 ④ 階段不排在 Web 上線同一天，間隔有根據（例如登入 session 的最長時數，或舊版前端的請求量歸零）',
+      '確認訊號量得到：請求帶前端版本（例如 `X-Client-Version`）並在監控看舊版的請求數，不是「應該都重新整理了」',
+    ],
+    twist: '前端改成部署後在背景偵測新版本，跳出「有新版本，重新整理」的提示，但不強制。先預測第 ④ 階段能提前多少、哪些使用者仍會停在舊分頁（例如表單填到一半的人），再說出 API 端還要保留什麼才能安全刪欄。',
+  },
   implementation: [
     { title: 'deprecated 欄位的回應：欄位還在，用標頭告知停用日（Deprecation 是標記時間點、Sunset 是停止服務日）', lang: 'http', code: `GET /orders/42 HTTP/1.1
 Accept: application/json

@@ -69,6 +69,8 @@ type="module"  和 defer 相同；加上 async 就和 async 相同
 
 `defer` 與 `async` 只對有 `src` 的一般 script 有作用，寫在行內 script 上會被忽略；用 JavaScript 建立再插入的 script 預設就是 async 的行為。
 
+:::stop 讀到這裡可以先停：會分辨擋解析與擋第一個畫面的資源，替 `<head>` 裡的 script 選 `defer`、`async` 或 module。後面的時間點、下載優先順序與 Vite 的輸出，在主圖很晚才出現或要讀 waterfall 時再回來讀。
+
 ### DOMContentLoaded 與 load
 
 頁面載入過程的幾個時間點，依先後順序：
@@ -93,7 +95,7 @@ type="module"  和 defer 相同；加上 async 就和 async 相同
 | `<link rel="preload" href as>` | 提早下載晚才會被發現的資源 | CSS 裡指定的字型、JS 才會插入的主圖 |
 | `<link rel="modulepreload">` | 提早下載並解析 module | 入口依賴的 chunk（Vite 自動加） |
 
-`fetchpriority` 在 2024 年 10 月成為 Baseline（Chrome 103、Firefox 132、Safari 17.2 起支援）。它只是提示，更舊的瀏覽器忽略這個屬性、照預設的優先順序下載，不必另外寫退路。字型的 preload 要加 `crossorigin`：字型一律用 CORS 模式下載，preload 沒加 `crossorigin` 時兩個請求的模式不同，瀏覽器用不到預先下載的那一份，同一個字型會下載兩次。
+`fetchpriority` 在 2024 年 10 月成為 Baseline（Chrome 101、Firefox 132、Safari 17.2 起支援）。它只是提示，更舊的瀏覽器忽略這個屬性、照預設的優先順序下載，不必另外寫退路。字型的 preload 要加 `crossorigin`：字型一律用 CORS 模式下載，preload 沒加 `crossorigin` 時兩個請求的模式不同，瀏覽器用不到預先下載的那一份，同一個字型會下載兩次。
 
 ### SPA 的首屏
 

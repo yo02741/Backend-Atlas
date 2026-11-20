@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, useReducedMotion, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, useReducedMotion, useWidth, Measure } from '../ui.jsx'
 
 /* 上傳情境模擬器：
    一個 100 MB 的檔案在「客戶端 / API / 物件儲存 / 縮圖 worker」之間怎麼流，三種做法各自經過哪些節點。
@@ -132,9 +132,9 @@ export default function UploadScenarioLab() {
           <Stats min={120}>
             <Stat label="t" value={`${at.toFixed(1)} s`} />
             <Stat label="客戶端送出" value={`${Math.round(sentNow)} MB`} note="檔案 100 MB" tone={sentNow > FILE + 1 ? 'bad' : ''} />
-            <Stat label="API worker 占用" value={`${apiNow.toFixed(1)} s`} tone={apiNow > 5 ? 'bad' : 'ok'} />
-            <Stat label="API 記憶體峰值" value={`${tl.memPeak} MB`} tone={tl.memPeak >= FILE ? 'bad' : 'ok'} />
-            <Stat label="全部完成" value={`${tl.total.toFixed(1)} s`} />
+            <Stat label="API worker 占用" value={<Measure kind="set" value={apiNow.toFixed(1)} unit="s" />} tone={apiNow > 5 ? 'bad' : 'ok'} />
+            <Stat label="API 記憶體峰值" value={<Measure kind="set" value={tl.memPeak} unit="MB" />} tone={tl.memPeak >= FILE ? 'bad' : 'ok'} />
+            <Stat label="全部完成" value={<Measure kind="set" value={tl.total.toFixed(1)} unit="s" />} />
           </Stats>
           <div className="up-conc">
             <Slider label="同時上傳人數" min={1} max={50} value={conc} onChange={setConc} format={(v) => `${v} 人`} />

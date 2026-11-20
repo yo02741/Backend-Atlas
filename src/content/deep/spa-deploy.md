@@ -156,6 +156,8 @@ location /clinic/ {
 
 `/api` 的轉發、`config.js`、容器與 K8s 的部分見 [前端與 nginx 上 K8s](#/skill/spa-containers) 與 [nginx 反向代理](#/skill/nginx)。Firebase Hosting、Netlify 這類平台用設定檔的 rewrite 規則做 fallback，原則相同：確認不存在的 assets 不會被改寫成 `index.html`。
 
+:::stop 讀到這裡可以先停：會設定 `base`、history fallback 與兩種快取，深層連結與重新整理都正常。後面的舊分頁 chunk 處理與部署檢查，在發版後有人回報點頁面變白畫面時再回來讀。
+
 ### 處理 vite:preloadError
 
 ```js

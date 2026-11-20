@@ -203,3 +203,20 @@ async function submit() {
 **送出中、冪等鍵、成功的回饋**：`role="status"` 一開始就在而且是空的，成功後同一個元素顯示「掛號成功：第 N 號」；送出中按鈕停用、再送出也只有一個 POST；第一次網路錯誤、第二次成功時，兩個請求的 `Idempotency-Key` 相同且不是空的；兩次都成功時兩個鍵不同；網路錯誤後病歷號保留。
 
 下一階段是「我的掛號」：列出掛過的號、分頁、取消。
+
+## 串接驗收
+
+從乾淨的資料開始（後端參考專案 `docker compose down -v` 後重跑 README 的三步驟），用[登入](#/project/fe-login)串接驗收的接線，以 `desk1` 登入（櫃台要輸入病歷號）。掛號有限流（每位使用者容量 5、每 6 秒補 1 個），連續送太快會收到 429，各步之間隔幾秒。
+
+**1. 欄位錯誤。** 病歷號留空送出一次、填 `0` 送出一次、填 `3` 送出一次，先預測每次是前端擋下、後端回 422，還是成功。預期：留空由 `required` 擋下，沒有請求；`0` 回 422，訊息在病歷號下方、焦點移到病歷號；`3` 只有在送出的是數字時才成功。參考專案的 `patient_id` 是不做轉型的整數，`v-model` 沒加 `.number` 時送出的是字串 `"3"`，一樣回 422。參考專案的 `errors` 是 `[{ field, message }]`，`toFormErrors` 照樣把訊息放到欄位下。
+
+**2. 額滿與重複。** 診次 1 的名額是 2。替病歷號 1、2 各掛一次，再替 3 掛一次，最後再替 1 掛一次，先預測後兩次的 `type`。預期：第三次是 `session-full`；第四次是 `already-booked`，因為檢查順序是重複 → 名額 → 每日上限（[第 2 階段](#/project/domain)）。兩次的 `role="alert"` 文案不同、表單內容都保留。
+
+**3. 按兩次與重送。** 連點「送出」兩下，預期 Network 只有一個 POST。再在 Console 用同一個 `Idempotency-Key` 送兩次同樣的掛號（token 從 Network 裡登入的回應複製）：
+
+```js
+const h = { 'Content-Type': 'application/json', Authorization: 'Bearer <desk1 的 access_token>', 'Idempotency-Key': 'demo-key-1' }
+for (const i of [1, 2]) console.log((await fetch('/api/sessions/2/appointments', { method: 'POST', headers: h, body: '{"patient_id":3}' })).status)
+```
+
+預期：201、409。參考專案沒有實作 `Idempotency-Key`，網路錯誤後的重送如果第一次已經寫進資料庫，會收到 `already-booked`。寫下這種情況畫面要說什麼（例如「這筆可能已經掛好，請到我的掛號確認」）；下一階段的[我的掛號](#/project/fe-appointments)就是確認的地方。

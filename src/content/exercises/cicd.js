@@ -145,8 +145,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install uv
@@ -158,8 +158,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://app:test-only@localhost:5432/app_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install uv
@@ -172,13 +172,13 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: \${{ github.actor }}
           password: \${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           push: true
           tags: ghcr.io/example-org/shop-api:\${{ github.sha }}
@@ -193,11 +193,11 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/uv
           key: uv-\${{ runner.os }}-\${{ hashFiles('uv.lock') }}
@@ -226,11 +226,11 @@ jobs:
     env:
       DATABASE_URL: postgresql://app:test-only@localhost:5432/app_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/uv
           key: uv-\${{ runner.os }}-\${{ hashFiles('uv.lock') }}
@@ -247,19 +247,19 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: \${{ github.actor }}
           password: \${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           push: true
           tags: ghcr.io/example-org/shop-api:\${{ github.sha }}
 `,
     hints: [
-      '`actions/cache@v4` 放在 `uv sync` 之前：`path: ~/.cache/uv`、`key: uv-${{ runner.os }}-${{ hashFiles(\'uv.lock\') }}`。lock 檔沒變，key 就一樣，直接命中。',
+      '`actions/cache@v6` 放在 `uv sync` 之前：`path: ~/.cache/uv`、`key: uv-${{ runner.os }}-${{ hashFiles(\'uv.lock\') }}`。lock 檔沒變，key 就一樣，直接命中。',
       'job 層級寫 `needs: lint`，test 就會等 lint 成功才開始；lint 失敗時 test 會被跳過。',
       'service 的設定寫在 `services: postgres:` 底下：`image`、`env`、`ports: - 5432:5432`，以及 `options: --health-cmd pg_isready ...`。',
       '`build` 加 `needs: [lint, test]` 與 `if: github.ref == \'refs/heads/main\'`（可以再加上 `github.event_name == \'push\'`）。',
@@ -335,7 +335,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker build -t ghcr.io/example-org/shop-api:\${{ github.sha }} .
       - run: docker push ghcr.io/example-org/shop-api:\${{ github.sha }}
       - run: ./scripts/deploy.sh "ghcr.io/example-org/shop-api:\${{ github.sha }}"
@@ -348,7 +348,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker build -t ghcr.io/example-org/shop-api:\${{ github.sha }}-prod .
       - run: docker push ghcr.io/example-org/shop-api:\${{ github.sha }}-prod
       - run: ./scripts/deploy.sh "ghcr.io/example-org/shop-api:\${{ github.sha }}-prod"
@@ -374,14 +374,14 @@ jobs:
       # digest 是內容的雜湊：staging 與 production 拿到的是位元組完全相同的 image
       image: ghcr.io/example-org/shop-api@\${{ steps.push.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: \${{ github.actor }}
           password: \${{ secrets.GITHUB_TOKEN }}
       - id: push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           push: true
           tags: ghcr.io/example-org/shop-api:\${{ github.sha }}
@@ -391,7 +391,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: ./scripts/deploy.sh "\${{ needs.build.outputs.image }}"
         env:
           DATABASE_URL: \${{ secrets.DATABASE_URL }}
@@ -404,7 +404,7 @@ jobs:
       url: https://shop.example.org
     concurrency: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: ./scripts/deploy.sh "\${{ needs.build.outputs.image }}"
         env:
           DATABASE_URL: \${{ secrets.DATABASE_URL }}

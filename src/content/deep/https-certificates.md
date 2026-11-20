@@ -142,7 +142,7 @@ ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 ## 免費的 Let's Encrypt 與購買的憑證
 
-Let's Encrypt 是免費的公開 CA，只發 DV 憑證，透過 **ACME** 協定自動申請與續約。目前預設效期 90 天，官方也公布了把效期再往下調的計畫，細節以 Let's Encrypt 的公告為準。ACME 的驗證方式主要有兩種：
+Let's Encrypt 是免費的公開 CA，只發 DV 憑證，透過 **ACME** 協定自動申請與續約。預設效期長年是 90 天，官方也公布了把效期再往下調的計畫；2026 年 11 月核對時沒能確認目前走到哪個階段，實際效期以 Let's Encrypt 的公告與拿到的憑證為準（`openssl x509 -noout -dates`）。ACME 的驗證方式主要有兩種：
 
 | 驗證方式 | 怎麼證明你控制網域 | 限制 |
 |---|---|---|
@@ -172,7 +172,7 @@ Let's Encrypt 是免費的公開 CA，只發 DV 憑證，透過 **ACME** 協定�
 | 2027 年 3 月 15 日起 | 100 天 |
 | 2029 年 3 月 15 日起 | 47 天 |
 
-（確切時程與細節以 CA/Browser Forum 的公告為準。）這代表「一年換一次、到時候手動處理」的流程會變成一年換八次以上。到期事故的根本解法是**自動續約加上獨立的到期監控**，光靠提醒不夠。
+（2026 年 11 月核對時，第一階段的 200 天已經生效；確切時程與細節以 CA/Browser Forum 的公告為準。）這代表「一年換一次、到時候手動處理」的流程會變成一年換八次以上。到期事故的根本解法是**自動續約加上獨立的到期監控**，光靠提醒不夠。
 
 ## 續約：不靠人記得
 
@@ -269,6 +269,8 @@ X509v3 Subject Alternative Name:
 ```
 
 第一段把服務送的憑證取出來，第二段印出效期、主體與 SAN（`-ext` 需要 OpenSSL 1.1.1 以上）。也可以直接看檔案：`openssl x509 -in cert.pem -noout -dates -subject -ext subjectAltName`。`subject=` 那一行的空白與分隔格式依 OpenSSL 版本略有差異。
+
+:::stop 讀到這裡可以先停：會用 `openssl s_client` 看信任鏈、SAN 與到期日，也能設計自動續約加上獨立於續約的到期監控。後面的 cert-manager，在服務搬上 Kubernetes、憑證要放進 Secret 時再回來讀。
 
 ## Kubernetes 上的憑證：cert-manager
 

@@ -27,6 +27,16 @@ export default {
         { c: '事件有宣告', t: 'Console 出現 `Component emitted event "cancel" but it is neither declared in the emits option nor as an "onCancel" prop`，代表少了 `defineEmits([\'cancel\'])`。' },
       ],
     },
+    challenge: {
+      task: '預約清單頁有標題、篩選列（日期、狀態）、清單、每一列的「取消」按鈕，以及空狀態。寫兩種拆法：A 是 `AppointmentPage` 加一個包辦篩選與每一列的 `AppointmentList`；B 是 `FilterBar`、`AppointmentList`、`AppointmentRow`、`EmptyState` 四個元件。替兩種拆法各畫元件樹，標出每個元件的 props 與 emits。再拿三條需求變更比較：每一列加「報到」按鈕、篩選多一個科別下拉、空狀態加「新增掛號」連結。挑一條在 [Playground](#/playground?lang=vue) 用 B 拆法實際改一次。',
+      deliver: '兩張元件樹（含 props 與 emits）、一張三條需求 × 兩種拆法各要改哪些元件的表，以及實際改的那一條的程式',
+      check: [
+        '每個元件的 props 與 emits 都寫出名稱與型別，資料只由擁有它的元件修改',
+        '實際改的那一條，改到的元件和表上寫的一致',
+        '寫出你選哪一種拆法，以及什麼條件下會改選另一種',
+      ],
+      twist: '需求變成：同一份清單在櫃台頁要能勾選批次報到，在醫師頁唯讀。先預測哪種拆法要改的檔案比較少，`AppointmentRow` 該多一個 prop、留一個 slot，還是拆成兩個元件。',
+    },
     points: [
       { b: '一個元件一件事', t: '頁面元件抓資料、清單元件排版、列元件顯示一筆與發事件。列元件裡出現 `fetch`，同一份資料就會被抓很多次、很難測。' },
       { b: '`<script setup>` 是預設寫法', t: '頂層的變數、函式、import 的元件直接給模板用。Vue 官方文件與 `npm create vue@latest` 產生的專案都以它為主；Options API 留給舊專案。' },
@@ -72,6 +82,16 @@ export default {
         { c: 'computed 沒有副作用', t: 'computed 裡出現 `fetch`、`push`、改別的 ref，lint 規則 `vue/no-side-effects-in-computed-properties`、`vue/no-async-in-computed-properties` 會報錯。' },
       ],
     },
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 寫候診清單：`keyword`（搜尋字）、`list`（`ref` 陣列）、`showPanel`（和清單無關的開關），用三種寫法算出篩選後的清單：A 是 `computed`；B 是 `watch([keyword, list], ..., { immediate: true })` 寫進另一個 `ref`；C 是模板裡呼叫方法 `filtered()`。在三種寫法的計算裡各放一個 `console.count`。操作：打三個字、切換 `showPanel` 三次、`list.value.push(...)` 一筆。執行前先預測每種寫法在每種操作後的次數。可以先在 [ReactivityLab](#/lab/ReactivityLab) 看一次 computed 與 watch 的觸發順序。',
+      deliver: '預測與實際的次數表（三種寫法 × 三種操作），預測錯的格子各附一句原因',
+      check: [
+        'A 在切換 `showPanel` 時次數不增加',
+        'B 說得出 `push` 之後有沒有重算，以及和 `deep` 的關係',
+        'C 的次數和元件重新渲染的次數一致，並說出為什麼切換 `showPanel` 也會增加',
+      ],
+      twist: '把 `list` 改成 `shallowRef`，新增仍寫 `list.value.push(x)`。先預測三種寫法哪幾種會顯示新的那一筆，再驗證並改成都會更新的寫法。',
+    },
     points: [
       { b: '`ref` 為主', t: '任何型別都能放，`.value` 讓「這是響應式的值」看得出來。`reactive` 不能放原始值、解構會斷，官方文件也建議以 `ref` 為主。' },
       { b: '模板自動拆 `.value`', t: '頂層的 ref 在模板裡不用 `.value`；放在普通物件裡的 ref 不會被拆，`{{ obj.n + 1 }}` 會印出 `[object Object]1`。' },
@@ -116,6 +136,16 @@ export default {
         { c: '沒有 `v-html` 吃使用者內容', t: '在備註欄輸入 `<img src=x onerror=alert(1)>`，畫面應該顯示這串文字而不是跳出對話框；全專案搜尋 `v-html` 逐一確認來源，lint 規則 `vue/no-v-html` 會列出每一處。' },
         { c: 'v-if 與 v-show 選對', t: '切換篩選面板後，Elements 分頁裡面板還在但 `style="display: none;"` 是 `v-show`；整個節點消失是 `v-if`，面板裡的輸入值會被清掉。' },
       ],
+    },
+    challenge: {
+      task: '演唱會的座位清單每一列有座位號、票價，以及一個沒有綁資料的「備註」輸入框，上方有「依票價排序」按鈕。在 [Playground](#/playground?lang=vue) 先用 `:key="index"` 寫：在第二列的備註打字，按 Tab 移到排序按鈕再按 Enter；接著改成 `:key="seat.id"` 重做一次。兩次都記下排序後備註文字留在哪個座位，並在 `document` 上加 `focusin` 監聽，把焦點所在列的座位號印到 Console。',
+      deliver: '兩種 key 各一份操作紀錄：排序前後備註文字所在的座位號、焦點所在的位置',
+      check: [
+        '`index` 版的紀錄顯示備註留在原本的位置，對到了別的座位',
+        '`seat.id` 版排序後，備註文字跟著原本的座位移動',
+        '說出差別來自 Vue 依 key 重用或移動 DOM 元素的規則',
+      ],
+      twist: '售票系統改成每 5 秒重新抓一次座位清單，每次都是新的物件，但 `id` 不變。先預測兩種 key 在重新抓之後備註還在不在原座位，再驗證。說明哪些規則可以沿用到門診清單（有穩定 id 就用 id 當 key），哪些要跟售票業務重新確認（換場次或換座位時 `id` 會不會變）。',
     },
     points: [
       { b: '插值會跳脫 HTML', t: '`{{ note }}` 裡的 `<b>` 會顯示成文字。只有 `v-html` 不跳脫，內容不是自己寫死的就不要用。' },
@@ -164,6 +194,17 @@ export default {
         { c: '沒有混用兩套寫法', t: '同一個元件同時出現 `mounted()`、`data()` 與 `<script setup>`，代表產出混用了 Options API 與 Composition API，要求改成 `onMounted`。' },
       ],
     },
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 用 Vue Router（`createMemoryHistory()`）做兩個路由：`/board` 每 2 秒 `fetch(\'/api/sessions\')`，並在 `window` 上掛一個 resize 監聽；`/about` 是空白頁。先寫沒有任何清理的版本，在 `/board` 與 `/about` 之間來回切三次，看預覽下方「網路」分頁 30 秒內多了幾筆；再補上 `onUnmounted` 的 `clearInterval`、`removeEventListener` 與 `AbortController` 重做一次。動手前先預測兩個版本在 `/about` 停 10 秒時各會送出幾個請求。',
+      deliver: '兩個版本各一份紀錄：切換三次後每 2 秒的請求數、停在 `/about` 10 秒內的請求數、切走時正在路上的請求有沒有顯示「已取消」',
+      check: [
+        '沒清理的版本請求數隨切換次數增加，和預測對照',
+        '有清理的版本停在 `/about` 時沒有新請求，回到 `/board` 後只有一組計時器',
+        '切走時正在路上的請求，在「網路」分頁顯示「已取消」',
+        '說出 resize 監聽為什麼要用具名函式才移除得掉',
+      ],
+      twist: '改用 `<RouterView v-slot="{ Component }">` 把頁面包進 `<KeepAlive>`。先預測切到 `/about` 時還有沒有請求、`onUnmounted` 會不會執行，再把輪詢搬到 `onActivated`／`onDeactivated` 驗證。',
+    },
     points: [
       { b: '子元件先掛載', t: '父元件的 `onMounted` 執行時，同步的子元件都已經掛載完成；非同步元件與 `<Suspense>` 裡的元件不在此列。' },
       { b: '鉤子在 setup 期間同步註冊', t: '把 `onMounted` 放進 `setTimeout` 或某個稍後才執行的函式，Vue 找不到目前的元件，Console 會出現 `onMounted is called when there is no active component instance`。' },
@@ -209,6 +250,16 @@ export default {
         { c: '事件有宣告', t: 'Console 出現 `Component emitted event "confirm" but it is neither declared in the emits option nor as an "onConfirm" prop`，代表少了 `defineEmits`；lint 規則 `vue/require-explicit-emits` 會抓到。' },
         { c: '送出的是新值', t: '`confirm` 帶的日期比畫面上慢一步，代表子元件寫了 `date.value = d` 之後立刻 `emit(\'confirm\', date.value)`：父元件更新前 `date.value` 還是舊值，要傳參數裡的 `d`。' },
       ],
+    },
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 寫 `DatePicker`：`const date = defineModel(\'date\')`，點日期時 `date.value = d` 後 `emit(\'confirm\', date.value)`。父元件寫 `v-model:date="selected"` 與 `@confirm="onConfirm"`，在子元件的點擊、父元件的 `onConfirm`、`watch(selected)`、父子兩邊的 `onUpdated` 各放一行 `console.log`，印出當下的 `date.value` 或 `selected`。執行前先畫出你預期的事件時間線，再點一次日期比對 Console。',
+      deliver: '一條事件時間線：點擊、子元件寫入、`update:date`、父元件 `selected` 改變、`watch`、重新渲染、子元件拿到新 prop，每一步標上 Console 實際印出的順序與值',
+      check: [
+        '時間線的每一步都有對應的 Console 紀錄',
+        '指出 `onConfirm` 收到舊值發生在時間線的哪兩步之間',
+        '拿掉 `v-model:date` 只留 `:date="selected"` 再點一次，記下子元件顯示的日期、父元件的 `selected` 與 `onConfirm` 收到的值，並說明時間線少了哪一步',
+      ],
+      twist: '需求改成「選了日期要按確認才生效」。先預測時間線裡哪幾步要往後移、`defineModel` 要換成什麼（例如本地 `ref`，按確認時才寫入 model），再改寫並重新畫一次時間線。',
     },
     points: [
       { b: '資料只有一個擁有者', t: '預約日期放在頁面元件，子元件收 props 顯示、發事件要求修改。兩個元件各存一份同樣的資料，遲早會不一致。' },
@@ -256,6 +307,16 @@ export default {
         { c: '後代沒有直接改', t: 'Console 出現 `[Vue warn] Set operation on key "value" failed: target is readonly`，代表後代想直接改 provide 的值；修改要透過提供者一起 provide 的函式。' },
       ],
     },
+    challenge: {
+      task: '從程式題 [表格的狀態欄交給頁面畫](#/exercise/slots-provide-1) 的 `DataTable` 出發，寫兩個使用它的頁面：頁面 A 的狀態格畫 Badge；頁面 B 換成「取消」按鈕，按下時由頁面 B 呼叫 `cancel(row.id)`。動手前先列出 slot 內容裡出現的每個名稱（`row`、`value`、`cancel`、院區設定 `clinic`），標出它由誰提供：子元件的 slot props、父元件自己的作用域，還是 `inject`。',
+      deliver: '名稱來源表、頁面 B 的 slot 寫法，以及按下按鈕後的 Console 紀錄',
+      check: [
+        '表裡每個名稱都標了提供者，和程式一致',
+        '做頁面 B 時 `DataTable` 的程式一行都沒改',
+        '`cancel` 定義在頁面 B，Console 顯示按鈕的處理函式在頁面 B 執行，`DataTable` 沒有宣告這個事件',
+      ],
+      twist: '頁面 B 還要讓狀態是取消的整列變灰。先預測三種做法各要改到哪些檔案：在 slot 裡處理、`DataTable` 加一個 prop、`DataTable` 收一個回傳 class 的函式 prop，再挑一種實作。',
+    },
     points: [
       { b: 'props 傳資料，slot 傳一塊畫面', t: '元件負責外框與行為（卡片的邊框、Dialog 的開關與焦點），內容交給使用的人。為了每種顯示方式加一個 prop，元件很快會長出十幾個 `v-if`。' },
       { b: 'slot 內容屬於父元件', t: '寫在父元件模板裡的 slot 內容只讀得到父元件的變數。子元件要交出資料就 `<slot :row="row">`，父元件用 `#default="{ row }"` 接。' },
@@ -301,6 +362,17 @@ export default {
         { c: '清理寫在 await 之前', t: 'Console 出現 `[Vue warn] onWatcherCleanup() was called when there was no active watcher to associate with.`，代表 `onWatcherCleanup` 寫在 `await` 之後，要移到第一個 `await` 前面。' },
         { c: '卸載後停止', t: '切到別的路由後，watcher 裡的 `console.log` 還在印，代表 watcher 是在 `setTimeout` 或 `.then()` 裡建立的；lint 規則 `vue/no-watch-after-await` 抓得到 `await` 之後才呼叫的 `watch`。' },
       ],
+    },
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 重現兩個「畫面不對」的時段查詢頁。A：`watch(dept, async (d) => { slots.value = await (await fetch(\'/api/slots?dept=\' + d)).json() })`，用 `api.get(\'/api/slots\', (req) => ({ delay: ..., body: ... }))` 讓內科慢、骨科快，快速切換科別。B：`watchEffect(async () => { const res = await fetch(\'/api/slots?dept=\' + dept.value); const all = await res.json(); slots.value = onlyOpen.value ? all.filter((s) => s.left > 0) : all })`，切換「只看有名額」。兩個都只從畫面看起來像「資料不對」。',
+      deliver: '兩個案例各一段：觀察到的現象、「網路」分頁或 Console 裡用來判斷的證據、歸類（資料晚回或依賴沒追蹤）、修法與修好後的證據',
+      check: [
+        'A 的證據是兩筆請求都送出，回應完成的順序和送出順序相反',
+        'B 的證據是切換 `onlyOpen` 後「網路」分頁沒有新請求，畫面也沒變',
+        'A 修好後被取代的請求在「網路」分頁顯示「已取消」，畫面只顯示最後選的科別',
+        'B 修好後 `onlyOpen` 在第一個 `await` 之前讀取，或改成 `watch` 明確列出來源',
+      ],
+      twist: '把 A 的延遲改成每一科都一樣。先預測錯誤還會不會出現、你的修法還要不要留，並說明「這次沒重現」為什麼不能當作沒有競態的證據。',
     },
     points: [
       { b: '先問能不能用 computed', t: '值能從狀態算出來就用 computed：有快取、沒有第二份狀態要同步。watch 留給「資料變了要做一件事」：打 API、寫網址、存 localStorage、操作第三方套件。' },
@@ -349,6 +421,17 @@ export default {
         { c: '不會重複送出', t: 'Network 分頁的節流選 `3G`，連點送出三次，只能出現一個 `POST /api/appointments`。' },
       ],
     },
+    challenge: {
+      task: '餐廳的訂位表單有姓名、手機、人數、日期與備註。在 [Playground](#/playground?lang=vue) 寫出表單，送出時呼叫 `POST /api/bookings`，用 `api.post(\'/api/bookings\', [...])` 讓第一次回 `422`（body 的 `errors` 指出 `phone` 格式錯誤）、第二次回 `201`。全程只用鍵盤：填完送出、看錯誤、改手機、再送出；請求進行中連按兩次 Enter。在 `document` 上加一個 `focusin` 監聽，把 `event.target.name` 印到 Console，記下每一步的焦點。',
+      deliver: '兩次送出的操作紀錄：每一步的焦點位置、各欄位的值、手機欄位的 `aria-invalid` 與 `aria-describedby`、「網路」分頁的請求筆數',
+      check: [
+        '`422` 之後焦點在手機欄位，其他欄位的值都還在',
+        '手機欄位有 `aria-invalid="true"`，`aria-describedby` 指到顯示錯誤訊息的元素',
+        '請求進行中連按 Enter，「網路」分頁只多一筆',
+        '`201` 之後錯誤訊息消失，表單清空或顯示訂位完成',
+      ],
+      twist: '餐廳改成 8 人以上要電話確認，後端對這種訂位回 `409` 與一段說明，沒有欄位錯誤。先預測你的錯誤處理會把它顯示在哪裡、焦點會去哪，再修改。說明哪些做法可以沿用到掛號表單（`422` 對回欄位、保留輸入），哪些要跟餐廳重新確認（`409` 時要不要保留表單、提示電話號碼）。',
+    },
     points: [
       { b: '狀態是唯一的來源', t: '`v-model` 會忽略輸入框上寫死的 `value`、`checked`、`selected`，初始值寫在 script 的 ref 裡。' },
       { b: '每種輸入綁出不同型別', t: '文字框是字串；`type="number"` 與 `.number` 轉成數字（清空時是空字串）；單一 checkbox 是布林，多個 checkbox 綁同一個陣列；`select multiple` 是陣列。' },
@@ -396,6 +479,16 @@ export default {
         { c: '狀態有沒有被共用', t: '`const count = ref(0)` 寫在 composable 函式外面（模組頂層）時，所有元件共用同一份；兩個元件互相影響時先看這裡；要全站共用就改用 Pinia。' },
       ],
     },
+    challenge: {
+      task: '倉庫後台的頁首顯示一個 SKU 的庫存徽章，商品面板顯示另一個 SKU 的庫存，兩者都用你寫的 `useStock(sku)`：參數是 getter，每 3 秒抓 `/api/stock/:sku`，清理寫在 composable 裡。在 [Playground](#/playground?lang=vue) 用 `api.get(\'/api/stock/:sku\', (req) => ({ body: { sku: req.params.sku, qty: ... } }))` 提供資料，面板用 `v-if` 開關。動手前先預測：關掉面板後兩個 SKU 的請求各會怎樣、頁首的數字會不會受影響。',
+      deliver: '關掉面板前後各 10 秒的「網路」分頁紀錄（依 SKU 分組）與一句結論',
+      check: [
+        '兩個元件各一份狀態：改面板的 SKU 不影響頁首',
+        '關掉面板後，面板那個 SKU 的請求停止，頁首的照常每 3 秒一次',
+        '把 `const qty = ref(...)` 搬到函式外面再跑一次，記下從哪一步開始互相干擾',
+      ],
+      twist: '倉儲 API 有限流，要求同一個 SKU 同時只能有一條輪詢，而頁首與面板有時會顯示同一個 SKU。先預測現在的寫法會打出幾倍的請求，再決定改用 Pinia store、在 composable 裡做引用計數，還是保留各自一份。說明哪些條件可以沿用門診看板的做法，哪些要跟倉儲重新確認（例如可以接受幾秒的延遲、限流的單位是 SKU 還是帳號）。',
+    },
     points: [
       { b: 'composable 是普通函式', t: '名稱用 `use` 開頭，在 setup 裡呼叫；裡面的 `ref` 每次呼叫各建一份，`onMounted`、`watch` 綁在呼叫它的元件上，元件卸載時一起停止。' },
       { b: '回傳 ref 組成的物件', t: '`return { data, error, loading }`，元件解構後仍然連著狀態，也能改名：`const { data: slots } = useFetch(…)`。' },
@@ -440,6 +533,17 @@ export default {
         { c: '沒有塞進不該放的狀態', t: '看 store 的 state：輸入到一半的表單、只有一個 Dialog 用的開關、目前頁碼，多半該留在元件或網址；頁碼放 store 時，複製網址給同事打開會回到第一頁。' },
         { c: '重設與登出', t: '對 setup store 呼叫 `$reset()` 會丟出 `Store "session" is built using the setup syntax and does not implement $reset().`；登出後換另一位醫師登入，畫面不該還有前一位的資料。' },
       ],
+    },
+    challenge: {
+      task: '售票網站有 `useSessionStore`（登入者）、`useCartStore`（已選座位、套用的優惠券）與 `useUiStore`（語系）。在 [Playground](#/playground?lang=vue) 寫出這三個 store 與頁首、購物車兩個元件。用帳號 A 登入、選兩個座位，登出後換帳號 B 登入。動手前先預測 B 會看到什麼：頁首的名字、購物車的座位、語系。第一版登出只清 `user`；第二版把清理寫在登出 action 裡。每一步在 Console 印出各 store 的 `$state`。',
+      deliver: '兩個版本各一份切換帳號前後的 `$state` 紀錄，以及清理寫在哪裡的說明',
+      check: [
+        '第一版的紀錄指出 B 看得到 A 的哪些資料、在哪個 store 的哪個欄位',
+        '第二版登出後跟帳號有關的 store 都回到初始值，語系保留',
+        '清理只寫在一個地方，頁面元件不必自己清；setup store 沒有內建 `$reset`，你的重設寫法寫在說明裡',
+        '頁首用 `storeToRefs` 讀 `user`，換帳號後立刻更新',
+      ],
+      twist: '票務規定已選座位保留 10 分鐘，換帳號前要先用 `POST /api/holds/release` 釋放 A 的座位。先預測清理順序寫錯（先清購物車再呼叫 API）時會發生什麼，再修正。說明哪些做法可以沿用門診系統的登出清理，哪些要跟票務重新確認（例如釋放失敗時還能不能登出）。',
     },
     points: [
       { b: 'store 是全域的單一實例', t: '同一個 Pinia 實例裡，每個元件呼叫 `useSessionStore()` 拿到同一份。適合登入者、權限、購物車這類跨頁面的狀態。' },
@@ -488,6 +592,17 @@ export default {
         { c: '路徑拼對', t: 'Console 出現 `No match found for location with path "/patient/7"`（Vue Router 5.5 前面標 `[VUE_ROUTER_R0004]`，4.x 是 `[Vue Router warn]:`），代表連結或 `push` 的路徑拼錯，或少了 404 路由。' },
       ],
     },
+    challenge: {
+      task: '在 `npm create vue@latest` 建的專案裡做預約清單頁 `/appointments`（科別篩選與分頁）與病人頁 `/patients/:id`。寫兩個版本：篩選與頁碼放在元件的 `ref`；篩選與頁碼放在網址 query（改篩選用 `router.replace`）。兩個版本都做三個操作：選「內科」、翻到第 2 頁、點進一位病人再按上一頁；在病人頁按重新整理；在清單頁按重新整理。先在 `npm run dev`，再用 `npm run build` 加 `npx vite preview` 各做一次，最後把 `dist/` 放到沒有 fallback 的靜態伺服器重新整理病人頁。',
+      deliver: '一張表：每個操作 × 兩個版本 × 伺服器，記下結果網址與畫面上的篩選、頁碼',
+      check: [
+        'query 版在上一頁與重新整理之後，科別與頁碼都還在',
+        'ref 版說得出上一頁之後篩選消失的原因',
+        '沒有 fallback 的伺服器重新整理病人頁得到 404，並寫出要加的設定（例如 nginx 的 `try_files`）',
+        '用 `router.replace` 改篩選時，上一頁直接回到進清單之前的頁面，不會一次退一個篩選',
+      ],
+      twist: '用 `<RouterView v-slot="{ Component }">` 把清單頁包進 `<KeepAlive>`。先預測 ref 版在上一頁之後篩選還在不在、重新整理之後呢，再驗證，說明哪一種保存方式撐得過重新整理。',
+    },
     points: [
       { b: '網址是狀態的一部分', t: '病人 id 放 params、日期與科別放 query，重新整理、上一頁、分享連結都回到同一個畫面。只存在元件或 store 的條件，換頁回來就沒了。' },
       { b: '同一個元件會被重用', t: '`/patients/7` 到 `/patients/8` 用同一個元件實例，`onMounted` 不會再跑。用 `watch(() => route.params.id, …)` 或 `onBeforeRouteUpdate` 重抓；`const { params } = useRoute()` 解構後不會更新。' },
@@ -535,6 +650,17 @@ export default {
         { c: '沒有混用兩邊的寫法', t: 'React 元件裡出現 `ref(`、`.value`、`v-model`，或 Vue 元件裡出現 `useState`，代表產出把兩個框架混在一起。' },
         { c: 'hooks 順序', t: 'Console 出現 `Rendered more hooks than during the previous render.`，代表某個 hook 寫在條件式或提早 `return` 之後。' },
       ],
+    },
+    challenge: {
+      task: '餐廳訂位的時段選擇器：選人數後重抓可訂時段。Vue 版寫 `watch(partySize, load, { immediate: true })`，React 版寫 `useEffect(() => { load(partySize) }, [partySize])`。兩版都加一個「改成 4 人」按鈕，處理函式裡設定人數後立刻 `console.log` 狀態，再讀一次畫面上顯示人數的 DOM 文字；`load` 開頭也印一行。Vue 版在 [Playground](#/playground?lang=vue) 跑，React 版用 `npm create vite@latest` 的 React 範本在本機跑（開發模式，`StrictMode` 開著）。動手前先預測兩邊的 Console 輸出。',
+      deliver: '兩邊 Console 輸出並排，每一行附一句解釋',
+      check: [
+        '兩邊「設定後立刻讀狀態」印出的值不同，各寫出原因（Vue 的 ref 立即改值，React 的 state 要等下一次渲染）',
+        'Vue 版在 `await nextTick()` 前後讀 DOM 的差異寫出來',
+        'React 版的紀錄分得出哪一次 `load` 是開發模式 `StrictMode` 多跑的',
+        '點完按鈕後兩邊畫面上的人數與時段一致',
+      ],
+      twist: '需求改成按「查詢」才送請求，人數改了不自動重抓。先預測兩邊各要拿掉什麼（Vue 的 `watch`、React 的 effect）、改成在哪裡呼叫 `load`，再說明哪些條件可以沿用門診的時段選擇器，哪些要跟餐廳重新確認（例如人數改了還沒按查詢時，畫面上的舊時段要不要標成過期）。',
     },
     points: [
       { b: '差在重跑的範圍', t: 'React 每次渲染重跑整個元件函式，Vue 的 setup 只跑一次、之後靠依賴追蹤只重跑 render。React 的依賴陣列、`useCallback`、hooks 規則都來自這一點。' },

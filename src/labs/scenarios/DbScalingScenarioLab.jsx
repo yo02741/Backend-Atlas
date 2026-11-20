@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, useWidth, Callout, Status, Stats, Stat, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, useWidth, Callout, Status, Stats, Stat, fmtN, Measure } from '../ui.jsx'
 
 /* 資料庫擴展情境模擬器：Stepper 逐階段疊上去——現況 → pgbouncer → 讀寫分離 → 表分割 → 分片。
    每一階段看：連線數（客戶端 / DB 端）、每台的 CPU、能撐的 QPS、複雜度；後兩階段另外看掃了幾個分區、打了幾台。
@@ -99,7 +99,7 @@ export default function DbScalingScenarioLab() {
             <Stat label="客戶端連線" value={`${m.clientConns} 條`} note={step >= 1 ? '接到 pgbouncer' : '直連 DB'} />
             <Stat label={`DB 端連線 / 上限${step === 4 ? '（每片）' : ''}`} value={`${m.dbConns} / ${MAX_CONN}`} tone={m.connOver ? 'bad' : ''} note={m.connOver ? `${m.dbConns - MAX_CONN} 條拿不到，請求失敗` : ''} />
             <Stat label="最忙節點 CPU" value={`${Math.round(m.maxCpu)}%`} tone={m.maxCpu >= 75 ? 'bad' : m.maxCpu >= 55 ? 'warn' : ''} note={m.saturated ? '飽和：請求排隊、延遲飆高' : ''} />
-            <Stat label="能撐的 QPS（示意）" value={fmtN(m.qps)} note={`現況 ${fmtN(NOW_QPS)}`} />
+            <Stat label="能撐的 QPS" value={<Measure kind="set" value={fmtN(m.qps)} />} note={`現況 ${fmtN(NOW_QPS)}`} />
             <Stat label="複雜度" value={COMPLEXITY[step]} tone={step === 4 ? 'bad' : ''} />
             <Stat label={step === 4 ? '一個查詢打幾片' : '一個查詢掃幾個分區'} value={step >= 3 ? (step === 4 ? `${m.shardsHit} / ${SHARDS}` : `${m.partsHit} / ${PARTS}`) : '—'} tone={(step === 4 ? m.shardsHit > 1 : m.partsHit > 1) ? 'bad' : ''} />
           </Stats>

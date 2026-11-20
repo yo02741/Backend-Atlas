@@ -126,6 +126,8 @@ const next = { ...appt, patient: { ...appt.patient, contact: { ...appt.patient.c
 console.log('next 的電話：', next.patient.contact.phone, '／原資料：', appt.patient.contact.phone)
 ```
 
+:::stop 讀到這裡可以先停：分得出兩個變數是同一份資料還是複本，會用逐層展開改內層。後面的 `structuredClone`、Proxy 與 Vue 元件寫法，在寫編輯 Dialog 或遇到 `DataCloneError` 時再回來讀。
+
 ### `structuredClone` 與 JSON 來回
 
 ```js run

@@ -195,6 +195,8 @@ for src, dst, port in [("internet", "lb", 443), ("lb", "app-1", 8000), ("app-1",
 
 使用者上傳的檔案、報表、備份、前端的靜態檔，放在物件儲存（S3、Cloud Storage、Blob Storage），而不是虛擬機的磁碟：容量不用預先規劃、多台 API 都讀得到、耐久性由業者負責。瀏覽器透過 presigned URL 直接上傳下載，檔案不經過 API；bucket 預設私有、開啟版本控制與生命週期規則。細節見 [物件儲存：bucket、預簽網址與生命週期](#/skill/object-storage)。前端靜態檔通常再加一層 CDN，減少從儲存直接對外的流量。
 
+:::stop 讀到這裡可以先停：分得出 IaaS、PaaS 與 SaaS，規劃得出 VPC、子網與安全群組，知道負載平衡器、受管資料庫與物件儲存各放哪裡。後面的 IAM、成本與調整後的架構，在要發憑證給程式或估帳單時再回來讀。
+
 ## IAM 與最小權限
 
 IAM（Identity and Access Management）決定誰可以對哪個資源做什麼動作。

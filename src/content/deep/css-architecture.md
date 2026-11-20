@@ -113,6 +113,8 @@ Error: Cannot apply unknown utility class `text-sm`. Are you using CSS modules o
 
 在 `<style>` 開頭加 `@reference "../styles/main.css";` 指向主要的 CSS 入口。不過 `@apply` 用多了等於回到自己取名字，重複的 class 組合通常抽成一個 Vue 元件。
 
+:::stop 讀到這裡可以先停：會說出 BEM、scoped、CSS Modules、Tailwind 各自怎麼避免撞名，以及各自的坑。後面的 CSS-in-JS、原生 CSS 的新功能與選型表，在要替專案訂樣式規範時再回來讀。
+
 ### CSS-in-JS
 
 ```jsx

@@ -77,6 +77,8 @@ Tailwind CSS 的 preflight 也是這樣設定（4.3.5 版的 `preflight.css` 第
 
 最穩的做法是不讓子元素用 margin 決定和父元素邊緣的距離：父層用 padding 留邊，子元素之間用 flex 或 grid 的 `gap`。
 
+:::stop 讀到這裡可以先停：會算出盒子實際佔的寬度、用 `border-box` 避免撐破父元素、看出 margin 合併。後面的 `display`、`overflow` 與 `outline`，在 `width` 沒作用或多出捲軸時再回來讀。
+
 ### block、inline 與 inline-block
 
 `display` 決定盒子怎麼參與排版：

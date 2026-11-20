@@ -179,6 +179,8 @@ const to = (p) => ({ query: { ...route.query, page: p === 1 ? undefined : p } })
 
 `<RouterLink>` 判斷「完全符合」時比的是路由與 params，query 不列入（Vue Router 5.5 的原始碼）；同一個路由、不同 `?page=` 的連結會全部被當成目前頁，全都帶 `aria-current="page"` 與 `router-link-exact-active`。所以分頁自己決定 `aria-current`，樣式也掛在 `[aria-current="page"]` 上，不用那個 class。頁數很多時只顯示目前頁前後幾頁加第一頁、最後一頁，中間用「…」。
 
+:::stop 讀到這裡可以先停：會分辨連結與 Tabs、用 `aria-current` 標目前位置，並把 Tab 與頁碼寫進網址。後面的捲動還原在清單回來時停在頂端才需要，到時再回來讀。
+
 按上一頁時捲回原位，資料要先載完：
 
 ```js

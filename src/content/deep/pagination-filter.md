@@ -111,6 +111,8 @@ for (const q of cases) {
 
 `toQuery` 把預設值省略，所以「全部、第 1 頁」的網址就是 `/appointments`，和第一次進來的網址相同。`parseQuery(toQuery(f))` 要等於 `f`，這是可以寫成單元測試的性質。
 
+:::stop 讀到這裡可以先停：會決定哪些條件放網址、選 `push` 或 `replace`，並把網址解析成條件。後面的「載入更多」列表、`<KeepAlive>` 與 offset 頁碼，在動手做清單頁時再回來讀。
+
 ### 列表元件：cursor 分頁加「載入更多」
 
 ```vue

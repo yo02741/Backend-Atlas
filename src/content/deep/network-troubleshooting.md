@@ -160,6 +160,8 @@ nc: connect to 10.30.0.8 port 5432 (tcp) timed out: Operation now in progress
 
 申請防火牆規則時，要給的資訊是：來源 IP 或網段、目的 IP、目的 port、協定（TCP / UDP）、用途與期限。只寫「讓 A 系統可以連 B 系統」，網路組沒辦法照著開。
 
+:::stop 讀到這裡可以先停：會用 `dig` 確認問的是哪一台 DNS、用 `nc -vz` 分辨 refused 與 timeout。後面的 proxy、負載平衡、TLS 與應用程式層，在 TCP 已經連得上、`curl -v` 卻看到 HTTP 錯誤或憑證錯誤時再回來讀。
+
 ## 第 4 層：proxy
 
 很多內網的伺服器不能直接連外，要透過正向 proxy。問題常出在兩個方向：

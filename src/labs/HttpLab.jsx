@@ -1,5 +1,5 @@
 import React, { useId, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Code, Callout, Status, useWidth } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Stepper, usePlayer, Code, Callout, Status, useWidth, Measure } from './ui.jsx'
 
 /* ============================================================
    一個 HTTP 請求的一生
@@ -292,7 +292,7 @@ function Timeline({ step, sc, keep }) {
           <text x={(setup * k) / 2} y={72 + 12} textAnchor="middle" className="svg-text small">跳過 ①②③：省下 {setup} ms</text>
         </>}
       </svg>
-      <p className="lab-caption">毫秒是示意值，用來看比例：建立連線（①②③）常常比伺服器處理請求的時間還長。</p>
+      <p className="lab-caption">第 1 次請求 <Measure kind="set" value={total} unit="ms" />{keep && <>，連線重用 <Measure kind="set" value={total - setup} unit="ms" /></>}。毫秒是示意值，用來看比例：建立連線（①②③）常常比伺服器處理請求的時間還長。</p>
     </div>
   )
 }

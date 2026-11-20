@@ -1,8 +1,10 @@
 // 技能內容結構校驗：索引（src/content/dN-*.js）與內文（src/content/body/dN-*.js）技能 id 一一對應、
 // 必填欄位齊全、id 全站唯一、lab 檔存在、refs 是 https 連結、每條路線的 PATHS / KEYWORDS 對得到該路線的技能、mapRequired 的路線每課都有 map、related 指向其他路線的課。
+// 也檢查：進階驗收（body 的 challenge）、深入內容的停靠點（:::stop）、程式題的 verifies、實驗室的觀察任務（src/labs/tasks.js）、跨課作業（src/content/assignments.js）。
 import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { challengeErrors } from './check-challenge.mjs'
 const here = dirname(fileURLToPath(import.meta.url))
 const content = resolve(here, '../src/content')
 const { ALL_DOMAINS: DOMAINS, PATHS, KEYWORDS } = await import(pathToFileURL(resolve(content, 'roadmap.js')).href)
@@ -64,7 +66,10 @@ for (const d of DOMAINS) {
       const mx = Object.keys(m).filter((k) => !['names', 'ask', 'prompt', 'verify'].includes(k))
       if (mx.length) errors.push(`${st}: map 有不認得的欄位 ${mx.join(', ')}`)
     }
-    const extra = Object.keys(b).filter((k) => !['points', 'checklist', 'refs', 'map'].includes(k))
+    // 進階驗收：每課都要有
+    if (b.challenge === undefined) errors.push(`${st}: 缺少 challenge（進階驗收）`)
+    else errors.push(...challengeErrors(b.challenge, st))
+    const extra = Object.keys(b).filter((k) => !['points', 'checklist', 'refs', 'map', 'challenge'].includes(k))
     if (extra.length) errors.push(`${st}: 內文多了不認識的欄位 ${extra.join(', ')}`)
   }
   for (const id of Object.keys(body)) if (!ids.has(id)) errors.push(`${tag}: body 有 "${id}" 但索引沒有這個技能`)
@@ -97,6 +102,7 @@ for (const t of TRACKS) {
 // 深入內容（src/content/deep/<skill-id>.md）：檔名對得到技能、至少三個 ## 段落、篇幅足夠、
 // 不用禁用措辭、連結是 https、程式碼區塊有收尾、標 run 的區塊只能是 python / sql / js，
 // 或在沙箱 iframe 跑的 html（```html run）與 Vue module（```js run vue）
+const STOP_MAX = { 'spa-containers': 3, 'k8s-rbac-tenancy': 3, 'k8s-networking': 3 }   // 篇幅最長、有多個獨立交付物的課
 const BANNED = ['為什麼要學', '給前端工程師', '你工作上', '你已經會', '身為前端']
 const deepDir = resolve(content, 'deep')
 const deepFiles = existsSync(deepDir) ? readdirSync(deepDir).filter((f) => f.endsWith('.md')) : []
@@ -121,6 +127,21 @@ for (const f of deepFiles) {
   if (chars < 1500) errors.push(`${tag}: 正文太短（${chars} 字，至少 1500）`)
   for (const w of BANNED) if (md.includes(w)) errors.push(`${tag}: 不用「${w}」這類措辭（見 CLAUDE.md 語氣規則）`)
   for (const m of prose.matchAll(/\]\(([^)]+)\)/g)) if (!/^https:\/\//.test(m[1]) && !/^#\//.test(m[1])) errors.push(`${tag}: 連結要是 https:// 或站內 #/ 路由（${m[1]}）`)
+  // 停靠點：獨佔一行的 :::stop 文字；每課最多 1 個（STOP_MAX 的課最多 3 個）；不放在程式碼區塊、表格、清單中間
+  const lines = md.split('\n')
+  let inFence = false, stops = 0
+  const listOrTable = (l) => /^\s*(\||-\s|\*\s|\d+\.\s)/.test(l || '')
+  lines.forEach((l, i) => {
+    if (/^```/.test(l)) { inFence = !inFence; return }
+    if (!/^\s*:::stop\b/.test(l)) return
+    if (inFence) { errors.push(`${tag}: 第 ${i + 1} 行的 :::stop 在程式碼區塊裡`); return }
+    stops++
+    if (!/^:::stop\s+\S/.test(l)) errors.push(`${tag}: 第 ${i + 1} 行：停靠點寫成獨佔一行、從行首開始的「:::stop 文字」`)
+    if (listOrTable(lines[i - 1]) && listOrTable(lines[i + 1])) errors.push(`${tag}: 第 ${i + 1} 行的 :::stop 在表格或清單中間`)
+  })
+  const maxStops = STOP_MAX[id] || 1
+  if (stops > maxStops) errors.push(`${tag}: 停靠點（:::stop）最多 ${maxStops} 個，目前 ${stops} 個`)
+  if (stops === 0) errors.push(`${tag}: 缺少停靠點（:::stop）`)
 }
 // 站內連結 #/skill/<id>、#/lab/<Name>：深入內容裡連到的課與實驗室要存在（跨路線也一樣）
 const labNames = new Set(readdirSync(resolve(here, '../src/labs')).filter((f) => /Lab\.jsx$/.test(f)).map((f) => f.replace('.jsx', '')))
@@ -165,6 +186,8 @@ for (const e of EXERCISES) {
   if (typeof e.starter !== 'string') errors.push(`${tag}: starter 要是字串（可以是空字串）`)
   if (!Array.isArray(e.hints)) errors.push(`${tag}: hints 要是陣列（可以是空陣列）`)
   if (![1, 2, 3].includes(e.level)) errors.push(`${tag}: level 要是 1 / 2 / 3`)
+  // verifies（選填）：判分結果顯示的「這題驗了什麼」，覆寫題型的預設文字
+  if (e.verifies !== undefined && (typeof e.verifies !== 'string' || !e.verifies.trim())) errors.push(`${tag}: verifies 要是非空字串（或省略，用題型的預設說明）`)
   if (e.kind === 'sql' ? !e.expect : !(Array.isArray(e.tests) && e.tests.length)) errors.push(`${tag}: ${e.kind === 'sql' ? '缺 expect' : 'tests 至少一個'}`)
   // 前端題（沙箱 iframe）：css 題要有固定的 html；api、html、css 是字串；測試的 viewport 是數字、api 是字串
   if (KINDS[e.kind]?.runtime === 'frame') {
@@ -184,6 +207,53 @@ for (const e of EXERCISES) {
   }
 }
 
+// 實驗室的觀察任務（src/labs/tasks.js）：key 是存在的實驗室，predict / observe 一句、steps 2–4 步、preset 選填
+const { LAB_TASKS } = await import(pathToFileURL(resolve(here, '../src/labs/tasks.js')).href)
+const isStr = (v) => typeof v === 'string' && v.trim() !== ''
+for (const [name, t] of Object.entries(LAB_TASKS)) {
+  const tag = `labs/tasks.js ${name}`
+  if (!labNames.has(name)) { errors.push(`${tag}: 沒有這個實驗室（src/labs/${name}.jsx）`); continue }
+  if (!isStr(t?.predict)) errors.push(`${tag}: predict 必填（動手前要寫下的預測）`)
+  if (!isStr(t?.observe)) errors.push(`${tag}: observe 必填（哪個觀察會推翻猜測）`)
+  if (!Array.isArray(t?.steps) || t.steps.length < 2 || t.steps.length > 4 || t.steps.some((x) => !isStr(x))) errors.push(`${tag}: steps 要 2–4 步非空字串`)
+  if (t?.preset !== undefined && !isStr(t.preset)) errors.push(`${tag}: preset 要是非空字串（或省略）`)
+  const extra = Object.keys(t || {}).filter((k) => !['predict', 'steps', 'observe', 'preset'].includes(k))
+  if (extra.length) errors.push(`${tag}: 不認得的欄位 ${extra.join(', ')}`)
+}
+// 每個獨立實驗室（src/labs/index.js 的 LAB_META）都要有觀察任務；情境模擬器不算
+{
+  const meta = readFileSync(resolve(here, '../src/labs/index.js'), 'utf8')
+  const start = meta.indexOf('LAB_META')
+  const block = meta.slice(start, meta.indexOf('\n}', start))
+  for (const m of block.matchAll(/^\s+([A-Z][A-Za-z0-9]*Lab):/gm)) if (!LAB_TASKS[m[1]]) errors.push(`labs/tasks.js: ${m[1]} 缺少觀察任務`)
+}
+
+// 跨課作業（src/content/assignments.js）：id 唯一、路線存在、lessons / stages / scenarios 都存在、每一步有 title / do / deliver / check
+const { ASSIGNMENTS } = await import(pathToFileURL(resolve(content, 'assignments.js')).href)
+const scenarioIds = new Set(readdirSync(resolve(content, 'scenarios')).filter((f) => f.endsWith('.js') && f !== 'index.js').map((f) => f.replace(/\.js$/, '')))
+const asgSeen = new Set()
+for (const a of ASSIGNMENTS) {
+  const tag = `assignments ${a?.id}`
+  if (!/^[a-z0-9-]+$/.test(a?.id || '') || asgSeen.has(a.id)) errors.push(`${tag}: id 缺少、重複或不是小寫英數與連字號`)
+  asgSeen.add(a?.id)
+  if (!trackIds.has(a?.track)) errors.push(`${tag}: track "${a?.track}" 不在 tracks.js`)
+  for (const k of ['title', 'summary']) if (!isStr(a?.[k])) errors.push(`${tag}: 缺 ${k}`)
+  if (!Array.isArray(a?.lessons) || !a.lessons.length) errors.push(`${tag}: lessons 至少一課`)
+  for (const l of a?.lessons || []) if (!seen.has(l)) errors.push(`${tag}: lessons 的課 "${l}" 不存在`)
+  for (const st of a?.stages || []) if (!stageIds.has(st)) errors.push(`${tag}: stages 的階段 "${st}" 不存在`)
+  for (const sc of a?.scenarios || []) if (!scenarioIds.has(sc)) errors.push(`${tag}: scenarios 的情境 "${sc}" 不存在`)
+  if (!Array.isArray(a?.steps) || !a.steps.length) errors.push(`${tag}: steps 至少一步`)
+  ;(a?.steps || []).forEach((st, i) => {
+    const stTag = `${tag} 第 ${i + 1} 步`
+    for (const k of ['title', 'do', 'deliver']) if (!isStr(st?.[k])) errors.push(`${stTag}: 缺 ${k}`)
+    if (!Array.isArray(st?.check) || st.check.length < 1 || st.check.length > 4 || st.check.some((x) => !isStr(x))) errors.push(`${stTag}: check 要 1–4 條非空字串`)
+  })
+  if (a?.twist !== undefined && !isStr(a.twist)) errors.push(`${tag}: twist 要是非空字串（或省略）`)
+  const text = JSON.stringify(a)
+  for (const m of text.matchAll(/\(#\/skill\/([a-z0-9-]+)/g)) if (!seen.has(m[1])) errors.push(`${tag}: 連到不存在的課 #/skill/${m[1]}`)
+  for (const m of text.matchAll(/\(#\/scenario\/([a-z0-9-]+)/g)) if (!scenarioIds.has(m[1])) errors.push(`${tag}: 連到不存在的情境 #/scenario/${m[1]}`)
+}
+
 // 前端沙箱的 vendor 版本：src/runtime/versions.js 要和 node_modules 一致；package.json 有列的話要寫精確版本
 const { VERSIONS } = await import(pathToFileURL(resolve(here, '../src/runtime/versions.js')).href)
 const pkg = JSON.parse(readFileSync(resolve(here, '../package.json'), 'utf8'))
@@ -198,6 +268,6 @@ for (const [name, version] of Object.entries(VERSIONS)) {
   }
 }
 
-console.log(`領域 ${DOMAINS.length} 個，技能 ${skills} 個，深入內容 ${deepFiles.length} / ${skills} 課，實作路線 ${STAGES.length} 個階段，程式題 ${EXERCISES.length} 道`)
+console.log(`領域 ${DOMAINS.length} 個，技能 ${skills} 個，深入內容 ${deepFiles.length} / ${skills} 課，實作路線 ${STAGES.length} 個階段，程式題 ${EXERCISES.length} 道，實驗室觀察任務 ${Object.keys(LAB_TASKS).length} 個，跨課作業 ${ASSIGNMENTS.length} 份`)
 if (errors.length) { console.log('錯誤：\n' + errors.join('\n')); process.exit(1) }
 console.log('OK')

@@ -270,6 +270,8 @@ print(f"一個一個往回測，最壞要測 {len(COMMITS) - 2} 次；二分法�
 
 每一步只改一樣東西、跑同一個重現；同時改兩樣，結果就無法歸因。
 
+:::stop 讀到這裡可以先停：會做最小重現、讀串接的 traceback、用 git bisect 找出改壞的 commit。後面的 pdb 與 profiler，在要看執行中的值或程式變慢時再回來讀。
+
 ## 看現場：pdb 與 breakpoint()
 
 除錯器讓你看到變數**實際上**是什麼。在想停下來的地方加一行 `breakpoint()`（Python 3.7 起內建，預設進入 pdb）：

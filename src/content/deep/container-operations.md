@@ -225,6 +225,8 @@ with_rotation(debug)
 - `kubectl logs` 只讀得到最新的那個檔案；輪替出去的、Pod 刪除後的 log，要靠 Fluent Bit 這類 DaemonSet 收到叢集外，見 [Kubernetes 叢集維運](#/skill/k8s-operations)。
 - 程式自己寫進容器裡的 log 檔，既不會被輪替，也不會被收集。gunicorn 的 access log 用 `--access-logfile -` 寫到 stdout；Python 在非終端機時緩衝 stdout 的問題，見 [日誌、錯誤處理與設定](#/skill/logging-config)。
 
+:::stop 讀到這裡可以先停：會用 logs、inspect、events 查一個停掉的容器，看得懂結束碼，替主機設好日誌輪替。後面的資源上限、重啟策略、優雅關機、非 root 與執行環境，在遇到 OOM、`docker stop` 要等 10 秒或要搬上 Kubernetes 時再回來讀。
+
 ## 資源上限：記憶體、CPU 與 GIL
 
 ```bash

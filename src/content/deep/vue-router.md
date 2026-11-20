@@ -172,6 +172,8 @@ watch(() => id, async (pid) => {                       // 換病人時重抓；i
 
 上面的 `watch` 在快速切換病人時也有「舊回應蓋掉新結果」的問題，取消請求的寫法見 [watch 與 watchEffect](#/skill/watchers)。
 
+:::stop 讀到這裡可以先停：會設定路由、params 與 query，寫導航守衛，知道換參數時元件會被重用、history 模式要伺服器 fallback。後面的 React 對照與錯誤訊息表，在讀 React Router 或部署後重新整理出現 404 時再回來讀。
+
 ## React 對照
 
 | Vue Router 5.5 | React Router 8 |

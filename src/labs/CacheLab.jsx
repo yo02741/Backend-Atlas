@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Toggle, Slider, Code, Callout, Status, useReducedMotion, useLabVisible } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Toggle, Slider, Code, Callout, Status, useReducedMotion, useLabVisible, Measure } from './ui.jsx'
 
 /* ============================================================
    Cache-aside：Redis 擋在 PostgreSQL 前面，但所有邏輯都在 API 裡
@@ -141,7 +141,7 @@ export default function CacheLab() {
           <div className="cache-stats">
             <span className="pill">hit <b>{stats.hits}</b></span>
             <span className="pill">miss <b>{stats.misses}</b></span>
-            <span className="pill">命中率 <b>{rate === null ? '–' : `${rate}%`}</b></span>
+            <span className="pill">命中率 {rate === null ? <b>–</b> : <Measure kind="local" value={rate} unit="%" />}</span>
             <span className="pill">DB 目前 name = <b>"{db.name}"</b></span>
           </div>
           {log.length > 0 && (
@@ -212,7 +212,7 @@ function LogLine({ e }) {
       <span className="n">#{e.id}</span> GET /users/1
       {e.kind === 'hit' ? <Status ok>hit</Status> : <Status warn>miss</Status>}
       {e.stale && <Status>stale："{e.name}"</Status>}
-      <span className="ms">{e.ms} ms</span>
+      <span className="ms"><Measure kind="set" value={e.ms} unit="ms" /></span>
     </>
   )
 }

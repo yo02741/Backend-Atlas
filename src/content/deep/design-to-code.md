@@ -68,6 +68,8 @@ Dev Mode 選取圖層時顯示寬高與 padding，按住 Option（Windows 是 Al
 2. **padding 與 gap 分開看**。兩張卡片之間 12px，可能是父層的 gap，也可能是卡片自己的 margin；Auto layout 的設定告訴你是哪一個，CSS 用 `gap`，不要在子項加 margin。
 3. **邊框算在哪裡**。Figma 的 stroke 可以設在內側、中間、外側，預設多半是內側；CSS 用 `box-sizing: border-box` 時，border 算在寬度裡，和內側 stroke 的結果一致（見 [盒模型](#/skill/box-model)）。
 
+:::stop 讀到這裡可以先停：會依切版的順序框區塊，把 Auto layout 與 Hug、Fill、Fixed 轉成 flex 與尺寸規則，量值時分清 padding 與 gap。後面的 token 表、素材與沒畫的寬度與狀態，在要正式接一份設計稿時再回來讀。
+
 ### token：先把值整理成表
 
 | 種類 | 設計稿 | CSS 變數 |

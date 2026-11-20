@@ -232,6 +232,8 @@ async function onSubmit() {
 
 登入頁本身不能設 `requiresAuth`；守衛把 `/login` 也導去 `/login` 時，Vue Router 會在 Console 警告 `Detected a possibly infinite redirection in a navigation guard when going from "/" to "/login". Aborting to avoid a Stack Overflow.`。
 
+:::stop 讀到這裡可以先停：會分開處理 401 與 403、檢查 `redirect`、讓同時過期的請求共用一次更新，並用路由守衛管畫面。後面的登出與跨分頁同步，在做登出或共用電腦的情境時再回來讀。
+
 ### 登出與其他分頁
 
 ```js

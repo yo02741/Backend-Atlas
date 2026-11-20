@@ -72,6 +72,8 @@ Kubernetes Secret 的 base64 只是為了能存二進位資料。`kubectl get se
 
 秘密的危害等於它的權限。API 服務用的資料庫帳號不需要 `DROP`；只讀取 bucket 的服務不需要寫入權限；每個服務各自一組憑證，不共用一把萬用金鑰。這樣一把秘密外洩時，損害有範圍，也能從存取紀錄看出是哪個服務出事。
 
+:::stop 讀到這裡可以先停：分得出秘密的種類與外洩途徑，知道本機、CI 與正式環境各放哪裡、怎麼輪替。後面的 CI 與 OIDC、外洩後的處理順序與掃描程式，在設定部署流程或真的發生外洩時再回來讀。
+
 ### CI 的秘密與 OIDC
 
 CI 平台都有秘密功能（GitHub Actions 的 secrets、GitLab 的 CI/CD variables 搭配 masked 與 protected）。幾個重點：

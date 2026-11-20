@@ -197,6 +197,8 @@ Content-Type: application/json
 | 格式 | 規格不規定；可能是 JWT 也可能是 opaque 字串，client 不應該解析它 | 一定是 JWT |
 | 送到 API | 是，`Authorization: Bearer` | 否；API 不應該接受 ID token 當存取憑證 |
 
+:::stop 讀到這裡可以先停：會走一次授權碼流程，說得出 state、PKCE、scope 各防什麼，也分得出 access token 與 ID token。後面的程式模擬與錯誤訊息，在要自己寫 callback 或除錯登入失敗時再回來讀。
+
 ## 實際程式：模擬授權伺服器與 client 的 callback
 
 下面用 Python 標準函式庫寫一個極小的授權伺服器與 client，跑一次正常流程，再跑四種會失敗的情況。為了專注在流程，ID token 在這裡用字典代替（真實環境要驗 JWT 簽章，見 [JWT 解剖](#/skill/jwt)）。

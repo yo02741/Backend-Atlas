@@ -341,6 +341,20 @@ export function Stat({ label, value, unit, note, tone = '' }) {
   )
 }
 
+/* 數字的來源標籤：模擬器裡會被當成容量或效能承諾的數字（延遲、吞吐、容量、命中率、耗時）用它包起來。
+   kind：set＝教材設定（寫死的示意值）、local＝本機量測（這台瀏覽器量到的）、env＝需在你的環境測。
+   <Measure kind="set" value={120} unit="ms" />；可以放在 Stat 的 value 裡。樣式在 styles.css 的「數字的來源標籤」段。 */
+const MEASURE_KIND = { set: '教材設定', local: '本機量測', env: '需在你的環境測' }
+export function Measure({ kind = 'set', value, unit }) {
+  const k = MEASURE_KIND[kind] ? kind : 'set'
+  return (
+    <span className={`measure ${k}`}>
+      <span className="measure-v">{value}{unit && <small> {unit}</small>}</span>
+      <span className="measure-k">{MEASURE_KIND[k]}</span>
+    </span>
+  )
+}
+
 /* 流向列：一排節點加箭頭（HTML flex，手機自動換行）。
    steps: [{ label, value, hot, bad }]；back：往回走的那條（逾時 / 503 …），notes：底下的小字說明 */
 export function Flow({ title, steps, back, notes = [], ariaLabel }) {

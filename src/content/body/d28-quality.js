@@ -41,6 +41,16 @@ export default {
       '能只用鍵盤走完一個表單流程，指出焦點順序、焦點框與焦點移動的問題',
       '能判斷一個需求該用原生元素、`aria-*` 屬性還是 live region，並用 Lighthouse 與顏色選擇器的對比值驗收',
     ],
+    challenge: {
+      task: '用程式題 [掛號表單的無障礙](#/exercise/a11y-basics-1) 的頁面，或自己專案的一個表單，把同一件工作做三次：用滑鼠、只用鍵盤、開 VoiceOver 或 NVDA 並且不看螢幕。三次都故意先送出一次空白欄位。動手前先預測鍵盤與螢幕閱讀器各會卡在哪一步。',
+      deliver: '三次操作各一份步驟紀錄：每一步焦點停在哪裡、螢幕閱讀器念了什麼、在哪裡卡住',
+      check: [
+        '鍵盤那一次寫出完整的 Tab 順序，指出停不到或看不見焦點的地方',
+        '螢幕閱讀器那一次記下錯誤訊息有沒有被念出來、在什麼時候念',
+        '每個卡住的地方對應一個修法（名稱、焦點、live region 三者之一）',
+      ],
+      twist: '把錯誤提示改成只有紅色外框、沒有文字。先預測三次操作裡哪幾次會發現不了錯誤。',
+    },
     refs: [
       { label: 'W3C：WCAG 2.2', url: 'https://www.w3.org/TR/WCAG22/' },
       { label: 'WCAG 2.2 Understanding：Contrast (Minimum)', url: 'https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html' },
@@ -91,6 +101,17 @@ export default {
       '能分辨元件用的是 roving tabindex 還是 `aria-activedescendant`，並用對應的方法驗收焦點',
       '能為一條鍵盤行為寫出元件測試或 Playwright 測試，並說出 axe 抓得到與抓不到的問題',
     ],
+    challenge: {
+      task: '情境換成售票網站的「場次」Tabs 與「更多操作」選單（退票、轉讓）。用程式題 [更多操作選單](#/exercise/a11y-components-1) 或自己做的元件，對照 APG 的 Tabs 與 Menu Button 模式頁，替兩個元件各寫一張驗收表：進入、移動、選取、離開四組按鍵，每列寫預期的焦點位置與屬性。再開 Console 的 live expression `document.activeElement` 一列一列實測。',
+      deliver: '兩個元件的驗收表，每列有預期、實測與通過與否',
+      check: [
+        '每個元件四組操作都有，至少一列是 Esc 或 Tab 離開元件',
+        '實測欄寫出 `document.activeElement` 是誰與 `aria-*` 的值，不寫「正常」',
+        '標出 APG 寫 Optional 的列，寫明做或不做的理由',
+        '說明從門診選單沿用的條件，以及要跟售票業務重新確認的事（例如退票前要不要再確認一次）',
+      ],
+      twist: '業務要求選了場次就載入座位圖，而座位圖要兩秒。先預測驗收表的哪幾列要改成「焦點移動、但按 Enter 才選取」，`aria-selected` 什麼時候變。',
+    },
     refs: [
       { label: 'WAI-ARIA APG：Read Me First', url: 'https://www.w3.org/WAI/ARIA/apg/practices/read-me-first/' },
       { label: 'WAI-ARIA APG：Developing a Keyboard Interface', url: 'https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/' },
@@ -139,6 +160,16 @@ export default {
       '能說出 jsdom 做不到、必須在真的瀏覽器裡測的三種行為',
       '能故意改壞程式，確認對應那一層的測試會變紅',
     ],
+    challenge: {
+      task: '三個回歸都曾經上線：(1) `canCancel` 在剛好 2 小時時回 `false`；(2) 取消 Dialog 關閉後焦點掉到 `body`；(3) 390px 時「送出」被底部提示列蓋住。替每一個選一層（單元、jsdom 元件測試、Browser Mode 或 Playwright），寫出那支測試，再把產品程式改回壞的版本確認它會紅。',
+      deliver: '三支測試的程式、各自在壞版本上失敗的輸出，以及一句選這層的理由',
+      check: [
+        '每支測試在壞版本失敗、修好的版本通過',
+        '沒有一支放在比需要更貴的層（例如時間規則沒有寫成 E2E）',
+        '焦點與版面那兩支說明 jsdom 為什麼測不到',
+      ],
+      twist: '團隊規定 CI 只能跑 jsdom，不能開瀏覽器。先預測三支裡哪幾支會失去保護，以及你會改用什麼證據補上。',
+    },
     refs: [
       { label: 'Vue：Testing', url: 'https://vuejs.org/guide/scaling-up/testing.html' },
       { label: 'Vitest：Getting Started', url: 'https://vitest.dev/guide/' },
@@ -188,6 +219,17 @@ export default {
       '能用 fake timers 測 debounce 與倒數，不真的等待',
       '能故意改壞一個函式，確認至少一個測試變紅，再判斷覆蓋率報告漏了什麼',
     ],
+    challenge: {
+      task: '情境換成訂位系統的 `canModify(booking, now)`：開席前 24 小時（含）以前才能改期，時區 `+08:00`。用 Vitest 寫 `test.each` 邊界表，用 `vi.setSystemTime` 固定「現在」，含跨日（23:30 改隔天 23:30 的位子）與跨月（10/31 改 11/1）。寫完故意改壞三次：`>=` 改成 `>`、時區改用 UTC、毫秒換算少一個 0，每次都要有測試變紅。不熟「殺掉改壞的版本」可以先做程式題 [替候診時間估算寫測試](#/exercise/unit-tests-1)。',
+      deliver: '測試檔，以及三個改壞版本各自失敗的測試名稱',
+      check: [
+        '測試不依賴執行當下的時間，換一天跑結果一樣',
+        '邊界表至少有剛好 24 小時、差 1 分鐘、跨日、跨月四列',
+        '三個改壞版本各至少一個測試失敗',
+        '列出從門診取消規則沿用的條件，以及要跟餐廳重新確認的事（24 小時從開席還是入座時間算、跨日用哪個時區）',
+      ],
+      twist: '業務改成「開席前一天的 18:00 以前」。先預測邊界表哪幾列的預期值會變、哪幾列不變。',
+    },
     refs: [
       { label: 'Vitest：Getting Started', url: 'https://vitest.dev/guide/' },
       { label: 'Vitest：expect', url: 'https://vitest.dev/api/expect' },
@@ -238,6 +280,16 @@ export default {
       '能用 `getByRole`、`findBy*` 與 user-event 寫出一個互動測試，並說出每個 `await` 在等什麼',
       '能用 MSW 為成功、409、500 各寫一個測試，並讓沒有 handler 的請求使測試失敗',
     ],
+    challenge: {
+      task: '替一個會呼叫 API 的元件（例如送出掛號的表單）用 Testing Library、user-event 與 MSW 寫成功、422、500 三個測試，斷言只看使用者看得到的東西：role、名稱、文字。接著做兩種改動，各自先預測會讓幾個測試變紅：(a) 改掉元件內部的 class、變數名稱與子元件的拆法；(b) 把送出的 body 欄位 `patientId` 改名成 `patient`。',
+      deliver: '三個測試，以及兩次改動各自的測試結果與一句解釋',
+      check: [
+        '(a) 之後所有測試仍然通過',
+        '(b) 之後至少一個測試失敗，失敗訊息指向 body 或畫面',
+        '測試裡沒有 class、`data-testid` 或元件內部的變數',
+      ],
+      twist: '把 setup 檔的 `onUnhandledFrame: \'error\'` 拿掉，再刪掉一個 handler。先預測測試會紅、會綠，還是請求會送到網路上。',
+    },
     refs: [
       { label: 'Vue Test Utils', url: 'https://test-utils.vuejs.org/' },
       { label: 'Testing Library：Which query should I use?', url: 'https://testing-library.com/docs/guide-which-query' },
@@ -287,6 +339,16 @@ export default {
       '能讀懂 `strict mode violation` 與逾時錯誤的 Call log，找出 locator 或等待的問題',
       '能打開 trace，在失敗的那一步看到 DOM、Network 與 Console',
     ],
+    challenge: {
+      task: '在一支掛號流程的 Playwright 測試裡，用 `page.route` 讓 `POST /api/appointments` 延遲 3 秒才回 201，設 `trace: \'retain-on-failure\'`、`expect` 逾時 2 秒，讓它失敗一次。再造第二種失敗：回應很快，但產品程式把「已完成掛號」放在 `role="status"` 之外。打開兩份 trace，各判斷該改測試的等待條件，還是該修產品。',
+      deliver: '兩份 trace 各一張失敗那一步的截圖（DOM 快照與 Network）與判斷',
+      check: [
+        '第一份指出 Network 裡的 201 在斷言逾時之後才回來',
+        '第二份指出文字在 DOM 裡、但不在 `role="status"` 底下，結論是修產品',
+        '兩份的修法都沒有用 `waitForTimeout`',
+      ],
+      twist: '延遲改成 1.5 秒，用 `--repeat-each=10` 跑。先預測十次裡會失敗幾次，再預測把 `expect` 逾時改回預設的 5 秒之後會怎樣。',
+    },
     refs: [
       { label: 'Playwright：Locators', url: 'https://playwright.dev/docs/locators' },
       { label: 'Playwright：Auto-waiting', url: 'https://playwright.dev/docs/actionability' },
@@ -336,6 +398,16 @@ export default {
       '能用 `vue-tsc` 檢查專案，讀懂模板裡的型別錯誤',
       '能設定 pre-commit 與 CI 各跑哪些檢查，並說出型別檢查為什麼不傳檔名',
     ],
+    challenge: {
+      task: '情境換成庫存管理的 `StockRow.vue`。在檔案裡放四個錯：模板讀 `item.qtyy`（型別只有 `qty`）、`v-for` 沒有 `key`、`const total: number = \'3\'`、一個 import 指向不存在的檔案。動手前先預測 `npx eslint .`、`npx vue-tsc --noEmit`、`npm run build` 各會抓到哪幾個，再實際跑。',
+      deliver: '4×3 的表：四個錯 × 三個工具，每格寫預測與實際，抓到時附規則名或 TS 錯誤代碼',
+      check: [
+        '每格的實際結果附輸出裡的規則名或錯誤代碼',
+        '指出 build 成功但程式有錯的那幾格',
+        '另寫一條工具都抓不到、要跟倉儲業務確認的規則（例如數量能不能是負數或小數），以及哪些設定從門診專案直接沿用',
+      ],
+      twist: '把 `tsconfig` 的 `strict` 關掉。先預測表上哪幾格會改變、為什麼，再實際跑。',
+    },
     refs: [
       { label: 'ESLint：Configure ESLint', url: 'https://eslint.org/docs/latest/use/configure' },
       { label: 'eslint-plugin-vue', url: 'https://eslint.vuejs.org' },
@@ -384,6 +456,16 @@ export default {
       '能用 Performance 分頁的 Local metrics 與 Insights 找出三個指標各自的原因',
       '能用 web-vitals 套件收集實際使用者的數據，並說出它和 Lighthouse 的差別',
     ],
+    challenge: {
+      task: '在 [VitalsLab](#/lab/VitalsLab) 造兩個版本：A 是主圖 `lazy`、公告插在上方；B 是主圖 `fetchpriority=high`、公告預留空間，下一號的處理時間拉到 400 毫秒。記下兩版的 LCP、CLS、INP 與評等（這些是教材設定的數字）。再假設實際數據的手機 p75：A 是 LCP 3.1 秒、INP 180 毫秒；B 是 LCP 2.2 秒、INP 320 毫秒。寫一段發版決定。',
+      deliver: '兩版實驗室數據的表，以及五句以內的發版決定（放行、擋下或分批），寫明引用哪幾個數字',
+      check: [
+        '分開寫實驗室數據與實際數據，說明 INP 為什麼要看實際數據',
+        '決定引用 p75 與評等門檻，不用平均',
+        '列出還要收集什麼才能確認（例如手機與桌機分開、樣本數、哪幾頁）',
+      ],
+      twist: '產品說只有 5% 的使用者用手機。先預測你的決定會不會變、哪個指標的份量變了。',
+    },
     refs: [
       { label: 'web.dev：Web Vitals', url: 'https://web.dev/articles/vitals' },
       { label: 'web.dev：Largest Contentful Paint (LCP)', url: 'https://web.dev/articles/lcp' },
@@ -433,6 +515,16 @@ export default {
       '能為大量資料的列表選擇分頁或虛擬捲動，並說出虛擬捲動的限制',
       '能分辨 debounce 與 throttle 的用途，並找出造成整串列表重新渲染的 props',
     ],
+    challenge: {
+      task: '用程式題 [兩千筆掛號一次渲染，改成分頁](#/exercise/render-performance-1) 的元件或自己的列表頁，固定 CPU `4× slowdown`，錄三次 Performance：改前、套用一個有效的修法（改傳布林的 `selected`，或分頁）、套用一個你預測沒用的修法（例如在子元件裡 `watch` 同一個 `selectedId`）。開發版設 `app.config.performance = true`，每次記下最長 task 的時間與 `patch` 的次數。',
+      deliver: '三次錄製的最長 task、`patch` 次數與重現條件（機器、瀏覽器版本、CPU 降速、資料筆數）',
+      check: [
+        '三次在同一台機器、同一個降速設定、同一份資料下錄製',
+        '反例的數字沒有改善或在誤差內，並解釋原因',
+        '每個數字標成本機量測，不寫成通用的效能承諾',
+      ],
+      twist: '資料從 3,000 筆變成 30 筆。先預測有效的修法還值不值得做、最長 task 會剩多少。',
+    },
     refs: [
       { label: 'Vue：Performance', url: 'https://vuejs.org/guide/best-practices/performance.html' },
       { label: 'Vue：Application API（app.config.performance）', url: 'https://vuejs.org/api/application.html' },
@@ -481,6 +573,17 @@ export default {
       '能設定 hidden source map、上傳給監控服務，並確認部署的檔案裡沒有 `.map`',
       '能檢查送往監控服務的資料裡沒有個資',
     ],
+    challenge: {
+      task: '情境換成物流追蹤頁 `track.example/shipments/:id?phone=…`。設 `build.sourcemap: \'hidden\'`，`app.config.errorHandler` 把錯誤送到 `/api/client-errors`（本課「自己收」那段），payload 帶上 git commit 當 release。讓「確認收貨」按鈕丟錯，從收到的 payload 追回原始檔名與行號：上傳 map 給監控服務，或用 `source-map` 套件寫一段 Node 程式查。',
+      deliver: '一筆錯誤的 payload、對回的原始檔名與行號、release 值，以及遮罩前後的網址欄位',
+      check: [
+        'payload 的 release 對得上這次建置的 commit',
+        '對回的位置是 `.vue` 或 `.ts` 原始檔的行號，不是 `index-*.js:1`',
+        'payload 的網址沒有 `phone` 等 query string',
+        '列出從門診案例沿用的遮罩規則，以及要跟物流業務重新確認哪些欄位算個資（收件地址、追蹤號碼）',
+      ],
+      twist: '部署腳本忘了刪 `.map` 檔。先預測使用者能不能拿到原始碼、`hidden` 擋住了什麼，再用 `curl` 驗證。',
+    },
     refs: [
       { label: 'Vue：app.config.errorHandler', url: 'https://vuejs.org/api/application.html#app-config-errorhandler' },
       { label: 'Vue：Production Error Code Reference', url: 'https://vuejs.org/error-reference/' },

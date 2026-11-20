@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, Flow, LineChart, Caption, useTicker, fmtN, fmtMs } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, Flow, LineChart, Caption, useTicker, fmtN, fmtMs, Measure } from './ui.jsx'
 
 /* ============================================================
    逐步加壓，找飽和點
@@ -181,11 +181,11 @@ export default function LoadTestLab() {
                   notes={[qW && qP ? '兩段都在排隊：worker 和連線池的上限很接近' : qW ? '紅框：請求排在 worker 前面，連線池還有空' : qP ? '紅框：請求算完 CPU 後排在連線池前面，worker 還有空' : '沒有哪一段在排隊：每個請求幾乎一到就拿到 worker 和連線']} />
           </LabStage>
           <Stats min={116}>
-            <Stat label="最大吞吐" value={fmtN(Math.round(m.plateau))} unit="req/s" note={`算式上限 ${capTxt(m.cap)}`} />
-            <Stat label="飽和點" value={`併發 ${LEVELS[m.sat]}`} note={`算式 ≈ ${Math.round(m.nStar)}`} />
+            <Stat label="最大吞吐" value={<Measure kind="set" value={fmtN(Math.round(m.plateau))} unit="req/s" />} note={`算式上限 ${capTxt(m.cap)}`} />
+            <Stat label="飽和點" value={<Measure kind="set" value={`併發 ${LEVELS[m.sat]}`} />} note={`算式 ≈ ${Math.round(m.nStar)}`} />
             <Stat label="瓶頸資源" value={cpuBn ? 'CPU' : '連線池'} tone="warn" note={`最高級：worker ${pct(m.rows[TOP].utilW)} · 連線 ${pct(m.rows[TOP].utilP)}`} />
             <Stat label="目前級距錯誤率" value={errPct(r.err)} tone={r.err > 0.005 ? 'bad' : 'ok'} note={`併發 ${r.N} · 排隊逾時`} />
-            <Stat label={`目前級距 ${M_LABEL[metric]}`} value={fmtMs(r[metric])} tone={r[metric] > m.target ? 'bad' : ''} note={`目標 ${m.target} ms`} />
+            <Stat label={`目前級距 ${M_LABEL[metric]}`} value={<Measure kind="set" value={fmtMs(r[metric])} />} tone={r[metric] > m.target ? 'bad' : ''} note={`目標 ${m.target} ms`} />
           </Stats>
           <div className="lt-cross" aria-label="各指標超過目標的併發">
             <span className="h">超過延遲目標 {m.target} ms 的併發</span>

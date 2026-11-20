@@ -206,6 +206,8 @@ const { rooms, connection } = useQueueStream()
 </template>
 ```
 
+:::stop 讀到這裡可以先停：會在輪詢、SSE、WebSocket 之間選一個，寫出 SSE 看板的重連與重連後補資料。後面的 WebSocket 重連與輪詢寫法，在後端只提供那一種時再回來讀。
+
 ### WebSocket：自己寫重連
 
 ```js

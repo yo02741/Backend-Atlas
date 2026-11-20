@@ -11,6 +11,7 @@ const labs = readdirSync(src('labs')).filter((f) => /Lab\.jsx$/.test(f)).map((f)
 const scenarios = readdirSync(src('content/scenarios')).filter((f) => f.endsWith('.js') && f !== 'index.js').map((f) => f.replace('.js', ''))
 const { ALL_DOMAINS } = await import(src('content/roadmap.js'))
 const { STAGES } = await import(src('content/project/stages.js'))
+const { ASSIGNMENTS } = await import(src('content/assignments.js'))
 const domains = ALL_DOMAINS.filter((d) => d.skills.length).map((d) => d.id)
 const routes = [
   '#/', '#/track/frontend', '#/track/backend', '#/track/ai', '#/roadmap', '#/roadmap?track=backend&kw=JWT', '#/roadmap?track=ai',
@@ -21,6 +22,7 @@ const routes = [
   '#/scenarios', ...scenarios.map((id) => `#/scenario/${id}`),
   ...domains.map((id) => `#/domain/${id}`),
   '#/project', ...STAGES.map((s) => `#/project/${s.id}`),
+  '#/assignments', '#/assignments?track=frontend', '#/assignments?track=ai', ...ASSIGNMENTS.map((a) => `#/assignment/${a.id}`),
   // 每個領域挑一兩課（深入內容的表格、程式碼區塊最容易在手機上撐破版面）
   '#/skill/python-backend', '#/skill/how-programs-run', '#/skill/sql-joins', '#/skill/transactions', '#/skill/indexes', '#/skill/jwt',
   '#/skill/cors-cookies', '#/skill/docker-basics', '#/skill/linux-basics', '#/skill/cloud-basics', '#/skill/crypto-toolbox',

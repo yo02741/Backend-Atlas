@@ -41,6 +41,16 @@ export default {
       '能把「一個框」「彈出來的東西」這類描述改成元件名稱',
       '能拿描述逐段驗收一份 AI 產出，指出缺了哪一段',
     ],
+    challenge: {
+      task: '照本課的五段加兩項，替「今日門診」寫一份描述。交給兩個彼此沒看過對方作品的人（同事、同學，或兩個不共享對話的 AI 對話），各自畫出每個區塊的狀態圖：載入中、空、錯誤、成功、送出中。比較兩張圖，標出每一處不一致。',
+      deliver: '描述、兩張狀態圖，以及一張歧義清單（原句、兩邊各怎麼理解、改寫後的句子）',
+      check: [
+        '歧義清單至少三條，每條指到描述裡的原句',
+        '改寫後的句子能用一個操作判斷對錯',
+        '改寫後請第三個人再畫一次，原本的歧義不再出現',
+      ],
+      twist: '加一條需求：同一筆掛號可能同時被櫃台改期。先預測狀態圖要多哪個狀態、描述的哪一段要改。',
+    },
     refs: [
       { label: 'WAI-ARIA Authoring Practices：Patterns', url: 'https://www.w3.org/WAI/ARIA/apg/patterns/' },
       { label: 'web.dev：Responsive web design basics', url: 'https://web.dev/articles/responsive-web-design-basics' },
@@ -87,6 +97,16 @@ export default {
       '能設定 eslint-plugin-vue 與 `vue-tsc`，讓這些錯在 CI 被擋下',
       '能把禁止事項與驗收指令寫進專案規範檔',
     ],
+    challenge: {
+      task: '做程式題 [修好一段 AI 產生的預約清單](#/exercise/ai-common-mistakes-1) 之前，先審它的起始碼，再加審一段看起來奇怪但正確的程式：`const sorted = computed(() => props.items.toSorted(byTime))`。每一處寫「退件」或「保留」，退件要附證據：lint 規則名、Console 訊息，或改了之後的行為差異。審完再交卷。',
+      deliver: '審查清單（每一處的判斷、理由與證據）與程式題的交卷結果',
+      check: [
+        '每一處退件都附可以重現的證據，不是「看起來怪」',
+        '`toSorted` 那段判斷為保留，並說明它沒有改到 props',
+        '程式題交卷通過',
+      ],
+      twist: '專案的瀏覽器目標改成要支援 Safari 15。先預測 `toSorted` 那段的判斷會不會變、要查什麼證據。',
+    },
     refs: [
       { label: 'eslint-plugin-vue：Available rules', url: 'https://eslint.vuejs.org/rules/' },
       { label: 'Vue 3 Migration Guide', url: 'https://v3-migration.vuejs.org/' },
@@ -132,6 +152,16 @@ export default {
       '能在專案規範裡寫明瀏覽器目標，並依 Baseline 狀態決定直接用、加退路或不用',
       '能說出 Modern Web Guidance 是什麼、怎麼查，以及它的建議和標準不同時以誰為準',
     ],
+    challenge: {
+      task: '在自己的 Vue 專案（或用 `npm create vite@latest` 新建一個）請 AI 寫一個「篩選後的清單」加「確認刪除」的元件。對照 `npm ls vue vue-router pinia vite` 的實裝版本與規範檔寫的瀏覽器目標，逐項核對 AI 用到的 API：屬於哪個版本的寫法、瀏覽器功能的 Baseline 狀態。可以先做程式題 [把 AI 的舊式 modal 改成原生 dialog](#/exercise/outdated-patterns-1)。',
+      deliver: '一張核對表：AI 用到的 API、實裝版本、這個版本的正確寫法或 Baseline 狀態、來源（官方文件或 `node_modules` 裡的型別定義）',
+      check: [
+        '每一列的版本號從 `npm ls` 的輸出抄，不是記憶',
+        '至少一列寫出 AI 的寫法屬於哪一版，以及和實裝版本的差異',
+        '瀏覽器 API 那幾列附 Baseline 狀態與來源',
+      ],
+      twist: '瀏覽器目標改成要支援 Safari 15。先預測核對表哪幾列會從「可以直接用」變成「要加退路」，再查證。',
+    },
     refs: [
       { label: 'Chrome for Developers：Modern Web Guidance', url: 'https://developer.chrome.com/docs/modern-web-guidance' },
       { label: 'Chrome for Developers：Modern Web Guidance 1.0', url: 'https://developer.chrome.com/blog/modern-web-guidance-v1' },
@@ -179,6 +209,16 @@ export default {
       '能在截圖上加編號標註，寫出對應的元件名稱、狀態與互動',
       '能用文字線框描述一個沒有設計稿的畫面',
     ],
+    challenge: {
+      task: '情境換成餐廳訂位的「選時段」畫面。截一張自己做的、或任一公開訂位頁的 1280px 截圖（不含真實個資），照本課的方式標註每個區塊的編號，再補一張表：每個區塊的載入中、沒有時段、錯誤時長什麼樣，鍵盤怎麼選時段，390px 怎麼排。把「截圖加文字」與「只給截圖」各交給 AI 做一版，比較兩版。',
+      deliver: '標註後的截圖、補充表，以及兩版產出各自在 390px 與只用鍵盤時的紀錄',
+      check: [
+        '補充表的每一列都是截圖上看不出來的事',
+        '兩版的差異至少一處落在補充表寫到的行為',
+        '說明從門診看板沿用的條件，以及要跟餐廳重新確認的事（例如時段滿了要不要開放候補）',
+      ],
+      twist: '餐廳加了「候補」按鈕，截圖還是舊的。先預測只給截圖的那版會怎麼處理這個按鈕，補充表要加哪一列。',
+    },
     refs: [
       { label: 'Chrome DevTools：Device mode', url: 'https://developer.chrome.com/docs/devtools/device-mode' },
       { label: 'Chrome DevTools：View and change CSS', url: 'https://developer.chrome.com/docs/devtools/css' },
@@ -224,6 +264,17 @@ export default {
       '能為每份狀態決定放在元件、父元件、store 或網址，並說出理由',
       '能用 Vue DevTools 與 lint 檢查 AI 產出是否照拆分與資料流向寫',
     ],
+    challenge: {
+      task: '情境換成倉庫的「今日出貨」頁：上方是日期與倉別篩選，中間是出貨單表格，右側是選取的出貨單明細。先只交元件樹與介面表（每個元件的 props 與型別、emits、狀態放哪一層），不寫程式。交卷後才看需求變化。',
+      deliver: '元件樹、介面表，以及需求變化後的修改清單（哪些元件改了介面、哪些不用動）',
+      check: [
+        '每個元件的 props 與 emits 都列出型別',
+        '日期與倉別放在網址或頁面元件，並寫出理由',
+        '需求變化後要改介面的元件不超過兩個，或寫明原本的拆分為什麼撐不住',
+        '列出從門診案例沿用的拆分原則，以及要跟倉儲業務重新確認的事（例如切換倉別時，已選的明細要不要保留）',
+      ],
+      twist: '新需求：同一頁要能左右並排比較兩個倉別的出貨單。先預測元件樹哪裡要改、狀態要不要搬層。',
+    },
     refs: [
       { label: 'Vue：Components Basics', url: 'https://vuejs.org/guide/essentials/component-basics.html' },
       { label: 'Vue：Props', url: 'https://vuejs.org/guide/components/props.html' },
@@ -272,6 +323,16 @@ export default {
       '能用 DevTools 造出 loading、empty、error 三種狀態並檢查畫面',
       '能把一條驗收步驟寫成 Playwright 測試，並故意改壞程式確認它會失敗',
     ],
+    challenge: {
+      task: '請 AI 依一份描述做「我的掛號」清單。等產出看起來漂亮、附的測試也全綠之後，寫兩條驗收條件，條件本身要讓這份產出有機會失敗，例如 API 回 500 時要有重試按鈕且焦點不跑掉、390px 時沒有水平捲軸。用 DevTools 或 Playwright 實際跑這兩條。',
+      deliver: '兩條驗收條件，以及每條的操作步驟與實際結果（截圖或 Playwright 輸出）',
+      check: [
+        '兩條條件都能判斷過或不過，不靠主觀',
+        '至少一條在原產出上失敗',
+        '失敗的那條附重現步驟（例如用 `page.route` 回 500）',
+      ],
+      twist: 'AI 依你的條件修好後又交回一版，順手改了所有 class 名稱。先預測你的驗收會不會因此失敗；會的話，寫出條件綁錯了哪一層。',
+    },
     refs: [
       { label: 'Chrome DevTools：Network panel', url: 'https://developer.chrome.com/docs/devtools/network' },
       { label: 'Chrome DevTools：Device mode', url: 'https://developer.chrome.com/docs/devtools/device-mode' },
@@ -321,6 +382,16 @@ export default {
       '能判斷哪些規則該寫進規範檔、哪些該改成 lint 規則或測試',
       '能用一個小任務檢查 AI 有沒有遵守規範，並改寫不清楚的那一條',
     ],
+    challenge: {
+      task: '拿自己專案的 AGENTS.md（或本課的範例）做一次乾淨 checkout 演練：`git clone` 到新的資料夾，只照規範檔寫的步驟安裝、檢查、測試、建置，不看 README、不靠記憶。每一步記下成功或失敗，以及輸出的第一行。',
+      deliver: '每個指令的結果表，以及規範檔的修改 diff',
+      check: [
+        '所有指令都在新的 clone 裡執行，不是原本的工作目錄',
+        '每個失敗的指令都對應一處規範檔的修改',
+        '修改後從乾淨的 clone 再跑一次，全部成功',
+      ],
+      twist: '用 `nvm` 換一個 Node 主版本再跑一次。先預測哪一步會最先失敗、規範檔要補哪一行。',
+    },
     refs: [
       { label: 'AGENTS.md', url: 'https://agents.md/' },
       { label: 'Claude Code 文件：Memory（CLAUDE.md 與 @ 引入）', url: 'https://code.claude.com/docs/en/memory' },
@@ -370,6 +441,17 @@ export default {
       '能用型別檢查與 Network 分頁找出 AI 編出來的欄位與讀錯的錯誤格式',
       '能要求 AI 列出規格的缺口，並分辨哪些要回頭改規格',
     ],
+    challenge: {
+      task: '情境換成物流的「我的包裹」清單，API 回 `{ id, trackingNo, status, eta? }`，`eta` 是選填。照本課準備一份契約包（規格節錄、一筆實際回應、限制），請 AI 做清單與 MSW mock。交回後把 mock 裡的 `eta` 全部拿掉再跑一次，檢查畫面與程式碼：有沒有自己補上「預計明天送達」這類值、mock 有沒有用 `satisfies` 綁型別。',
+      deliver: '契約包、拿掉 `eta` 前後的畫面截圖，以及程式碼裡處理缺值的那幾行',
+      check: [
+        '缺 `eta` 時畫面顯示的是契約包約定的文字，不是 AI 自己編的',
+        'mock 用了 `satisfies` 或等效的型別檢查',
+        '找出至少一處 AI 自行補值或猜欄位的地方，或說明為什麼沒有',
+        '列出從掛號契約沿用的規則，以及要跟物流業務重新確認的事（`eta` 缺值時畫面要寫什麼）',
+      ],
+      twist: '後端在 `status` 加了新值 `returned`。先預測畫面會顯示什麼、型別檢查會不會擋。',
+    },
     refs: [
       { label: 'OpenAPI Specification', url: 'https://spec.openapis.org/oas/latest.html' },
       { label: 'RFC 9457：Problem Details for HTTP APIs', url: 'https://datatracker.ietf.org/doc/html/rfc9457' },
@@ -418,6 +500,16 @@ export default {
       '能指出 diff 裡削弱測試與繞過檢查的寫法，並要求修正',
       '能把一個過大的元件規劃成「先補測試、再分步拆分」的幾個 commit',
     ],
+    challenge: {
+      task: '在練習 repo 開一個分支：做一個小功能（例如清單加「只看未報到」的勾選），同時用 `npm install` 升一個無關的套件，讓 `package-lock.json` 也變動。用 `git diff --stat main...HEAD` 由外往內審，再用 `git add -p`（或 `git restore -p`）逐塊決定留下哪些改動，讓最後的 commit 只含功能需要的部分。',
+      deliver: '整理前後的 `git diff --stat`，以及每一塊留下或丟掉的理由',
+      check: [
+        '最後的 diff 不含與功能無關的 lockfile 變動',
+        '最後的分支上 `npm ci` 與測試都通過',
+        '每一塊丟掉的改動都寫了理由',
+      ],
+      twist: '那個「無關」的套件其實修了功能用到的一個 bug。先預測你會從哪裡發現，以及它該拆成獨立的 PR 還是留在這次。',
+    },
     refs: [
       { label: 'Git：git-diff', url: 'https://git-scm.com/docs/git-diff' },
       { label: 'Git：git-add', url: 'https://git-scm.com/docs/git-add' },

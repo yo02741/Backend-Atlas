@@ -102,6 +102,8 @@ TypeScript 的版本要注意：vue-tsc 3.3 用的是 TypeScript 的 JavaScript 
 
 ESLint 要讀懂 `.vue` 裡的 TypeScript，用 `@vue/eslint-config-typescript`：`defineConfigWithVueTs()` 取代 `defineConfig()`，`vueTsConfigs.recommended` 帶進 typescript-eslint 的建議規則，例如 `@typescript-eslint/no-explicit-any`（`Unexpected any. Specify a different type`）與 `@typescript-eslint/ban-ts-comment`。
 
+:::stop 讀到這裡可以先停：會分辨 ESLint、Prettier、vue-tsc 各抓什麼，排對 flat config 的順序。後面的 oxlint、執行時機與完整設定，在要調整 pre-commit 或 CI 的檢查時再回來讀。
+
 ### oxlint
 
 create-vue 3.24 也可以選擇加入 oxlint：一個用 Rust 寫的 linter，規則與 ESLint 的常用規則相容、速度快很多。範本的做法是 `lint` 先跑 `oxlint . --fix`，再跑 `eslint . --fix`，並用 `eslint-plugin-oxlint` 在 ESLint 裡關掉 oxlint 已經檢查過的規則。eslint-plugin-vue 的模板規則仍然由 ESLint 負責。

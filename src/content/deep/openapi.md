@@ -10,7 +10,7 @@
 
 | 欄位 | 內容 |
 |---|---|
-| `openapi` | 規格版本，例如 `3.1.0`（以下範例用 3.1） |
+| `openapi` | 規格版本，例如 `3.1.0`（以下範例用 3.1；規格已出到 3.2，FastAPI 產生的是 3.1.0，工具支援要逐一確認） |
 | `info` | API 名稱、版本、說明 |
 | `servers` | API 的基底網址，例如 `https://api.shop.example/v1` |
 | `paths` | 每個路徑與方法：參數、請求 body、各狀態碼的回應 |
@@ -173,6 +173,8 @@ def get_order(order_id: int) -> Order:
 啟動後 `/openapi.json` 是規格、`/docs` 是 Swagger UI、`/redoc` 是 Redoc。請求 body 不符合 `OrderCreate` 時，FastAPI 自動回 422；`response_model` 會過濾回應，只留下 `Order` 有的欄位。`responses={404: ...}` 只是**文件**，框架不會檢查程式是否只回這些狀態碼。
 
 兩種做法都要把規格當成**合約**：規格要進版本控制、改規格要經過評審，code-first 也要在 CI 裡把產出的 `openapi.json` 存下來比對。
+
+:::stop 讀到這裡可以先停：會讀懂一份 OpenAPI 文件、分清 code-first 與 schema-first。後面的相容性規則、契約測試與產生 client，在要把規格放進 CI 或替前端產型別時再回來讀。
 
 ## 版本與向後相容的規則
 

@@ -3,6 +3,16 @@ import l1 from './parts/d1-language-l1.js'
 import m1 from './parts/d1-language-m1.js'
 const base = {
   'python-backend': {
+    challenge: {
+      task: '照[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的 README 起服務、用 `desk1` 登入，對 `POST /sessions/1/appointments` 送四個 body：`{"patient_id": "2"}`、`{"patient_id": 0}`、`{"patient_id": true}`，以及一個不是 JSON 的 `abc`。每送一個之前，先寫下你預測的狀態碼，以及前端表單該把錯誤標在哪個欄位。',
+      deliver: '四次請求的對照表：預測、實際狀態碼、回應的 `errors` 內容，加一句前端依哪個欄位決定標紅哪個輸入框。',
+      check: [
+        '每一列都有送出前寫下的預測；和實際不同的列，指出是 `BookIn` 的哪個設定（`strict=True`、`gt=0`）造成的',
+        '分得出 400（body 讀不懂）與 422（讀得懂但內容不對），並指出這是 `clinic/api/errors.py` 的哪一段決定的',
+        '前端依 `errors[].field` 對應輸入框，不比對 `message` 的文字',
+      ],
+      twist: '把 `BookIn` 的 `strict=True` 拿掉再重啟。先預測 `"2"` 與 `true` 兩列的結果會怎麼變，再重送一次，說明關掉 strict 會讓哪種錯誤的輸入被當成有效資料。',
+    },
     points: [
       { b: '型別提示是文件也是防線', t: '`def get_user(user_id: int) -> User | None` 一眼看出輸入輸出；搭配 pyright / mypy 在存檔時就抓到錯，和 TypeScript 的型別直覺一致。' },
       { b: '資料用 dataclass / pydantic 裝', t: '不要用 dict 到處傳。pydantic `BaseModel` 會驗證、轉型、產生 JSON schema。FastAPI 的請求/回應模型就是 pydantic model。' },
@@ -23,6 +33,17 @@ const base = {
     ],
   },
   'how-programs-run': {
+    challenge: {
+      task: '在本機寫一個最小的 FastAPI 應用：模組層級放一個 `CACHE = {}`，`GET /item/{k}` 回傳 `{"pid": os.getpid(), "hit": k in CACHE}`，然後把 `k` 放進快取。分別用 `uvicorn app:app --workers 1` 與 `--workers 4` 啟動，各用 curl 對同一個 key 連打 20 次。打之前先寫下：4 個 worker 時 20 次裡會有幾次 `hit: false`。',
+      deliver: '兩種設定各一張表：每個 pid 接到幾次請求、其中幾次沒命中；加上 `ps -o pid,ppid,nlwp,cmd` 的輸出。',
+      check: [
+        '表格是實際輸出統計出來的，並附上啟動前寫下的預測',
+        '4 個 worker 時，沒命中的次數等於實際接到請求的不同 pid 數，並用「每個行程各有一份記憶體」解釋',
+        '`ps` 的輸出看得出 1 個父行程加 4 個 worker 行程',
+        '寫出要讓 4 個 worker 共用快取，資料要放在哪裡（行程外，例如 Redis），以及多出的代價',
+      ],
+      twist: '把 dict 換成 `functools.lru_cache` 包住的函式，worker 數不變。先預測命中分布會不會改變，再跑一次驗證。',
+    },
     points: [
       { b: '行程分資源，執行緒分 CPU', t: '行程有自己的記憶體、PID 與 fd 表，彼此隔離；同一行程的執行緒共用記憶體與 fd，各有自己的 stack。`uvicorn --workers 4` 是 4 個行程，記憶體與全域快取各一份。' },
       { b: 'stack 放呼叫、heap 放物件', t: '每次函式呼叫在 stack 推一個 frame；CPython 的物件都在 heap，變數只是指向物件的名字。Python 的記憶體洩漏通常是「還有人參照著」，例如只增不減的全域快取。' },
@@ -43,6 +64,17 @@ const base = {
     ],
   },
   'data-representation': {
+    challenge: {
+      task: '演唱會售票：場次在台北時間 `2026-12-31 23:30` 開賣，票價 1,999 元，加收 2.5% 手續費（四捨五入到元），總額分三期付款，尾差放最後一期。在 [Playground](#/playground?lang=python) 只用標準函式庫寫一段往返測試：開賣時間存成 UTC、`json.dumps` 成字串、讀回後分別轉成台北（UTC+8）與洛杉磯（固定用 UTC−8）顯示；金額用 float 與從字串建立的 `Decimal` 各算一次。',
+      deliver: '程式與輸出：每一步的時間字串與日期、兩種算法的手續費、三期金額與加總。',
+      check: [
+        'UTC 字串帶 `Z` 或 `+00:00`，讀回後與原本的時間點相減為 0',
+        '寫出台北與洛杉磯看到的「開賣日期」各是哪一天',
+        'Decimal 版用 `quantize` 指定捨入規則，三期加總等於總額；float 版若有差異，指出差在哪一步',
+        '分成兩欄列出：可以從門診掛號的例子沿用的條件（存 UTC、從字串建 Decimal），以及要跟售票業務重新確認的條件（以哪個時區算「當天」、尾差放哪一期、手續費的捨入方式）',
+      ],
+      twist: '業務改成「依購票者所在時區的當天，每人限購一張」。先預測同一個 UTC 時間在台北與洛杉磯會不會落在不同的「當天」，以及資料表要多存哪個欄位，再用你的程式驗證。',
+    },
     points: [
       { b: 'str 是字元、bytes 是位元組', t: 'UTF-8 裡 ASCII 1 個位元組、常用中文 3 個、emoji 4 個。在邊界明確 `encode` / `decode` 並指定 `encoding="utf-8"`；亂碼是同一串位元組被用錯的編碼解讀。' },
       { b: 'JSON 沒有日期、Decimal、bytes', t: '`json.dumps` 遇到 datetime、Decimal 直接 TypeError；tuple 變 list、int key 變字串、NaN 輸出成不合法的 JSON。格式要自己決定並寫進 API 規格。' },
@@ -65,6 +97,16 @@ const base = {
     ],
   },
   'project-layering': {
+    challenge: {
+      task: '倉儲系統的「出庫」service：`ShipmentService(stock_repo, carrier, clock)` 先扣庫存，再呼叫物流商 API 建託運單。在 [Playground](#/playground?lang=python) 用 `typing.Protocol` 定義兩個依賴，寫三個替身：記憶體版 repository、一定丟 `CarrierUnavailable` 的物流商、回傳固定時間的 clock。先寫下你認為「物流商失敗時庫存該不該扣」的規則，再寫測試驗證 service 照這個規則做。',
+      deliver: '程式與測試輸出，加一段：失敗的替身暴露了哪個原本沒講清楚的邊界（扣庫存與建託運單的順序、失敗時誰負責補回）。',
+      check: [
+        'service 不 import 框架或資料庫模組，三個替身都從建構子傳入',
+        '物流商失敗的測試斷言具體的庫存數字，不是只斷言有丟例外',
+        '分成兩欄：可以從門診掛號「名額」沿用的條件（扣了要能還、在同一個交易裡），以及要跟倉儲業務確認的條件（部分出貨、預留庫存保留多久）',
+      ],
+      twist: '物流商改成「逾時，但對方可能已經建單成功」。先預測現在的測試能不能區分「失敗」與「不知道」，再說明 service 要多哪個依賴或狀態。',
+    },
     points: [
       { b: '三層各管一種改動', t: 'handler 管 HTTP（路徑、狀態碼、schema）、service 管業務規則、repository 管資料怎麼存。HTTP 格式、規則、資料庫各自因不同理由改，分開後改一種只動一層。' },
       { b: '領域邏輯不碰框架與資料庫', t: 'service 裡不出現 `HTTPException`、`Request`、SQL 或 ORM session；錯誤丟自訂例外，在邊界轉成狀態碼。同一個 service 才能被 API、批次工作、CLI 共用。' },
@@ -85,6 +127,16 @@ const base = {
     ],
   },
   'error-design': {
+    challenge: {
+      task: '在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)製造三種錯誤：`patient1` 對同一個診次掛號兩次；`desk1` 替 `{"patient_id": 99999}` 掛號；停掉 postgres（`docker compose stop postgres`）後送 `GET /appointments`。每次記下狀態碼、`Content-Type`、`type`、`detail` 與回應標頭 `X-Request-ID`，再用 request id 在 `docker compose logs api` 找出對應的日誌行。',
+      deliver: '三個錯誤的對照表：回應裡的欄位 ↔ 日誌裡的欄位，加一欄前端該顯示的文字與依據的欄位。',
+      check: [
+        '三列都有 request id，而且在日誌裡找得到同一個 id 的那一行',
+        '5xx 那一列的回應沒有 stack trace、SQL 或主機名稱，日誌裡有完整的例外',
+        '前端依 `type` 的結尾（例如 `already-booked`）決定訊息，不解析 `detail`',
+      ],
+      twist: '產品要求重複掛號時告訴使用者「你已經掛到第幾號」。先預測要在 Problem Details 加什麼擴充欄位、會不會讓別人查到這筆掛號，再寫出要改哪一個測試。',
+    },
     points: [
       { b: '預期內錯誤 vs 程式錯誤', t: 'Email 已註冊、找不到訂單是使用者能處理的，回 4xx、記 info；KeyError、連不上資料庫是 bug，回 500、記 stack trace、告警。不要在中間 `except Exception` 吞掉 bug。' },
       { b: '例外階層帶著狀態碼與代碼', t: '`AppError` → `NotFound` / `Conflict` / `ValidationFailed` → `EmailTaken`…，每類帶 HTTP 狀態、穩定代碼、標題；基礎設施例外在 repository 翻譯成領域例外，用 `raise ... from e` 保留原因。' },
@@ -105,6 +157,17 @@ const base = {
     ],
   },
   'uv-packaging': {
+    challenge: {
+      task: '把[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api) clone 到一個沒有 `.venv` 的目錄，依序做三件事：(1) `uv sync --locked`，用 `uv pip list` 記下 fastapi、pydantic 的版本，並和 `uv.lock` 裡的對照；(2) `uv lock --upgrade --dry-run`，記下如果升級會變的套件；(3) 在 `pyproject.toml` 加一個依賴但不更新 lock，分別跑 `uv sync --locked` 與 `uv sync --frozen`。',
+      deliver: '三步的指令輸出摘錄，加一段說明 lock、解析與安裝各在哪一步發生。',
+      check: [
+        '第 1 步裝出的版本與 `uv.lock` 一致，兩個套件都列出',
+        '第 2 步寫出 uv 列出的變更（可能是零），並說明 lock 沒變時版本為什麼不會自己升級',
+        '第 3 步寫出兩個指令各自的結果：`--locked` 報錯、`--frozen` 照舊 lock 安裝，新依賴不在環境裡',
+        '附上 `uv --version`',
+      ],
+      twist: '把 `.python-version` 改成 `3.13`。先預測 `uv sync --locked` 會不會失敗、`uv.lock` 要不要重產（提示：看 `requires-python`），再實際跑一次。',
+    },
     points: [
       { b: 'pyproject.toml 記「你要什麼」，uv.lock 記「實際裝了什麼」', t: '前者是直接依賴與版本範圍，後者是完整解析結果（含間接依賴、精確版本、hash）。兩個都進版控。' },
       { b: '`uv run` 是新的入口', t: '不用 activate。`uv run pytest`、`uv run uvicorn app:app` 會先確保 .venv 與 lock 同步再執行。' },
@@ -122,9 +185,20 @@ const base = {
     ],
   },
   'python-async': {
+    challenge: {
+      task: '物流公司的出貨 API：每個請求要查三個倉庫的庫存（各等 I/O 0.1 秒），再算運費（純 CPU 約 0.05 秒）。在 [Playground](#/playground?lang=python) 用 `await asyncio.sleep(0.1)` 模擬 I/O、一段調到約 0.05 秒的迴圈模擬 CPU，分別量 1、5、10 個請求同時進來的總時間。跑之前先寫下 10 個請求的預測總時間，並分開寫 I/O 與 CPU 各佔多少。',
+      deliver: '預測與實測的對照表（3 種請求數 × 總時間），加一段解釋。',
+      check: [
+        '預測寫在跑之前；實測中 I/O 部分不隨請求數線性增加，CPU 部分大約線性增加',
+        '用 `time.perf_counter()` 量，並標明是 Pyodide 在瀏覽器裡的本機量測，不是伺服器容量',
+        '寫出要讓 CPU 部分也並行要改用什麼（行程池或任務佇列），以及為什麼在 Pyodide 裡做不到',
+        '分成兩欄：可以沿用到門診掛號服務的結論（I/O 等待可以重疊），以及要跟物流業務確認的條件（運費是否一定要在回應前算完、倉庫 API 的逾時多久）',
+      ],
+      twist: '倉庫 API 換成同步的 client：把 `await asyncio.sleep(0.1)` 改成 `time.sleep(0.1)`。先預測 10 個請求的總時間，再實測，說明差異從哪裡來。',
+    },
     points: [
       { b: '`await` 是「讓出控制權」', t: '碰到 I/O 就把執行權還給 event loop 去跑別人，I/O 完成再回來。單執行緒也能同時處理很多請求，但 CPU 密集運算會霸住 loop。' },
-      { b: 'GIL 的實際意義', t: '預設的 CPython 同一時間只有一個執行緒在跑 Python bytecode；等 I/O 時會釋放 GIL，所以多執行緒對 I/O 密集有效、對 CPU 密集無效（要用多程序）。3.13 起有實驗性的 free-threaded build，但生態系還在跟上。' },
+      { b: 'GIL 的實際意義', t: '預設的 CPython 同一時間只有一個執行緒在跑 Python bytecode；等 I/O 時會釋放 GIL，所以多執行緒對 I/O 密集有效、對 CPU 密集無效（要用多程序）。3.13 起有不帶 GIL 的 free-threaded build（3.14 起正式支援，但仍不是預設的 build），部分 C 擴充還在跟進。' },
       { b: '別在 async 函式裡用同步 driver', t: '`psycopg2`、`requests` 會阻塞整個 loop。要用 `asyncpg`、`httpx.AsyncClient`、`motor`，或把同步呼叫丟到 threadpool。' },
       { b: 'FastAPI 的 def 與 async def 差別', t: '`def` handler 會自動在 threadpool 執行（不會卡 loop）；`async def` 才跑在 loop 上，裡面就不能有阻塞呼叫。' },
     ],
@@ -139,6 +213,16 @@ const base = {
     ],
   },
   'web-framework': {
+    challenge: {
+      task: '在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的本機副本加上暫時的 log：`RequestContextMiddleware` 進入與結束、`clinic/api/deps.py` 的 `get_db` 在 `yield` 前後、`GET /appointments/{id}` 的 handler 開頭與結尾。帶 `X-Request-ID: trace-1` 送一次存在的掛號、帶 `X-Request-ID: trace-2` 送一次不存在的 id。送之前先寫下你預測的順序。',
+      deliver: '兩個請求的時序（每行帶 request_id）與預測對照，加一句說明兩者哪裡不同。',
+      check: [
+        '預測寫在送出之前；和實際不同的地方寫出原因（例如 yield 依賴的清理在回應送出前還是後）',
+        '不存在的那次指出 `get_db` 的清理有沒有執行、`NotFound` 在哪一層轉成 Problem Details',
+        '每一行都帶同一個 request_id，回應標頭的 `X-Request-ID` 和送出的一致',
+      ],
+      twist: '改送 `X-Request-ID: trace 3`（中間有空白）。先預測回應標頭與日誌裡的 request_id 會是什麼，再看 middleware 的哪一行決定了結果。',
+    },
     points: [
       { b: '一個請求的路徑', t: 'ASGI server（uvicorn）→ middleware（CORS、log、trace id）→ 路由比對 → 依賴注入（DB session、目前使用者）→ 參數驗證（pydantic）→ handler → 回應序列化 → middleware 收尾。' },
       { b: 'Depends 做的事', t: '`Depends(get_db)` 就是「執行這個函式、把結果塞給我」。把「取得目前使用者」「開 DB session」寫成依賴，handler 只剩商業邏輯。' },
@@ -155,6 +239,16 @@ const base = {
     ],
   },
   'testing': {
+    challenge: {
+      task: '售票服務的 `buy(seat)`：寫入訂單，再呼叫金流商扣款。在 [Playground](#/playground?lang=python) 用 `unittest` 寫兩層測試：單元測試用記憶體版 repository 加假的金流商；跨層測試用 `sqlite3` 建真的 `orders` 表（`seat` 欄位有 `UNIQUE`）加同一個假金流商。同一個座位買兩次，兩層各自應該怎麼表現？先寫下預測再跑。',
+      deliver: '兩層測試的程式與輸出，加一張表：每個替身替掉了什麼、因此測不到什麼風險。',
+      check: [
+        '拿掉 `UNIQUE` 約束後重跑：跨層測試變紅、單元測試仍然綠，兩次輸出都附上',
+        '表裡每個替身至少寫一個它測不到的風險（例如假金流商測不到逾時後重複扣款）',
+        '分成兩欄：可以從門診掛號沿用的做法（名額與唯一性交給資料庫約束），以及要跟票務業務確認的條件（座位保留多久、退票後何時釋出）',
+      ],
+      twist: '金流商改成非同步通知：webhook 回來才算付款成功。先預測現在哪一個測試的期望值會錯，再說明要加哪一層的測試。',
+    },
     points: [
       { b: 'fixture 是依賴注入', t: '`def test_x(client, db)`：pytest 依名字找 fixture 提供。DB session、測試用 client、假資料都這樣給，測試本身很乾淨。' },
       { b: '整合測試用真的資料庫', t: '用 docker-compose 起一個測試用 PostgreSQL，每個測試在 transaction 裡跑、結束 rollback。拿 SQLite 代替 Postgres，會漏掉只在 Postgres 上出現的 bug。' },
@@ -172,6 +266,16 @@ const base = {
     ],
   },
   'code-quality': {
+    challenge: {
+      task: '在[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)的本機副本做三個改動：加一個沒用到的 import、對一個回傳 `X | None` 的值直接取屬性、把 `clinic/domain/rules.py` 裡一個比較符號寫反。分別跑 `uv run ruff check .`、`uv run ruff format --check .`、型別檢查（例如 `uvx pyright`）與 `uv run pytest tests/test_domain.py`，記錄每個工具抓到哪一個。跑之前先填一份預測表。',
+      deliver: '3 個改動 × 4 個工具的表：預測、實際（抓到或沒抓到、訊息原文），加上工具版本。',
+      check: [
+        '每格都有實際輸出，附 `ruff --version` 與型別檢查器的版本',
+        '指出比較符號寫反只被測試抓到，或沒有任何工具抓到時要補哪個測試',
+        '說明 clinic-api 在 `[tool.ruff.lint]` 明列 `select` 的理由（ruff 0.16 起預設規則大幅擴充，版本一升結果就會變）',
+      ],
+      twist: '把 `[tool.ruff.lint]` 的 `select` 刪掉改用預設規則。先預測三個改動裡哪個的結果會變、會不會多出新的違規，再實際跑。',
+    },
     points: [
       { b: 'ruff 一個工具取代五個', t: 'lint（flake8 規則集）、import 排序、格式化（black 相容）都是它，快到可以每次存檔跑。設定寫在 pyproject.toml 的 `[tool.ruff]`。' },
       { b: '型別檢查的嚴格度漸進', t: '先 `basic`，新檔案用 `strict`。回報的錯誤多半是真的 bug（None 沒處理、回傳型別不一致）。' },
@@ -187,6 +291,16 @@ const base = {
     ],
   },
   'logging-config': {
+    challenge: {
+      task: '用[參考專案 clinic-api](https://github.com/yo02741/Backend-Atlas/tree/main/companion/clinic-api)做三次錯誤的啟動：`JWT_SECRET` 設成空字串、`DB_POOL_SIZE=abc`、`LOG_LEVEL=verbose`（例如 `docker compose run --rm -e LOG_LEVEL=verbose api`，或在主機上 `uv run uvicorn clinic.main:app`）。每次啟動前先預測：行程會不會起來、錯誤訊息會列出哪些變數。',
+      deliver: '三次啟動的輸出摘錄與預測對照，加一段：這類錯誤在發版流程的哪一步最早被攔下。',
+      check: [
+        '輸出列出了出錯的變數名稱，而且沒有印出 secret 的值',
+        '指出 `LOG_LEVEL=verbose` 是被拒絕還是被換成預設值，並說明哪一種比較安全',
+        '寫出發版流程中最早攔下這類錯誤的步驟（例如部署前另跑一次設定驗證，或靠 healthcheck 等不到就不切流量）',
+      ],
+      twist: '把 `JWT_SECRET` 設成 10 個字元的字串。先預測服務會不會啟動、日誌裡會不會出現這個值，再實際啟動一次。',
+    },
     points: [
       { b: '結構化 log（JSON）', t: '每行 log 帶 `request_id`、`user_id`、`path`、`duration_ms`，才能在 log 系統裡查詢與聚合。人讀的格式只留給本機開發。' },
       { b: '錯誤分三層', t: '預期的商業錯誤（回 4xx、不記 error log）、未預期的例外（回 500、記 stack trace、送告警）、驗證錯誤（回 422、附欄位）。' },

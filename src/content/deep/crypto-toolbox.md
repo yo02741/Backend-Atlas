@@ -106,6 +106,8 @@ Python 的 `random` 是 Mersenne Twister，設計目標是統計性質好與可�
 - 瀏覽器與 Node：WebCrypto（`crypto.subtle`）
 - 雲端：KMS 的 encrypt／decrypt／sign API，金鑰不出 KMS
 
+:::stop 讀到這裡可以先停：能依用途在雜湊、HMAC、AES-GCM、簽章與安全亂數之間選一個。後面的 WebCrypto 與 Python 程式，在要實作 webhook 驗證、欄位加密或產生 token 時再回來讀。
+
 ## 實際程式
 
 ### AES-GCM 加解密、AAD 與竄改偵測（WebCrypto）

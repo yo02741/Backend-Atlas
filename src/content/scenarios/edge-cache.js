@@ -63,6 +63,22 @@ export default {
     { id: 'viral', situation: '一個冷門商品頁突然被網紅貼出來，一分鐘內從每秒 0 次讀衝到每秒 5,000 次，快取裡從來沒有這個 key。', options: ['ttl', 'swr', 'singleflight', 'jitter'], answer: 'singleflight',
       explain: '冷 key 沒有舊值可以回，swr 與提前更新都幫不上忙；抖動只影響到期時間，第一次載入照樣所有請求同時 miss。singleflight 讓第一個請求搶到鎖去載入，其餘 4,999 個等它回填後再讀快取，DB 只被打一次。實務上 singleflight 與 swr 會一起用：冷 key 靠鎖、熱 key 到期靠舊值。' },
   ],
+  switchIf: [
+    { when: '資料不能顯示舊值（錢包餘額、剩餘庫存）', then: '改用 `singleflight`：到期時只放一個請求去查，其他請求等它回來；代價是那零點幾秒到兩秒的等待。' },
+    { when: '幾百個 key 由同一個排程在整點同時寫入、TTL 相同', then: '加上 `jitter`：TTL 加隨機抖動、快到期前提前更新，原站的尖峰攤成一段平緩的流量。' },
+    { when: '每秒只有幾次讀，原站一次查詢幾十毫秒', then: '用 `ttl` 就夠：到期時多打幾次原站沒有差別，多一套機制只多維護成本。' },
+  ],
+  alternative: { option: 'singleflight', holdsWhen: '顯示舊值不能接受、等原站一次回應可以接受時。鎖要有到期時間（`PX`），搶到鎖的請求失敗時，其他請求不能一直等下去。' },
+  challenge: {
+    task: '動手前先寫下預測：TTL 60 秒、熱門 key 500 個，用「單純 TTL」時原站在到期那一秒每秒大約收到幾次請求？用「TTL 抖動 + 提前更新」時又是多少？寫完後在本頁模擬器各按一次「▶ 快取到期」，讀「尖峰（原站每秒）」與「60 秒內打到原站」。再把「熱門 key 數」調到 1，比較兩種做法的差距變大還是變小。',
+    deliver: '一張預測與實際的對照表（兩種做法 × 兩種 key 數），每格附一句差距的原因',
+    check: [
+      '預測寫在按「▶ 快取到期」之前，附上估算依據（每秒讀取次數、同時到期的 key 數）',
+      '寫出 key 只有 1 個時抖動幫不上忙，擊穿要靠 singleflight 或 stale-while-revalidate',
+      '打開「原站回應變慢（2 秒）」後用「單純 TTL」再跑一次，寫出「等原站回來的請求」怎麼變',
+    ],
+    twist: '部署後有人清空了整個 Redis。先預測四種做法裡哪一種原站尖峰最高、抖動這時還有沒有用，再說明模擬器上哪一組設定最接近這個狀況、實際跑一次。',
+  },
   implementation: [
     { title: 'CDN / 瀏覽器層：到期後照樣回舊值、背景更新', lang: 'http', code: `HTTP/1.1 200 OK
 Content-Type: application/json

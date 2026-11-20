@@ -237,6 +237,8 @@ traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
 
 **取樣**：每個請求都記錄完整 trace 成本很高。head sampling 在請求開始時就決定要不要記（例如 10%），簡單但會漏掉罕見的慢請求；tail sampling 等請求結束後再決定（例如「錯誤或超過 1 秒的全部保留」），需要先把 span 暫存在收集器裡。
 
+:::stop 讀到這裡可以先停：會分辨 log、metrics、trace 各回答什麼，寫帶 request id 的 JSON log，從 histogram 讀百分位數，沿著 trace 找到慢的 span。後面的 OpenTelemetry 與告警設計，在要替服務接 SDK 或整理告警時再回來讀。
+
 ## OpenTelemetry 的角色
 
 OpenTelemetry（OTel）是一套與廠商無關的標準與工具：

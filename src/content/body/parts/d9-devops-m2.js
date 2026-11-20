@@ -42,6 +42,17 @@ export default {
       '給定 replicas、maxSurge、maxUnavailable，能算出滾動更新期間 Pod 總數的上限與可用數的下限',
       '套用後能用 kubectl 確認 Service 後面有 Pod，並在新版出錯時回退',
     ],
+    challenge: {
+      task: '照 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 建好 kind 叢集，把服務分三步套用：只有 Deployment → 加上 Service → 加上 Gateway 與 HTTPRoute（kind 沒有 Ingress controller，照指南「選讀：接上 Gateway API」一節）。每加一個資源只驗收一個行為：Pod ready、Service 後面有 Pod、從叢集外經過 Gateway 的 `curl` 拿到 200。三步都通過後，把 Service 的 `targetPort` 改錯一次。',
+      deliver: '三步各一段：套用的資源、驗收的指令與輸出，外加 targetPort 改錯時的輸出',
+      check: [
+        '第一步以 `kubectl rollout status` 成功結束當作驗收，不是 `apply` 印出 created',
+        '第二步的 `kubectl get endpointslices -l kubernetes.io/service-name=…` 列出 Pod IP，`port-forward` 打得到健康檢查端點',
+        '第三步從叢集外經過 Gateway 的 `curl -i` 拿到 200，`Host` 換成 HTTPRoute 沒列的名字時拿到 404',
+        'targetPort 改錯時 EndpointSlice 仍有位址、連線被拒絕，並說明這和 selector 改錯的症狀差在哪',
+      ],
+      twist: '把 Deployment 改成 `replicas: 2`、`maxSurge: 0`、`maxUnavailable: 1`，再換 image tag。先預測更新期間最少有幾個 Pod 在收流量，再用 `kubectl get pods -w` 與 EndpointSlice 驗證。',
+    },
     refs: [
       { label: 'Kubernetes：Deployments', url: 'https://kubernetes.io/docs/concepts/workloads/controllers/deployment/' },
       { label: 'Kubernetes：Service', url: 'https://kubernetes.io/docs/concepts/services-networking/service/' },
@@ -63,6 +74,17 @@ export default {
       '能說明記憶體與 CPU 超過 limits 時各自發生什麼事，並用公式算出 HPA 的期望副本數',
       '能把寫死在 manifest 裡的密碼改成從 Secret 讀取，並說明 Secret 為什麼不能直接進 Git',
     ],
+    challenge: {
+      task: '照 [本機叢集指南](https://github.com/yo02741/Backend-Atlas/blob/main/companion/clinic-api/docs/local-k8s.md) 部署 clinic-api，副本數 2，開一個迴圈每 0.5 秒打一次 Service（`port-forward` 或叢集內的 Pod 都可以），記下每次的狀態碼。做兩次實驗：照指南的練習 5 讓新版的 readiness 路徑打錯；還原後，把 liveness 改成打一個不存在的路徑。',
+      deliver: '兩次實驗的時間線：READY、RESTARTS 的變化，以及迴圈裡失敗請求的數量',
+      check: [
+        'readiness 那次：RESTARTS 不變、新 Pod 不出現在 EndpointSlice，滾動更新停住，舊 Pod 繼續回 200',
+        'liveness 那次：RESTARTS 增加，Events 有 `Liveness probe failed`',
+        '兩次都寫出失敗請求的數量，並用 periodSeconds × failureThreshold 解釋多久後開始有影響',
+        '說明哪一次使用者感受得到、為什麼',
+      ],
+      twist: '把 liveness 的端點改成會檢查資料庫，然後刪掉資料庫的 Pod。先預測兩個副本會不會同時重啟、資料庫回來之後要多久才恢復服務，再實際做一次。',
+    },
     refs: [
       { label: 'Kubernetes：ConfigMaps', url: 'https://kubernetes.io/docs/concepts/configuration/configmap/' },
       { label: 'Kubernetes：Secrets', url: 'https://kubernetes.io/docs/concepts/configuration/secret/' },
@@ -84,6 +106,17 @@ export default {
       'Pod 是 Running 但 Service 連不到時，能依序檢查 EndpointSlice、selector、readiness、targetPort',
       '能說明 logs 與 Events 各自回答什麼問題，以及什麼時候要加 --previous',
     ],
+    challenge: {
+      task: '在 [Kubernetes 排錯](#/lab/K8sDebugLab) 把六種故障兩兩配對：CrashLoopBackOff 與 OOMKilled、Running 但連不到與 Running 但 0/1。每組先只看 `kubectl get pods`，寫下你猜的原因；再用 `describe pod`、`logs --previous`、`get events`、`get endpoints` 收集線索，指出是哪一行輸出把兩者分開。最後做 [依狀態、結束碼與 Events 診斷 Pod](#/exercise/k8s-troubleshooting-1)。',
+      deliver: '兩組對照表：相同的症狀、各自的關鍵線索（指令與那一行輸出）、要改 manifest 的哪一行',
+      check: [
+        'CrashLoopBackOff 與 OOMKilled 用 Last State 的 Reason 與 Exit Code（1 或 137）分開',
+        '0/1 那一個指出 readiness 失敗、Pod 不在 endpoints 裡；連不到那一個指出 endpoints 是空的或 port 對不上',
+        '每組都寫出只看 `get pods` 時的猜測，以及推翻或證實它的線索',
+        '每個故障的修正都落在 manifest 的一個欄位',
+      ],
+      twist: '某個 Pod 的 Last State 是 OOMKilled，但 `kubectl top pod` 顯示平常只用到 limits 的一半。先列出你預測的可能原因（啟動時的短暫尖峰、某個請求一次載入大量資料、節點本身記憶體不足），再寫出要多收集哪一個線索才能分辨。',
+    },
     refs: [
       { label: 'Kubernetes：Debug Pods', url: 'https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/' },
       { label: 'Kubernetes：Debug Services', url: 'https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/' },
@@ -104,6 +137,17 @@ export default {
       '能說明 Kustomize 與 Helm 做法上的差別，以及各自適合的情境',
       '能比較 push 式部署與 GitOps 在憑證、drift、回退、維運成本上的差別',
     ],
+    challenge: {
+      task: '先做 [把複製貼上的環境改成 overlay](#/exercise/k8s-helm-gitops-1)。再對參考專案 `companion/clinic-api/k8s/` 跑 `kubectl kustomize overlays/kind` 與 `kubectl kustomize overlays/production`，各存成一個檔案後 `diff`。把每一處差異標成「刻意的」或「意外的」，並指出每一處差異來自 overlay 的哪一行。',
+      deliver: '一份 diff 審查紀錄：每一處差異的分類、造成它的 overlay 行，以及意外差異的修改建議（沒有就寫沒有）',
+      check: [
+        '審的是 `kubectl kustomize` 的輸出，不是只讀 overlay 檔案',
+        '每一處差異都對到 overlay 的某一行（images、replicas、patches 或 generator）',
+        '檢查輸出裡有沒有密碼或 Secret 的原文，結果寫在紀錄裡',
+        '說明在 GitOps 下這份 diff 應該在 MR 審查時看，而不是同步之後',
+      ],
+      twist: '有人在 base 的 Deployment 加了環境變數 `LOG_LEVEL=debug`。先預測兩份輸出的 diff 會不會變、production 會不會跟著拿到 debug，再實際改一次驗證，並寫出讓 production 維持原值的改法。',
+    },
     refs: [
       { label: 'Kubernetes：Declarative Management of Kubernetes Objects Using Kustomize', url: 'https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/' },
       { label: 'Kustomize', url: 'https://kustomize.io/' },

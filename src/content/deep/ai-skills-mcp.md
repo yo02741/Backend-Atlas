@@ -69,7 +69,7 @@ Skill 不只是文字。它可以附帶腳本，agent 會以自己的權限執�
 - **Client**：host 裡面負責跟某一個 server 連線的元件，一個 server 一條連線。
 - **Server**：提供能力的程式。
 
-訊息格式是 **JSON-RPC 2.0**。連線一開始有初始化步驟，雙方交換支援的協定版本與能力，之後才開始呼叫。
+訊息格式是 **JSON-RPC 2.0**。協定版本與能力怎麼交換，依規格版本而定：2025-11-25 以前的版本在連線一開始用 `initialize` 握手；2026-07-28 版取消了握手，每個請求在 `_meta` 裡帶協定版本與 client 的能力，server 另外提供 `server/discover` 讓 client 查詢支援的版本與能力。多數 SDK 兩種都支援，client 會先試新版、對方較舊時退回握手。
 
 ### Server 提供的三種東西
 
@@ -79,7 +79,7 @@ Skill 不只是文字。它可以附帶腳本，agent 會以自己的權限執�
 | **Resources** | 可以讀取的資料，用 URI 識別 | 應用決定要不要放進脈絡 | 一份設計文件、一張資料表的 schema |
 | **Prompts** | 提示樣板，可以帶參數 | 使用者選用（例如在介面上當成指令） | 「依這個工單寫修復計畫」 |
 
-另外，規格也定義了 client 端可以提供給 server 的能力（例如讓 server 請 client 代為呼叫模型）。這部分在不同規格版本間有增減，用到時以規格為準。
+另外，規格也定義了 client 端可以提供給 server 的能力（例如讓 server 請 client 代為呼叫模型的 sampling）。這部分在不同規格版本間有增減：2026-07-28 版取消了 server 主動發給 client 的請求，改成工具在結果裡回傳「需要使用者提供的輸入」，由 client 補上後重送，sampling 與 roots 也被標為 deprecated。用到時以所用的規格版本為準。
 
 一次工具呼叫在線路上的樣子（省略了初始化）：
 
@@ -111,12 +111,12 @@ Skill 不只是文字。它可以附帶腳本，agent 會以自己的權限執�
 
 ### 用官方 Python SDK 寫一個 server
 
-下面用官方 Python SDK（`mcp` 套件）的寫法示意。它需要安裝套件，不能在瀏覽器裡執行：
+下面用官方 Python SDK（`mcp` 套件 2.x）的寫法示意。它需要安裝套件，不能在瀏覽器裡執行。1.x 的類別叫 `FastMCP`（`from mcp.server.fastmcp import FastMCP`），2.0 改名為 `MCPServer`，網路上的範例兩種都有：
 
 ```python
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
-mcp = FastMCP("tickets")
+mcp = MCPServer("tickets")
 
 
 @mcp.tool()
@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
 ### 協定在做什麼：一個極簡的分派器
 
-下面這段不是完整的 MCP 實作（沒有初始化、沒有傳輸層），只示範 server 收到 JSON-RPC 訊息後怎麼回應，包括兩種不同的錯誤。可以直接執行：
+下面這段不是完整的 MCP 實作（沒有版本交換、沒有傳輸層），只示範 server 收到 JSON-RPC 訊息後怎麼回應，包括兩種不同的錯誤。可以直接執行：
 
 ```python run
 import json
@@ -191,6 +191,8 @@ for msg in [
 | 一個只有一個人用、在本機跑的小腳本 | 不一定需要兩者 | 直接讓 agent 執行腳本也可以；要分享給團隊時再包成 Skill 或 MCP server |
 
 兩者可以組合：Skill 告訴模型「這種任務的步驟是什麼、該用哪些工具」，MCP 提供那些工具。專案根目錄的規範檔（例如 `CLAUDE.md` 或 `AGENTS.md`）則是每次都會載入的那一份，放專案層級、每個任務都需要知道的規則；只在某類任務才需要的，就移到 Skill。
+
+:::stop 讀到這裡可以先停：分得出 Skill 與 MCP 各管什麼，看得懂一次 `tools/call` 與兩種錯誤。後面的治理問題，在團隊要做內部 Skill 平台或開放 MCP server 上架時再回來讀。
 
 ## 治理：內部分享平台與 MCP 上架
 

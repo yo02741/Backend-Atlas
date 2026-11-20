@@ -185,6 +185,8 @@ Webhook-Signature: v1=5d2c0b3f9a...
 
 很多系統是混用的：對外 REST、內部 gRPC、App 用 GraphQL 聚合、合作夥伴收 webhook。
 
+:::stop 讀到這裡可以先停：會說出 GraphQL、gRPC、WebSocket、Webhook 各解決什麼、成本在哪，以及怎麼選。後面的 DataLoader 與 webhook 簽章程式，在實際導入其中一種時再回來讀。
+
 ## 實際程式：DataLoader 怎麼把 N+1 變成 1
 
 下面用 asyncio 模擬 GraphQL 執行時，8 件訂單明細各自要求載入商品：沒有 DataLoader 時每件一次查詢，有 DataLoader 時同一輪的請求被合併成一次：

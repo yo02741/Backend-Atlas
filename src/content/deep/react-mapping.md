@@ -186,6 +186,8 @@ export function SlotPicker({ dept, selected, onSelectedChange, renderOption }) {
 
 逐項對照：`defineModel('selected')` 拆成 `selected` 與 `onSelectedChange`；`computed` 變成一行直接計算；`watch` 加 `immediate` 變成依賴 `[dept]` 的 effect（React 的 effect 第一次渲染後一定會執行，相當於 `immediate`）；`onWatcherCleanup` 變成 effect 回傳的函式；作用域 slot `#option="{ item }"` 變成 `renderOption` 函式 prop。
 
+:::stop 讀到這裡可以先停：說得出 React 每次渲染重跑整個元件、閉包會留住舊值，會把 Vue 的 computed、watch 與 v-model 對到 React 的寫法。後面的錯誤訊息表，在 React 的 Console 出現 hooks 警告時再回來查。
+
 ## 常見錯誤與錯誤訊息
 
 | 訊息或現象 | 原因 | 修法 |

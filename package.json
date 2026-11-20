@@ -10,13 +10,13 @@
     "build": "vite build",
     "prepreview": "node scripts/copy-pyodide.mjs && node scripts/copy-vendor.mjs",
     "preview": "vite preview --port 4173 --strictPort",
-    "validate:quizzes": "node scripts/validate-quizzes.mjs",
+    "validate:quizzes": "node scripts/validate-quizzes.mjs && node scripts/quiz-stats.mjs --check",
     "e2e:runtime": "node e2e/runtime.mjs",
     "e2e:verify": "node e2e/verify-exercises.mjs",
     "e2e:frame": "node e2e/frame.mjs",
     "e2e:sweep": "node e2e/sweep.mjs",
     "e2e:mobile": "node e2e/mobile-overflow.mjs",
-    "e2e:ui": "node e2e/ui-metro.mjs && node e2e/ui-exercise.mjs && node e2e/ui-quiz.mjs && node e2e/ui-review.mjs && node e2e/ui-scenario.mjs && node e2e/ui-routing.mjs && node e2e/ui-visibility.mjs",
+    "e2e:ui": "node e2e/ui-metro.mjs && node e2e/ui-exercise.mjs && node e2e/ui-quiz.mjs && node e2e/ui-review.mjs && node e2e/ui-scenario.mjs && node e2e/ui-routing.mjs && node e2e/ui-visibility.mjs && node e2e/ui-playground.mjs",
     "e2e:labs": "node e2e/labs-smoke.mjs",
     "e2e": "npm run e2e:runtime && npm run e2e:frame && npm run e2e:verify && npm run e2e:deep && npm run e2e:ui && npm run e2e:labs && npm run e2e:sweep && npm run e2e:mobile",
     "e2e:cloud": "vite build --mode e2e --outDir dist-e2e && npx -y firebase-tools@15 emulators:exec --only auth,firestore --project demo-backend-atlas \"node e2e/cloud-sync.mjs\"",
@@ -28,7 +28,8 @@
     "docs:check": "node scripts/sync-docs.mjs --check",
     "validate": "npm run validate:content && npm run validate:quizzes && npm run validate:scenarios",
     "test:unit": "node scripts/test-progress.mjs && node scripts/test-review.mjs && node scripts/test-sandbox.mjs",
-    "e2e:deep": "node e2e/verify-deep.mjs"
+    "e2e:deep": "node e2e/verify-deep.mjs",
+    "quiz:stats": "node scripts/quiz-stats.mjs"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",

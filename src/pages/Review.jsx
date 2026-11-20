@@ -5,6 +5,7 @@ import { DOMAINS, findDomain, domainsOf } from '../content/roadmap.js'
 import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
 import { QUIZZES } from '../content/quizzes/index.js'
 import { useProgress } from '../progress.js'
+import { cloudEnabled } from '../cloud/config.js'
 import { COUNTS, SCOPES, applyRound, buildPool, grade, loadRecord, mulberry32, parseSeed, randomSeed, sample, saveRecord, scopePool } from '../review.js'
 
 /* 複習頁：跨課的混合測驗。設定（範圍、題數）→ 一次作答 → 交卷看分數、解析、依領域的答對率。
@@ -15,7 +16,7 @@ const poolFor = (track) => {
   const pool = buildPool(QUIZZES, domainsOf(track))
   return [pool, domainsOf(track).filter((d) => pool.some((it) => it.domain === d.id))]
 }
-const SCOPE_LABEL = { done: '已完成的課', domains: '選領域', wrong: '上次答錯的題', all: '全部', retry: '重做答錯的' }
+const SCOPE_LABEL = { done: '讀過的課', domains: '選領域', wrong: '上次答錯的題', all: '全部', retry: '重做答錯的' }
 const letter = (i) => String.fromCharCode(65 + i)
 const fmtTime = (at) => new Date(at).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 
@@ -74,7 +75,7 @@ export default function Review({ seed = '', track: rawTrack = '' }) {
     const take = Math.min(count, avail)
     const doneSkills = new Set(pools.done.map((it) => it.skill)).size
     const desc = {
-      done: usable.done ? `${doneSkills} 課，共 ${pools.done.length} 題` : '還沒有完成的課',
+      done: usable.done ? `${doneSkills} 課，共 ${pools.done.length} 題` : '還沒有標記讀過的課',
       domains: '',
       wrong: usable.wrong ? `${pools.wrong.length} 題，答對就從清單移除` : '沒有答錯紀錄',
       all: `${POOL.length} 題，${POOL_DOMAINS.length} 個領域`,
@@ -132,6 +133,8 @@ export default function Review({ seed = '', track: rawTrack = '' }) {
           </div>
           <p className="rv-note">錯題與成績只存在這個瀏覽器，不會同步到帳號。</p>
         </section>
+
+        <SyncScope />
 
         {record.history.length > 0 && (
           <section className="rv-history">
@@ -257,5 +260,24 @@ export default function Review({ seed = '', track: rawTrack = '' }) {
         </div>
       </section>
     </div>
+  )
+}
+
+/* 哪些紀錄會跨裝置、哪些只在這個瀏覽器（同步範圍見 src/cloud/sync.js 與 progressData.js；只存本機的見 review.js、localStore.js、ExerciseRunner 的草稿） */
+const SYNCED = ['讀過（課頁的「標記讀過」）', '自我檢核的勾選（全勾＝能自行解釋）', '選擇題（全對＝測驗通過）、程式題、決策題的通過狀態', '決策題的理由']
+const LOCAL_ONLY = ['複習的錯題與成績', '程式題與 Playground 的草稿', '進階驗收與跨課作業的勾選', '實驗室的猜測']
+function SyncScope() {
+  return (
+    <section className="rv-sync" aria-labelledby="rv-sync">
+      <h2 id="rv-sync">紀錄存在哪裡</h2>
+      {cloudEnabled
+        ? (
+          <div className="rv-sync-cols">
+            <div><h3>登入後跨裝置同步</h3><ul>{SYNCED.map((x) => <li key={x}>{x}</li>)}</ul></div>
+            <div><h3>只在這個瀏覽器</h3><ul>{LOCAL_ONLY.map((x) => <li key={x}>{x}</li>)}</ul></div>
+          </div>
+        )
+        : <p className="rv-note">所有紀錄（讀過、能自行解釋、測驗通過、錯題、草稿）都只存在這個瀏覽器；換裝置或清除網站資料就不見。</p>}
+    </section>
   )
 }

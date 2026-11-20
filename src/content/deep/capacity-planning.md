@@ -185,6 +185,8 @@ print(f"\n若 DB 變慢 5 倍：需要 {slow_db_conns:.0f} 條連線 > 連線池
 
 把 `cpu_per_req_s` 改成 0.2、`burst_factor` 改成 4，看看結果怎麼變，就知道哪一個假設對結論影響最大，那個數字最需要量測。
 
+:::stop 讀到這裡可以先停：會從尖峰推出 CPU、連線數、記憶體、磁碟與頻寬，並用 N+1 檢查少一台時扛不扛得住。後面的 VM、容器與 Kubernetes 的 requests、limits，在服務要搬進容器或叢集時再回來讀。
+
 ## VM 與容器
 
 | | VM | 容器 |

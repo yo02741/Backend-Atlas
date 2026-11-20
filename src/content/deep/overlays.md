@@ -73,6 +73,8 @@ showModal()
 | `command="show-modal"`、`commandfor` | 按鈕不寫 JavaScript 就能開關 Dialog 或 popover | Baseline 2025（2025 年 12 月），舊瀏覽器要退路 |
 | `requestClose()`、`command="request-close"` | 和按 Esc 一樣先觸發 `cancel`，可以在這裡擋下「表單還沒存」 | Baseline 2025（2025 年 5 月），舊瀏覽器要退路 |
 
+:::stop 讀到這裡可以先停：會依擋不擋操作選浮層，並用原生 `<dialog>` 的 `showModal()` 處理開啟、Esc 與焦點歸還。後面的 Popover、Tooltip、背景捲動與疊放，在做到那種浮層或遇到浮層被蓋住時再回來讀。
+
 ### Popover
 
 `popover` 屬性讓任何元素變成浮層，`popovertarget` 指定由哪顆按鈕開關（Baseline 2025，2025 年 1 月）：
@@ -149,7 +151,7 @@ function open() {
 
 async function onClose() {
   if (dialog.value.returnValue !== 'confirm') return   // Esc 或「保留預約」：焦點自動回到觸發按鈕
-  await fetch(`/api/appointments/${props.appt.id}`, { method: 'DELETE' })
+  await fetch(`/api/appointments/${props.appt.id}/cancel`, { method: 'POST' })
   emit('cancelled', props.appt.id)                 // 父元件移除這一列，觸發按鈕跟著消失
   await nextTick()
   document.getElementById('appt-list-title')?.focus()   // 觸發按鈕不在了：移到清單標題（tabindex="-1"）

@@ -145,6 +145,8 @@ export function usePolling(fn, ms) {
 
 composable 裡的 `onMounted` 一樣要在 setup 期間同步呼叫，所以 `usePolling(load, 30_000)` 要寫在 `<script setup>` 的頂層，不能放在 callback 裡。
 
+:::stop 讀到這裡可以先停：知道各個鉤子的順序，會在 `onUnmounted` 清掉計時器、監聽與請求，知道 `KeepAlive` 要換成哪組鉤子。後面的 React 對照與錯誤訊息表，在讀 `useEffect` 的清理函式時再回來讀。
+
 ## React 對照
 
 | Vue 3.5 | React 19 |

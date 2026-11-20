@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Callout, Status,
-  useTicker, useWidth, Stats, Stat, Flow, LineChart, Caption,
+  useTicker, useWidth, Stats, Stat, Flow, LineChart, Caption, Measure,
 } from '../ui.jsx'
 
 /* 讓 agent 調查告警：00:00–06:00 的一組固定告警（8 則誤報、3 則真問題）逐分鐘播放。
@@ -218,7 +218,7 @@ export default function AlertTriageScenarioLab() {
             <Caption>確認時間＝告警到「原因確認並開始處置」的分鐘數；叫醒後 10 分鐘內再被叫算同一次。全部是示意推算，不代表任何 agent 產品的準確率。</Caption>
           </LabStage>
           <Stats min={130}>
-            <Stat label="真問題平均確認時間" value={sim.ack ? sim.ack.toFixed(0) : '—'} unit="分" tone={sim.ack > 15 ? 'bad' : sim.ack ? 'ok' : ''} note="要求 ≤ 15 分（示意）" />
+            <Stat label="真問題平均確認時間" value={sim.ack ? <Measure kind="set" value={sim.ack.toFixed(0)} unit="分" /> : '—'} tone={sim.ack > 15 ? 'bad' : sim.ack ? 'ok' : ''} note="要求 ≤ 15 分（示意）" />
             <Stat label="誤報被過濾" value={sim.fpTotal ? `${Math.round((sim.filtered / sim.fpTotal) * 100)}%` : '—'} note={`${sim.filtered} / ${sim.fpTotal} 則`} tone={sim.fpTotal && !sim.filtered ? 'warn' : ''} />
             <Stat label="人被叫醒" value={sim.wakes} unit="次" tone={sim.wakes > 4 ? 'bad' : sim.wakes > 2 ? 'warn' : 'ok'} />
             <Stat label="錯誤動作" value={sim.wrong} unit="次" tone={sim.wrong ? 'bad' : 'ok'} note="示意" />

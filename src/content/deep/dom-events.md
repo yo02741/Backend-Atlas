@@ -92,6 +92,8 @@ window
 
 `stopPropagation()` 只管事件還要不要傳給下一個元素，同一個元素上的其他監聽照樣執行；要連它們一起擋用 `stopImmediatePropagation()`。`preventDefault()` 只管預設動作，事件照樣往上冒泡，外層可以用 `event.defaultPrevented` 知道它被取消了。
 
+:::stop 讀到這裡可以先停：會分辨 `target` 與 `currentTarget`，用 `stopPropagation()` 與 `preventDefault()` 分別處理冒泡和預設動作。後面的不冒泡事件、監聽選項與 Vue 寫法，在要做事件委派或在 `window` 上掛監聽時再回來讀。
+
 ### 不冒泡的事件
 
 | 不冒泡 | 會冒泡的替代 | 用途 |

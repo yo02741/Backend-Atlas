@@ -63,6 +63,22 @@ export default {
     { id: 'import', situation: '批次匯入合作夥伴的訂單：對方每天丟一個 CSV，每列都有對方系統的 external_order_id，檔案偶爾會重傳。', options: ['none', 'key', 'unique', 'hash'], answer: 'unique',
       explain: '每列天生有唯一鍵，`UNIQUE (partner_id, external_order_id)` 加 `INSERT … ON CONFLICT DO NOTHING`，重傳整份檔案也不會重複，不需要任何客戶端配合，也不必存 hash 或 key。' },
   ],
+  switchIf: [
+    { when: '業務改成一張訂單只能付一次，不再有訂金與尾款', then: '改選 `unique`：`UNIQUE (order_id)` 由資料庫擋第二筆，客戶端不必帶 key；重送拿到 409，客戶端要懂得改去查既有的付款。' },
+    { when: '呼叫方是改不動的舊版 App 或第三方表單，帶不了 Idempotency-Key', then: '改選 `hash`：伺服器以 user_id 加請求內容算 hash，在幾分鐘的視窗內去重；要接受金額相同的合法付款可能被誤擋。' },
+  ],
+  alternative: { option: 'unique', holdsWhen: '一張訂單只會有一筆成功付款，而且客戶端能把 409 解讀成「已經付過，改查 `GET /orders/{id}/payment`」時。' },
+  challenge: {
+    task: '上方模擬器選「Idempotency-Key」與「① 回應遺失後重送」，先不要播放：寫下回應遺失那一步結束時 `payments` 與 `idempotency_keys` 各有哪幾列、`status` 是什麼，以及重送後客戶端拿到什麼，再逐步播放對照。接著讀下方落地程式碼「Idempotency-Key 處理流程」：第 2 步 `charge_and_insert` 已經扣款成功，程序卻在第 3 步 `UPDATE` 之前當掉，這個 key 會停在哪個狀態、App 重送會拿到什麼？補上 `except IntegrityError` 分支裡缺的處理。',
+    deliver: '一張兩張表與客戶端回應的「預測／實際」對照，加一段十行以內的補丁（程式或虛擬碼）與一句理由',
+    check: [
+      '預測與實際不同的地方逐項寫出原因',
+      '指出當掉之後 key 停在 `processing`，原程式對之後每一次重送都回 409，客戶端永遠拿不到 payment_id',
+      '補丁不會再扣一次款：先查 `payments` 是否已有這筆的成功紀錄，有就補寫回應並回第一次的同一份內容',
+      '寫出 `processing` 停多久算卡住，以及卡住又查不到付款時要回什麼、由誰處理',
+    ],
+    twist: 'App 的 bug 讓同一個 `Idempotency-Key` 第二次送來時 `amount` 從 500 變成 5,000。先預測原程式會回什麼、使用者以為自己付了多少，再說出你要回哪個狀態碼、要比對請求的哪些部分。',
+  },
   implementation: [
     { title: 'Idempotency-Key 處理流程', lang: 'python', code: `import json
 from psycopg import IntegrityError

@@ -9,6 +9,7 @@ import { findScenario } from './content/scenarios/index.js'
 import { findExercise } from './content/exercises/index.js'
 import { LAB_META } from './labs/index.js'
 import { findStage } from './content/project/stages.js'
+import { findAssignment } from './content/assignments.js'
 import Account from './components/Account.jsx'
 import { cloudEnabled } from './cloud/config.js'
 
@@ -28,9 +29,13 @@ const Scenarios = lazy(() => import('./pages/Scenarios.jsx'))
 const ScenarioPage = lazy(() => import('./pages/Scenarios.jsx').then((m) => ({ default: m.ScenarioPage })))
 const Project = lazy(() => import('./pages/Project.jsx'))
 const Review = lazy(() => import('./pages/Review.jsx'))
+const Assignments = lazy(() => import('./pages/Assignments.jsx'))
+const AssignmentPage = lazy(() => import('./pages/Assignments.jsx').then((m) => ({ default: m.AssignmentPage })))
 
 /* hash 路由：#/（選路線）、#/track/:id（路線首頁）、#/roadmap（?track=&kw=）、#/domain/:id、#/skill/:id、
-   #/labs、#/exercises、#/scenarios、#/review（?track=&seed=）、#/curriculum（?track=&week=）、#/lab/:Name …
+   #/labs、#/exercises、#/scenarios、#/review（?track=&seed=）、#/curriculum（?track=&week=）、#/lab/:Name、
+   #/assignments（?track=）、#/assignment/:id …
+   頁內錨點（href="#points" 這類不以 #/ 開頭的連結）不換路由，由 useInPageAnchors 捲到該元素。
    列表頁的 ?track= 是路線篩選；單頁的路線由內容推出（src/track.js）。 */
 function useHashRoute() {
   const [hash, setHash] = useState(window.location.hash)
@@ -62,6 +67,8 @@ function parseHash(hash) {
   if (seg[0] === 'scenario' && seg[1]) return { view: 'scenario', id: seg[1] }
   if (seg[0] === 'exercise' && seg[1]) return { view: 'exercise', id: seg[1] }
   if (seg[0] === 'project') return { view: 'project', id: seg[1] || '', track }
+  if (seg[0] === 'assignments') return { view: 'assignments', track }
+  if (seg[0] === 'assignment' && seg[1]) return { view: 'assignment', id: seg[1] }
   if (seg[0] === 'review') return { view: 'review', seed: params.get('seed') || '', track }
   if (seg[0] === 'playground') return { view: 'playground', lang: params.get('lang') || seg[1] || 'python', code: params.get('code') || '' }
   return { view: 'home' }
@@ -70,7 +77,7 @@ function parseHash(hash) {
 
 /* 每頁的瀏覽器分頁標題：書籤與歷史紀錄才分得出是哪一頁 */
 const SITE = SITE_INFO.name
-const SECTION_TITLES = { roadmap: '技能盤點', labs: '實驗室', exercises: '練習題', curriculum: '課綱', scenarios: '設計情境', playground: 'Playground', project: '實作路線', review: '複習' }
+const SECTION_TITLES = { roadmap: '技能盤點', labs: '實驗室', exercises: '練習題', curriculum: '課綱', scenarios: '設計情境', playground: 'Playground', project: '實作路線', review: '複習', assignments: '跨課作業' }
 function titleFor(route) {
   switch (route.view) {
     case 'track': return findTrack(route.id)?.title
@@ -79,6 +86,7 @@ function titleFor(route) {
     case 'lab': return LAB_META[route.name]?.title
     case 'scenario': return findScenario(route.id)?.title
     case 'exercise': return findExercise(route.id)?.title
+    case 'assignment': return findAssignment(route.id)?.title
     case 'project': return route.id ? (findStage(route.id)?.title || '實作路線') : '實作路線'
     default: return SECTION_TITLES[route.view]
   }
@@ -99,15 +107,34 @@ function useTheme() {
   return [theme, () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))]
 }
 
+/* 頁內錨點：<a href="#points"> 直接設 location.hash 會被當成路由（#points → 首頁），所以攔下來改成捲動 */
+function useInPageAnchors() {
+  useEffect(() => {
+    const on = (e) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const a = e.target.closest?.('a[href^="#"]')
+      const href = a?.getAttribute('href') || ''
+      if (!href || href === '#' || href.startsWith('#/')) return
+      const el = document.getElementById(decodeURIComponent(href.slice(1)))
+      if (!el) return
+      e.preventDefault()
+      el.scrollIntoView({ block: 'start' })
+    }
+    document.addEventListener('click', on)
+    return () => document.removeEventListener('click', on)
+  }, [])
+}
+
 export default function App() {
   const route = useHashRoute()
+  useInPageAnchors()
   const [theme, toggleTheme] = useTheme()
   const track = trackOfRoute(route)
   useEffect(() => { if (track) rememberTrack(track) }, [track])
   useEffect(() => {
     // 技能頁自己處理捲動（要停在頁首）；其他頁換路由回到頂端
     // 課綱帶 ?week= 時由課綱頁自己捲到那一週
-    if (!['skill', 'lab', 'exercise', 'scenario'].includes(route.view) && !(route.view === 'curriculum' && route.week)) window.scrollTo({ top: 0 })
+    if (!['skill', 'lab', 'exercise', 'scenario', 'assignment'].includes(route.view) && !(route.view === 'curriculum' && route.week)) window.scrollTo({ top: 0 })
     const t = titleFor(route)
     document.title = t ? `${t} · ${SITE}` : SITE
   }, [route.view, route.id, route.name, route.lang])
@@ -122,6 +149,8 @@ export default function App() {
     case 'lab': page = <LabPage name={route.name} />; break
     case 'exercises': page = <Exercises key={route.track} track={route.track} />; break
     case 'project': page = <Project key={route.id + route.track} id={route.id} track={route.track} />; break
+    case 'assignments': page = <Assignments key={route.track} track={route.track} />; break
+    case 'assignment': page = <AssignmentPage id={route.id} />; break
     case 'review': page = <Review key={route.seed + route.track} seed={route.seed} track={route.track} />; break
     case 'curriculum': page = <Curriculum key={route.track} week={route.week} track={route.track} />; break
     case 'scenarios': page = <Scenarios track={route.track} />; break

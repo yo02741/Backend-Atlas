@@ -39,6 +39,16 @@ export default {
       '能判斷改 `color`、改 `width`、改 `transform`、新增節點各要重跑哪幾段',
       '能用 Performance 分頁與 Rendering 面板找出動畫或互動有沒有觸發 layout 或大範圍重繪',
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=html) 做一頁門診看板：右下角的 Toast 用 `transition: right 0.4s` 滑入，旁邊的候診人數每秒加 1。用 Performance 分頁加 `4× slowdown` 錄兩份紀錄：一份只觸發 Toast（先停掉計數），一份只跑計數。從兩份紀錄分出哪些 `Layout`、`Paint` 屬於 Toast 自己、哪些屬於計數更新；再把 Toast 改成 `transform` 與 `opacity`，錄第三份。',
+      deliver: '三份紀錄 Main 軌道的截圖，各附一句「這段 `Layout` 是誰觸發的」',
+      check: [
+        '只觸發 Toast 的紀錄：改之前動畫期間每一格都有 `Layout`，改之後沒有',
+        '只跑計數的紀錄：指出每秒一次的 `Layout` 或 `Paint`，並說明它和 Toast 無關',
+        '用 Rendering 面板的 `Paint flashing` 確認計數更新時重繪的範圍只有數字那一塊',
+      ],
+      twist: '計數改成每 16 ms 更新一次文字，Toast 維持 `transform`。先預測同時錄 Toast 與計數時，動畫期間每一格還會不會出現 `Layout`、Toast 會不會卡，再錄一次驗證。',
+    },
     refs: [
       { label: 'web.dev：Rendering performance', url: 'https://web.dev/articles/rendering-performance' },
       { label: 'web.dev：Stick to compositor-only properties and manage layer count', url: 'https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count' },
@@ -87,6 +97,16 @@ export default {
       '能從 Network 分頁判斷一個錯誤是前端送錯請求，還是後端回錯',
       '能用節流與 `Offline` 讓載入中與錯誤狀態出現，並用裝置模式檢查三種寬度',
     ],
+    challenge: {
+      task: '盲測：請同伴在本站製造三個故障，你只聽症狀，先寫下「我看到什麼 → 去哪個面板 → 預期看到哪個值」，寫完才打開工具。三個故障：在 Network 對某一課的深入內容檔案按 `Block request URL`，再進那一課；節流切到 `Offline` 後換到另一個路線首頁；在 Application 把本站存學習進度的值改成不合法的 JSON 後重新整理。沒有同伴時，自己製造故障，隔一天再做。',
+      deliver: '一張三列的表：症狀、預測的面板與值、實際看到的截圖、命中與否',
+      check: [
+        '每列的預測在開工具之前寫好，指名一個面板與一個具體的值（狀態欄的字、Console 訊息的開頭、Size 欄）',
+        '至少一列用 Initiator，或 Console 訊息旁的檔名與行號，找到觸發的程式',
+        '沒命中的那一列寫出差在哪裡、下次第一個先看哪裡',
+      ],
+      twist: '第四個症狀是「請求回 `200`，畫面卻沒變」。先預測哪個面板最容易讓人誤判成後端的問題、要怎麼排除快取，再自己重現一次。',
+    },
     refs: [
       { label: 'Chrome DevTools 官方文件', url: 'https://developer.chrome.com/docs/devtools' },
       { label: 'Chrome DevTools：Network panel', url: 'https://developer.chrome.com/docs/devtools/network' },
@@ -134,6 +154,17 @@ export default {
       '能用 Performance 分頁的 `Record and reload` 找出擋住解析與擋住第一個畫面的資源',
       '能判斷一個資源該用 `preload`、`fetchpriority="high"` 還是 `loading="lazy"`',
     ],
+    challenge: {
+      task: '找一個售票網站的活動頁（或用 `vite preview` 開自己的專案），Network 設 `Slow 4G` 並勾 `Disable cache`，在欄位標題按右鍵加上 `Priority` 與 `Render-blocking`；再用 Performance 的 `Record and reload` 錄一次。從 waterfall 找出真正延後第一個畫面的資源，以及延後最大那張圖（LCP）的原因，兩者可能不是同一個。',
+      deliver: '一張標出那個資源的 waterfall 截圖，加三句：哪個資源、證據在哪裡、改法與預期的變化',
+      check: [
+        '指名的資源出現在 Insights 的 `Render-blocking requests` 或 `LCP request discovery`，不是只挑 waterfall 裡最長的那條',
+        '分開說明擋第一個畫面的資源與延後 LCP 的資源',
+        '改法對得上本課的表（`media="print"`、`defer`、`async`、拿掉 `lazy`、`fetchpriority`）',
+        '列出哪些判斷搬到門診首頁也成立（擋渲染的規則），哪些要跟業務確認（例如開賣倒數的 script 能不能延後載入）',
+      ],
+      twist: '網路改回 `No throttling`，改加 CPU `4× slowdown`。先預測延後第一個畫面的會不會換成另一個資源（例如某支 script 的執行時間），再錄一次比對。',
+    },
     refs: [
       { label: 'HTML Standard：The script element', url: 'https://html.spec.whatwg.org/multipage/scripting.html#the-script-element' },
       { label: 'MDN：<script>', url: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script' },
@@ -182,6 +213,16 @@ export default {
       '能用事件委派處理一個會增減的清單，並用 `closest()` 找出被點的那一列',
       '能分辨一個 bug 該用 `stopPropagation`、`preventDefault` 還是改寫判斷，並用 Event Listeners 分頁查出元素上綁了哪些監聽',
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=html) 貼上深入內容的事件委派範例，在 `document` 加 `{ capture: true }` 的監聽，印出 `e.type`、`e.target.tagName`、`e.currentTarget` 與 `e.detail`，也監聽 `keydown`、`keyup`。用三種方式觸發同一列的「取消」：滑鼠點按鈕裡的 `<svg>`、Tab 到按鈕按 Enter、按 Space。',
+      deliver: '三次觸發各一段 Console 輸出，各附一句觀察',
+      check: [
+        '指出滑鼠點圖示時 `target` 是 `svg`，鍵盤觸發時是 `button`',
+        '記下鍵盤觸發時 `click` 前後還有哪些事件，以及 `e.detail` 的值',
+        '說明 `closest()` 的委派寫法為什麼三種方式都拿得到同一個 id',
+      ],
+      twist: '把「取消」改成 `<div class="cancel" tabindex="0">`。先預測 Enter 與 Space 還會不會產生 `click`、Console 會少掉哪幾行，再改改看。',
+    },
     refs: [
       { label: 'DOM Standard：Events', url: 'https://dom.spec.whatwg.org/#events' },
       { label: 'MDN：EventTarget.addEventListener()', url: 'https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener' },
@@ -229,6 +270,16 @@ export default {
       '能寫出讀寫 localStorage 的安全寫法：`JSON.stringify`、版本號、`try/catch`',
       '能用 Application 分頁檢查一個網站存了哪些資料與 cookie 的屬性，清除網站資料後重測',
     ],
+    challenge: {
+      task: '在本站任一頁的 Console 寫入四筆資料：localStorage、sessionStorage、沒設期限的 cookie、`max-age=600` 的 cookie。先寫下預測，再做三次獨立的觀察：關掉分頁後從網址列重開；完全結束瀏覽器再開；用「複製分頁」開出第二個分頁，在兩邊各改 sessionStorage。每次觀察前把資料恢復成原樣，做完到 Application 刪掉。',
+      deliver: '一張四筆資料 × 三次觀察的表，預測與實際並排',
+      check: [
+        '預測在操作前寫好，實際結果附 Application 分頁的截圖',
+        '結束瀏覽器後 session cookie 還在的話，寫出原因（例如瀏覽器設定了「繼續瀏覽上次開啟的網頁」）',
+        '每筆資料對到一種適合的用途，例如表單草稿、偏好設定、登入狀態',
+      ],
+      twist: '情境換成餐廳訂位網站，店裡有一台讓客人自助訂位的共用平板。先預測哪幾筆資料會讓下一位客人看到上一位的姓名與電話、完成訂位或登出時要清哪些；再列出哪些條件可以沿用（共用裝置、各分頁自己的草稿），哪些要跟店家確認（草稿保留多久、能不能記住常用分店）。',
+    },
     refs: [
       { label: 'MDN：Web Storage API', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API' },
       { label: 'MDN：IndexedDB API', url: 'https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API' },
@@ -276,6 +327,16 @@ export default {
       '能從 Console 的 CORS 錯誤與 Network 分頁判斷該前端改還是後端改，並整理成交給後端的資訊',
       '能寫出 Vite 的 `server.proxy` 設定，讓前端程式在開發與正式環境都用相對路徑 `/api`',
     ],
+    challenge: {
+      task: '在任一網站的 Console 送三個跨來源請求並排比較：一個回應裡沒有 `Access-Control-Allow-Origin` 的網址（例如 `https://example.com/`，先在 Network 確認）、同一個網址把 `mode` 設成 `no-cors`、一個回 `Access-Control-Allow-Origin: *` 的公開 API（在 Response Headers 確認）。每個請求都記下 Network 看到的內容與程式拿到的值。',
+      deliver: '一張三列的表：Network 的狀態碼與標頭、Console 的訊息、程式拿到的 `res.status`、`res.type` 或錯誤',
+      check: [
+        '至少一列是 Network 看得到 `200`，程式卻拿到 `TypeError`',
+        '`no-cors` 那一列的 `res.status` 是 `0`、`res.type` 是 `opaque`，並說明為什麼讀不到內容',
+        '每一列寫出要改的話是前端還是後端、改哪個設定',
+      ],
+      twist: '對回 `*` 的那個 API 把 `credentials` 設成 `include` 再送一次。先預測 Network 與程式各會怎麼變、Console 的訊息後半段是哪一句，再驗證。',
+    },
     refs: [
       { label: 'MDN：Same-origin policy', url: 'https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy' },
       { label: 'MDN：Cross-Origin Resource Sharing (CORS)', url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS' },
@@ -323,6 +384,17 @@ export default {
       '能說出 `pushState`、`replaceState`、`popstate` 的關係，以及什麼時候用 push、什麼時候用 replace',
       '能說明 history 模式為什麼需要伺服器 fallback，並在部署後用重新整理驗證',
     ],
+    challenge: {
+      task: '倉庫的庫存清單有這些條件：倉別、品名關鍵字、「只看低於安全量」、排序、頁碼、勾選要調撥的品項。決定每個條件放 query 還是只放元件狀態、改的時候用 push 還是 replace。接著在本站的 [練習題](#/exercises?track=frontend) 切換路線篩選，各做一次重新整理、上一頁、把網址貼到無痕視窗，對照你的設計會不會得到一樣的結果。',
+      deliver: '條件設計表（放哪裡、push 或 replace、理由），加上本站三個操作的結果與原因',
+      check: [
+        '重新整理、上一頁、分享網址三個結果，各寫出靠的是 path、query、hash 還是伺服器 fallback',
+        '輸入中的關鍵字用 replace，換倉別、換頁用 push，各有理由',
+        '勾選的品項有明確的決定：放不放進網址，以及分享出去時對方會看到什麼',
+        '列出哪些條件和門診清單一樣可以沿用，哪些要跟倉管確認（勾選要不要跟著分享、安全量由誰定）',
+      ],
+      twist: '部署環境改成不能設定 fallback 的靜態主機，路由維持 `createWebHistory()`。先預測三個操作裡哪一個會壞、伺服器回什麼，以及改成 hash 模式後網址長什麼樣。',
+    },
     refs: [
       { label: 'MDN：URL', url: 'https://developer.mozilla.org/en-US/docs/Web/API/URL' },
       { label: 'MDN：URLSearchParams', url: 'https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams' },
@@ -371,6 +443,16 @@ export default {
       '能寫出只放行允許 scheme 的網址檢查，並用 `javascript:` 網址驗證它',
       '能從 Console 的 CSP 訊息判斷是哪一種寫法被擋，並說出改法',
     ],
+    challenge: {
+      task: '審一個已經「修好」的 PR，改動都在前端：備註從 `v-html` 改成 `{{ }}`；醫師網站的連結用 `new URL()` 檢查是 `https:` 才顯示；非管理員看不到「刪除」按鈕；掛號表單的「自付金額」欄設成 `disabled`；登入後不再把 token 存進 localStorage。圈出哪些改動已經擋住問題、哪些仍要後端保護，並用 DevTools 證明一項：在 Network 對送出的請求按 `Copy as fetch`，到 Console 改 body 後重送。',
+      deliver: '一段 PR 評語：每項改動寫「前端擋住了什麼／後端還要做什麼／怎麼驗證」，附重送請求的截圖',
+      check: [
+        '指出 `disabled` 欄位與隱藏的按鈕都不是保護，請求照樣送得出去',
+        '備註與網址各寫出後端還要做的事（存檔時過濾、檢查 scheme），以及前端為什麼仍要保留檢查',
+        '重送的請求有截圖，寫出預期後端回哪個狀態碼',
+      ],
+      twist: '同一份 PR 換到演唱會售票網站：座位價格放在 hidden input，每人限購 4 張只寫了 `max="4"`。先預測哪些攻擊照樣成功；再列出哪些判斷可以沿用（前端送出的值都能被改），哪些要跟業務確認（限購以帳號還是以訂單計、價格由誰算）。',
+    },
     refs: [
       { label: 'Vue：Security', url: 'https://vuejs.org/guide/best-practices/security.html' },
       { label: 'MDN：Content-Security-Policy', url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy' },

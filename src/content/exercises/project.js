@@ -1473,7 +1473,7 @@ build:
 
 deploy:
   stage: deploy
-  image: alpine:3.20
+  image: alpine:3.22
   script:
     - ./scripts/deploy.sh "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
   environment: production

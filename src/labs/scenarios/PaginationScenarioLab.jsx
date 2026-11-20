@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Caption, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Caption, fmtN, Measure } from '../ui.jsx'
 import { runSql, resetSchema } from '../../runtime/sql.js'
 import { PlanTree, RuntimeStatus } from '../../components/Output.jsx'
 
@@ -234,11 +234,11 @@ function Deep() {
             {bench && (
               <div className="res">
                 <div>
-                  <h5><span>OFFSET</span><span className="ms" style={{ color: 'var(--c-orange)' }}>{bench.off.ms.toFixed(2)} ms · 實際掃 {bench.off.scanned} 列</span></h5>
+                  <h5><span>OFFSET</span><span className="ms" style={{ color: 'var(--c-orange)' }}><Measure kind="local" value={bench.off.ms.toFixed(2)} unit="ms" /> · 實際掃 {bench.off.scanned} 列</span></h5>
                   <PlanTree plan={bench.off.plan} />
                 </div>
                 <div>
-                  <h5><span>Cursor</span><span className="ms" style={{ color: 'var(--c-aqua)' }}>{bench.key.ms.toFixed(2)} ms · 實際掃 {bench.key.scanned} 列</span></h5>
+                  <h5><span>Cursor</span><span className="ms" style={{ color: 'var(--c-aqua)' }}><Measure kind="local" value={bench.key.ms.toFixed(2)} unit="ms" /> · 實際掃 {bench.key.scanned} 列</span></h5>
                   <PlanTree plan={bench.key.plan} />
                 </div>
               </div>

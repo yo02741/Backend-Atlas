@@ -28,6 +28,17 @@ export default {
         { c: '空陣列', t: '在 Console 呼叫 `summarizeClinics([])`：應該得到空清單與 0 人；出現 `Reduce of empty array with no initial value`，代表 `reduce` 沒給初始值。' },
       ],
     },
+    challenge: {
+      task: '倉庫的庫存 API `GET /api/stock` 回傳 `[{ sku: "A-01", qty: 0, location: { shelf: "B3" } }, { sku: "A-02", qty: 7 }, { sku: "A-03", qty: null, location: null }]`，`qty: null` 代表盤點中。在 [Playground](#/playground?lang=js) 寫 `stockLines(items)`：依 `qty` 由多到少排、盤點中的排最後，每筆組成「A-01（B3）：0 件」，沒有儲位寫「未上架」，盤點中寫「盤點中」，另外回傳總件數。執行前先在紙上預測：預設值用 `||` 與 `??` 各會把哪幾筆顯示錯，比較函式直接寫 `b.qty - a.qty` 時 `null` 會排在哪裡。',
+      deliver: '`stockLines` 的程式、一段執行輸出，以及一張預測表：每一筆在 `||` 版、`??` 版與直接相減的排序裡各得到什麼',
+      check: [
+        '`qty: 0` 顯示「0 件」，`qty: null` 顯示「盤點中」並排在最後',
+        '呼叫前後各印一次原陣列的 `sku` 順序，兩次相同',
+        '`stockLines([])` 回傳空清單與 0 件，不丟錯',
+        '預測表和實際輸出不一致的格子，各寫出是哪個運算子或哪個隱含轉型造成的',
+      ],
+      twist: '倉儲系統改版：`qty` 變成字串（`"0"`、`"7"`），盤點中改成欄位不存在。先預測哪幾條驗收會失敗（提示：`reduce` 的加總會變成什麼），再修。最後說明這支函式的哪些假設可以沿用到門診看板的 `waiting`（例如 0 是合法值），哪些要跟倉儲人員重新確認（例如盤點中的品項要不要算進總數）。',
+    },
     points: [
       { b: '`const` 鎖的是變數，不是內容', t: '`const list = []` 之後 `list.push(x)` 合法，`list = []` 才會丟出 `TypeError: Assignment to constant variable.`。要讓物件不能改得用 `Object.freeze`，而且它只凍結第一層。' },
       { b: '箭頭函式加了大括號就要 return', t: '`(n) => n * 2` 回傳結果，`(n) => { n * 2 }` 回傳 `undefined`。`() => { name: \'王\' }` 的大括號被當成函式本體，也回傳 `undefined`；回傳物件寫成 `() => ({ name: \'王\' })`。' },
@@ -77,6 +88,16 @@ export default {
         { c: 'watch 有觸發', t: '在 `watch` 的回呼裡 `console.log`，再改一個內層欄位：沒有印出來，代表監看的是物件型的 ref 或回傳物件的 getter，要加 `{ deep: true }` 或改監看那個欄位。' },
       ],
     },
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 寫一個父元件，用 `reactive([...])` 存兩筆掛號（含 `patient.contact.phone`），畫出兩個子元件：`PatientCard` 顯示第一筆的電話，`EditDialog` 用 `const draft = reactive({ ...props.appointment })` 建草稿並綁在輸入框。執行前先預測三個操作之後 `PatientCard` 會不會跟著變：改 `draft.status`、改 `draft.patient.contact.phone`、把草稿改成 `structuredClone(toRaw(props.appointment))` 再改電話。每做完一個操作就看畫面並在 Console 印出父元件的資料。',
+      deliver: '一張預測與實際對照表（三個操作 × 卡片有沒有變），每一列附一句用「參考」或「第一層」解釋的原因',
+      check: [
+        '三個操作都有預測與實際結果，預測錯的列寫出原因',
+        '最後的版本按「取消」後，`PatientCard` 與父元件的資料都維持原值',
+        '說出拿掉 `toRaw` 時 Console 出現哪個錯誤、為什麼',
+      ],
+      twist: '父元件把清單改成 `shallowRef([...])`，儲存時寫 `list.value[0] = draft`。先預測 `PatientCard` 會不會更新，再驗證並改成會更新的寫法。',
+    },
     points: [
       { b: '指定與傳參數都不複製物件', t: '`const draft = props.appointment`、把物件傳進函式，拿到的都是同一份資料的參考；在函式裡改它，呼叫端的資料跟著變。' },
       { b: '展開只複製一層', t: '`const copy = { ...appt }` 之後改 `copy.status` 不影響原資料，改 `copy.patient.name` 會。要改內層就逐層展開：`{ ...appt, patient: { ...appt.patient, name } }`，或整份 `structuredClone`。' },
@@ -124,6 +145,16 @@ export default {
         { c: 'lock 檔一起更新', t: '`git diff --stat` 裡 `package.json` 多了套件，`package-lock.json` 也要有變更；只改前者，CI 的 `npm ci` 會失敗，訊息是 `can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync`。' },
         { c: '部署後的白畫面', t: 'Console 出現 `Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of "text/html"`：要的 JS 檔不存在、伺服器回了 `index.html`，常見原因是 `base` 路徑設錯，或部署後舊頁面還在要已經刪掉的 chunk。' },
       ],
+    },
+    challenge: {
+      task: '在 `npm create vue@latest` 建的專案裡，挑一個靜態匯入的套件（例如 `vue`）和一個你改成懶載入的頁面（路由寫 `() => import(...)`）。對每一個匯入找三樣東西：程式裡的匯入語法、`node_modules/<套件>/package.json` 的 `exports` 或 `module` 指到哪個檔、`npm run build` 之後它落在 `dist/assets/` 的哪個 chunk、多大。`npm run preview` 打開首頁，在 Network 分頁確認哪些 chunk 有下載。',
+      deliver: '一張三欄對照表（匯入語法、套件入口檔、建置後的 chunk 與大小）與首頁 Network 分頁的截圖',
+      check: [
+        '表裡至少有一個靜態匯入與一個動態 `import()`',
+        '入口檔的路徑在 `node_modules` 裡找得到，並說出 `exports` 裡是哪個條件（例如 `import`、`default`）選中它',
+        '懶載入的頁面在建置後是獨立的 chunk，首頁的 Network 分頁沒有下載它',
+      ],
+      twist: '把懶載入頁面改回 `import ReportView from ...` 的靜態匯入。先預測首頁要下載的 JS 會多出哪個 chunk 的內容、大約多少 KB，再建置一次驗證。',
     },
     points: [
       { b: '具名匯出要同名', t: '`export function formatDate()` 對 `import { formatDate }`；寫成 `import formatDate from` 會去拿預設匯出。對不上時瀏覽器在載入階段就丟出 SyntaxError，整個模組都不會執行。' },
@@ -174,6 +205,17 @@ export default {
         { c: '少了 await', t: '畫面上出現 `[object Promise]`，或 Console 出現 `TypeError: data.map is not a function`，代表拿到的是 Promise 本身，呼叫時少了 `await`。' },
       ],
     },
+    challenge: {
+      task: '餐廳的訂位頁同時要三份資料：`getTables()`（300 ms 成功）、`getMenu()`（500 ms 後丟出 `Error(\'menu 503\')`）、`getPromos()`（200 ms 成功）。在 [Playground](#/playground?lang=js) 用 `setTimeout` 包成 Promise 模擬，各寫一個 `Promise.all` 版與 `Promise.allSettled` 版的 `load()`，用 `performance.now()` 記錄耗時，`finally` 裡印「loading 關閉」。執行前先預測兩個版本的總耗時、哪幾份資料拿得到、錯誤在哪裡被接住。',
+      deliver: '預測與實際的對照表（兩個版本 × 耗時、拿到的資料、錯誤在哪裡出現）',
+      check: [
+        '兩個版本的耗時和預測相差 50 ms 以內，相差更多時寫出原因',
+        '`all` 版說得出 tables 與 promos 的請求有沒有完成、結果為什麼拿不到',
+        '`allSettled` 版三份資料各自顯示資料或錯誤，「loading 關閉」只印一次',
+        '寫出這個頁面該用哪一種：哪一份資料失敗時整頁不能用',
+      ],
+      twist: '把 `getMenu` 改成 100 ms 就失敗。先預測 `Promise.all` 版在第幾 ms 結束、另外兩個請求會不會被取消，再執行驗證。接著說明哪些判斷可以沿用到門診首頁（區塊互不相依時用 `allSettled`），哪些要跟餐廳重新確認（例如菜單載入失敗時還能不能讓客人訂位）。',
+    },
     points: [
       { b: 'Promise 只會定案一次', t: 'pending 之後變成 fulfilled 或 rejected 就不再改變。`await` 一個成功的 Promise 拿到值，失敗的則在那一行丟出錯誤，所以 `try`/`catch` 接得住 `await` 的失敗。' },
       { b: '依序還是平行', t: '`const a = await f(); const b = await g();` 等 `f` 結束才開始 `g`，總時間相加。兩者互不相依時寫 `const [a, b] = await Promise.all([f(), g()])`，總時間約等於較慢的那一個。' },
@@ -220,6 +262,16 @@ export default {
         { c: '計算時畫面能操作', t: '計算進行中捲動頁面、在搜尋框打字：要能即時反應；卡到計算結束才一次跳出來，代表某一批還是太大。' },
         { c: '讀 DOM 的時機', t: '改資料的下一行就讀元素高度或捲動位置，拿到的是舊值，改成 `await nextTick()` 之後再讀。看到 `setTimeout(…, 100)` 這種用延遲碰運氣的寫法，要求改掉。' },
       ],
+    },
+    challenge: {
+      task: '打開 [事件迴圈實驗室](#/lab/EventLoopLab) 的「await」範例，逐步執行前先把 Console 的順序手寫下來，再一步一步比對。接著在 [Playground](#/playground?lang=html) 寫一個按鈕：處理函式先把狀態列改成「處理中…」，`await Promise.resolve()`，跑一段約 800 ms 的同步迴圈，最後改成「完成」；第二版把讓出那一行換成 `await new Promise((r) => requestAnimationFrame(() => setTimeout(r)))`。兩版各在 Performance 分頁錄一次點擊。',
+      deliver: '手排的順序與實驗室的實際順序，以及兩張 Performance 截圖，標出長 task 與 Paint 的位置',
+      check: [
+        '手排與實際不同的每一行，寫出它是同步、microtask 還是 task',
+        '第一版的截圖裡，長 task 之前沒有 Paint，畫面從原本的文字直接跳到「完成」',
+        '第二版的截圖裡，長 task 之前有一次 Paint，畫面上看得到「處理中…」',
+      ],
+      twist: '把 800 ms 的迴圈拆成 8 段，每段之間 `await new Promise((r) => setTimeout(r))`。先預測 Performance 裡會變成幾個 task、計算途中按另一個按鈕會不會有反應，再錄一次驗證。',
     },
     points: [
       { b: '一次只跑一段', t: '主執行緒上同一時間只有一段 JavaScript 在跑。`await` 暫停的只有那個 async 函式，其他程式照常執行；一段同步迴圈則會把所有事情都擋住。' },
@@ -270,6 +322,16 @@ export default {
         { c: '型別和實際資料一致', t: '在 Network 分頁點開 API 的 Response 對照 interface：欄位名稱、哪些是 `null`、數字還是字串。型別只存在於編譯時，API 多給或少給欄位，執行時都不會報錯。' },
       ],
     },
+    challenge: {
+      task: '在 [TypeScript Playground](https://www.typescriptlang.org/play) 貼上：`interface Appointment { id: number; patient?: { name: string }; checkedInAt: string | null }` 與 `function label(a: Appointment) { return a.patient.name + \' \' + a.checkedInAt.slice(11, 16) }`。編譯器會給兩個診斷。不要先改程式，先替每個診斷往回找：型別上是哪個欄位造成的、後端在什麼情況下會給這個值、那時畫面該顯示什麼。接著寫兩個版本：一個只用 `!` 讓紅線消失，一個用 narrowing 處理每種情況。',
+      deliver: '一張診斷表（錯誤代碼、對應的欄位、真實資料什麼時候是這個值、畫面要顯示什麼）、兩個版本的程式，以及一筆讓 `!` 版在執行時壞掉的資料',
+      check: [
+        '兩個診斷都對到 `interface` 裡的一個欄位，並寫出後端給這個值的情況（例如還沒報到）',
+        '處理版沒有 `!`、`as` 或 `any`，型別檢查沒有錯誤',
+        '給出的那筆資料在 `!` 版丟出 TypeError，在處理版顯示預設文字',
+      ],
+      twist: '後端說 `patient` 一定會有，但 `checkedInAt` 改成未報到時給空字串 `""`。先預測哪個診斷會消失、哪個錯誤型別檢查再也抓不到，再決定要改型別還是改判斷。',
+    },
     points: [
       { b: '型別在執行前就移除', t: 'TypeScript 只在編譯時檢查，輸出的 JavaScript 沒有型別；`interface` 不能拿來 `instanceof`（`TS2693`），API 回應的形狀也不會被自動檢查。' },
       { b: 'Vite 不做型別檢查', t: 'Vite 只把 `.ts` 轉成 JavaScript，有型別錯誤照樣跑起來。create-vite 的 Vue + TS 範本把檢查放在 `build`：`vue-tsc -b && vite build`。' },
@@ -318,6 +380,17 @@ export default {
         { c: 'hidden source map', t: '建置後打開 `dist/assets/` 裡的 `.js` 看檔尾：不該有 `//# sourceMappingURL=`；`.map` 檔存在，但部署的檔案清單裡沒有它。' },
         { c: '沒有留下除錯碼', t: '`grep -rnE "console\\.log|debugger" src/` 沒有結果，或 ESLint 的 `no-console`、`no-debugger` 規則通過。' },
       ],
+    },
+    challenge: {
+      task: '使用者回報：「掛號清單切到第 2 頁就白掉。」附上的紀錄是 source map 對回後的 `TypeError: Cannot read properties of null (reading \'name\')`，堆疊依序是 `formatRow (rows.js:14:22)`、`Array.map`、`renderList (list.js:8:17)`、`runtime-core.esm-bundler.js`、`loadPage (api.js:31:9)`，以及第 2 頁的 API 回應：十筆掛號，其中一筆 `doctor: null`、另一筆沒有 `room`。在 [Playground](#/playground?lang=js) 做一份最小重現：不用框架、不連網，丟出同一個錯誤訊息。',
+      deliver: '15 行以內的最小重現程式、執行後的錯誤訊息、堆疊每個 frame 的標註，以及修正後的輸出',
+      check: [
+        '重現程式在 Playground 的 JavaScript 模式直接丟出同一個 TypeError 訊息',
+        '重現資料只留觸發錯誤需要的那一筆與欄位，並寫出刪掉哪些資料後錯誤仍在',
+        '堆疊的每個 frame 標成自己的程式或框架，指出第一個自己的 frame',
+        '修正後同一份資料輸出預設文字，沒有用空的 `catch` 把錯誤吞掉',
+      ],
+      twist: '同一份紀錄改成只有壓縮後的位置 `index-4f2a.js:1:20931`。先預測你還能做到哪一步、缺了什麼，再說明 `build.sourcemap` 設成 `hidden` 時產生的 `.map` 檔要放在哪裡，才對得回原始碼又不公開給瀏覽器。',
     },
     points: [
       { b: '先讀第一行，再找自己的 frame', t: '`TypeError: Cannot read properties of undefined (reading \'name\')` 說的是「某個值是 `undefined`，卻去讀它的 `name`」；stack trace 裡第一個自己的檔案與行號，是那個值被用到的地方，從這裡往回追它從哪裡來。' },
@@ -370,6 +443,16 @@ export default {
         { c: '環境變數的型別', t: '暫時把 `import.meta.env.VITE_API_BASE` 拼錯成 `VITE_API_BAES`：沒有型別錯誤，代表 `env.d.ts` 沒有宣告或沒開 `strictImportMetaEnv`；開了之後會報 `TS2551: Property \'VITE_API_BAES\' does not exist on type \'ImportMetaEnv\'. Did you mean \'VITE_API_BASE\'?`。' },
       ],
     },
+    challenge: {
+      task: '物流商的追蹤 API `GET /api/shipments/:id` 照文件回 `{ id: number, status: \'in_transit\' | \'delivered\', eta: string | null, weightKg: number }`。在 [Playground](#/playground?lang=vue) 用 `api.get(\'/api/shipments/:id\', [...])` 讓每次請求依序回四種 body（頁面放一個「重新載入」按鈕）：照文件的、多一個沒宣告的欄位、`weightKg` 是字串 `"3.5"`、`status` 是文件沒有的 `returned`。寫一個不靠函式庫的檢查函式，放在 `fetch` 之後、資料進入畫面之前；檢查不過時顯示「資料格式錯誤」與出錯的欄位。',
+      deliver: '四種回應各一張畫面截圖，以及檢查函式的程式（註解寫出多餘欄位的處理方式與理由）',
+      check: [
+        '只有照文件的那組顯示貨件資料；型別錯與未知狀態兩組顯示「資料格式錯誤」與欄位名稱，畫面上沒有 `NaN`、`undefined` 或白畫面',
+        '多一個欄位的那組，處理方式（忽略或報錯）和註解寫的一致',
+        '寫出 `res.json()` 的型別為什麼讓四組資料都通過 `vue-tsc`',
+      ],
+      twist: '物流商說 `status` 之後還會增加新值（例如 `customs_hold`）。先預測你的檢查會把新狀態擋成錯誤還是照常顯示，再決定怎麼處理。說明哪些規則可以沿用門診 API 的做法（型別錯就拒絕），哪些要跟物流業務重新確認（未知狀態顯示「處理中」還是報錯、要不要通知誰）。',
+    },
     points: [
       { b: '型別不會檢查資料', t: 'TypeScript 編譯完型別就消失，`as Appointment[]` 與 `const list: Appointment[] = await res.json()` 都只是叫編譯器相信你。後端改了欄位、多了狀態值，錯誤會出現在離 API 很遠的元件裡。' },
       { b: '在邊界驗證一次', t: '資料一進來就用 schema 檢查，通過的資料之後都可以相信；失敗時在同一個地方決定畫面與回報。不要在每個元件裡各自寫 `if (x && x.status)`。' },
@@ -419,6 +502,16 @@ export default {
         { c: '漏洞報告怎麼讀', t: '`npm audit --omit=dev` 只看 dependencies。建置工具的漏洞在開發機與 CI 上執行，影響的是那裡的金鑰；打包進 bundle 的套件，影響的是使用者的瀏覽器，修補的急迫程度不同。' },
         { c: '沒有幽靈依賴', t: '程式 import 了 `package.json` 沒列的套件時，換成 pnpm 或那個套件改版後，Vite 報 `Failed to resolve import "dayjs" from "src/…". Does the file exist?`；`npm ls dayjs` 看它是被哪個套件順便裝進來的，要用就自己加進 `dependencies`。' },
       ],
+    },
+    challenge: {
+      task: '在自己的專案挑一個 `npm outdated` 裡 `Current` 與 `Wanted` 不同的套件。執行 `npm update <套件>` 之前，先預測 `package.json` 與 `package-lock.json` 會有哪些變動（版本、`resolved`、`integrity`、間接依賴）。執行後用 `git diff` 比對，接著刪掉 `node_modules` 跑 `npm ci`、`npm ls <套件>` 與 `npm run build`，並記下 `node -v`、`npm -v` 與 `package.json` 的 `engines`。',
+      deliver: '一段 PR 說明：升級了什麼、lock 檔每一處變動的來源、乾淨安裝與建置的結果、使用的 Node 與 npm 版本',
+      check: [
+        '預測和實際的 diff 逐項對照，說得出 `package.json` 有沒有變、為什麼',
+        'lock 檔的每一處變動都對到一個套件與版本，沒有說不出來源的變動',
+        '乾淨安裝後 `npm ls` 的版本等於 lock 檔記的版本，`npm run build` 通過',
+      ],
+      twist: '同事用另一個 npm 主版本跑了 `npm install`，lock 檔多出一大段跟這次升級無關的變動。先預測 CI 的 `npm ci` 會不會因此失敗、哪些變動該退回，再說明 PR 要怎麼拆才審得動。',
     },
     points: [
       { b: '範圍與 lock 檔分工', t: '`package.json` 寫可以接受的範圍，lock 檔記實際的版本與雜湊。lock 檔要提交、CI 用 `npm ci`，大家才裝到同一組版本；只用 `npm install` 的 CI，每次都可能裝到剛發布的新版。' },

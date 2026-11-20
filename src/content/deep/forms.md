@@ -166,6 +166,8 @@ async function onSubmit() {
 
 幾個細節：`<form novalidate>` 關掉瀏覽器的提示泡泡，改顯示自己的訊息；`@submit.prevent` 擋掉表單預設的整頁送出；錯誤訊息只在要顯示時才渲染，`aria-describedby` 也只在那時才指過去；送出按鈕寫明 `type="submit"`，表單裡其他按鈕（例如「清除」）要寫 `type="button"`，否則按了也會送出表單。
 
+:::stop 讀到這裡可以先停：會用 `v-model` 與修飾符綁表單、處理中文輸入法，在離開欄位或送出後才顯示錯誤。後面的 React 對照與錯誤訊息表，在讀 React 表單或 Console 出現綁定警告時再回來讀。
+
 ## React 對照
 
 | Vue 3.5 | React 19 |

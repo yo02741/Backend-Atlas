@@ -231,6 +231,17 @@
 - **建置與上線（2）**：公開頁與登入後的頁面：CSR、SSR 還是 SSG；多環境的設定放哪裡
 <!-- /sync:scenarios -->
 
+### 進階驗收、停靠點與跨課作業
+
+- **進階驗收**：課（`body/dN-*.js` 的 `challenge`）與設計情境（`challenge`）有一份進階驗收：任務、交付物、2–4 條驗收條件、按了才展開的需求變化。驗收條件的勾選只存在讀者的瀏覽器（`atlas-local-v1`），不同步。
+- **停靠點**：深入內容裡獨佔一行的 `:::stop 文字` 顯示成停靠點，課的目錄列有連結跳到第一個。
+- **判分說明**：程式題交卷後顯示「這題驗了什麼」（依題型的預設，題目可用 `verifies` 改寫）。
+- **觀察任務**：`src/labs/tasks.js` 讓實驗室上方顯示「先猜 → 操作 → 看哪個觀察推翻猜測」；模擬器的數字用 `ui.jsx` 的 `Measure` 標出「教材設定／本機量測／需在你的環境測」。
+- **跨課作業**：`src/content/assignments.js`，頁面在 `#/assignments`（依路線篩選）與 `#/assignment/<id>`。
+- **進度的三種狀態**：讀過（手動標記）、能自行解釋（自我檢核全勾）、測驗通過（選擇題全對）。前兩者與題目狀態登入後同步；複習紀錄、草稿、進階驗收與作業的勾選、實驗室的猜測只在這個瀏覽器。
+- **數量口徑**：首頁與路線首頁把路線的站數與課綱週數標成主線，其餘的課是選讀；課綱週次由 `npm run docs:sync` 產生到 `src/content/curriculum-weeks.js`。
+- `npm run quiz:stats`：每課有幾題的正解是唯一最長的選項（`validate:quizzes` 會擋超過 1 題的課）。
+
 ### 實作路線：從零做完一個門診掛號後端
 
 `#/project`。資料表與約束 → 掛號規則寫成程式與測試 → REST 介面與狀態碼 → 登入與角色權限 → 同時搶最後一個號 → 快取與限流 → 打包與持續整合（Dockerfile、GitLab CI）→ 日誌、指標與追蹤 → 給 agent 一個唯讀查詢的 MCP server（OAuth 保護、依使用者限制可查的表、遮罩、稽核）→ 部署到 Kubernetes（Deployment、Service、Ingress、探針與資源、零停機滾動更新）。每階段一份說明，連回相關的課，驗收題在瀏覽器裡跑（SQL 約束、Python 規則與測試、Dockerfile 與 `.gitlab-ci.yml` 檢查）。
@@ -248,7 +259,7 @@
 
 - **程式題 282 道**（Python 127、SQL 38、config 30、JavaScript 23、HTML 15、CSS 13、Vue 36）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、`.gitlab-ci.yml`、GitHub Actions）由 JS 檢查器逐條驗證；HTML、CSS、Vue 題在沙箱 iframe 裡執行（自架的 Vue 3.5.45、Pinia 4.1.0、Vue Router 5.5.1，import `element-plus` 的題目另外載入 Element Plus 2.14.8，標了 `tailwind` 的題目另外載入 Tailwind CSS 4.3.5（`@tailwindcss/browser`）；`fetch` 由假的門診 API 回應），測試透過 DOM 檢查畫面與行為，CSS 題在 390、768、1280 等寬度下各檢查一次。
 - **選擇題 720 道**：每課 3 題，含程式碼判讀與情境題。
-- **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。
+- **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、讀過的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。
 <!-- /sync:practice -->
 
 ### 課綱（16 週主線、6 週延伸、10 週 K8s 專題）
@@ -286,7 +297,7 @@
 
 ### 其他
 
-- **Playground**：Python、PostgreSQL、JavaScript 在瀏覽器裡自由寫、直接跑，附電商範例資料庫；HTML 與 Vue 模式跑在沙箱 iframe，可以調假 API 的延遲與錯誤率。
+- **Playground**：Python、PostgreSQL、JavaScript 在瀏覽器裡自由寫、直接跑，附電商範例資料庫；HTML 與 Vue 模式跑在沙箱 iframe，可以調假 API 的延遲與錯誤率，或用固定情境（成功、失敗、空資料、亂序）重播同一組回應。每個模式的草稿、上次的範例與輸出存在瀏覽器（`atlas-playground-*`），重新整理後還在；載入範例蓋掉草稿時可以復原。
 - **進度與登入**：完成的課、檢核清單、題目與決策題的狀態預設存在瀏覽器；用 Google 登入後同步到其他裝置（見「登入與同步」）。
 
 ## 執行環境（全部在瀏覽器）
@@ -302,6 +313,7 @@
 - 沙箱的 import map 用 data: URL：不受 CORS 限制，dev、preview、Pages、Firebase 的行為一樣（網址直連的話，伺服器要對 null origin 回 `Access-Control-Allow-Origin`）。
 - 沙箱的迴圈保護：組 srcdoc 前在 `while`、`for`、`do` 迴圈插入檢查，主執行緒連續被占用 1.5 秒就中止；另有每個測試 8 秒逾時。沙箱 iframe 可能和外殼同一個程序（Chromium 實測是），`eval`、`new Function` 裡的迴圈保護不到。
 - 表單沒有取消預設動作時，沙箱攔下送出並在 Console 提示（否則 iframe 會換頁）；`<form method="dialog">` 只關閉 Dialog，不攔。
+- `api.scenario = 'success' | 'fail' | 'empty' | 'shuffle'`：固定情境，設了就不套用 `errorRate`；fail 是每個方法＋路徑第 1 次回 503、重試成功；empty 是成功的 GET 回空清單；shuffle 是較早的請求較晚回、陣列倒序。
 - Tailwind CSS：html、vue 題設 `tailwind: true`，或 Playground／深入內容的 HTML 裡有 `<style type="text/tailwindcss">` 時，沙箱另外載入自架的 `@tailwindcss/browser`（約 0.3 MB，一個分頁只下載一次）。它在瀏覽器裡掃 DOM 的 class 產生 CSS，`@theme`、`@custom-variant` 寫在那個 `<style>` 裡；和用 `@tailwindcss/vite` 建置不同，用字串組出來的 class 在沙箱裡也會產生。測試 helper：`twReady()` 等 Tailwind 產生完，`cssWhen(元素, 偽類, 屬性)` 讀 `:hover`、`:focus-visible` 狀態下的樣式。
 - Element Plus：程式碼 import `element-plus`（或 `element-plus/es/locale/lang/zh-tw` 這類子路徑）時，沙箱另外載入自架的 Element Plus：瀏覽器 ESM 建置 `dist/index.full.min.mjs`（約 0.9 MB，只 import `vue`，和 Pinia、Vue Router 共用同一份 Vue）、zh-tw 語系，以及以 `<link>` 載入的 `dist/index.css`（約 0.36 MB），一個分頁只下載一次。題目照真實專案寫 `import ElementPlus from 'element-plus'` 與 `app.use(ElementPlus)`；樣式自動帶入，題目或使用者的 CSS 能覆蓋 `--el-*` 變數。這個建置沒有棄用警告，只有 npm 套件的 `es` 建置才有。
 - Pinia 與 Vue Router：程式碼（使用者的程式與測試）出現 `from 'pinia'`、`from 'vue-router'` 或 `import('…')` 才放進 import map，兩者的 `import 'vue'` 經同一個 import map 共用一份 Vue。沙箱的網址是 `about:srcdoc`，相對網址卻以外殼的網址為基準：`createWebHashHistory()`、`createWebHistory()` 一開始的 `history.replaceState` 會丟 `SecurityError`，router 接著用 `location.replace()` 讓 iframe 換頁，所以題目一律用 `createMemoryHistory()`；iframe 要換頁時 prelude 先通知外殼，測試馬上失敗並說明原因。兩者是正式建置版：沒有 `next` 的棄用警告、setup store 的 `$reset()` 不丟錯；prod 版也偵測不到導航守衛的無窮導向（實測會讓 iframe 與外殼一起卡死），import map 的 `vue-router` 因此指到一個包裝模組，`createRouter` 先掛一個守衛，同一個 task 裡導航超過 100 次就取消並丟出說明原因的錯誤。
@@ -372,6 +384,7 @@ npm run docs:check               # README 與課綱的產生段落是否最新�
 npm run check:links              # 延伸閱讀與深入內容裡的外部連結（需要連外網；Actions 的 Links workflow 每月跑一次）
 npm run build && npm run preview # 另開終端跑下面的 e2e（需要 npx playwright install chromium）
 npm run e2e:runtime              # Playground 的 Python / SQL / JS 能執行
+node e2e/ui-playground.mjs       # Playground：鍵盤操作（分頁、範例、Esc 後 Tab、跳到結果）、錯誤念出、草稿與輸出、固定情境、390px
 npm run e2e:verify               # 每道程式題：解答通過、起始碼不通過
 npm run e2e:deep                 # 深入內容的每個 run 區塊都能執行（ONLY=transactions 只驗指定的課）
 npm run e2e:ui                   # 首頁路線圖（2／3／4／6 欄：站序、文字不重疊、線不穿過字）；練習題、選擇題、設計情境的 UI 流程；路由懶載入；實驗室動畫在捲出畫面 / 分頁隱藏時暫停

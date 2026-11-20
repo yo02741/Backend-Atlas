@@ -50,6 +50,8 @@ OWASP GenAI Security Project 的 Top 10 for LLM Applications（2025 版）列了
 
 工具層與 MCP 的風險有專門的清單，見 [#/skill/owasp-mcp-top10](#/skill/owasp-mcp-top10)；知識庫下毒見 [#/skill/knowledge-poisoning](#/skill/knowledge-poisoning)。
 
+:::stop 讀到這裡可以先停：會畫出 LLM 應用的資料流，逐段對到 OWASP Top 10 for LLM 的項目。後面的 MITRE ATLAS、STRIDE 與控制層次，在要寫正式的威脅建模文件或安全審查單時再回來讀。
+
 ## 用 MITRE ATLAS 看攻擊者的進程
 
 OWASP 清單是從「系統有什麼弱點」的角度列；MITRE ATLAS 是從「攻擊者會經過哪些階段」的角度整理，架構仿照 ATT&CK，把 AI 系統相關的手法歸到不同的戰術（tactics）之下。威脅建模時只需要用高層次的戰術名稱，檢查每個階段有沒有對應的偵測或阻擋：

@@ -131,6 +131,8 @@ debounce 300ms 的測試照時間推：
 
 整個測試在 1 毫秒內跑完。取消期限的測試在凌晨失敗，是因為測試用了真的「今天」：測試用 `new Date().toISOString().slice(0, 10)` 組出今天的預約，台灣時間凌晨 0 點到 8 點時 UTC 還是前一天，拿到的是昨天的日期。`vi.setSystemTime(new Date('2026-11-20T07:00:00+08:00'))` 把現在固定在看診前 2 小時整，結果每天都一樣。Vitest 5.1.1 實測，沒呼叫 `vi.useFakeTimers()` 也能用 `vi.setSystemTime()`，這時只有 `Date` 被固定，計時器照常走。
 
+:::stop 讀到這裡可以先停：會寫 `test.each` 邊界表、選對 `toBe` 與 `toEqual`、用 fake timers 測時間。後面的替身、composable、覆蓋率與完整程式，在要測呼叫 API 的程式或確認測試改壞會不會紅時再回來讀。
+
 ### 替身：`vi.fn`、`vi.spyOn`、`vi.mock`
 
 | 工具 | 換掉什麼 | 適合 | 代價 |

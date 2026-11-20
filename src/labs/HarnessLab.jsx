@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, Stats, Stat, LineChart, Caption } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, Stats, Stat, LineChart, Caption, Measure } from './ui.jsx'
 
 /* ============================================================
    Harness Engineering：同一個 prompt 跑 N 次，結果為什麼不一樣
@@ -185,7 +185,7 @@ export default function HarnessLab() {
             </div>
           </LabStage>
           <Stats min={130}>
-            <Stat label="整體通過率" value={pct(sim.passRate)} tone={tone} note={`${CASES.length} 題 × ${n} 次`} />
+            <Stat label="整體通過率" value={<Measure kind="set" value={pct(sim.passRate)} />} tone={tone} note={`${CASES.length} 題 × ${n} 次`} />
             <Stat label="不穩定的題" value={sim.unstable} unit={`/ ${CASES.length}`} tone={sim.unstable >= 4 ? 'bad' : sim.unstable ? 'warn' : 'ok'} note={n === 1 ? '只跑 1 次看不出來' : '有時過有時不過'} />
             <Stat label="錯誤放行" value={pct(sim.badRate)} tone={sim.badRate > 0.15 ? 'bad' : sim.badRate > 0 ? 'warn' : 'ok'} note={strategy === 'checker' ? `另有 ${sim.blocked} 次被攔下` : '錯了卻當成答案往下走'} />
             <Stat label="平均每次任務呼叫" value={sim.avgCalls.toFixed(2)} unit="次" note={strategy === 'vote' ? '固定 3 倍成本' : strategy === 'retry' ? '難題才多花' : '1 次就 1 次'} />

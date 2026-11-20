@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Toggle, Callout, Status, useTicker, Stats, Stat, Flow, LineChart, Caption } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Toggle, Callout, Status, useTicker, Stats, Stat, Flow, LineChart, Caption, Measure } from '../ui.jsx'
 
 /* 地端 / 公有雲託管 / 混合 情境模擬器（虛構的區域醫院，18 個服務）。
    上半：調負載波動、資料落地限制、維運人力、成長率，看每月成本指數、擴充時間、維運工時、合規符合度、災備。
@@ -139,7 +139,7 @@ export default function HostingChoiceScenarioLab() {
         <div className="lab-stack">
           <Stats min={150}>
             <Stat label="每月成本指數（示意）" value={pl.cost} note={mode === 'cloud' ? '跟著平均用量走' : `依尖峰採購 ${pl.nodes} 台，平時只用到約 ${Math.round((1 - pl.idle) * 100)}%`} />
-            <Stat label="擴充所需時間" value={scaleTime} note={mode === 'onprem' ? '編預算、採購、上架' : mode === 'cloud' ? '受帳號配額限制' : '核心部分仍 8–12 週'} tone={mode === 'onprem' ? 'warn' : ''} />
+            <Stat label="擴充所需時間" value={<Measure kind="set" value={scaleTime} />} note={mode === 'onprem' ? '編預算、採購、上架' : mode === 'cloud' ? '受帳號配額限制' : '核心部分仍 8–12 週'} tone={mode === 'onprem' ? 'warn' : ''} />
             <Stat label="維運工時 / 可投入" value={`${pl.hours} / ${pl.capHours}`} unit="h/月" note={`負荷 ${Math.round(pl.load * 100)}%${staff === 1 ? '，人的單點故障' : ''}`} tone={pl.load > 1 ? 'bad' : pl.load > 0.8 || staff === 1 ? 'warn' : 'ok'} />
             <Stat label="合規與資料落地符合度" value={`${comply}%`} note={COMPLY_NOTE[mode][limit]} tone={comply < 50 ? 'bad' : comply < 90 ? 'warn' : 'ok'} />
             <Stat label="單點故障 / 災備" value={drLabel} note={mode === 'cloud' ? '仍依賴院內對外網路' : mode === 'hybrid' ? '連線也是單點' : ''} tone={mode !== 'cloud' && !dr ? 'bad' : ''} />

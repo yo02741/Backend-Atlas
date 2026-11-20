@@ -104,6 +104,8 @@ html { scroll-padding-top: 64px; }                     /* 頁首 56px 加一點�
 
 收合的選擇記在 `localStorage`，重新整理後維持；只在 1024 以上有意義，768 到 1023 固定是 icon rail。
 
+:::stop 讀到這裡可以先停：會用版面模式的名稱說出結構、寫一張四欄的斷點表，並分清 media query 與 container query 各管什麼。後面的清單與詳細、底部固定列，在做到那種頁面時再回來讀。
+
 ### 清單與詳細
 
 寬螢幕時清單與詳細同時在畫面上，選中的那一筆寫進網址（`/appointments/501`），重新整理或分享連結都回到同一筆。窄螢幕時兩者是兩頁：從清單點進 `/appointments/501`，按上一頁回到清單，而且要回到剛才捲到的位置。Vue Router 的 `scrollBehavior` 在瀏覽器上一頁、下一頁時會拿到 `savedPosition`：

@@ -167,6 +167,8 @@ print("結論：", "可以合併" if not failed else f"退回，未通過 {', '.
 - M2 是 `skipped`，報告的 `failures="0"` 看起來很健康，但它是這次失敗的主因。
 - F1 和 F2 都只看 diff，不需要知道掛號系統怎麼運作。
 
+:::stop 讀到這裡可以先停：會把一張票的驗收寫成 must 與 forbid 清單，用檢查器只讀證據來判定。後面的 CI 設定與 review agent 的輸入，在要把驗收接進 pipeline 或交給第二個 agent 時再回來讀。
+
 ### 放進 CI：獨立的驗收階段
 
 檢查器放在受保護的路徑，跑在獨立的 job。下面是 GitLab CI 的示意（實際的 job 名稱、路徑依專案調整）：

@@ -55,6 +55,22 @@ export default {
     { id: 'video-progress', situation: '使用者上傳影片後要轉檔 1–5 分鐘，頁面要有百分比進度條，轉完自動播放。', options: ['sync', 'poll', 'push'], answer: 'poll',
       explain: '進度是連續變化的狀態：worker 每處理一段就更新 `jobs.progress`，前端每 2 秒輪詢。量大時改 SSE 推進度可省請求，但骨架仍是「202 + 背景 worker + 可查狀態」，只是通知管道不同。' },
   ],
+  switchIf: [
+    { when: '資料量縮到幾千筆、10 秒內產完，一次只有一兩個人按', then: '改選 `sync`：遠低於 60 秒逾時、占不滿 worker，佇列與 jobs 表是多付的成本；按鈕送出後停用、handler 設查詢逾時。' },
+    { when: '呼叫方是合作夥伴的排程系統，不想寫輪詢迴圈', then: '改選 `push`：對方註冊 webhook，完成後帶簽章 POST 過去並重試，`GET /jobs/{id}` 保留給漏接時補查。' },
+  ],
+  alternative: { option: 'push', holdsWhen: '站內已經在維護 SSE 或 WebSocket 連線（例如站內通知），可以共用那條通道推進度，並且保留 `GET /jobs/{id}` 讓斷線後補查時。' },
+  challenge: {
+    task: '上方模擬器把「同時按的人數」設 20、「API worker 數」設 4、「工作長度」設 3 分鐘，「同步等待」與「202 + 輪詢」各播放一次，記下逾時 504、白做與 API worker 占用。接著替 202 + 輪詢設計三種畫面：① 匯出還沒完成時使用者重新整理頁面、② 使用者按「取消」、③ 三天後回來重新下載。每種畫面寫出前端呼叫哪個端點、看到哪個 `status`、畫面上的文字與按鈕。下方落地程式碼的 `jobs` 表沒有取消狀態，一併寫出表與 worker 要怎麼改。',
+    deliver: '兩次播放的三個數字，加三種畫面各一段規格（端點、status、文字與按鈕），以及 jobs 表與 worker 的改動（各三行內）',
+    check: [
+      '「同步等待」那次的 504 與白做都大於 0，「202 + 輪詢」那次 504 為 0，數字來自模擬器',
+      '① 重新整理後不會再送一次 `POST /exports`：畫面用網址裡的 job id 或「我最近的匯出」接回原本的進度',
+      '② 寫出 worker 怎麼得知被取消（例如每批檢查一次 status）、寫到一半的暫存檔怎麼處理，`status` 的 CHECK 加上新值',
+      '③ 寫出 `result_url` 保留多久，過期後的畫面是「重新產生」還是說明已過期，不是永遠留著',
+    ],
+    twist: '業務要求同一個人匯出同一年度，10 分鐘內按第二次要直接拿第一次的結果，不要再算一次。先預測你的設計會不會重算、`jobs` 表要多查哪些欄位，再說出這條規則跟付款的 Idempotency-Key 哪裡相同、哪裡不同。',
+  },
   implementation: [
     { title: '送出與查詢：202 Accepted + Location', lang: 'http', code: `POST /exports HTTP/1.1
 Content-Type: application/json

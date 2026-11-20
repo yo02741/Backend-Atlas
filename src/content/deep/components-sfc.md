@@ -173,6 +173,8 @@ onMounted(load)
 
 `AppointmentList` 的根層是 `v-if`／`v-else`，一次只渲染其中一個元素，算單一根元素，父元件傳的 `class` 會套到出現的那個元素上；如果在 `<ul>` 前面再加一個 `<h2>`，就變成兩個根元素，要自己寫 `v-bind="$attrs"`。prop 在 script 裡叫 `busyId`，在模板屬性裡寫 `busy-id` 或 `busyId` 都可以。錯誤與載入中的畫面在 [API 的四種狀態](#/skill/api-states) 補上。
 
+:::stop 讀到這裡可以先停：會把一個畫面拆成父子元件，用 props 往下傳、事件往上送，知道 scoped 樣式管到哪裡。後面的 React 對照與錯誤訊息表，在讀 React 程式或 Console 出現 props 警告時再回來讀。
+
 ## React 對照
 
 | Vue 3.5 | React 19 |

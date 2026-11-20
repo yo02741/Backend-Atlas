@@ -148,6 +148,8 @@ await Promise.all(ids.map(save))
 console.log('Promise.all', JSON.stringify(saved))    // [1,2,3]，全部完成才往下
 ```
 
+:::stop 讀到這裡可以先停：會判斷請求是依序還是平行，部分失敗時選對 `all` 或 `allSettled`，也知道 `forEach` 不等 `await`。後面的逾時與 Vue 元件寫法，在要處理 loading 與請求太久時再回來讀。
+
 ### `finally` 與逾時
 
 ```js run

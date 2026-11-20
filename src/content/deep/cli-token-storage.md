@@ -120,6 +120,8 @@ if __name__ == "__main__":
         raise SystemExit("找不到系統 keyring。改用 `atlas login --device` 取得短效 token，或明確加上 --insecure-storage。")
 ```
 
+:::stop 讀到這裡可以先停：會比較五種存放位置的風險，用 keyring 存取與刪除 token。後面的短效 token 流程與 CI 的 OIDC，在要實作自動換新與登出或要在 CI 拿雲端憑證時再回來讀。
+
 ### 短效 access token + 可撤銷的 refresh token
 
 把兩種 token 分開存：

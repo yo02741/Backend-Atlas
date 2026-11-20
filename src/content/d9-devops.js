@@ -38,7 +38,7 @@ export default {
       example: { primary: "Let's Encrypt（ACME）自動續約", alts: ['付費 OV 憑證', '內部 CA（內網系統）', 'cert-manager（Kubernetes）'] },
       keywords: ['nginx'],
       lab: 'CertChainLab',
-      reviewed: '2026-10',
+      reviewed: '2026-11',
     },
     {
       id: 'capacity-planning',
@@ -70,6 +70,7 @@ export default {
       example: { primary: 'GitLab CI + Docker executor Runner', alts: ['Kubernetes executor', 'GitHub Actions（對照）'] },
       keywords: ['GitLab CI', 'Docker', 'PostgreSQL'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'k8s-readiness',
@@ -102,6 +103,7 @@ export default {
       example: { primary: 'ConfigMap / Secret + probes + requests / limits', alts: ['HPA', 'PodDisruptionBudget', 'External Secrets'] },
       keywords: ['Docker'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'k8s-networking',
@@ -249,6 +251,7 @@ export default {
       example: { primary: 'MR 審核 + pipeline 紀錄作為變更證據', alts: ['CAB 會議審核', '標準變更預先核准'] },
       keywords: ['GitLab CI'],
       lab: null,
+      reviewed: '2026-11',
     },
   ],
 }

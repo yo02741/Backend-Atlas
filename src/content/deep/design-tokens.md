@@ -82,7 +82,7 @@
 - `prefers-color-scheme` 讀作業系統的設定（Baseline 2020）。
 - `data-theme` 是使用者在網站上手動選的，優先於系統設定；選擇存在 localStorage，頁面載入時在 `<head>` 裡的一小段 script 先設好，避免先閃一下亮色。
 - `color-scheme`（Baseline 2022）告訴瀏覽器這一頁是亮或暗，表單元件、捲軸、`<input type="date">` 的日曆這些瀏覽器畫的東西才會跟著變暗。開頭提到的「輸入框還是白色」就是少了這行。
-- `light-dark(亮色值, 暗色值)` 函式依 `color-scheme` 選值，可以把一組 token 寫在一行，例如 `--color-bg: light-dark(#f9fafb, #030712)`。它是 Baseline 2024（Newly available），不支援的瀏覽器裡，用到這個 token 的屬性會變成無效值、退回繼承值或初始值；要顧到舊瀏覽器就保留上面 `prefers-color-scheme` 加 `[data-theme]` 的寫法當退路。
+- `light-dark(亮色值, 暗色值)` 函式依 `color-scheme` 選值，可以把一組 token 寫在一行，例如 `--color-bg: light-dark(#f9fafb, #030712)`。它在 2024 年 5 月進入 Baseline，依 2026-11 的 web-features 資料已列為廣泛可用（2026 年 11 月起）；不支援的舊瀏覽器裡，用到這個 token 的屬性會變成無效值、退回繼承值或初始值；要顧到舊瀏覽器就保留上面 `prefers-color-scheme` 加 `[data-theme]` 的寫法當退路。
 
 暗色主題不是把顏色反轉。暗色背景上的主色通常要調亮一階，陰影的效果變弱，常改用邊框或較亮的表面色表示層次；每一組文字與背景的對比都要重新檢查。
 
@@ -122,6 +122,8 @@ for (const [label, fg, bg] of pairs) {
 ```
 
 第二行就是開頭的問題：亮色主題的灰色說明文字直接搬到暗色背景，對比掉到 3:1 以下。
+
+:::stop 讀到這裡可以先停：會把 token 分成基礎與語意兩層、用 custom properties 做亮暗主題，並算出每組文字與背景的對比。後面的 token 檔格式與元件庫選型，在設計稿和程式要共用 token 或要挑元件庫時再回來讀。
 
 ### token 檔與轉換工具
 

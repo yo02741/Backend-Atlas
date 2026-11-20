@@ -220,6 +220,8 @@ def hops(graph, start):
 print("從 amy 出發的距離：", hops(follows, "amy"))
 ```
 
+:::stop 讀到這裡可以先停：會先列出操作再挑結構，用 heap 取代全掃、用 hash 與 deque 處理查找與佇列、用拓樸排序排依賴。後面的 `WITH RECURSIVE` 與常見錯誤，在依賴關係存在資料表裡、要直接用 SQL 走訪時再回來讀。
+
 ### 圖在資料庫裡：WITH RECURSIVE
 
 角色繼承存在資料表裡時，直接在 SQL 裡走訪。PostgreSQL 14 起有 `CYCLE` 子句，可以標出循環、避免無窮遞迴：

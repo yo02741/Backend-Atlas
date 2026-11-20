@@ -1,5 +1,5 @@
 // 手機寬度（390px）逐頁檢查：頁面不能橫向捲動、內容不能被擠出畫面裁掉，並列出還需要左右滑的區塊
-// 前置：npm run build && npm run preview。ONLY=skill 只掃技能頁（skill / scenario / lab / exercise / project / page）
+// 前置：npm run build && npm run preview。ONLY=skill 只掃技能頁（skill / scenario / lab / exercise / project / assignment / page）
 import { chromium } from 'playwright'
 import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -8,13 +8,15 @@ const base = process.env.E2E_BASE || 'http://localhost:4173/'
 const src = (p) => fileURLToPath(new URL(`../src/${p}`, import.meta.url))
 const { ALL_DOMAINS } = await import(src('content/roadmap.js'))
 const { STAGES } = await import(src('content/project/stages.js'))
+const { ASSIGNMENTS } = await import(src('content/assignments.js'))
 const exIds = (await import(src('content/exercises/index.js').replace(/^/, 'file://')).catch(() => null))?.EXERCISES?.map((e) => e.id) || []
 const groups = {
-  page: ['#/', '#/track/frontend', '#/track/backend', '#/track/ai', '#/roadmap', '#/roadmap?track=ai', '#/labs', '#/scenarios', '#/exercises', '#/curriculum', '#/playground', '#/playground?lang=sql', '#/playground?lang=html', '#/playground?lang=vue', '#/project', '#/review'],
+  page: ['#/', '#/track/frontend', '#/track/backend', '#/track/ai', '#/roadmap', '#/roadmap?track=ai', '#/labs', '#/scenarios', '#/exercises', '#/curriculum', '#/playground', '#/playground?lang=sql', '#/playground?lang=html', '#/playground?lang=vue', '#/project', '#/review', '#/assignments'],
   skill: ALL_DOMAINS.flatMap((d) => d.skills.map((s) => `#/skill/${s.id}`)),
   scenario: readdirSync(src('content/scenarios')).filter((f) => f.endsWith('.js') && f !== 'index.js').map((f) => `#/scenario/${f.replace('.js', '')}`),
   lab: readdirSync(src('labs')).filter((f) => /Lab\.jsx$/.test(f)).map((f) => `#/lab/${f.replace('.jsx', '')}`),
   project: STAGES.map((s) => `#/project/${s.id}`),
+  assignment: ASSIGNMENTS.map((a) => `#/assignment/${a.id}`),
   exercise: exIds.map((id) => `#/exercise/${id}`),
 }
 const only = process.env.ONLY?.split(',')

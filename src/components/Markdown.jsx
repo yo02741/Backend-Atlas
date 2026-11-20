@@ -2,7 +2,9 @@ import React from 'react'
 import { Code } from '../labs/ui.jsx'
 
 /* 夠用的 Markdown 渲染器（課綱文件用）：標題、段落、清單（兩層）、表格、
-   程式碼區塊、引用、分隔線、粗體、行內碼、連結。不處理 HTML。 */
+   程式碼區塊、引用、分隔線、粗體、行內碼、連結、停靠點。不處理 HTML。
+   停靠點：獨佔一行的 `:::stop 文字`（深入內容用，格式見 docs/CONTRIBUTING-lessons.md）。
+   站內連結（#/…）在同一個分頁開，其他連結開新分頁。 */
 
 const LANG_MAP = { dockerfile: 'bash', toml: 'yaml', shell: 'bash', sh: 'bash', text: '', txt: '', javascript: 'js', typescript: 'js', ts: 'js' }
 
@@ -18,10 +20,12 @@ export function inline(text) {
     if (p.startsWith('`')) return <code key={i}>{p.slice(1, -1)}</code>
     if (p.startsWith('**')) return <strong key={i}>{inline(p.slice(2, -2))}</strong>
     const m = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(p)
-    if (m) return <a key={i} href={m[2]} target="_blank" rel="noreferrer">{m[1]}</a>
+    if (m) return m[2].startsWith('#') ? <a key={i} href={m[2]}>{m[1]}</a> : <a key={i} href={m[2]} target="_blank" rel="noreferrer">{m[1]}</a>
     return <React.Fragment key={i}>{p}</React.Fragment>
   })
 }
+
+export const STOP_RE = /^:::stop\b\s*(.*)$/
 
 export function parse(md) {
   const lines = md.replace(/\r\n/g, '\n').split('\n')
@@ -43,6 +47,8 @@ export function parse(md) {
       push({ type: 'code', lang: LANG_MAP[lang] ?? lang, rawLang: lang, flags, text: buf.join('\n') })
       continue
     }
+    const stop = STOP_RE.exec(line)
+    if (stop) { push({ type: 'stop', text: stop[1].trim() }); i++; continue }
     const h = /^(#{1,6})\s+(.*)$/.exec(line)
     if (h) { push({ type: 'h', level: h[1].length, text: h[2].trim() }); i++; continue }
     if (/^---+\s*$/.test(line)) { push({ type: 'hr' }); i++; continue }
@@ -79,7 +85,7 @@ export function parse(md) {
     // paragraph
     const buf = [line]
     i++
-    while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|```|---|>|\||\s*(-|\*|\d+\.)\s)/.test(lines[i])) buf.push(lines[i++])
+    while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|```|---|>|\||:::stop\b|\s*(-|\*|\d+\.)\s)/.test(lines[i])) buf.push(lines[i++])
     push({ type: 'p', text: buf.join(' ') })
   }
   return blocks
@@ -109,9 +115,11 @@ function List({ items }) {
 
 /* idFor(block, defaultId)：自訂標題的 id；after(block)：在某個區塊後面插入額外內容（例如課綱每週標題下掛本站的情境連結）
    headingOffset：標題降級（技能頁的深入內容放在 h2「深入」底下，md 裡的 ## 要變成 h3）
-   codeAction(block)：程式碼區塊下方的動作（例如「在 Playground 開啟」） */
-export default function Markdown({ text, className = '', idFor, after, headingOffset = 0, codeAction }) {
+   codeAction(block)：程式碼區塊下方的動作（例如「在 Playground 開啟」）
+   stopId(n)：第 n 個停靠點（1 起）的 id，預設 stop-n */
+export default function Markdown({ text, className = '', idFor, after, headingOffset = 0, codeAction, stopId = (n) => `stop-${n}` }) {
   const blocks = React.useMemo(() => parse(text), [text])
+  const stops = blocks.filter((b) => b.type === 'stop')
   return (
     <div className={`mdoc ${className}`}>
       {blocks.map((b, i) => {
@@ -123,6 +131,15 @@ export default function Markdown({ text, className = '', idFor, after, headingOf
             return <React.Fragment key={i}><Tag id={id}>{inline(b.text)}</Tag>{extra}</React.Fragment>
           }
           case 'hr': return <hr key={i} />
+          case 'stop': {
+            const n = stops.indexOf(b) + 1
+            return (
+              <aside key={i} className="md-stop" id={stopId(n)} aria-label={stops.length > 1 ? `停靠點 ${n}` : '停靠點'}>
+                <span className="md-stop-tag">{stops.length > 1 ? `停靠點 ${n}` : '停靠點'}</span>
+                <p>{inline(b.text)}</p>
+              </aside>
+            )
+          }
           case 'quote': return <blockquote key={i}>{b.lines.map((l, j) => <p key={j}>{inline(l)}</p>)}</blockquote>
           case 'code': {
             const action = codeAction ? codeAction(b) : null
@@ -145,6 +162,9 @@ export default function Markdown({ text, className = '', idFor, after, headingOf
     </div>
   )
 }
+
+/* 停靠點的數量（課頁目錄的連結用） */
+export const countStops = (md) => (md ? md.split('\n').filter((l) => STOP_RE.test(l)).length : 0)
 
 /* 從標題產生目錄（## 與 ###） */
 export function toc(md, idFor) {

@@ -271,6 +271,8 @@ print("\n回應（status, X-Request-ID）：", results)
 
 `asyncio.gather` 會把每個協程包成 task，task 建立時複製當下的 context，所以三個請求各自 `set` 的 request id 互不干擾。執行緒池（`asyncio.to_thread`）同樣會複製 context。
 
+:::stop 讀到這裡可以先停：會寫 JSON log、帶 request id、把錯誤分三類處理。後面的啟動時驗證設定，在部署時因為少設或設錯環境變數出事時再回來讀。
+
 ### 啟動時驗證設定，錯了就不啟動
 
 ```python run

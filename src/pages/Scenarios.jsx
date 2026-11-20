@@ -6,6 +6,7 @@ import { useProgress } from '../progress.js'
 import { Level, LabEmbed } from '../components/bits.jsx'
 import Md from '../components/Md.jsx'
 import Decisions from '../components/Decisions.jsx'
+import Challenge from '../components/Challenge.jsx'
 import { Code } from '../labs/ui.jsx'
 import TrackFilter, { normTrack, withTrack } from '../components/TrackFilter.jsx'
 import { TRACKS } from '../content/tracks.js'
@@ -79,6 +80,9 @@ export function ScenarioPage({ id }) {
   const related = SCENARIOS.filter((x) => x !== s && ((s.related || []).includes(x.id) || (x.related || []).includes(s.id)))
   const exercise = s.exercise ? findExercise(s.exercise) : null
   const optName = (oid) => s.options.find((o) => o.id === oid)?.name || oid
+  // switchIf 的 then 用 options 的 id 指出改選哪個做法：找出第一個提到的 id，標上做法名稱
+  const switchTo = (text) => s.options.find((o) => new RegExp(`(^|[^\\w-])${o.id}($|[^\\w-])`).test(text))
+  const hasSwitch = s.switchIf?.length > 0 || s.alternative
 
   return (
     <article className="lesson fade-swap" style={{ '--tint': color }}>
@@ -106,6 +110,8 @@ export function ScenarioPage({ id }) {
           <a href="#options">做法（{s.options.length}）</a>
           <a href="#tradeoffs">取捨</a>
           <a href="#decide">決策（{s.decisions.length}）</a>
+          {hasSwitch && <a href="#switch">換方案</a>}
+          {s.challenge && <a href="#challenge">進階驗收</a>}
           {s.implementation?.length > 0 && <a href="#impl">落地</a>}
         </nav>
       </div>
@@ -160,6 +166,42 @@ export function ScenarioPage({ id }) {
         <h2 className="lab-full-title">決策</h2>
         <Decisions key={s.id} scenario={s} />
       </section>
+
+      {hasSwitch && (
+        <section className="lab-full scen-switch" id="switch">
+          <h2 className="lab-full-title">哪個條件改變會換方案</h2>
+          {s.switchIf?.length > 0 && (
+            <ul className="scen-switch-list">
+              {s.switchIf.map((x, k) => {
+                const to = switchTo(x.then)
+                return (
+                  <li key={k}>
+                    <div className="scen-switch-when"><Md text={x.when} /></div>
+                    <div className="scen-switch-then">
+                      {to && <span className="pill tint">改選 {to.name}</span>}
+                      <Md text={x.then} />
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          {s.alternative && (
+            <div className="scen-alt">
+              <p className="kicker">第二方案</p>
+              <h3>{optName(s.alternative.option)}</h3>
+              <p className="scen-alt-k">成立條件</p>
+              <Md text={s.alternative.holdsWhen} />
+            </div>
+          )}
+        </section>
+      )}
+
+      {s.challenge && (
+        <div className="reading">
+          <Challenge challenge={s.challenge} storeKey={`scenario:${s.id}`} />
+        </div>
+      )}
 
       {s.implementation?.length > 0 && (
         <section className="lab-full" id="impl">

@@ -77,6 +77,8 @@ fetch('http://localhost:8000/api/appointments', { method: 'POST', headers: { 'Co
 
 程式裡只能分出「拿到回應」與「沒拿到回應」兩類；沒拿到回應時是 CORS 還是斷線，要打開 Network 與 Console 才分得出來。回報給後端時附上 Console 那一行的全文與 Network 分頁的 `Copy as cURL`。
 
+:::stop 讀到這裡可以先停：會判斷兩個網址同不同源，從 Network 與 Console 分出 CORS、preflight 與連線失敗。後面的 cookie、回應標頭與 Vite proxy，在登入後 API 回 401 或要設定開發環境時再回來讀。
+
 ### `credentials`：帶不帶 cookie
 
 | `credentials` | 同源請求 | 跨來源請求 | 跨來源時伺服器要回 |

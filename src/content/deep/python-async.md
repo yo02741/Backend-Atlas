@@ -191,6 +191,8 @@ print(f"依序 4 個：{seq:.3f} 秒；gather 4 個：{gathered:.3f} 秒")
 # 對照第一段的 I/O：gather 5 個只花 1 個的時間。CPU 密集要交給別的行程。
 ```
 
+:::stop 讀到這裡可以先停：會分辨 I/O 與 CPU 密集的工作、找出卡住 event loop 的阻塞呼叫。後面的逾時、取消與 FastAPI 的 `def`／`async def`，在要同時呼叫好幾個外部服務時再回來讀。
+
 ### 逾時、錯誤與取消
 
 ```python run

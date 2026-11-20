@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, Caption, useTicker, fmtMs } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Status, Stats, Stat, Caption, useTicker, fmtMs, Measure } from '../ui.jsx'
 
 /* 預約清單怎麼抓的情境模擬器：同一段 180 秒的櫃台操作（進清單、看詳細、換日期、新增掛號、切到別的分頁），
    三種抓法並排成三條時間帶：Skeleton、最新、舊資料、剛新增的那筆不見了。
@@ -200,8 +200,8 @@ export default function ListFetchingScenarioLab() {
           </div>
           <Stats min={130}>
             <Stat label="送出的請求" value={sim.req} note={kind === 'refetch' ? '徽章與清單各打一次' : '同一份資料共用請求'} />
-            <Stat label="看 Skeleton" value={`${sim.skel} s`} tone={sim.skel > 5 ? 'warn' : ''} />
-            <Stat label="顯示舊資料" value={`${sim.stale} s`} note={`最長一次 ${sim.longest} s`} tone={sim.longest > 60 ? 'bad' : ''} />
+            <Stat label="看 Skeleton" value={<Measure kind="set" value={sim.skel} unit="s" />} tone={sim.skel > 5 ? 'warn' : ''} />
+            <Stat label="顯示舊資料" value={<Measure kind="set" value={sim.stale} unit="s" />} note={`最長一次 ${sim.longest} s`} tone={sim.longest > 60 ? 'bad' : ''} />
             <Stat label="少了剛新增的那筆" value={`${sim.missing} s`} tone={sim.missing === 0 ? 'ok' : sim.missing <= lat / 1000 ? 'warn' : 'bad'} />
           </Stats>
           <Caption>只計算清單在畫面上的時間；請求數不含送出新增的 POST（示意）。點時間帶可以切換做法。</Caption>

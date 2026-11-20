@@ -149,6 +149,8 @@ print(f"估計大約 {LIMIT // one:,} 則留言就會碰到 16 MiB 上限")
 
 互動版本見 [文件 vs 關聯式實驗室](#/lab/DocVsRelLab)：同一篇文章在三種擺法下長什麼樣、新增一則留言要動到哪裡。
 
+:::stop 讀到這裡可以先停：會說明文件、collection 與 `_id`，也能用三個問題決定嵌入還是參照。後面的 schema 驗證與 JSONB 對照，在 collection 的資料形狀開始不一致、或要和 PostgreSQL 比較時再回來讀。
+
 ## Schema 驗證
 
 collection 預設不檢查形狀。沒有任何約束時，幾個月後同一個 collection 會出現 `price` 有時是數字、有時是字串，`createdAt` 與 `created_at` 並存。MongoDB 3.6 起可以在 collection 上掛 `$jsonSchema` 驗證器：

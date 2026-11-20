@@ -55,6 +55,22 @@ export default {
     { id: 'mixed', situation: '混合：280 家小客戶，加 5 家要專屬環境的大客戶。程式碼只想維護一套，主體的資料佈局選哪個？', options: ['shared', 'schema', 'database'], answer: 'shared',
       explain: '主體走共用表（一套程式、一份 migration），5 家專屬客戶用同一套程式碼、同一個帶 `tenant_id` 的 schema，部署到各自的資料庫，差別只在依租戶選連線字串。這樣專屬客戶得到物理隔離，其他 280 家維持一份維運，而不是為 285 家都養三套佈局。' },
   ],
+  switchIf: [
+    { when: '客戶變成十來家超大企業，各自要求資料落地、獨立稽核日誌、客戶自帶加密金鑰', then: '改選 `database`：連線就是邊界，法規要求的落地與金鑰只有獨立資料庫做得到；租戶少，維運乘數可以接受。' },
+    { when: '租戶只有幾十家，常要把單一租戶整包搬走或還原到某個時間點', then: '改選 `schema`：`pg_dump -n` 一家一份，查錯 schema 只會表不存在；migration 用腳本逐 schema 套。' },
+  ],
+  alternative: { option: 'schema', holdsWhen: '租戶數維持在幾十家、要能單獨搬移或還原某一家，而且 migration 有腳本逐 schema 套用、失敗能從斷點續跑時。' },
+  challenge: {
+    task: '上方模擬器選「共用表 + tenant_id」，目前請求是 globex。先寫下 globex 的人事專員查 R&D 部門時畫面上該出現誰，再打開「忘了加 WHERE tenant_id」看多出誰、接著打開「開 RLS」看剩下誰。然後寫一份驗收清單：acme 與 globex 各有一個叫「R&D」的部門、各有一位員工編號 E001。只用登入後畫面或 API 回應看得到的東西，驗收兩家的邊界。',
+    deliver: '模擬器三種狀態的名單，加一份四到六條的驗收清單（每條：以誰登入、做什麼、預期看到什麼）',
+    check: [
+      '清單裡有一條跳過列表、直接用 acme 員工的 id 打 `GET /employees/{id}`，預期 404，不透露那筆資料存在',
+      '兩家都能建立同名部門與相同員工編號，清單寫出建立第二家時的預期結果（唯一鍵含 `tenant_id`）',
+      '至少一條涵蓋列表以外的出口：搜尋自動完成、匯出 CSV 或通知信',
+      '每條的預期結果是使用者看得到的資料（名單、筆數、狀態碼），不是「程式有加 WHERE」',
+    ],
+    twist: '換成票務平台：每個主辦單位是一個租戶，但一場聯合售票的演唱會由兩個主辦單位共同管理。先預測你的清單哪幾條在這個案例會失敗，再說出「一列只屬於一個租戶」要怎麼改，哪些權限要跟業務重新確認（例如誰能退票、誰看得到購票人名單）。',
+  },
   implementation: [
     { title: 'Row-Level Security：忘了加 WHERE 也只會看不到列（沒設 app.tenant_id 就一列都看不到）', lang: 'sql', code: `ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employees FORCE  ROW LEVEL SECURITY;   -- 表的擁有者也受限；superuser 仍會繞過

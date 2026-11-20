@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status, useReducedMotion, Stats, Stat, fmtN, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Stepper, usePlayer, Callout, Status, useReducedMotion, Stats, Stat, fmtN, useWidth, Measure } from '../ui.jsx'
 
 /* 秒殺情境模擬器：
    ① 開賣：N 個請求同時衝向 DB / Redis / 佇列，看賣出、超賣、鎖等待堆積、回應時間、1 秒內有答案的比例
@@ -138,8 +138,8 @@ export default function FlashSaleScenarioLab() {
             <Stats min={140}>
               <Stat label="賣出 / 庫存" value={ran ? `${sim.sold + sim.oversold} / ${stock}` : '—'} tone={ran && sim.oversold > 0 ? 'bad' : ''} />
               <Stat label="堆積峰值（等鎖 / 等連線）" value={ran ? fmtN(sim.peak) : '—'} tone={ran && sim.peak > POOL ? 'bad' : ''} note={ran && sim.peak > POOL ? `> 連線上限 ${POOL}` : ''} />
-              <Stat label="平均回應" value={ran ? fmt(sim.avg) : '—'} />
-              <Stat label="p95 回應" value={ran ? fmt(sim.p95) : '—'} tone={ran && sim.p95 > 1000 ? 'bad' : ''} />
+              <Stat label="平均回應" value={ran ? <Measure kind="set" value={fmt(sim.avg)} /> : '—'} />
+              <Stat label="p95 回應" value={ran ? <Measure kind="set" value={fmt(sim.p95)} /> : '—'} tone={ran && sim.p95 > 1000 ? 'bad' : ''} />
               <Stat label="DB 寫入次數" value={ran ? fmtN(sim.dbWrites) : '—'} />
               <Stat label={mode === 'redis' ? 'DECR 到負數補回' : mode === 'queue' ? '佇列最長' : '沒搶到'} value={ran ? fmtN(mode === 'redis' || mode === 'queue' ? sim.extra : n - sim.sold - sim.oversold) : '—'} />
             </Stats>

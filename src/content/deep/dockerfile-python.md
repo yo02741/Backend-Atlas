@@ -222,8 +222,8 @@ slim 映像通常沒有 `curl`，用 Python 標準函式庫就好：`urlopen` �
 ############################
 FROM python:3.12-slim AS builder
 
-# 從 uv 官方映像複製執行檔。標籤釘在你驗證過的版本（這裡的 0.8 只是示範）
-COPY --from=ghcr.io/astral-sh/uv:0.8 /uv /uvx /bin/
+# 從 uv 官方映像複製執行檔。標籤釘在你驗證過的版本（這裡的 0.13 只是示範；2026 年 11 月的最新版是 0.13.9）
+COPY --from=ghcr.io/astral-sh/uv:0.13 /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -284,6 +284,8 @@ docker ps   # STATUS 欄會在 start-period 後顯示 (healthy)
 ```
 
 如果依賴需要編譯（沒有對應的 wheel），在 **builder** 階段 `apt-get install` 編譯工具，runtime 只裝執行時需要的共享函式庫。編譯工具不會進最終 image。
+
+:::stop 讀到這裡可以先停：寫得出多階段、非 root、exec 形式、有健康檢查的 Python Dockerfile。後面的建置秘密、映像大小與漏洞掃描，在要裝私有套件或映像被掃出弱點時再回來讀。
 
 ### 建置時需要秘密
 

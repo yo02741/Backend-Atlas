@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Stepper, usePlayer, Code, Callout } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Stepper, usePlayer, Code, Callout, Measure } from './ui.jsx'
 
 /* ============================================================
    Docker 層快取視覺化：Dockerfile 每一行 = 一層唯讀 layer
@@ -87,7 +87,9 @@ export default function DockerLab() {
 
         <div className="lab-stack">
           <LabStage label="image layers 堆疊圖"
-                    caption={step === 0 ? '虛線 = 還沒 build 的層；每層寬度示意大小（數字為示意值）' : `已 build ${step} / ${layers.length} 層 · 命中 ${hits} · 重建 ${rebuilds}`}>
+                    caption={step === 0
+                      ? <>虛線 = 還沒 build 的層；每層寬度示意大小（數字為示意值）· 全部重做 ≈ <Measure kind="set" value={fmtSec(fullSec)} /></>
+                      : <>已 build {step} / {layers.length} 層 · 命中 {hits} · 重建 {rebuilds} · 這次 build ≈ <Measure kind="set" value={fmtSec(thisSec)} /></>}>
             <LayerStack layers={built} step={step} fullSec={fullSec} thisSec={thisSec} />
           </LabStage>
           <LabStage plain label="image 與 container 的關係" caption="image 是唯讀模板；每個 container 只多一層自己的可寫層，底下共用同一份 image">
@@ -125,6 +127,8 @@ export default function DockerLab() {
     </Lab>
   )
 }
+
+const fmtSec = (s) => (s < 1 ? `${s.toFixed(1)} s` : `${Math.round(s)} s`)
 
 function md(s) { return s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/`([^`]+)`/g, '<code>$1</code>') }
 

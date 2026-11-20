@@ -144,6 +144,8 @@ Modern Web Guidance 由 GoogleChrome 在 npm 發布（README 寫明由 Chrome、
 - 和 WAI-ARIA APG 的細節不同：選單指南說用滑鼠點開選單時焦點留在按鈕，APG 的 Menu Button 範例則是開選單時把焦點移到第一項。無障礙的行為以 APG 與 WCAG 為準，再看指南有沒有更好的實作方式。
 - 指南寫的支援狀態跟著它的資料版本，可能和最新的 web-features 不同；真正決定能不能用的是查證當天的資料與專案的瀏覽器目標。
 
+:::stop 讀到這裡可以先停：會用 Baseline 判斷一個功能能不能直接用，照對照表換掉常見的舊寫法。後面讓 agent 先查再寫的設定與完整程式，在要替 coding agent 定規範時再回來讀。
+
 ## 讓 AI 先查再寫
 
 ### 1. 專案規範寫明瀏覽器目標

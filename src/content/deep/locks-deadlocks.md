@@ -150,6 +150,8 @@ ALTER ROLE app_user SET statement_timeout = '30s';
 ALTER ROLE app_user SET idle_in_transaction_session_timeout = '60s';
 ```
 
+:::stop 讀到這裡可以先停：會分辨表鎖與列鎖，用 SKIP LOCKED 寫工作佇列，也會替 migration 設 lock_timeout。後面的死結與查誰擋住誰，在出現 `deadlock detected` 或請求卡住時再回來讀。
+
 ## 死結：互相等對方
 
 死結的形狀永遠一樣：A 握著 X 在等 Y，B 握著 Y 在等 X。最常見的例子是轉帳，兩筆方向相反的轉帳同時發生：

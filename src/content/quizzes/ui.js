@@ -51,13 +51,13 @@ export default [
       {
         q: '取消預約失敗，原因是「已過可取消時間」。這個訊息用哪個元件呈現？',
         options: [
-          'Toast，3 秒後自動消失，不打擾使用者',
-          '確認 Dialog，使用者按「確定」才能繼續操作',
-          '頁面標題旁閃一下紅色的圖示',
-          '在該列下方的 inline Alert，寫出原因，留到使用者處理為止',
+          'Toast，固定在右下角，5 秒後自動消失，不擋住操作',
+          '確認 Dialog，寫出原因，按「我知道了」才能繼續',
+          '頁面上方的 Banner，寫出原因，整頁的錯誤訊息都集中放在這裡',
+          '該列下方的 inline Alert，寫出原因，留到處理為止',
         ],
         answer: 3,
-        explain: '失敗而且使用者需要知道原因的訊息，放在出錯的位置、不自己消失，用 inline Alert（`role="alert"`）。Toast 幾秒就消失，使用者可能沒看到而以為成功；Dialog 用在需要使用者做決定的情況；只閃一下圖示沒有說明原因，也只靠顏色。',
+        explain: '失敗而且使用者需要知道原因的訊息，放在出錯的位置、不自己消失，用 inline Alert（`role="alert"`）。Toast 幾秒就消失，使用者可能沒看到而以為成功；Dialog 用在需要使用者做決定的情況；Banner 給整頁層級的狀況（離線、維護），把這一列的錯誤放到頁首，使用者要自己對回是哪一筆。',
       },
       {
         q: '網路斷掉時，這段程式會讓畫面顯示什麼？',
@@ -74,8 +74,8 @@ export default [
         lang: 'js',
         options: [
           '錯誤訊息，因為 fetch reject 時 Vue 會把 `status` 設成 error',
-          'Empty state「這天沒有預約」：`catch` 把清單設成空陣列，最後被判斷成 empty',
-          '一直停在 loading，因為 `catch` 之後的程式不會執行',
+          'Empty state「這天沒有預約」：`catch` 把清單設成了空陣列',
+          '一直停在 loading：進了 `catch` 之後，後面那行設定 `status` 的程式不會執行',
           '上一次成功載入的清單，因為 `items` 不會被改動',
         ],
         answer: 1,
@@ -86,7 +86,7 @@ export default [
         options: [
           '容器在頁面載入時就放好並帶 `role="status"`，之後只更換裡面的內容',
           '改成 `role="alert"`，讓每一則訊息都立刻打斷朗讀',
-          'Toast 出現時把焦點移到 Toast 上',
+          'Toast 出現時用 `el.focus()` 把焦點移到 Toast 上，螢幕閱讀器就會念出內容',
           '在 Toast 上加 `aria-hidden="true"`，避免重複朗讀',
         ],
         answer: 0,
@@ -109,7 +109,7 @@ export default [
         options: [
           '只回到上一步，`<button>` 沒寫 `type` 時不做任何事',
           '回到上一步，接著也送出表單：表單裡沒寫 `type` 的 `<button>` 會送出表單',
-          '什麼都不會發生，`@click` 在表單裡會被 `@submit.prevent` 擋下',
+          '什麼都不會發生：`@click` 在表單裡會被外層的 `@submit.prevent` 擋下來',
           '只送出表單，`@click` 的處理函式不會執行',
         ],
         answer: 1,
@@ -118,18 +118,18 @@ export default [
       {
         q: '設定頁的「接收簡訊提醒」，需求是使用者一切換就立即生效。哪個元件最合適？',
         options: [
-          'Checkbox，下方再放一顆「儲存」按鈕',
-          '兩個 Radio：「接收」與「不接收」，加上「儲存」按鈕',
-          'Select，選項是「開」與「關」',
-          'Switch（`role="switch"` 加 `aria-checked`），切換後立即儲存並顯示結果',
+          'Checkbox 加上表單底部的「儲存」按鈕，和其他設定一起送出',
+          '兩個 Radio：「接收」與「不接收」，選好之後按頁面底部的「儲存」才寫進設定',
+          'Select 放「開」與「關」兩個選項，送出表單時一起儲存',
+          'Switch（`role="switch"`），切換後立即儲存並顯示結果',
         ],
         answer: 3,
-        explain: 'Switch 表示一個立即生效的開關，螢幕閱讀器會念出它是開關以及目前開或關。Checkbox 加「儲存」適合要按下儲存才生效的設定，和需求不符；只有兩個值時用 Radio 或 Select 多一層操作，也同樣暗示要另外確認。Switch 的 label 不隨狀態改變（APG 的 Switch 模式）。',
+        explain: 'Switch（`role="switch"`，狀態用 `aria-checked`）表示一個立即生效的開關，螢幕閱讀器會念出它是開關以及目前開或關。Checkbox 加「儲存」適合要按下儲存才生效的設定，和需求不符；只有兩個值時用 Radio 或 Select 多一層操作，也同樣暗示要另外確認。Switch 的 label 不隨狀態改變（APG 的 Switch 模式）。',
       },
       {
         q: '「手機」欄位只寫了 `<input type="tel" placeholder="例如 0912345678">`，沒有 `<label>`。這樣寫實際的問題是什麼？',
         options: [
-          '開始輸入後提示文字消失，回頭檢查時看不出這格是什麼；點文字聚焦欄位、說明連結這些 label 提供的東西也都沒有',
+          '輸入後提示文字就消失，看不出這格是什麼；點文字聚焦欄位這類 label 的功能也沒有',
           'placeholder 的文字會跟著表單一起送出，後端收到的值會多一段範例',
           '手機上會跳出英文鍵盤，因為 placeholder 會蓋過 `type="tel"` 的設定',
           '瀏覽器會把 placeholder 當成預設值，必填驗證永遠不會失敗',
@@ -146,12 +146,12 @@ export default [
         q: '可輸入的「看診醫師」Combobox 清單開著，使用者按 ↓ 移到第三個選項。照 WAI-ARIA APG 的做法，這時 DOM 焦點在哪裡？',
         options: [
           '第三個選項上，每個 `role="option"` 都設了 `tabindex="0"`',
-          '清單容器（`role="listbox"`）上，由它記住反白的是哪一項',
+          '清單容器（`role="listbox"`）上，由它的 `tabindex="0"` 記住反白的是哪一項',
           '仍在輸入框；輸入框的 `aria-activedescendant` 指向第三個選項的 id',
           '頁面的 `body`，選項只靠 CSS 的 `:hover` 樣式反白',
         ],
         answer: 2,
-        explain: 'APG 的 Combobox 讓 DOM 焦點留在輸入框，使用者可以繼續打字；輔助科技靠 `aria-activedescendant` 知道反白的是哪個選項。每個選項都設 `tabindex="0"` 會讓 Tab 一格一格走進清單；焦點掉到 `body` 或只靠樣式，螢幕閱讀器完全不知道目前在哪一項。',
+        explain: 'APG 的 Combobox 讓 DOM 焦點留在輸入框，使用者可以繼續打字；輔助科技靠 `aria-activedescendant` 知道反白的是哪個選項。每個選項都設 `tabindex="0"` 會讓 Tab 一格一格走進清單；焦點移到清單容器，使用者就不能繼續打字；焦點掉到 `body` 或只靠樣式，螢幕閱讀器完全不知道目前在哪一項。',
       },
       {
         q: '病患搜尋的 Autocomplete 寫成下面這樣。使用者快速輸入「王小明」，會出什麼問題？',
@@ -173,8 +173,8 @@ export default [
       {
         q: '掛號頁的「科別」有 12 個固定選項、只能選一個，外觀不需要特別設計，使用者多半用手機。哪個做法最合適？',
         options: [
-          '用 `div` 自己畫一個下拉選單，外觀才能完全照設計稿',
-          '可輸入的 Combobox，讓使用者打字篩選科別',
+          '用 `div` 自己畫一個下拉選單，外觀與動畫才能完全照設計稿走',
+          '可輸入的 Combobox，讓使用者打字篩選 12 個科別，再按 Enter 選取',
           'Autocomplete，每次開啟清單時向 API 查詢科別',
           '原生 `<select>`：鍵盤、螢幕閱讀器與手機的系統選單都內建',
         ],
@@ -195,8 +195,8 @@ export default [
 </dialog>`,
         lang: 'html',
         options: [
-          '焦點留在 Dialog 裡，按 Esc 會關閉，和 `showModal()` 的效果一樣',
-          'Tab 會走到 Dialog 後面的頁面元素、Esc 不會關閉：設定 `open` 屬性開出的是非 modal 的 Dialog',
+          '焦點留在 Dialog 裡，按 Esc 會關閉：設定 `open` 屬性和呼叫 `showModal()` 的效果一樣',
+          'Tab 走得到後面的頁面、Esc 不會關：`open` 屬性開出的是非 modal 的 Dialog',
           '瀏覽器丟出 `InvalidStateError`，Dialog 不會出現',
           'Dialog 不會顯示，`<dialog>` 只能用 JavaScript 的方法開啟',
         ],
@@ -217,7 +217,7 @@ export default [
       {
         q: '科別名稱旁的 ⓘ 要顯示「本科每週三休診」與一個「查看門診表」連結。用哪種浮層？',
         options: [
-          'Popover（或非 modal 的 Dialog）：裡面的連結拿得到焦點，點外面或按 Esc 關閉',
+          'Popover（或非 modal 的 Dialog），裡面的連結拿得到焦點',
           'Tooltip（`role="tooltip"`），hover 與 focus 時出現',
           'modal Dialog，開啟時擋住整個頁面',
           '用 `title` 屬性，讓瀏覽器顯示內建的提示',
@@ -250,20 +250,20 @@ export default [
 </div>`,
         lang: 'html',
         options: [
-          '→ 沒有作用；Tab 移到「已報到」',
-          '→ 與 Tab 都移到「已報到」',
-          '→ 移到「已報到」（自動切換時也顯示它的內容）；Tab 離開分頁列、進入目前的 tabpanel',
-          '→ 讓頁面往右捲動；Tab 依序走過三個分頁',
+          '→ 沒有作用（方向鍵只捲動頁面）；Tab 移到下一個分頁「已報到」',
+          '→ 與 Tab 都移到「已報到」，兩種按鍵的效果相同',
+          '→ 移到「已報到」；Tab 離開分頁列，進入目前的 tabpanel',
+          '→ 移到「已報到」；Tab 也依序走過三個分頁，最後才進 tabpanel',
         ],
         answer: 2,
-        explain: 'APG 的 Tabs：左右方向鍵在分頁之間移動，Tab 鍵離開分頁列進入內容。只有目前的分頁是 `tabindex="0"`，其他是 `-1`（roving tabindex），所以 Tab 鍵不會一格一格走過每個分頁。方向鍵的行為要自己用 JavaScript 實作，瀏覽器不會因為 `role="tab"` 就自動處理。',
+        explain: 'APG 的 Tabs：左右方向鍵在分頁之間移動，Tab 鍵離開分頁列進入內容。只有目前的分頁是 `tabindex="0"`，其他是 `-1`（roving tabindex），所以 Tab 鍵不會一格一格走過每個分頁。分頁是自動切換（automatic activation）時，→ 移到「已報到」的同時也顯示它的內容。方向鍵的行為要自己用 JavaScript 實作，瀏覽器不會因為 `role="tab"` 就自動處理。',
       },
       {
         q: '預約清單在第 4 頁，點進一筆詳細資料再按瀏覽器的上一頁，畫面回到第 1 頁。最可能的原因與修法是什麼？',
         options: [
-          '頁碼只存在元件的 `ref` 裡，回來時元件重建就重設；把頁碼寫進網址 `?page=4`',
-          '瀏覽器的上一頁會清掉所有 JavaScript 狀態，前端沒有辦法處理',
-          'API 沒有回傳總頁數，前端不知道該回到第幾頁',
+          '頁碼只存在元件的 `ref`，元件重建就重設；改寫進網址 `?page=4`',
+          '瀏覽器的上一頁會清掉頁面上所有 JavaScript 狀態，前端沒有辦法保留頁碼',
+          'API 沒有回傳總頁數與目前頁碼，前端回來時不知道該停在第幾頁',
           '要改成無限捲動，按上一頁才會回到原位',
         ],
         answer: 0,
@@ -277,7 +277,7 @@ export default [
       {
         q: '預約表格每頁 20 筆、共 134 筆。前端拿到這一頁的 20 筆後，用 `items.value.sort()` 依姓名排序。使用者按「姓名」排序後看到什麼？',
         options: [
-          '全部 134 筆依姓名排序後的前 20 筆',
+          '全部 134 筆依姓名排好之後的前 20 筆，`sort()` 會處理整個查詢結果',
           '這一頁的 20 筆在頁內重新排列，其他頁的資料沒有參與排序',
           '瀏覽器自動向 API 要其他頁的資料，合併後再排序',
           '排序會失敗，因為 `sort()` 不能排中文字串',
@@ -292,9 +292,9 @@ export default [
 </th>`,
         lang: 'html',
         options: [
-          '顯示 indeterminate，直到使用者點擊為止',
+          '顯示 indeterminate（橫線）：HTML 屬性和 DOM 屬性同名，寫在標籤上和用 JavaScript 設定的效果完全一樣',
           '顯示成已勾選，任何多出來的屬性都會讓 checkbox 變成 checked',
-          '顯示成未勾選：`indeterminate` 沒有對應的 HTML 屬性，要用 JavaScript 設 `el.indeterminate = true`',
+          '顯示成未勾選：`indeterminate` 只能用 JavaScript 設定（`el.indeterminate = true`）',
           '瀏覽器丟出錯誤，checkbox 不會顯示',
         ],
         answer: 2,
@@ -326,8 +326,8 @@ export default [
 .btn-primary { background: var(--blue-600); }`,
         lang: 'css',
         options: [
-          '`#60a5fa`，暗色主題覆寫了主色',
-          '`#1d4ed8`：按鈕直接用了基礎 token `--blue-600`，暗色主題只覆寫了語意 token',
+          '`#60a5fa`：暗色主題覆寫了 `--color-primary`，按鈕跟著換',
+          '`#1d4ed8`：按鈕直接用了基礎 token `--blue-600`',
           '透明，`var()` 在 `[data-theme]` 底下會失效',
           '兩個值的中間色，瀏覽器會自動混色',
         ],
@@ -337,7 +337,7 @@ export default [
       {
         q: '品牌主色要從藍色改成綠色，設計師希望只改一個地方。token 怎麼分層才做得到？',
         options: [
-          '元件只引用語意 token `--color-primary`，它指向某個基礎色票；只改 `--color-primary` 指向的色票',
+          '元件只引用語意 token `--color-primary`，改它指向的基礎色票',
           '把 `--blue-600` 的值改成綠色，名字維持不動',
           '每個元件各自寫 hex，用編輯器全域取代',
           '每個元件建立自己的 `--button-blue`、`--link-blue`，再各自改值',
@@ -349,9 +349,9 @@ export default [
         q: '專案已有完整的設計稿與 token，需要 Combobox、Dialog、Tabs，鍵盤與 ARIA 要照 WAI-ARIA APG，外觀必須完全照設計稿。哪個選擇最合適？',
         options: [
           '全部用 `div` 從零自己寫，外觀最自由',
-          '用元件庫的預設主題，讓設計稿配合元件庫修改',
-          'headless 元件（例如 Reka UI）提供行為、鍵盤與 ARIA，外觀用專案的 token 寫',
-          '只用 CSS 框架的 utility class，不需要元件',
+          '用元件庫的預設主題，再請設計師依元件庫的外觀修改設計稿',
+          'headless 元件（例如 Reka UI）處理行為與 ARIA，外觀用專案的 token',
+          '只用 CSS 框架的 utility class 照設計稿刻外觀，鍵盤與 ARIA 由框架處理',
         ],
         answer: 2,
         explain: 'headless 元件處理焦點、鍵盤與 ARIA，不帶外觀，正好符合「行為照 APG、外觀照設計稿」。從零自己寫最自由，但 Combobox 與 Dialog 的鍵盤行為要全部自己補；元件庫的預設主題要改設計稿去配合；utility class 只處理樣式，不提供鍵盤與 ARIA。',
@@ -397,13 +397,13 @@ export default [
       {
         q: '櫃台的舊電腦開掛號頁很慢。`vite build` 的輸出有一支 1 MB 的 JS 與 363 KB 的 CSS，頁面只用到表單、按鈕、表格與 Dialog。`main.js` 裡有 `app.use(ElementPlus)` 與 `import \'element-plus/dist/index.css\'`。先做哪件事？',
         options: [
-          '改成按需引入：拿掉這兩行，用 unplugin-vue-components 與 unplugin-auto-import 加 `ElementPlusResolver`',
+          '改成按需引入：拿掉這兩行，改用 unplugin-vue-components 的 `ElementPlusResolver`',
           '保留全量引入，把 Element Plus 切成獨立的 vendor chunk，第二次進頁就有快取',
           '換成 CDN 的 `index.full.min.js`，讓瀏覽器從 CDN 下載比較快',
           '把 `index.css` 改成 `<link rel="preload">`，讓它和 JS 平行下載',
         ],
         answer: 0,
-        explain: '全量引入把所有元件與整份樣式放進 bundle；按需引入只帶入模板與 script 用到的元件和它們的 CSS，同一個畫面實測 JS 約 368 KB、CSS 約 93 KB。切 vendor chunk 只改善第二次之後的快取，第一次仍然下載全部；CDN 的完整版一樣是全部元件；preload 改的是下載順序，不改大小。',
+        explain: '全量引入把所有元件與整份樣式放進 bundle；按需引入（unplugin-vue-components 加 `ElementPlusResolver`，`ElMessage` 這類 API 再加 unplugin-auto-import）只帶入模板與 script 用到的元件和它們的 CSS，同一個畫面實測 JS 約 368 KB、CSS 約 93 KB。切 vendor chunk 只改善第二次之後的快取，第一次仍然下載全部；CDN 的完整版一樣是全部元件；preload 改的是下載順序，不改大小。',
       },
     ],
   },
@@ -459,9 +459,9 @@ export default [
       {
         q: '畫面規格裡的狀態表（區域 × 狀態），最主要的用途是什麼？',
         options: [
-          '列出每個區域在 loading、empty、error 等狀態下出現什麼；空格一眼看出還沒決定的事，驗收時逐格造出來比對',
-          '讓設計師不用畫 loading 與 error 的設計稿，由前端自己決定',
-          '取代 API 規格，由前端定義每個錯誤的格式',
+          '列出每個區域在 loading、empty、error 等狀態下的樣子，空格就是還沒決定的事',
+          '讓設計師不用畫 loading 與 error 的設計稿，這幾種狀態的畫面都交給前端工程師自己決定',
+          '取代 API 規格，由前端定義每個錯誤回應的格式與狀態碼',
           '記錄每個元件的 CSS 選擇器，方便寫樣式',
         ],
         answer: 0,
@@ -477,21 +477,21 @@ export default [
 }`,
         lang: 'json',
         options: [
-          '直接顯示 `title`，後端已經寫好說明',
-          '顯示「發生錯誤，請稍後再試」，所有錯誤共用一句',
-          '依 `type` 對應一句文案，例如「已超過取消期限，請致電櫃台」，不直接顯示英文的 `title`',
+          '直接顯示 `title`：後端已經寫好說明，前端就不必另外維護一份文案',
+          '顯示「發生錯誤，請稍後再試」，所有錯誤共用一句，文案表比較好維護',
+          '依 `type` 對應一句文案，例如「已超過取消期限，請致電櫃台」',
           '顯示 HTTP 狀態碼 409，讓使用者自己查原因',
         ],
         answer: 2,
-        explain: 'Problem Details 的 `type` 是穩定的識別碼，文案表用它對應畫面上的文字與下一步；`title` 是給開發者看的英文摘要。所有錯誤共用一句話，使用者分不出是期限過了還是系統壞了，也不知道要打給櫃台；狀態碼對使用者沒有意義。',
+        explain: 'Problem Details 的 `type` 是穩定的識別碼，文案表用它對應畫面上的文字與下一步；`title` 是給開發者看的英文摘要，不直接顯示。所有錯誤共用一句話，使用者分不出是期限過了還是系統壞了，也不知道要打給櫃台；狀態碼對使用者沒有意義。',
       },
       {
         q: '「我的掛號」規格的驗收條件，下面哪一條可以直接拿來驗收？',
         options: [
-          '手機上的畫面要好看、符合設計稿的風格',
+          '手機上的畫面要好看、符合設計稿的風格，主要的幾款手機都看過一輪',
           '390px 寬時 `document.documentElement.scrollWidth > innerWidth` 為 `false`，取消確認改成從底部滑出的 Sheet',
-          '操作要流暢，使用者不會覺得卡',
-          '錯誤處理要完善，各種情況都要考慮到',
+          '操作要流暢，按下按鈕之後使用者不會覺得卡，載入也要盡量快',
+          '錯誤處理要完善，網路與伺服器的各種錯誤情況都要考慮到',
         ],
         answer: 1,
         explain: '可以驗收的條件寫出情況、操作、結果與檢查方法：寬度、指令、看到什麼算通過。「好看」「流暢」「完善」沒有工具能判定通過與否，驗收時只能憑感覺；要改寫成具體的寬度、按鍵、文字或請求數。',

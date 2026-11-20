@@ -92,6 +92,8 @@ hash 模式的網址多了 `#`，但伺服器只會收到 `/`，部署到不能�
 
 瀏覽器另有一套較新的 Navigation API（`navigation.navigate()`、`navigate` 事件），2026 年 1 月成為 Baseline（Chrome 102、Firefox 147、Safari 26.2 起支援）。Vue Router 5 仍然用 History API 實作。
 
+:::stop 讀到這裡可以先停：會說出網址每一段的用途、push 與 replace 的差別，以及重新整理出現 404 的原因。後面的示範與 Vue Router 寫法，在要把篩選條件寫進 query 時再回來讀。
+
 ## 一段可以跑的示範
 
 `URL` 與 `URLSearchParams` 在 Web Worker 裡也能用。下面拆一個網址、比較兩種組 query 的寫法，最後模擬一串瀏覽紀錄在 push、replace、上一頁時的變化（方括號是目前位置）：

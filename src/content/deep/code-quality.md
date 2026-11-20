@@ -36,7 +36,7 @@ formatter 會把程式碼解析之後重新輸出，所以結果只取決於程�
 
 ### linter：每條規則背後都有一種 bug
 
-ruff 的規則代碼前綴代表來源：`F` 來自 Pyflakes、`E`／`W` 來自 pycodestyle、`B` 來自 flake8-bugbear、`UP` 來自 pyupgrade、`I` 是 import 排序。ruff 預設只開 `E4`、`E7`、`E9`、`F`；下表裡的 `B` 系列要自己加進 `extend-select`。
+ruff 的規則代碼前綴代表來源：`F` 來自 Pyflakes、`E`／`W` 來自 pycodestyle、`B` 來自 flake8-bugbear、`UP` 來自 pyupgrade、`I` 是 import 排序。ruff 的預設規則隨版本改過：0.15 以前只開 `E4`、`E7`、`E9`、`F`；0.16 起擴大到約 400 條（含不少 `B` 規則），同時把 `E711`、`E402` 等 18 條較主觀的 `E`／`F` 規則移出預設；0.17 又調整了一次。下表的規則在你的版本是不是預設開啟，用 `ruff rule <代碼>` 或官方的 Default Rules 頁確認；要確定開著，就寫進 `select` 或 `extend-select`，不依賴預設。
 
 | 規則 | 訊息 | 背後的 bug |
 |---|---|---|
@@ -109,7 +109,7 @@ strict = true
 # .pre-commit-config.yaml
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.8            # 釘住版本，和 CI 用同一版
+    rev: v0.17.6            # 釘住版本，和 CI 用同一版（2026-11 的最新版）
     hooks:
       - id: ruff-check      # 較舊版本的 hook id 是 ruff
         args: [--fix]
@@ -129,6 +129,8 @@ uv run pytest
 ```
 
 型別檢查需要專案的依賴都裝好才能正確分析，所以通常放在 CI 用 `uv run pyright` 跑，而不是放進 pre-commit 的隔離環境。CI 管線的整體設計見 [CI 管線：lint、test、build](#/skill/ci-pipeline)，實驗室 [CI/CD 管線對照](#/lab/PipelineLab) 可以看各階段怎麼串。
+
+:::stop 讀到這裡可以先停：會設定 ruff、型別檢查與 pre-commit 三道關卡。後面的 ast 規則，在想自己寫 lint 規則或看懂一條規則怎麼判斷時再回來讀。
 
 ## 實際程式：用 ast 寫一條 lint 規則
 
@@ -314,5 +316,5 @@ app/billing.py:30:12 - error: Type "float | Literal[0]" is not assignable to ret
 1. 執行「用 ast 寫一條 lint 規則」那段，在 `SOURCE` 裡加一個 `def f(x=set()):`，它沒有被 B006 抓到（`set()` 是函式呼叫、不是字面值）。修改 `visit_FunctionDef`，讓 `list()`、`dict()`、`set()` 的呼叫也被回報。
 2. 在同一段加一條新規則 `PRINT001`：回報所有 `print(...)` 呼叫（提示：`visit_Call`，檢查 `node.func` 是不是名稱為 `print` 的 `ast.Name`）；後端程式應該用 logging（見 [日誌、錯誤處理與設定](#/skill/logging-config)）。
 3. 執行「這些規則擋下的到底是什麼」那段，把 B023 那個迴圈改成 `lambda i=i: …`，確認三個回呼各自印出 0、1、2。
-4. 在本機專案導入 ruff：先 `uv run ruff check .` 看預設規則的結果，再加上 `extend-select = ["B"]`，看多抓出哪些問題，逐條用 `ruff rule <代碼>` 讀懂原因。
+4. 在本機專案導入 ruff：先記下 `uv run ruff --version`，用 `uv run ruff check .` 看預設規則的結果，再加上 `extend-select = ["B"]`，看多抓出哪些問題（0.16 起許多 `B` 規則已在預設裡，差異可能不多），逐條用 `ruff rule <代碼>` 讀懂原因。
 5. 回到 [Python 後端心智模型](#/skill/python-backend)，對照可變預設參數與 late binding 的完整說明。

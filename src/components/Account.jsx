@@ -47,7 +47,7 @@ export default function Account() {
         <div className="account-pop" id="account-pop" role="dialog" aria-label="登入">
           <b className="account-title">用 Google 帳號登入</b>
           <p className="account-note">
-            {'登入後，完成的技能、清單勾選、題目與決策題的狀態會同步到你的其他裝置。不登入也能照常使用，進度只存在這台裝置。'}
+            {'登入後，讀過、自我檢核的勾選（能自行解釋）、題目（含測驗通過）與決策題的狀態會同步到你的其他裝置。不登入也能照常使用，進度只存在這台裝置。'}
           </p>
           {c.ready || !c.error
             ? <button className="btn small login-google" onClick={signIn} disabled={!c.ready || c.status === 'signing-in'}>
@@ -71,7 +71,7 @@ export default function Account() {
           </p>
           {c.error && <p className="account-err" role="alert">{c.error}</p>}
           <p className="account-note">
-            {'同步的內容：完成的技能、清單勾選、練習題 / 選擇題 / 決策題的通過狀態、決策題理由；程式草稿只留在這台裝置。'
+            {'同步的內容：讀過、自我檢核的勾選、練習題 / 選擇題 / 決策題的通過狀態、決策題理由；程式草稿、複習紀錄、進階驗收與作業的勾選、實驗室的猜測只留在這台裝置。'
               + '登入由 Firebase 處理，進度存在以帳號 ID 命名的文件裡，只有登入的本人讀得到。'}
           </p>
           <div className="account-actions">

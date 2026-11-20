@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Toggle, Callout, Status, useTicker, Stats, Stat, Flow, LineChart, Caption, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Toggle, Callout, Status, useTicker, Stats, Stat, Flow, LineChart, Caption, fmtN, Measure } from '../ui.jsx'
 
 /* 模型放哪裡 情境模擬器（虛構的醫院：衛教問答 + 病歷摘要）。
    三種做法：全部雲端 API / 全部地端自架 / 依資料敏感度分流。
@@ -160,7 +160,7 @@ export default function ModelHostingScenarioLab() {
             <Stat label="離開院內的敏感請求（累計）" value={fmtN(acc.leaked)} unit="筆"
                   tone={acc.leaked > 0 ? 'bad' : 'ok'}
                   note={mode === 'cloud' ? '所有請求都送雲端' : '敏感請求只進地端'} />
-            <Stat label="地端最長排隊" value={mode === 'cloud' ? '—' : waitText(acc.maxWait)}
+            <Stat label="地端最長排隊" value={mode === 'cloud' ? '—' : <Measure kind="set" value={waitText(acc.maxWait)} />}
                   tone={acc.maxWait > 30 ? 'bad' : acc.maxWait > 5 ? 'warn' : ''}
                   note={waitNote} />
             <Stat label="被拒絕（佇列已滿，累計）" value={fmtN(acc.rejected)} unit="筆"

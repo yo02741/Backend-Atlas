@@ -28,6 +28,7 @@ export default {
       example: { primary: 'Linux + CPython', alts: ['ps / top / ulimit', 'Node.js（libuv）', 'Go runtime'] },
       keywords: ['Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'data-representation',
@@ -48,7 +49,7 @@ export default {
       example: { primary: 'uv', alts: ['pip + venv', 'Poetry', 'PDM'] },
       keywords: ['Python', 'uv'],
       lab: 'UvLab',
-      reviewed: '2026-10',
+      reviewed: '2026-11',
     },
     {
       id: 'python-async',
@@ -59,6 +60,7 @@ export default {
       example: { primary: 'asyncio + FastAPI', alts: ['Node.js event loop', 'Go goroutine', 'Java virtual threads'] },
       keywords: ['Python'],
       lab: 'AsyncLab',
+      reviewed: '2026-11',
     },
     {
       id: 'web-framework',
@@ -109,6 +111,7 @@ export default {
       example: { primary: 'pytest + mutmut', alts: ['hypothesis（性質測試）', 'Stryker（JS）'] },
       keywords: ['Python'],
       lab: 'TestQualityLab',
+      reviewed: '2026-11',
     },
     {
       id: 'code-quality',
@@ -119,6 +122,7 @@ export default {
       example: { primary: 'ruff + pyright', alts: ['flake8 + black + isort + mypy'] },
       keywords: ['Python', 'uv'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'logging-config',

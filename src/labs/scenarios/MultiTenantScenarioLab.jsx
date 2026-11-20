@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, Stats, Stat, fmtN, useWidth } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, Status, useTicker, Stats, Stat, fmtN, useWidth, Measure } from '../ui.jsx'
 
 /* 多租戶隔離模擬器：
    SVG 畫三種佈局（一張表多色列 / 多個 schema 框 / 多個 DB 桶）
@@ -146,7 +146,7 @@ export default function MultiTenantScenarioLab() {
         <div className="lab-stack">
           <Stats min={140}>
             <Stat label="隔離強度" value={isolation[1]} tone={isolation[0]} />
-            <Stat label="每週 migration 次數" value={fmtN(migrations)} note={`≈ ${minutes < 60 ? `${minutes} 分` : `${(minutes / 60).toFixed(1)} 小時`}（每次 2 分，示意）`} />
+            <Stat label="每週 migration 次數" value={fmtN(migrations)} note={<>≈ <Measure kind="set" value={minutes < 60 ? minutes : (minutes / 60).toFixed(1)} unit={minutes < 60 ? '分' : '小時'} />（每次 2 分）</>} />
             <Stat label="大租戶暴衝影響" value={`${affected} / ${tenants}`} note="家一起變慢" />
             <Stat label="每月成本（示意）" value={`$${fmtN(cost)}`} note={approach === 'shared' ? '1 台實例' : approach === 'schema' ? '1 台，但 relation 數 ×' + tenants : tenants + ' 個最小實例'} />
           </Stats>

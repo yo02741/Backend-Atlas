@@ -205,6 +205,8 @@ rebase 時衝突是**一個 commit 一個 commit**出現的，訊息是 `error: 
 - **lock 檔不要手動合**：`uv.lock`、`package-lock.json` 衝突時，接受其中一邊後重新執行 `uv lock` 或 `npm install` 產生，再確認差異。
 - **大規模的機械變更**（全專案重新排版、大量改名）約好時間一次合完。
 
+:::stop 讀到這裡可以先停：會開短分支、設 main 的保護規則、依團隊規範選 merge 或 squash、寫能單獨 revert 的 commit 並解衝突。後面的 tag 發版與 feature flag，在要發版號或把沒做完的功能先合進 main 時再回來讀。
+
 ## tag 與發版
 
 tag 是指向某個 commit 的固定名字，用來標記「這是 v1.5.0」。

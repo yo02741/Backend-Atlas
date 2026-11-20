@@ -219,6 +219,8 @@ onUnmounted(() => items.value.forEach((x) => { x.task?.abort(); if (x.preview) U
 
 每個檔案有自己的 `status`：`ready`、`invalid`、`uploading`、`done`、`failed`、`cancelled`。畫面依狀態顯示進度條、錯誤、重試或移除，和 [API 的四種狀態](#/skill/api-states) 一樣，每個狀態都要有對應的樣子。全部 `done` 之後才把 `key` 清單送給 API 建立轉診紀錄。
 
+:::stop 讀到這裡可以先停：會用 FormData 送檔、在前端先檢查大小與類型，並用 XMLHttpRequest 顯示進度與取消。後面的拖放與錯誤對照，在要讓使用者把檔案拖進頁面或排查上傳失敗時再回來讀。
+
 ### 拖放
 
 ```js

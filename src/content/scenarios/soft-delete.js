@@ -63,6 +63,22 @@ export default {
     { id: 'gdpr', situation: '歐洲客戶依 GDPR 提出刪除權請求。該帳號沒有任何訂單或發票（只註冊沒買過），公司對這類帳號沒有任何法定保留義務。', options: ['hard', 'soft', 'anonymize', 'archive'], answer: 'hard',
       explain: '沒有關聯資料要保、沒有保留義務、也沒有復原需求，真的 DELETE 是最簡單也最容易舉證的做法。soft 與 archive 的個資還在，等於沒有回應請求；匿名化留一列空殼沒有價值。備份裡的資料靠備份保留期政策處理，並在回覆使用者時說明。' },
   ],
+  switchIf: [
+    { when: '要刪的帳號沒有任何訂單或發票，公司對它也沒有法定保留義務', then: '改選 `hard`：沒有關聯資料要保留，直接 DELETE 最符合刪除請求，也不必再排清除排程。' },
+    { when: '不需要客服復原，但使用者的留言要留著、名字要立刻消失（社群平台）', then: '改選 `anonymize`：保留 id 讓外鍵與討論串完整，個資當下覆寫。' },
+    { when: '員工帳號離職後立刻失效、不會用同 email 重新註冊，而權限查詢每個請求都 JOIN 這張表', then: '改選 `archive`：主表只留在職的人，查詢不必過濾；歷史紀錄到 archive 表查。' },
+  ],
+  alternative: { option: 'anonymize', holdsWhen: '客服復原可以取消（改成請使用者重新註冊），而訂單與發票只需要保留買方 id 與發票上的法定欄位時。' },
+  challenge: {
+    task: '把一次刪帳號拆成三個時間點：T0 使用者按下刪除，介面上立刻看不到他；T30 第 30 天，個資從可查詢的資料消失；T5y 發票的保存期限到期。上方模擬器選「soft · deleted_at」，依序按「刪除使用者 Alice」「列出使用者」「30 天後」「客服復原」，記下每一步的結果；再選「anonymize · 覆寫個資」做同一組操作。兩種做法各自只滿足一部分。寫出組合做法的時間表：每個時間點跑什麼 SQL 或排程，users、orders、comments 裡 Alice 的資料變成什麼，誰還看得到，還能不能復原。',
+    deliver: '兩種做法各一行模擬結果，加一張 T0、T30、T5y 三列的時間表',
+    check: [
+      'T0 到 T30 之間客服能復原、T30 之後不行，時間表寫出是哪一步讓它不可逆',
+      'T30 的清除是排程，寫出它怎麼挑出要處理的帳號（依 `deleted_at` 早於 30 天前）以及失敗時怎麼重跑',
+      'orders 與發票在三個時間點都在，財務報表金額不變；T5y 寫出到期後由誰決定刪、刪之前要確認什麼',
+    ],
+    twist: 'Alice 在第 10 天用同一個 email 重新註冊，第 12 天又找客服要復原舊帳號。先預測在你的時間表下會發生什麼（模擬器打開 partial unique index，依序按「Alice 用同 email 重新註冊」與「客服復原」驗證），再說出要跟客服與法務確認哪一條規則：兩個帳號合併、擇一保留，還是拒絕復原。',
+  },
   implementation: [
     { title: 'deleted_at 與 partial unique index', lang: 'sql', code: `ALTER TABLE users ADD COLUMN deleted_at TIMESTAMPTZ;
 

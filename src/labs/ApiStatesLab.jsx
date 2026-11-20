@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Caption, useTicker, useWidth, fmtMs } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Stepper, usePlayer, Code, Callout, Caption, useTicker, useWidth, fmtMs, Measure } from './ui.jsx'
 
 /* ============================================================
    API 的四種狀態：門診預約清單呼叫假的 API（純前端模擬，時間是示意）
@@ -226,7 +226,7 @@ export default function ApiStatesLab() {
                       <tr key={e.id} className="row-in">
                         <td>{e.url}</td>
                         <td className={`asl-nw${/^\(/.test(e.net) || /^[45]/.test(e.net) ? ' asl-bad' : ''}`}>{e.net}</td>
-                        <td className="asl-nw">{e.ms == null ? '' : fmtMs(e.ms)}</td>
+                        <td className="asl-nw">{e.ms == null ? '' : <Measure kind="set" value={fmtMs(e.ms)} />}</td>
                       </tr>
                     ))}
                   </tbody>

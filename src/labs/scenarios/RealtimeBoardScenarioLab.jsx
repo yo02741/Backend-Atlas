@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Stats, Stat, Caption, useTicker, fmtN } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Callout, Stats, Stat, Caption, useTicker, fmtN, Measure } from '../ui.jsx'
 
 /* 報到看板情境模擬器：一台櫃台電腦的看板，5 分鐘裡 4 個診間陸續叫號。
    可以加三種狀況：60 s 網路斷 8 秒（連線被中斷）、150 s 後端重啟 6 秒（期間回 502）、190 s 起切到背景 90 秒。
@@ -204,12 +204,12 @@ export default function RealtimeBoardScenarioLab() {
             {step.k === 'wrong' && <p className="rb-warn">連線正常，但斷線期間的叫號漏掉了</p>}
           </div>
           <Stats min={128}>
-            <Stat label="叫號到畫面（平均）" value={`${sim.avg.toFixed(1)} s`} note={`最長 ${sim.max.toFixed(1)} s`} tone={sim.max > 10 ? 'warn' : ''} />
+            <Stat label="叫號到畫面（平均）" value={<Measure kind="set" value={sim.avg.toFixed(1)} unit="s" />} note={`最長 ${sim.max.toFixed(1)} s`} tone={sim.max > 10 ? 'warn' : ''} />
             <Stat label="到最後都沒出現的叫號" value={sim.never} tone={sim.never ? 'bad' : 'ok'} note="不含背景期間" />
             <Stat label="號碼錯或停住" value={`${sim.broken} s`} tone={sim.broken > 0 ? 'bad' : 'ok'} note={`會自己追上的落後 ${sim.lag} s`} />
             <Stat label="5 分鐘結束時" value={endText} tone={sim.end === 'dead' ? 'bad' : ''} />
             <Stat label="這台電腦的請求" value={sim.req} note={`背景期間 ${sim.bgReq}`} tone={sim.bgReq > 0 ? 'warn' : ''} />
-            <Stat label="全院每分鐘請求" value={fmtN(fleetReq)} note={`長連線 ${fleetConn} 條`} />
+            <Stat label="全院每分鐘請求" value={<Measure kind="set" value={fmtN(fleetReq)} />} note={`長連線 ${fleetConn} 條`} />
             <Stat label="平板每分鐘收發" value={wakes.toFixed(1)} unit="次" note={opt === 'polling' ? '每輪一次' : `叫號 ${evPerMin.toFixed(1)} + 心跳 2`} />
           </Stats>
           <Caption>全院 = 6 台電視 + 40 台櫃台電腦，櫃台 6 成時間在背景；SSE 的重連間隔 3 秒、WebSocket 的退避 1、2、4… 秒（示意）。</Caption>

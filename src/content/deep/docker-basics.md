@@ -146,6 +146,8 @@ exec /usr/local/bin/python3: exec format error
 
 意思是「這個執行檔不是這顆 CPU 能跑的格式」。建置時指定目標平台：`docker buildx build --platform linux/amd64 -t … --push .`，或交給 CI 在目標架構上建。
 
+:::stop 讀到這裡可以先停：分得出 image 與 container，會排 Dockerfile 的順序讓快取生效，部署時用 digest 確認每台跑的是同一份。後面的隔離、資料存放、PID 1 與常用參數，在容器裡的資料不見或 `docker stop` 要等 10 秒時再回來讀。
+
 ## 隔離：container 不是虛擬機
 
 虛擬機有自己的核心；container 是**主機上的一般行程**，只是被核心的兩種機制圍起來：

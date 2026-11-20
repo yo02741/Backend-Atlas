@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Status, Stats, Stat, Caption, useTicker, fmtMs } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Status, Stats, Stat, Caption, useTicker, fmtMs, Measure } from '../ui.jsx'
 
 /* 渲染方式情境模擬器：同一支手機打開「門診時刻表」或「我的掛號」，四種做法的載入時間線。
    時間線是示意的模型：頻寬約 1.5 KB/ms、API 在伺服器端 150 ms、伺服器渲染 80 ms、JS 每 KB（gzip）執行約 1 ms。
@@ -165,8 +165,8 @@ export default function RenderingChoiceScenarioLab() {
         </div>
         <div className="lab-stack">
           <Stats min={120}>
-            <Stat label="看到內容" value={fmtMs(tl.content)} tone={tl.content > 1500 ? 'bad' : tl.content > 800 ? 'warn' : 'ok'} note="示意" />
-            <Stat label="可以操作" value={fmtMs(tl.tti)} note={tl.tti > tl.content ? `內容出現後再等 ${fmtMs(tl.tti - tl.content)}` : '內容出現就能按'} tone={tl.tti - tl.content > 300 ? 'warn' : ''} />
+            <Stat label="看到內容" value={<Measure kind="set" value={fmtMs(tl.content)} />} tone={tl.content > 1500 ? 'bad' : tl.content > 800 ? 'warn' : 'ok'} />
+            <Stat label="可以操作" value={<Measure kind="set" value={fmtMs(tl.tti)} />} note={tl.tti > tl.content ? `內容出現後再等 ${fmtMs(tl.tti - tl.content)}` : '內容出現就能按'} tone={tl.tti - tl.content > 300 ? 'warn' : ''} />
             <Stat label="爬蟲拿到內容" value={page === 'me' ? '不適用' : crawlerHasContent ? '有' : '沒有'} tone={page === 'me' ? '' : crawlerHasContent ? 'ok' : 'bad'} />
             {page === 'schedule'
               ? <Stat label="停診公告" value={!notice ? '尚未發布' : fresh ? '已出現' : '還是舊版'} tone={!notice ? '' : fresh ? 'ok' : 'bad'} note={eff === 'ssg' ? '重新建置後才出現' : eff === 'cache' ? '快取到期後出現' : '下一個請求就出現'} />

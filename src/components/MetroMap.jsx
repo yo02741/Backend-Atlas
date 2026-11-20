@@ -70,7 +70,7 @@ export default function MetroMap({ stations, isDone, label = '學習路線' }) {
           const done = isDone(st.id)
                     return (
             <a key={st.id} href={`#/skill/${st.id}`} className="metro-station" role="listitem"
-               aria-label={`第 ${i + 1} 站：${st.title}${done ? '（已完成）' : ''}`}>
+               aria-label={`第 ${i + 1} 站：${st.title}${done ? '（讀過）' : ''}`}>
               <circle className="ring" cx={p.x} cy={p.y} r="13" stroke={color} fill={done ? color : undefined} />
               {done
                 ? <path d={`M${p.x - 5},${p.y} l3.5,3.5 l7,-7`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />

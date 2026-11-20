@@ -72,6 +72,8 @@ Vue 3.5 另有 `app.config.throwUnhandledErrorInProduction`，設成 `true` 讓�
 
 錯誤訊息、URL、breadcrumbs、請求內容都可能帶到病患資料：`/patients?idno=A123456789` 的 query string、錯誤訊息裡印出的姓名、表單欄位的值。送出前要過濾，服務端的資料收集設定也要逐項確認（@sentry/vue 11 用 `dataCollection` 控制是否收集使用者資訊、cookie、標頭、query string 與請求內容，多數項目預設是開的）。服務端的處理與稽核見 [日誌裡的個資](#/skill/logs-pii)。
 
+:::stop 讀到這裡可以先停：會說出錯誤從哪幾個入口冒出來，處理 `Script error.` 與 source map。後面的自己收與 Sentry 寫法，在要替專案接上錯誤監控時再回來讀。
+
 ## 實際程式
 
 ### 不用第三方服務：自己收

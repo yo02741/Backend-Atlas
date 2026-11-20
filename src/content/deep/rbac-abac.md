@@ -130,6 +130,8 @@ def get_invoice(invoice_id: int, user = Depends(require_permission("invoice:read
 
 另外兩個補強：對外的 id 改用不可猜的值（UUID）可以讓列舉變難，但**不能取代**授權檢查，因為 id 會出現在分享連結、log、Email 裡；列表 API（`GET /api/invoices`）一樣要帶租戶條件，IDOR 不只出現在單筆查詢。
 
+:::stop 讀到這裡可以先停：會選 RBAC 或 ABAC、把檢查放在服務層，也會修好改 id 就讀到別人資料的 IDOR。後面的政策引擎程式，在規則多到要集中管理時再回來讀。
+
 ## 實際程式：一個小型政策引擎
 
 下面用不到一百行 Python 實作一個政策引擎：RBAC 決定角色能做的動作，ABAC 規則看屬性，合併規則是預設拒絕 + 拒絕優先，每個決策都回傳理由。最後模擬開頭的 IDOR，比較只看角色和完整檢查的差別。

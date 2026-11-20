@@ -47,6 +47,17 @@ export default {
       { label: 'RFC 9457：Problem Details for HTTP APIs', url: 'https://datatracker.ietf.org/doc/html/rfc9457' },
       { label: 'Chrome DevTools：Network panel', url: 'https://developer.chrome.com/docs/devtools/network' },
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=html) 定三條假 API 路由：`api.get(\'/api/a\', { network: true })`（傳輸失敗）、`api.get(\'/api/b\', { status: 404, body: api.problem(404, \'找不到這筆預約\') })`、`api.get(\'/api/c\', { headers: { \'Content-Type\': \'text/html\' }, body: \'<!doctype html><p>維護中</p>\' })`。三個請求都交給同一段 `try { const res = await fetch(url); … await res.json() } catch (err) { … }`。執行前先寫下每一個會走到哪一行、`res.ok` 與 `err.name` 是什麼，再執行並把結果並排印出。',
+      deliver: '三種情況的預測與實際對照表：有沒有 reject、`res.ok`、`res.status`、錯誤的 `name` 與 `message`',
+      check: [
+        '傳輸失敗：fetch reject，`err.name` 是 `TypeError`，沒有 `res`',
+        '404：fetch resolve，`res.ok` 為 `false`，讀得出 Problem Details 的 `detail`',
+        '無效 JSON：`res.ok` 為 `true`，`res.json()` 丟出 `SyntaxError`',
+        '預測錯的格子標出來並寫出原因',
+      ],
+      twist: '把 c 改成 `{ status: 204 }`。先預測 `res.ok` 與 `res.json()` 的結果，再實測。',
+    },
   },
   'api-states': {
     map: {
@@ -92,6 +103,17 @@ export default {
       { label: 'MDN：aria-busy', url: 'https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-busy' },
       { label: 'RFC 9457：Problem Details for HTTP APIs', url: 'https://datatracker.ietf.org/doc/html/rfc9457' },
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 選「掛號：四種狀態」範例，在程式最前面讓 `/api/sessions` 依序回四次：三筆資料、`{ status: 503 }`、空陣列、兩筆資料（`api.get(路徑, 回應)`、`api.post(路徑, 回應)` 會新增或蓋過假 API 的路由，回應寫成 `{ status, body, headers, delay }`，寫成陣列就依序回應）。加一顆「重新整理」，照課文的 `refreshing` 做法改寫：已經有資料時不回到 loading。連按三次重新整理，每次記下畫面、`status`、`refreshing` 與清單筆數。',
+      deliver: '四個時間點的紀錄（畫面上看到什麼、status、refreshing、筆數），每個時間點一張截圖',
+      check: [
+        '503 那次舊的三筆還在，上方一行「更新失敗」，沒有整個換成錯誤畫面',
+        '空陣列那次顯示 Empty state，沒有繼續顯示舊的三筆',
+        '重新整理時沒有回到「載入中…」',
+        '「重新整理」在 refreshing 時停用，連點只多一筆請求（用 `api.calls` 數）',
+      ],
+      twist: '503 改成 403。先預測畫面該保留舊資料還是整個換掉、要不要給重試按鈕，寫出理由再改。',
+    },
   },
   'cancel-race': {
     map: {
@@ -138,6 +160,16 @@ export default {
       { label: 'Vue：Watchers', url: 'https://vuejs.org/guide/essentials/watchers.html' },
       { label: 'Vue：Reactivity API: Core', url: 'https://vuejs.org/api/reactivity-core.html' },
     ],
+    challenge: {
+      task: '在 [Playground](#/playground?lang=vue) 用 `api.get(\'/api/patients\', (req) => ({ body: [{ id: Number(req.query.page) }], delay: req.query.page === \'1\' ? 1200 : 300 }))` 固定「第 1 頁慢、第 2 頁快」。做一個病患清單：頁碼放在 `createMemoryHistory()` 的 router query，有「下一頁」。在第 1 頁的請求回來前按「下一頁」，重播同一對亂序回應。先不取消跑一次，再用 `onWatcherCleanup` 加 `AbortController` 跑一次，每次結束都用 `api.calls.forEach((c) => console.log(c.method, c.url, c.status, c.ms, c.aborted))` 印出請求紀錄。',
+      deliver: '兩次的請求紀錄（看 aborted 欄）與最後畫面上的頁碼、資料',
+      check: [
+        '沒取消時重現錯誤：網址是第 2 頁，畫面是第 1 頁的資料',
+        '加了取消後，第 1 頁那筆 aborted 為 `true`，畫面與網址一致',
+        '被取消的請求沒有讓畫面出現「載入失敗」',
+      ],
+      twist: '再加「切換診間」的路由 `/rooms/:room`，請求進行中切到別的診間。先預測元件被重用與重建兩種情況下，清理函式各在什麼時候執行。',
+    },
   },
   'pagination-filter': {
     map: {
@@ -185,6 +217,17 @@ export default {
       { label: 'Vue Router：Programmatic Navigation', url: 'https://router.vuejs.org/guide/essentials/navigation.html' },
       { label: 'Vue Router：Scroll Behavior', url: 'https://router.vuejs.org/guide/advanced/scroll-behavior.html' },
     ],
+    challenge: {
+      task: '倉儲系統的「出貨單」清單有狀態篩選（待出貨、已出貨）、倉別篩選與「載入更多」。在 [Playground](#/playground?lang=vue) 用 `createMemoryHistory()` 的 router，讓 `/api/shipments` 回 `{ items, next_cursor }`（`api.get(路徑, 回應)`、`api.post(路徑, 回應)` 會新增或蓋過假 API 的路由，回應寫成 `{ status, body, headers, delay }`，寫成陣列就依序回應，也可以寫成依 `req.query` 回應的函式）。依序：選「待出貨」→ 選「台北倉」→ 載入更多 → `router.back()` 兩次。每一步記下三樣東西：`route.fullPath`、畫面上兩個 select 的值、`api.calls` 最後一筆的網址。最後列出哪些規則可以從門診的掛號清單沿用、哪些要跟倉儲業務重新確認。',
+      deliver: '每一步的三欄紀錄表，加一份「可沿用／要確認」清單',
+      check: [
+        '每一步三欄說的是同一組條件',
+        '換篩選後送出的請求不帶舊的 cursor，清單從第一批開始',
+        '`router.back()` 後 select 的值跟著變回去，不是只有網址變',
+        '手改成 `?status=lost` 時被 `replace` 成預設值，瀏覽紀錄沒有多一筆',
+      ],
+      twist: '業務要求重新整理後還停在第 47 筆。先預測 cursor 分頁做不做得到、要跟後端要什麼。',
+    },
   },
   'form-submit': {
     map: {
@@ -232,6 +275,17 @@ export default {
       { label: 'Vue：Form Input Bindings', url: 'https://vuejs.org/guide/essentials/forms.html' },
       { label: 'RFC 9457：Problem Details for HTTP APIs', url: 'https://datatracker.ietf.org/doc/html/rfc9457' },
     ],
+    challenge: {
+      task: '餐廳訂位表單有「日期」「時段」「人數」「兒童座椅數」。後端的 422 會回跨欄位錯誤：`{ errors: [{ field: null, message: \'兒童座椅不能超過人數\' }, { field: \'time\', message: \'這個時段只接受 4 人以下\' }] }`。在 [Playground](#/playground?lang=vue) 用 `api.post(\'/api/bookings\', { status: 422, body: … })` 回這個錯誤，用課文的 `toFormErrors` 把訊息放上畫面。實作前先決定 `field` 是 `null` 的那則放在哪裡、焦點移到哪一欄。最後列出哪些規則可以從掛號表單沿用、哪些要跟訂位業務重新確認。',
+      deliver: '錯誤出現後的截圖、焦點所在的元素、「這則錯誤放這裡，因為使用者要改的是哪一欄」的說明，加一份「可沿用／要確認」清單',
+      check: [
+        '兩則錯誤都看得到，`field` 是 `null` 的那則沒有消失',
+        '跨欄位錯誤的訊息指名要改的欄位或就在那一欄旁邊，焦點移到第一個要改的欄位',
+        '出錯的欄位有 `aria-invalid="true"`，`aria-describedby` 指向訊息',
+        '已填的內容都還在',
+      ],
+      twist: '後端改成回 `pointer: \'#/children\'`。先預測 `toFormErrors` 要改哪一行、訊息會移到哪裡。',
+    },
   },
   'auth-frontend': {
     map: {
@@ -280,6 +334,16 @@ export default {
       { label: 'MDN：BroadcastChannel', url: 'https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel' },
       { label: 'Pinia：State', url: 'https://pinia.vuejs.org/core-concepts/state.html' },
     ],
+    challenge: {
+      task: '做完 [程式題：401 導去登入並導回原頁](#/exercise/auth-frontend-1) 之後，把通過的答案貼到 [Playground](#/playground?lang=vue)，改成頁面一打開就同時送兩個請求，兩個都回 401：`api.get(\'/api/appointments\', { status: 401 })` 與 `api.get(\'/api/me\', { status: 401 })`。先不改程式跑一次，記下導向登入頁的次數、`redirect` 參數的值。接著改成共用一個「登入恢復中」的 Promise，再跑一次。',
+      deliver: '改前與改後的對照（導向次數、redirect 的值），加共用 Promise 的那段程式',
+      check: [
+        '改後只導向登入一次，`redirect` 是原頁的路徑，不是 `/login`',
+        '登入成功後回到原頁一次，兩個請求各重送一次',
+        '重送後還是 401 時不再進入恢復流程，沒有無限循環',
+      ],
+      twist: '第二個請求改回 403。先預測它會不會被併進同一個恢復流程、畫面顯示什麼。',
+    },
   },
   'api-errors-retry': {
     map: {
@@ -328,6 +392,17 @@ export default {
       { label: 'MDN：Navigator.onLine', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine' },
       { label: 'RFC 9457：Problem Details for HTTP APIs', url: 'https://datatracker.ietf.org/doc/html/rfc9457' },
     ],
+    challenge: {
+      task: '票務網站開賣時，`GET /api/events/42/seats` 大量回 503 與 429。先做 [程式題：fetchWithRetry](#/exercise/api-errors-retry-1)，再在 [Playground](#/playground?lang=vue) 讓這個路由依序回 `{ status: 503 }`、`{ status: 429, headers: { \'Retry-After\': \'5\' } }`、`{ body: [{ seat: \'A1\' }] }`，把 fetchWithRetry 接到畫面：顯示「第 N 次重試，X 秒後」與「停止重試」，按下就 abort。最後列出哪些規則可以從門診清單沿用、哪些要跟票務業務重新確認。',
+      deliver: '三張截圖（重試中、等 Retry-After、按下停止之後），請求紀錄的時間欄，加一份「可沿用／要確認」清單',
+      check: [
+        '畫面上的「X 秒後」和請求紀錄的實際間隔一致，429 那次等了 Retry-After 的 5 秒',
+        '按「停止重試」之後沒有新的請求，畫面留下手動「重試」',
+        '下單的 POST 不在自動重試的範圍內',
+        '「要確認」至少兩條，例如排隊頁的重試上限、使用者能不能手動連按重試',
+      ],
+      twist: '同一個人開了三個分頁。先預測三個分頁的重試時間會不會撞在一起、抖動怎麼改變它。',
+    },
   },
   'realtime-frontend': {
     map: {
@@ -375,6 +450,17 @@ export default {
       { label: 'MDN：Page Visibility API', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API' },
       { label: 'HTML Standard：Server-sent events', url: 'https://html.spec.whatwg.org/multipage/server-sent-events.html' },
     ],
+    challenge: {
+      task: '物流追蹤看板每筆事件帶遞增的 `seq`。按課文「重連的時間表與資料合併」的「在 Playground 開啟」，把第 3 段改成這組固定資料：快照 `{ seq: 10, A: \'倉庫\', B: \'倉庫\' }`；斷線期間伺服器送出 #11（A 出發）、#12（B 出發），前端沒收到；重連後收到 #13（A 送達）。先預測只套用收到的事件時 B 的狀態，再改成「重連後先抓快照、丟掉 seq 不比快照新的事件」，並在收到跳號（手上是 #10、下一筆是 #13）時觸發補抓。最後列出哪些規則可以從門診叫號看板沿用、哪些要跟物流業務重新確認。',
+      deliver: '兩種做法的最終狀態對照，跳號時程式做了什麼的輸出，加一份「可沿用／要確認」清單',
+      check: [
+        '只套用事件時重現錯誤：B 停在「倉庫」',
+        '重連後先抓快照的版本，A、B 的狀態都正確',
+        '收到跳號的事件會觸發補抓快照，不是靜靜略過',
+        '「要確認」至少兩條，例如事件會不會亂序抵達、快照多舊就不能用',
+      ],
+      twist: '後端改成每台車各自一組 `seq`。先預測跳號的判斷要怎麼改、全域的一個 `seq` 還能不能用。',
+    },
   },
   'data-caching': {
     map: {
@@ -425,6 +511,17 @@ export default {
       { label: 'MDN：Cache-Control', url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control' },
       { label: 'RFC 5861：HTTP Cache-Control Extensions for Stale Content', url: 'https://datatracker.ietf.org/doc/html/rfc5861' },
     ],
+    challenge: {
+      task: '倉儲頁的「可售數量」用課文的最小查詢快取，`staleTime` 是 500 ms。按那段程式的「在 Playground 開啟」，把資料換成三個商品的庫存，並改寫步驟：讀一次 → 停 2 秒不讀（中間伺服器改掉一筆庫存）→ 在 100 ms 內連讀三次 → 等 400 ms 再讀一次。每一步先預測會送出幾個請求、顯示的是舊值還是新值，再執行。最後列出哪些新鮮度規則可以從門診預約沿用、哪些要跟倉儲業務重新確認。',
+      deliver: '每一步的預測與實際（請求數、顯示的值、note），加一份「可沿用／要確認」清單',
+      check: [
+        '停在頁面超過 staleTime 本身沒有送請求，下一次讀取才重抓',
+        '過期後連讀三次只送出一個請求，三次都先顯示舊值（note 是 stale）',
+        '最後一次讀取顯示新值，沒有再送請求（note 是 fresh），`requests` 的數字對得上',
+        '「要確認」至少兩條，其中一條是下單前要不要強制重抓可售數量',
+      ],
+      twist: '換成 TanStack Query，`refetchOnWindowFocus` 維持預設。先預測切到別的分頁 2 秒再切回來，沒有任何程式讀取時會不會送出請求。',
+    },
   },
   'file-upload-frontend': {
     map: {
@@ -475,6 +572,17 @@ export default {
       { label: 'RFC 7578：Returning Values from Forms: multipart/form-data', url: 'https://datatracker.ietf.org/doc/html/rfc7578' },
       { label: 'Amazon S3：Working with presigned URLs', url: 'https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html' },
     ],
+    challenge: {
+      task: '物流司機上傳簽收單照片。從 [程式題：上傳轉診單](#/exercise/file-upload-frontend-1) 通過的答案出發，在 [Playground](#/playground?lang=html) 用 `api.post(\'/api/attachments\', { status: 201, body: { id: 9 }, delay: 4000 })` 讓上傳要 4 秒，加一顆用 `AbortController` 取消的按鈕（沙箱的假 API 只接管 fetch，進度條要在自己的專案用課文的 XMLHttpRequest 版本試）。依序：選一張照片 → 上傳中按取消 → 再選同一張照片 → 等上傳完成。每一步記下狀態文字、按鈕能不能按、`input.value` 是不是空的。最後列出哪些規則可以從轉診單上傳沿用、哪些要跟物流業務重新確認。',
+      deliver: '四步的狀態紀錄、重選同一張照片時 `change` 事件有沒有觸發與原因，加一份「可沿用／要確認」清單',
+      check: [
+        '取消後顯示「已取消」，不是「上傳失敗」，可以重新選檔',
+        '重選同一張照片能再上傳一次（取消或完成後清掉了 `input.value`）',
+        '請求紀錄裡第一筆 aborted 為 `true`，第二筆是 201',
+        '「要確認」至少兩條，例如照片大小上限、一筆簽收能不能補傳第二張、收訊差時要不要排隊重送',
+      ],
+      twist: '改成一次選三張照片、逐張上傳。先預測取消第二張時第一張與第三張的狀態，以及畫面怎麼標示。',
+    },
   },
   'openapi-types': {
     map: {
@@ -524,5 +632,16 @@ export default {
       { label: 'TypeScript：noUncheckedIndexedAccess', url: 'https://www.typescriptlang.org/tsconfig/#noUncheckedIndexedAccess' },
       { label: 'Zod', url: 'https://zod.dev/' },
     ],
+    challenge: {
+      task: '在自己的電腦開一個資料夾，寫一份最小的 OpenAPI 3.1 規格：`GET /appointments/{id}` 回 `AppointmentOut`，其中 `note` 是 `type: string` 而且必填。用 `npx openapi-typescript@7.13.0 spec.yaml -o schema.d.ts` 產生型別，寫一個函式回傳 `appt.note.trim()`。接著把 `note` 改成 `type: [string, \'null\']`（後端開始對沒有備註的預約回 `null`）再產生一次。先預測 `npx tsc --noEmit` 會不會報錯、報在哪一行；再預測「規格沒改、後端卻回了 `null`」時執行會發生什麼，然後實際跑兩種情況。',
+      deliver: '改前改後的 `schema.d.ts` 差異、`tsc` 的輸出，以及規格沒改、資料是 `null` 時的執行錯誤',
+      check: [
+        '改規格後 `note` 的型別變成 `string | null`',
+        '`tsc` 在 `appt.note.trim()` 那一行報「可能為 null」（TS18047）',
+        '規格沒改時 `tsc` 通過，執行時卻丟 `TypeError`：型別擋不住規格與實作不一致',
+        '修法寫明畫面顯示什麼（例如「—」）、在哪一層處理 `null`',
+      ],
+      twist: '後端改成沒有備註時不回這個欄位，規格把 `note` 從 required 拿掉。先預測產生的型別、`?.` 與 `??` 的寫法要怎麼改。',
+    },
   },
 }

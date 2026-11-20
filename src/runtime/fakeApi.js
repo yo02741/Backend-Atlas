@@ -15,6 +15,10 @@
      handler 是回應物件 { status = 200, body, headers, delay, network }、回應物件的陣列（依序回應，最後一個重複）、
      或 (req) => 回應物件（可以是 async）；req = { method, url, path, query, params, headers, body }。
    api.latency：預設延遲（ms）；api.errorRate：0–1，隨機回 503（Playground 的滑桿用）；api.auth = true 時內建路由要 Bearer token；
+   api.scenario：固定情境（Playground 的情境按鈕用，設了就不套用 errorRate，每次重建 iframe 都重播同一組回應）：
+     'success' 照常回應；'fail' 每個「方法 + 路徑」第 1 次回 503，之後照常（重試會成功）；
+     'empty' 成功的 GET 把陣列 body 換成 []、{ items } 換成空的 items；
+     'shuffle' 較早的請求較晚回（第 1、2 個請求另加 600、300 ms），陣列 body 倒序；
    api.calls：[{ method, url, body, status, ms, aborted, network }]；api.db：內建路由的資料；api.problem(status, detail, extra)。 */
 export function createFakeApi(env = {}) {
   const G = env.global || globalThis
@@ -68,8 +72,10 @@ export function createFakeApi(env = {}) {
     }
   }
 
-  const api = { latency: 150, errorRate: 0, auth: false, calls: [], db: seed(), problem }
+  const api = { latency: 150, errorRate: 0, auth: false, scenario: null, calls: [], db: seed(), problem }
   const routes = []
+  const scenarioSeen = {}   // 'fail' 情境：每個「方法 + 路徑」第幾次
+  let scenarioN = 0          // 'shuffle' 情境：第幾個請求
 
   function compile(path) {
     const keys = []
@@ -89,7 +95,33 @@ export function createFakeApi(env = {}) {
   }
   api.route = route
   for (const m of ['get', 'post', 'put', 'patch', 'delete']) api[m] = (path, handler) => route(m, path, handler)
-  api.reset = () => { routes.length = 0; api.calls.length = 0; api.db = seed(); api.latency = 150; api.errorRate = 0; api.auth = false }
+  api.reset = () => {
+    routes.length = 0; api.calls.length = 0; api.db = seed(); api.latency = 150; api.errorRate = 0; api.auth = false; api.scenario = null
+    for (const k of Object.keys(scenarioSeen)) delete scenarioSeen[k]
+    scenarioN = 0
+  }
+
+  // 固定情境：改寫已經決定好的回應（網路錯誤不動）。回傳 [回應, 額外延遲]
+  function applyScenario(res, req, n) {
+    const ok = !res.network && (res.status ?? 200) < 400
+    const key = req.method + ' ' + req.path
+    if (api.scenario === 'fail') {
+      scenarioSeen[key] = (scenarioSeen[key] || 0) + 1
+      if (scenarioSeen[key] === 1 && !res.network) return [fail(503, '伺服器暫時無法處理（固定情境：第 1 次失敗，重試會成功）'), 0]
+      return [res, 0]
+    }
+    if (api.scenario === 'empty' && ok && req.method === 'GET') {
+      const b = res.body
+      if (Array.isArray(b)) return [{ ...res, body: [] }, 0]
+      if (b && typeof b === 'object' && Array.isArray(b.items)) return [{ ...res, body: { ...b, items: [], next_cursor: null } }, 0]
+      return [res, 0]
+    }
+    if (api.scenario === 'shuffle') {
+      const extra = n === 0 ? 600 : n === 1 ? 300 : 0
+      return [ok && Array.isArray(res.body) ? { ...res, body: [...res.body].reverse() } : res, extra]
+    }
+    return [res, 0]
+  }
 
   // ── 內建的門診系統 ──
   const ACTIVE = ['booked', 'checked_in']
@@ -204,6 +236,7 @@ export function createFakeApi(env = {}) {
       const url = new URL(raw, baseURI)
       const call = { method, url: url.pathname + url.search, body: null, status: null, ms: 0, aborted: false, network: false }
       api.calls.push(call)
+      const n = scenarioN++
       const t0 = now()
       let timer = null
       let settled = false
@@ -235,7 +268,9 @@ export function createFakeApi(env = {}) {
           warn(`[假 API] 沒有對應的路由：${method} ${req.path}（用 api.${method.toLowerCase()}('${req.path}', …) 加一條）`)
           res = fail(404, `沒有 ${method} ${req.path} 這個路由`)
         }
-        if (api.errorRate > 0 && random() < api.errorRate) res = fail(503, '伺服器暫時無法處理（隨機錯誤）')
+        let extraDelay = 0
+        if (api.scenario) [res, extraDelay] = applyScenario(res, req, n)
+        else if (api.errorRate > 0 && random() < api.errorRate) res = fail(503, '伺服器暫時無法處理（隨機錯誤）')
         if (settled) return
         timer = setT(() => {
           if (settled) return
@@ -248,7 +283,7 @@ export function createFakeApi(env = {}) {
           try { response = toResponse(res) } catch (err) { call.network = true; finish(); reject(err); return }
           call.status = response.status; finish()
           resolve(response)
-        }, Math.max(0, Number(res.delay ?? api.latency) || 0))
+        }, Math.max(0, Number(res.delay ?? api.latency) || 0) + extraDelay)
       })().catch((err) => { if (!settled) { finish(); reject(err) } })
     })
   }

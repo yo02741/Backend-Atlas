@@ -56,6 +56,21 @@ export default {
     { id: 'line-twice', situation: '已經用了 outbox，但 LINE 通知偶爾還是寄兩次。relay 的紀錄顯示同一筆事件在 relay 重啟時送了第二次。', options: ['dual', 'outbox', 'cdc'], answer: 'outbox',
       explain: '這不是 outbox 選錯，而是消費端沒做冪等：outbox 保證的是至少一次。在 LINE 消費端加冪等鍵表（事件 id 為主鍵，`INSERT … ON CONFLICT DO NOTHING`，插入成功才寄），重複的事件就只會寄一次。換成 CDC 一樣會重放，問題不會消失。' },
   ],
+  switchIf: [
+    { when: '舊系統沒人敢改程式，要把十幾張表的變更送到報表倉儲', then: '改用 `cdc`：從 WAL 讀已 commit 的變更，應用程式不改；要有人顧連接器與 replication slot 的落後。' },
+    { when: '少一則或多一則通知都沒人在意（內部小工具的群組通知）', then: '用 `dual` 就夠：先 commit 再 publish，偶爾丟一則可以接受，省下 outbox 表與 relay。' },
+  ],
+  alternative: { option: 'cdc', holdsWhen: '團隊已經有人維運 Kafka Connect 這一類連接器、會看 replication slot 的落後，而且事件格式跟著資料表結構走也可以接受時（欄位改名會直接影響消費端）。' },
+  challenge: {
+    task: 'outbox 保證至少送一次，但不保證順序。設想一筆掛號 09:00:00 建立（v1），09:00:02 改時段（v2）；relay 重啟讓 v1 的事件在 v2 之後才送到，接著又重送一次。先在本頁模擬器選「Outbox」，把「消費端重複收到」拉到 20%，分別關掉與打開「消費端冪等鍵表」各跑 1,000 筆，記下「重複送達」與「重複生效」。然後寫出報到看板收到事件時的規則：怎麼判斷這筆比畫面上的舊，舊的怎麼處理。',
+    deliver: '一條四個事件的時間線（v1 建立、v2 改時段、v1 晚到、v1 重送），每個事件旁寫看板收到後的畫面',
+    check: [
+      '兩次模擬的「重複生效」都有記錄，並寫出冪等鍵表擋的是同一個事件 id 的重複',
+      '規則用事件裡的版本號或 `updated_at` 比較，v1 晚到時畫面維持 v2，不會倒退',
+      '寫出冪等鍵表擋不住「晚到的舊事件」，這一種要靠版本比較',
+    ],
+    twist: '同一套規則搬到物流的包裹狀態：已出貨、配送中、已送達。先預測哪些規則可以沿用，哪些要跟業務確認（例如「已送達」之後能不能回到「配送中」），再寫下來。',
+  },
   implementation: [
     { title: 'outbox：業務列與事件列同一交易（PostgreSQL）', lang: 'sql', code: `CREATE TABLE outbox (
   id          uuid PRIMARY KEY,

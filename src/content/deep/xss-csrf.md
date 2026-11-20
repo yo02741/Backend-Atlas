@@ -112,6 +112,8 @@ SameSite 的兩個盲點：
 
 實務上的組合：session cookie 設 `SameSite=Lax; Secure; HttpOnly`，改狀態用非 GET 方法，伺服器檢查 Origin，表單型網站再加 CSRF token。多數框架（Django、Rails、Laravel）內建 CSRF middleware，開著就好；FastAPI 這類 API 框架沒有內建，用 cookie 認證時要自己補。
 
+:::stop 讀到這裡可以先停：說得出 XSS 與 CSRF 各自怎麼發生，cookie session 與 Bearer token 各要防哪一個。後面的安全標頭與程式，在要設定 nginx 或 middleware 時再回來讀。
+
 ## 安全標頭基本盤
 
 | 標頭 | 建議值 | 作用 |

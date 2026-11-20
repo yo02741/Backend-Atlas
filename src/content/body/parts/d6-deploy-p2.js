@@ -13,6 +13,17 @@ export default {
       '能寫出一組保留規則，說明哪些 artifact 會被刪、為什麼刪完要跑垃圾回收、共用的 layer 為什麼不會釋放，以及怎麼避免刪到正在部署的映像',
       '能列出一座斷網叢集需要的所有映像（含 K8s 元件與 Helm chart 用到的），保留 digest 與多架構搬進院內，並讓節點信任院內 CA、透過 ServiceAccount 的 pull secret 拉得到',
     ],
+    challenge: {
+      task: '照本課「動手」第 4 步，在 kind 旁邊起一個本機 `registry:2`，用 `crane copy` 把多架構的 `postgres:16` 複製進去，再用不加 `--all` 的 `skopeo copy` 複製一份到另一個路徑。部署到 kind 之後，從三個地方取 digest 核對：上游（`crane digest`）、本機 registry、節點實際跑的（`kubectl get pod <名稱> -o jsonpath=\'{.status.containerStatuses[*].imageID}\'`）。',
+      deliver: '三個來源的 digest 對照表，以及兩條複製路徑各自部署的結果',
+      check: [
+        '表中的每個 digest 都來自實際指令的輸出',
+        '指出不加 `--all` 那一份的 digest 和上游不同，並說明它是單一架構的 manifest',
+        'manifest 用上游 digest 釘版本時，只有保留多架構索引的那一份拉得起來',
+        '寫出事後怎麼從正在跑的 Pod 反查它用的 digest',
+      ],
+      twist: '院內 Harbor 開了「有高風險弱點就不准拉」，這個 digest 一週後被掃出 Critical。先預測：正在跑的 Pod 會怎樣、節點重排時會怎樣、要在不換 digest 的前提下讓它繼續跑得做什麼。',
+    },
     refs: [
       { label: 'Harbor：Configure Proxy Cache', url: 'https://goharbor.io/docs/main/administration/configure-proxy-cache/' },
       { label: 'Harbor：Create Tag Retention Rules', url: 'https://goharbor.io/docs/main/working-with-projects/working-with-images/create-tag-retention-rules/' },

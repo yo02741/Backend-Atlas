@@ -91,6 +91,8 @@ web-vitals 6.2.3 的 README 列出：`onLCP`、`onINP` 在 Chromium、Firefox、
 
 還有一個 SPA 要注意的地方：這些指標預設以「一次完整的頁面載入」為單位。Vue Router 換頁不會重新載入，INP 與 CLS 會一直累積到使用者離開。web-vitals 6 加了 `reportSoftNavs: true`，在 Chromium 151 起的瀏覽器把這類「軟導覽」分開計算，其他瀏覽器沒有作用。
 
+:::stop 讀到這裡可以先停：會讀 LCP、CLS、INP 的門檻與評等，分辨實驗室數據與實際數據。後面的收集程式與三個指標的修法，在要接上實際數據或修一個不合格的指標時再回來讀。
+
 ## 實際程式
 
 ### 收集實際數據

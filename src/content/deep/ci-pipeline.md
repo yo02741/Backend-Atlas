@@ -53,7 +53,7 @@ cache 與 artifact 常被混用：
 快取的 key 決定什麼時候要換新的快取。用 **lock 檔的雜湊**：lock 檔沒變，依賴就沒變，可以直接用舊的；lock 檔一變，key 就變，產生新的快取。
 
 ```yaml
-- uses: actions/cache@v4
+- uses: actions/cache@v6
   with:
     path: ~/.cache/uv
     # 主 key：作業系統 + lock 檔雜湊。lock 檔一變，key 就變
@@ -125,11 +125,11 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/uv
           key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
@@ -158,11 +158,11 @@ jobs:
     env:
       DATABASE_URL: postgresql://app:test-only@localhost:5432/app_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/uv
           key: uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
@@ -171,7 +171,7 @@ jobs:
       - run: uv sync --locked
       - run: uv run alembic upgrade head          # 測試前先跑遷移：遷移本身也被測到
       - run: uv run pytest --junitxml=report.xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()                              # 測試失敗也要留下報告
         with:
           name: test-report
@@ -185,13 +185,13 @@ jobs:
       contents: read
       packages: write                             # 只有這個 job 能推 image
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@v7
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}   # 平台為這次 run 發的短期權杖
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           push: true
           tags: ghcr.io/example-org/shop-api:${{ github.sha }}
@@ -202,7 +202,9 @@ jobs:
 - **兩種觸發**：`pull_request` 讓 PR 上顯示檢查結果，`push` 到 main 才建 image。`build` 的 `if` 再擋一次，確保只有 main 會推。
 - **`permissions` 最小化**：`GITHUB_TOKEN` 的權限在 workflow 層設成只讀，只有 `build` 加上 `packages: write`。
 - **image tag 用 `github.sha`**：每個 image 能對回一個 commit；`latest` 會被覆蓋，也說不出正式環境跑的是哪一版。
-- **action 的版本**：範例寫的是主版本 tag（`@v4`）。tag 可以被移動，對安全要求高的專案會釘到完整的 commit SHA，並用 Dependabot 之類的工具更新，見 [依賴與供應鏈安全](#/skill/supply-chain)。版本號以各 action 的 repo 為準。
+- **action 的版本**：範例寫的是主版本 tag（`@v7`），主版本號是 2026 年 11 月對照各 action repo 的 tag 填的，之後會再往上升，用之前到該 repo 的 Releases 看目前是哪一版。tag 可以被移動，對安全要求高的專案會釘到完整的 commit SHA，並用 Dependabot 之類的工具更新，見 [依賴與供應鏈安全](#/skill/supply-chain)。也有 action 不再提供主版本 tag，例如 `astral-sh/setup-uv` 從 v8 起只有完整版本號（`@v10.3.3`）或 SHA 可以用，寫 `@v10` 會找不到。
+
+:::stop 讀到這裡可以先停：會排 lint、test、build 的先後，用 lock 檔雜湊當快取 key，讓測試接上同版本的 PostgreSQL。後面的平行化、flaky test 與兩個平台的對照，在管線變慢、紅燈開始被重跑或要換平台時再回來讀。
 
 ## 平行化
 
@@ -216,10 +218,10 @@ jobs:
 test:
   strategy:
     matrix:
-      python: ["3.11", "3.12", "3.13"]
+      python: ["3.12", "3.13", "3.14"]
   runs-on: ubuntu-latest
   steps:
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python }}
 ```

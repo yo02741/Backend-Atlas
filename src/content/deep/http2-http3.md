@@ -167,6 +167,8 @@ alt-svc: h3=":443"; ma=86400
 
 之後的連線瀏覽器才嘗試 QUIC。另一個方式是 DNS 的 HTTPS 紀錄（SVCB/HTTPS），讓瀏覽器在第一次連線前就知道。UDP 443 被防火牆擋掉時，瀏覽器會退回 TCP，使用者通常感覺不到。這也表示「設了 HTTP/3」不代表流量走的是 HTTP/3，要實際檢查。
 
+:::stop 讀到這裡可以先停：會說出 HTTP/2 的多工與 HTTP/3 解決的 TCP 隊頭阻塞。後面的反向代理設定、gRPC 與確認協定版本，在要開 HTTP/2、HTTP/3 或部署 gRPC 時再回來讀。
+
 ## 後端與反向代理怎麼設定
 
 常見的架構是：**對外的邊界（CDN、負載平衡器、nginx）終結 TLS 與 HTTP/2 / HTTP/3，往後端用 HTTP/1.1**。
@@ -194,7 +196,7 @@ server {
 
     location / {
         proxy_pass http://app;         # 往後端仍是 HTTP/1.1
-        proxy_http_version 1.1;
+        proxy_http_version 1.1;        # 1.29.7 起已是預設；寫出來讓舊版行為一致
         proxy_set_header Connection "";
     }
 }

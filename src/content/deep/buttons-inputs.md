@@ -172,6 +172,8 @@ textarea { min-block-size: 4.5rem; max-block-size: 12rem; field-sizing: content;
 - 「病歷號」用 `readonly`，值會送出、也能 Tab 到並被念出來。
 - 開關是 `type="button"` 的按鈕，放在表單裡也不會送出表單。
 
+:::stop 讀到這裡可以先停：會選按鈕的層級與 `type`，替欄位配好 label、`type` 與 `autocomplete`，分得清 Checkbox、Radio、Switch。後面的 icon button 與常見錯誤，在做只有圖示的按鈕或驗收別人的表單時再回來讀。
+
 Icon button 的寫法：
 
 ```vue

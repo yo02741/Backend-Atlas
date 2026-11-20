@@ -87,6 +87,8 @@ HTML 跳脫處理不了網址：`javascript:alert(1)` 沒有 `<`、`>` 或引號
 
 每個位置都會被利用，差別在攻擊者拿走的是「token 本身」還是「頁面開著時的操作權」。登入方案的整體取捨見 [登入狀態與 401](#/skill/auth-frontend) 與後端的 [驗證基礎](#/skill/authn-basics)；從資安的角度，最有效的仍是不讓 XSS 發生。
 
+:::stop 讀到這裡可以先停：會找出把字串當成 HTML 或網址的寫法，用 sanitizer 與 scheme 允許清單處理。後面的 CSP、第三方 script 與前端秘密，在要設定安全標頭或接廠商的 script 時再回來讀。
+
 ### CSP：伺服器限制前端程式能做什麼
 
 CSP（Content-Security-Policy）是伺服器隨 HTML 送出的回應標頭，告訴瀏覽器這個頁面能執行哪些來源的 script、套用哪些樣式、連到哪些網址。注入的程式就算進了 DOM，違反 CSP 也不會執行。代價是自己的程式也要照它的規矩寫。

@@ -193,6 +193,8 @@ const date = computed({
 
 `$subscribe` 可以在 state 改變時做同步，例如把批次掛號的暫存清單寫進 `sessionStorage`：`store.$subscribe((_mutation, state) => sessionStorage.setItem('batch', JSON.stringify(state.items)))`。
 
+:::stop 讀到這裡可以先停：會寫 setup store，用 `storeToRefs` 解構，分得出哪些狀態該放 store、網址或元件，也會在登出時清理。後面的 React 對照與錯誤訊息表，在讀 Redux 或 Zustand 時再回來讀。
+
 ## React 對照
 
 React 沒有內建的全域狀態工具，常見的選擇：

@@ -150,6 +150,8 @@ async function search(term, signal) {
 - `catch` 裡用 `signal.aborted` 判斷，不看 `err.name`，前面提過帶理由的 abort 會讓 `err.name` 變成 `undefined`。
 - 不用另外寫 `onUnmounted`：watcher 在 `<script setup>` 裡同步建立，元件卸載時 Vue 停止它並執行最後一次清理。
 
+:::stop 讀到這裡可以先停：會說出取消、序號、debounce 各解決什麼，並在 Vue 的 `watch` 裡用 debounce 加 `AbortController`。後面的舊版寫法、序號與現成工具，在專案是 Vue 3.4 以前、SDK 不收 `signal` 或改用 TanStack Query 時再回來讀。
+
 Vue 3.4 以前的專案沒有 `onWatcherCleanup`，改用 callback 的第三個參數：
 
 ```js

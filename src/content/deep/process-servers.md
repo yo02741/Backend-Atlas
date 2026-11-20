@@ -248,6 +248,8 @@ async def ready(response: Response):
 
 健康檢查端點不要需要登入、不要做重的查詢、不要寫 log 寫到洗版（每幾秒被呼叫一次）。Docker 的 `HEALTHCHECK` 與 compose 的 `service_healthy` 用的是同一類端點。
 
+:::stop 讀到這裡可以先停：分得出框架、介面與伺服器，算得出 worker 數與連線池上限，會做優雅關機與 `/health`、`/ready`。後面誰來管理行程與常見錯誤，在要決定由 systemd、容器平台還是 gunicorn 的 master 管行程時再回來讀。
+
 ## 誰來管理行程
 
 應用伺服器的 master 管 worker；master 本身也需要有人管：開機時啟動、崩潰時重啟、部署時依序停止與啟動。

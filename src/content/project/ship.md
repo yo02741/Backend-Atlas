@@ -185,3 +185,11 @@ PermissionError: [Errno 13] Permission denied: '/app/uploads'
 **.gitlab-ci.yml**：`stages` 依序是 lint、test、build、deploy 且每個都有 job；lint 跑 linter、test 跑 pytest；test 有固定版本的 postgres service、`POSTGRES_PASSWORD` 與主機為 `postgres` 的 `DATABASE_URL`；build 有固定版本的 dind、用 CI 提供的憑證登入、push 到 `$CI_REGISTRY_IMAGE:<commit SHA>`；deploy 只在 main 執行；所有 `image:` 都固定版本。
 
 規則檢查有它的極限：寫法合格不代表映像建得起來、管線會通過。這兩個檔案放進實際專案後，第一次執行的結果才是最後的驗收。
+
+## 串接驗收
+
+**1. 測試綠燈、映像壞掉。** 在後端參考專案（`companion/clinic-api`），暫時刪掉 Dockerfile 的 `COPY alembic/ ./alembic/`。依序執行 `uv run pytest tests/test_domain.py`、`docker compose up -d --build --wait`、`docker compose exec api alembic upgrade head`，先預測哪一步會失敗。預期：測試通過（它測的是原始碼）；映像建得起來，API 的 healthcheck 也通過；migration 失敗，錯誤指出找不到 alembic 的目錄。改回來並重建。
+
+**2. 列出每個 job 驗了什麼。** 讀參考專案的 `.gitlab-ci.yml`，寫一張表：job、在哪個映像裡跑、測的是原始碼還是建好的映像。預期：`lint` 與 `test` 都在 `python:3.12-slim` 裡對原始碼執行；`build` 只建置與推送；`build` 之後到 `deploy_production` 之前，沒有任何一步啟動過推上去的映像。步驟 1 的錯誤要到部署時的 migration Job 才出現（[第 10 階段](#/project/k8s)的「上線順序」：pipeline 停住，舊版不受影響）。
+
+**3. 補一道對映像的檢查。** 在 `build` 之後加一個 job，用 `$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA` 啟動 API（和 `test` 一樣帶 postgres 與 redis service），跑 migration、seed 與 `scripts/smoke.sh`。repo 的 `.github/workflows/companion.yml` 用 compose 做了同樣的事，可以對照。預期：步驟 1 那種映像在這個 job 失敗、不會進到 deploy。部署之後，`kubectl -n clinic get pods -l app=clinic-api -o jsonpath='{.items[*].status.containerStatuses[0].imageID}'` 印出的 digest 和 `build` job 裡 `docker push` 印出的 digest 相同，跑的就是測過的那一個。

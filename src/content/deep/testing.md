@@ -176,6 +176,8 @@ def test_create_order_requires_auth(client):
 
 同一個 endpoint 的三種情況（正常、驗證失敗、未授權）各自一個測試，失敗時從測試名稱就知道是哪一種壞了。FastAPI 的 `TestClient` 直接呼叫 ASGI 應用程式，不需要真的啟動 server。
 
+:::stop 讀到這裡可以先停：會寫 pytest 的 fixture、參數化與 FastAPI 的 API 測試。後面的時間注入與交易 rollback，在測試依賴現在時間或彼此留下資料時再回來讀。
+
 ### 在瀏覽器裡用 unittest：依賴注入讓時間可以測
 
 ```python run

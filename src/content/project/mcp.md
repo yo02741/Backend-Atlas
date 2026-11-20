@@ -385,3 +385,39 @@ print("原始資料沒有出現在輸出或稽核紀錄裡")
 1. 在 Playground 執行「驗 claims」那段，把 `aud` 那段檢查註解掉，看「aud 是別的服務」變成 200。
 2. 執行遮罩那段，刪掉 policy 的 `"note": "text"`，看 `assert` 失敗。
 3. 做下面三道驗收題。
+
+## 串接驗收
+
+這一階段可以單獨驗收：三道驗收題與這頁的兩段程式都在瀏覽器裡跑，不需要前八個階段的服務，也不需要 GitLab。後端參考專案沒有做這一階段（它的 README 寫了原因），下面第 3 步只借用它的 PostgreSQL。和其他階段的接點：
+
+| 接點 | 來自 | 這一階段要確認的事 |
+|---|---|---|
+| 可查的表與欄位 | [第 1 階段](#/project/schema)的資料表 | allowlist 的表名對得到實際的表；第 1 階段只有姓名，staging 若多了身分證字號、電話，每個欄位都要進遮罩的 policy |
+| 遮罩規則 | [第 8 階段](#/project/observe)的 `mask_national_id` | 自由文字的規則和日誌用同一套，中文緊鄰也遮得到 |
+| 身分 | GitLab 的 `sub`，不是[第 4 階段](#/project/auth)的掛號帳號 | allowlist 以 `sub` 為 key；兩套帳號互不通用 |
+| 資料庫帳號 | [第 10 階段](#/project/k8s)的 Secret | 另一個只有 `SELECT` 的帳號，不共用 API 的 `DATABASE_URL` |
+
+**1. 先猜六種請求的結果。** 執行「驗 claims」之前，寫下六種請求各回什麼狀態碼與 `error_description`。預期：401（只帶 `resource_metadata`）、200、401 `audience mismatch`、401 `expired`、403 `insufficient_scope`、401 `bad signature`。
+
+**2. 新欄位沒進 policy。** 在「遮罩與稽核」的第一列加 `"emergency_phone": "0987654321"`，先預測最後的 `assert` 會不會失敗、輸出裡看不看得到原值。預期：`assert` 照樣通過（它只檢查身分證字號），輸出裡出現 `0987654321`。在程式最後補一道檢查，預期它失敗並列出 `emergency_phone`：
+
+```python
+REVIEWED_PLAIN = {"id", "status"}          # 審過、可以原樣輸出的欄位
+unreviewed = {k for r in rows for k in r} - set(POLICY) - REVIEWED_PLAIN
+assert not unreviewed, f"沒有審過的欄位：{sorted(unreviewed)}"
+```
+
+**3. 唯讀帳號擋得住寫入。** 在參考專案的 PostgreSQL（`docker compose exec postgres psql -U clinic clinic`）建一個只有 `SELECT` 的角色並切過去：
+
+```sql
+CREATE ROLE mcp_reader NOLOGIN;
+GRANT SELECT ON sessions, appointments TO mcp_reader;
+SET ROLE mcp_reader;
+SELECT count(*) FROM appointments;
+UPDATE appointments SET status = 'cancelled' WHERE id = 1;
+RESET ROLE;
+```
+
+預期：`SELECT` 成功；`UPDATE` 失敗，訊息是 `permission denied for table appointments`（SQLSTATE `42501`）。allowlist 寫錯時，這一層還擋得住寫入。
+
+**4. 拿掉它，其他階段不受影響。** 寫下回退這一階段的步驟：MCP server 縮到 0 個副本、在 GitLab 撤銷它的 OAuth application、撤掉唯讀帳號（`DROP OWNED BY mcp_reader; DROP ROLE mcp_reader;`），稽核表保留。預期：參考專案的 `scripts/smoke.sh` 結果和回退前相同；agent 再連線時收到連線失敗或 401，拿不到任何資料。

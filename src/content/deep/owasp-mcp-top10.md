@@ -34,7 +34,7 @@
 
 傳統的 OWASP Top 10（見 [OWASP Top 10](#/skill/owasp-top10)）處理的是「使用者 → 應用程式」這條路徑。MCP 多了一條「模型 → 工具」的路徑：工具的描述會變成模型的指示、工具的輸出會變成模型的輸入、模型的決定會變成真實世界的動作。OWASP 的 MCP Top 10 專案把這條路徑上常見的風險整理成十項。
 
-> 本課依據 OWASP MCP Top 10 2025 版（專案在 [GitHub：OWASP/www-project-mcp-top-10](https://github.com/OWASP/www-project-mcp-top-10)）。專案目前標示為 beta，並寫明計畫在 2026 年 10 月改版，項目名稱與編號可能調整，引用時以專案最新內容為準。下文每一項的說明是依項目名稱整理的**概要**，不是專案原文。
+> 本課依據 OWASP MCP Top 10 2025 版（專案在 [GitHub：OWASP/www-project-mcp-top-10](https://github.com/OWASP/www-project-mcp-top-10)）。2026 年 11 月核對時，專案頁仍標示為 beta，頁面上寫的下一版時程是 2026 年 10 月，但還沒看到新版發布；項目名稱與編號可能調整，引用時以專案最新內容為準。下文每一項的說明是依項目名稱整理的**概要**，不是專案原文。
 
 ## 運作原理：MCP 架構裡的攻擊面
 
@@ -167,6 +167,8 @@ MCP 的角色分三層：**host**（使用者在用的應用程式，例如 IDE 
 | 工具輸出 | MCP06、MCP10、MCP05 | 當不可信輸入；不讓它直接觸發高風險動作 |
 | 憑證 | MCP01、MCP02 | 短效、最小範圍、執行層注入、不進 context |
 | 傳輸 | MCP07、MCP09 | 遠端 server 一律驗證身分與授權、走 TLS、經過 gateway |
+
+:::stop 讀到這裡可以先停：會用 MCP01–MCP10 的名稱指出一份設定的問題，知道每個攻擊面對應哪幾項。後面的傳統 OWASP 對照與掃描程式，在要寫內部檢查清單或自動掃描 MCP 設定時再回來讀。
 
 ## 和傳統 OWASP Top 10 的對照
 

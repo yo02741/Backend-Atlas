@@ -29,6 +29,7 @@ export default {
       example: { primary: 'tracer bullet 票 + 阻擋關係（Blocked by）', alts: ['依層切的水平票（反例）', 'expand–contract 分批遷移'] },
       keywords: [],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'ai-spec-to-tests',
@@ -49,6 +50,7 @@ export default {
       example: { primary: '驗收清單 → CI 檢查', alts: ['獨立的 review agent', '人工驗收表'] },
       keywords: ['GitLab CI', 'Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'ai-quality-gates',
@@ -59,6 +61,7 @@ export default {
       example: { primary: 'ruff + mypy + 測試 + secret 掃描（GitLab CI）', alts: ['pyright', 'pre-commit hooks', 'GitHub Actions + 分支保護'] },
       keywords: ['GitLab CI', 'Python', 'uv'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'architecture-tests',
@@ -69,6 +72,7 @@ export default {
       example: { primary: 'import-linter（Python）', alts: ['ArchUnit（Java）', 'dependency-cruiser（JS）', 'Structurizr DSL'] },
       keywords: ['Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'harness-engineering',
@@ -79,6 +83,7 @@ export default {
       example: { primary: '評測集 + 回歸比對', alts: ['promptfoo', '自建 harness'] },
       keywords: ['Python', 'LLM'],
       lab: 'HarnessLab',
+      reviewed: '2026-11',
     },
     {
       id: 'agent-delivery',
@@ -89,6 +94,7 @@ export default {
       example: { primary: 'GitLab CI 的評測階段', alts: ['GitHub Actions', 'promptfoo'] },
       keywords: ['GitLab CI', 'GitHub Actions', 'Agent'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'ai-skills-mcp',
@@ -99,7 +105,7 @@ export default {
       example: { primary: 'SKILL.md（說明書）+ MCP server（工具）', alts: ['專案規範檔（CLAUDE.md / AGENTS.md）', '直接呼叫 API 的自寫腳本'] },
       keywords: ['MCP'],
       lab: null,
-      reviewed: '2026-10',
+      reviewed: '2026-11',
     },
     {
       id: 'context-engineering',
@@ -131,6 +137,7 @@ export default {
       example: { primary: 'git worktree + 每個 agent 一條分支', alts: ['同一 session 開 subagent（資訊混在一起）', '每個 agent 一份完整 clone'] },
       keywords: ['Agent'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'llm-api-integration',
@@ -195,7 +202,7 @@ export default {
       example: { primary: 'OAuth + RFC 9728 + RFC 8707 + JWKS 驗章', alts: ['stdio 本機 server 從環境取得憑證', 'Gateway 代為驗證'] },
       keywords: ['OAuth', 'JWT', 'Token', 'MCP'],
       lab: null,
-      reviewed: '2026-10',
+      reviewed: '2026-11',
     },
     {
       id: 'mcp-gateway',
@@ -206,6 +213,7 @@ export default {
       example: { primary: 'MCP gateway + 內部上架清單', alts: ['每個 agent 各自設定 MCP server（無集中管理）'] },
       keywords: ['OAuth', 'Token', 'RBAC', 'MCP'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'ai-gateway',
@@ -270,7 +278,7 @@ export default {
       example: { primary: '用 MCP01–MCP10 逐項檢視 MCP 部署', alts: ['OWASP Top 10（Web）', 'OWASP API Security Top 10'] },
       keywords: ['OWASP', 'MCP'],
       lab: null,
-      reviewed: '2026-10',
+      reviewed: '2026-11',
     },
     {
       id: 'ai-threat-modeling',
@@ -292,6 +300,7 @@ export default {
       example: { primary: '鎖定工具描述的雜湊，變動就停用並重審', alts: ['只用內部審核過的 MCP server', 'gateway 統一檢查'] },
       keywords: ['OWASP', 'MCP'],
       lab: 'ToolPoisoningLab',
+      reviewed: '2026-11',
     },
     {
       id: 'agent-credential-isolation',
@@ -313,6 +322,7 @@ export default {
       example: { primary: '內部清單 + 鎖版本 + 變更重審', alts: ['直接安裝社群 Skill / MCP server 最新版（反例）'] },
       keywords: ['OWASP', 'Agent'],
       lab: null,
+      reviewed: '2026-11',
     },
   ],
 }

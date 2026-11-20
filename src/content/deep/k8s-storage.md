@@ -356,6 +356,8 @@ start("F. RWO，但後端是 NFS", spread, "RWO", attach_required=False)
 
 A 是開頭的狀況。B 看起來正常，只是三個 Pod 剛好在同一個節點，哪天其中一個被排到別處就會壞；單節點的測試叢集永遠重現不了 A。F 能跑，但三個節點同時寫同一份資料，衝突要程式自己處理。
 
+:::stop 讀到這裡可以先停：會選 volume 的種類、從 Events 判斷 PVC 為什麼 Pending，說得出 reclaimPolicy 與 ReadWriteOnce 的限制。後面的 CSI 選型、StatefulSet、資料庫放不放進叢集與備份，在要跑有狀態服務或挑地端儲存時再回來讀。
+
 ## CSI 與地端的儲存選項
 
 CSI（Container Storage Interface）是容器平台與儲存系統之間的標準介面，Kubernetes 1.13 起 GA。儲存廠商或開源專案寫一個 CSI driver，Kubernetes 就能建立、attach、掛載、擴充與快照它的 volume。早期內建在 Kubernetes 裡的雲端磁碟外掛，大多已經遷移到對應的 CSI driver。

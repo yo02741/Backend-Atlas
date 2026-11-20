@@ -1,4 +1,4 @@
-// 從內容資料重新產生 README.md 與課綱（docs/CURRICULUM*.md）裡會跟著內容變動的段落。
+// 從內容資料重新產生 README.md 與課綱（docs/CURRICULUM*.md）裡會跟著內容變動的段落，以及課綱週次的對照檔 src/content/curriculum-weeks.js。
 //   node scripts/sync-docs.mjs          重寫（npm run docs:sync）
 //   node scripts/sync-docs.mjs --check  只檢查，有過期的段落或錯誤就以 1 結束（npm run docs:check）
 //
@@ -140,7 +140,7 @@ const blocks = {
     '',
     `- **程式題 ${EXERCISES.length} 道**（Python ${kinds.python || 0}、SQL ${kinds.sql || 0}、config ${kinds.config || 0}、JavaScript ${kinds.js || 0}、HTML ${kinds.html || 0}、CSS ${kinds.css || 0}、Vue ${kinds.vue || 0}）：在瀏覽器裡執行並跑測試：SQL 跑 PGlite、Python 跑 Pyodide、JS 跑 Web Worker；config 題（Dockerfile、compose、nginx、Kubernetes manifest、\`.gitlab-ci.yml\`、GitHub Actions）由 JS 檢查器逐條驗證；HTML、CSS、Vue 題在沙箱 iframe 裡執行（自架的 Vue ${VERSIONS.vue}、Pinia ${VERSIONS.pinia}、Vue Router ${VERSIONS['vue-router']}，import \`element-plus\` 的題目另外載入 Element Plus ${VERSIONS['element-plus']}，標了 \`tailwind\` 的題目另外載入 Tailwind CSS ${VERSIONS['@tailwindcss/browser']}（\`@tailwindcss/browser\`）；\`fetch\` 由假的門診 API 回應），測試透過 DOM 檢查畫面與行為，CSS 題在 390、768、1280 等寬度下各檢查一次。`,
     `- **選擇題 ${quizCount} 道**：每課 3 題，含程式碼判讀與情境題。`,
-    '- **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、已完成的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。',
+    '- **複習頁** `#/review`：跨課混合抽 10 或 20 題，範圍可選全部、讀過的課、指定領域或上次答錯的題；交卷後列出各領域答對率，每題附回到該課的連結，可以只重做答錯的。錯題與成績只存在瀏覽器，不同步到帳號。',
   ].join('\n'),
 
   'k8s-track': () => {
@@ -201,6 +201,28 @@ for (const t of LIVE) {
   const unscheduled = skills.filter((s) => s.domain.track === t.id && !weeks[s.id]).map((s) => s.id)
   if (unscheduled.length) (CHECK ? errors : warnings).push(`${t.title}路線這些課沒有排進 ${file} 任何一週的「對應技能」：${unscheduled.join('、')}`)
 }
+// 課頁「課綱第 W 週」與首頁、路線首頁的「課綱 N 週」：產生一個小 JS 檔，瀏覽器不必解析 markdown
+const WEEKS_FILE = 'src/content/curriculum-weeks.js'
+const weekOfSkill = {}, trackWeeks = {}
+for (const t of LIVE) {
+  if (!fs.existsSync(path.join(root, t.curriculum))) continue
+  const weeks = t.curriculum === 'docs/CURRICULUM.md' ? weekOf : weeksIn(read(t.curriculum))
+  const mine = skills.filter((s) => s.domain.track === t.id && weeks[s.id])
+  for (const s of mine) weekOfSkill[s.id] = weeks[s.id]
+  trackWeeks[t.id] = new Set(mine.map((s) => weeks[s.id])).size
+}
+const weeksJs = [
+  '// 由 scripts/sync-docs.mjs 從課綱（docs/CURRICULUM*.md 每週的「對應技能」）產生，不要手改：npm run docs:sync。',
+  '// WEEK_OF：課 id → 課綱週次（同一課排在多週時取第一次出現的週）；TRACK_WEEKS：每條路線的課分布在幾週。',
+  'export const WEEK_OF = {',
+  ...Object.keys(weekOfSkill).sort().map((id) => `  '${id}': ${weekOfSkill[id]},`),
+  '}',
+  `export const TRACK_WEEKS = { ${Object.entries(trackWeeks).map(([k, v]) => `${k}: ${v}`).join(', ')} }`,
+  '',
+].join('\n')
+const oldWeeksJs = fs.existsSync(path.join(root, WEEKS_FILE)) ? read(WEEKS_FILE) : ''
+if (oldWeeksJs !== weeksJs) stale.push(WEEKS_FILE)
+
 const TREE = { language: 'A', web: 'B', data: 'C', auth: 'D', security: 'E', deploy: 'F', cicd: 'G', algo: 'H、I', devops: 'J', ai: 'K', knowledge: 'L' }
 // 這份課綱涵蓋的路線（tracks.js 的 curriculum 指向 docs/CURRICULUM.md 的路線）
 const TREE_DOMAINS = DOMAINS.filter((d) => TRACKS.find((t) => t.id === d.track)?.curriculum === 'docs/CURRICULUM.md')
@@ -229,6 +251,7 @@ if (CHECK) {
 } else {
   fs.writeFileSync(path.join(root, 'README.md'), readme)
   fs.writeFileSync(path.join(root, 'docs/CURRICULUM.md'), cur)
+  if (oldWeeksJs !== weeksJs) fs.writeFileSync(path.join(root, WEEKS_FILE), weeksJs)
 }
 if (warnings.length) console.warn('docs：\n' + warnings.map((w) => '! ' + w).join('\n'))
 if (errors.length) {

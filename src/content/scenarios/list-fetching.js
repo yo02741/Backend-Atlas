@@ -44,7 +44,7 @@ export default {
     rows: [
       { option: 'refetch', cells: ['差：每次 Skeleton', '好：每次都重抓', '中：下次進頁才更新', '差：每個元件各打一次', '最少'] },
       { option: 'store', cells: ['好：直接顯示', '差：要自己在新增後失效', '差：過期與重抓都要自己寫', '好：共用一份（要自己防同時呼叫）', '多：過期、失效、依日期分開存'] },
-      { option: 'swr', cells: ['好：先顯示快取、背景更新', '好：`invalidateQueries`', '好：掛載、切回分頁時重抓', '好：同 key 合併', '少：設定 key 與 `staleTime`；多一個依賴'] },
+      { option: 'swr', cells: ['好：先顯示快取、背景更新', '好：`invalidateQueries`', '好：掛載、切回分頁時重抓；停在清單上要加 `refetchInterval`', '好：同 key 合併', '少：設定 key 與 `staleTime`；多一個依賴'] },
     ],
   },
   decisions: [
@@ -55,6 +55,21 @@ export default {
     { id: 'counter', situation: '櫃台的預約清單：一天來回上百次，自己新增的要立刻看到，別的櫃台的變更 1 分鐘內要出現，頁首徽章也要同一份資料。', options: ['refetch', 'store', 'swr'], answer: 'swr',
       explain: '回到清單先顯示快取、背景重抓，新增後 invalidate，切回分頁時重抓，徽章與清單用同一個 key 只送一個請求。這些在 store 裡都要自己寫，每次重抓則要一直看 Skeleton。`staleTime` 設 30 秒，別人的變更在下一次掛載或切回分頁時出現；停在清單頁也要在 1 分鐘內更新，再加 `refetchInterval: 60_000`。' },
   ],
+  switchIf: [
+    { when: '參照資料一年改幾次、十幾個畫面共用，專案沒有資料快取工具', then: '改用 `store`：登入後抓一次放 store，不必為一份幾乎不變的資料引入新依賴。' },
+    { when: '畫面上絕不能先出現舊結果（檢驗報告）', then: '改用 `refetch`：進頁就抓、資料回來才顯示，Skeleton 那一下可以接受。' },
+  ],
+  alternative: { option: 'store', holdsWhen: '專案不打算引入 TanStack Query 或 Pinia Colada，而且願意在 store 裡自己寫依日期分開存、過期、共用進行中的請求、新增後失效（落地的第三段）時。' },
+  challenge: {
+    task: '「別的櫃台的變更 1 分鐘內要出現」有兩種情況：回到清單時，以及一直停在清單上。先在本頁模擬器選「stale-while-revalidate」，「多久算舊」設 30 秒，按「▶ 播放這 180 秒」，用「時間點」滑桿找出「別的櫃台取消一筆」之後，畫面在哪個事件才換成新資料、隔了幾秒。再推論：櫃台在取消那一筆之後一直停在清單上 5 分鐘不切頁，舊資料會留多久？寫出要加的設定（例如 `refetchInterval`）與數值，並說明模擬器的「最長一次」為什麼量不到這種情況。',
+    deliver: '取消那一筆到畫面更新的事件與秒數、停在清單 5 分鐘的推論，以及要加的設定與數值',
+    check: [
+      '用時間軸上的事件名稱寫出畫面在哪個事件更新，以及距離取消那一筆幾秒',
+      '寫出 `staleTime` 只決定什麼時候算舊，停在頁面上沒有重新掛載或切回分頁就不會重抓',
+      '加的設定讓停在頁面上的舊資料不超過 60 秒，並算出每台櫃台每小時多送幾個請求',
+    ],
+    twist: '把「API 延遲」拉到 3 秒。先預測「看 Skeleton」與「少了剛新增的那筆」各怎麼變、三種做法誰受影響最大，再播放驗證。',
+  },
   implementation: [
     { title: 'TanStack Query 5：依日期快取、新增後失效（@tanstack/vue-query）', lang: 'ts', code: `// main.ts
 import { VueQueryPlugin } from '@tanstack/vue-query'
@@ -75,6 +90,7 @@ export function useAppointments(date: Ref<string>) {
     queryKey: ['appointments', date],          // date 是 ref：換日期就換一份快取
     queryFn: ({ signal }) => getAppointments(date.value, signal),
     staleTime: 30_000,                         // 30 秒內回到清單不重抓；超過就先顯示快取、背景重抓
+    refetchInterval: 60_000,                   // 停在清單上也每分鐘重抓一次：別的櫃台的變更 1 分鐘內出現（分頁在背景時預設不抓）
   })
 }
 

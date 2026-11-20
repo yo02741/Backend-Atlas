@@ -38,7 +38,7 @@
 
 ### `sticky` 黏在哪裡
 
-`sticky` 元素平常照一般排版，捲到門檻（`top: 0` 這類值）時停住，像 `fixed` 一樣黏著，直到它的父元素底部離開畫面，它被父元素帶走。實測三個情況（頁面捲動 500px）：
+`sticky` 元素平常照一般排版，捲到門檻（`top: 0` 這類值）時停住，像 `fixed` 一樣黏著，直到它的父元素底部離開畫面，它被父元素帶走。實測幾種情況（頁面捲動 500px）：
 
 | 情況 | 頂端列的位置 |
 |---|---|
@@ -94,6 +94,8 @@
 `.menu` 的 9999 只在 `ul.rooms` 這個資料夾裡排第一；跟頂端列比的是 `ul.rooms` 這一整塊，它是 0，頂端列是 10，頂端列在上面。實測把 `transform` 換成 `opacity: 0.99` 結果一樣。把選單的數字調得再大也沒用；要嘛拿掉建立資料夾的屬性，要嘛讓選單離開這個資料夾（放進 top layer，或 teleport 到 `body` 底下）。
 
 另一個例子：父元素是 `position: relative` 但沒有 `z-index`（不建立 stacking context），子元素寫 `z-index: -1`，子元素會畫到父元素的背景後面，看起來消失了。父元素加 `isolation: isolate`，子元素就留在父元素的背景之上（實測）。
+
+:::stop 讀到這裡可以先停：會找出 `absolute` 的基準、`sticky` 黏不住的捲動容器，以及 `z-index` 失效的 stacking context。後面的 top layer，在要做 Dialog 或 Popover 時再回來讀。
 
 ### top layer
 

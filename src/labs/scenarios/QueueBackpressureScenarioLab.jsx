@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Status, useTicker, Stats, Stat, Flow, LineChart, Caption, kfmt } from '../ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Slider, Callout, Status, useTicker, Stats, Stat, Flow, LineChart, Caption, kfmt, Measure } from '../ui.jsx'
 
 /* 削峰與背壓情境模擬器：60 秒時間軸，t=10 發推播後流量從 200 衝到 5,000 QPS，維持一陣子再回落。
    四張小圖（單一 y 軸）：每秒請求、佇列深度、完成延遲、worker 數。切換做法看同一波尖峰的不同下場。
@@ -129,7 +129,7 @@ export default function QueueBackpressureScenarioLab() {
             <Stat label={isQueueDepth ? '佇列深度峰值' : '在途請求峰值'} value={sim.peakDepth.toLocaleString()} />
             <Stat label={mode === 'shed' ? '被拒絕（含重試）' : mode === 'direct' ? '逾時（狀態不明）' : '被拒絕'} value={(mode === 'shed' ? sim.rejectedTotal : sim.lost).toLocaleString()} tone={mode === 'direct' && sim.lost > 0 ? 'bad' : ''} />
             <Stat label="真正丟掉" value={sim.lost.toLocaleString()} tone={sim.lost > 0 ? 'bad' : ''} />
-            <Stat label={isQueueDepth ? '完成延遲峰值' : '回應時間峰值'} value={`${sim.peakLat.toFixed(1)} s`} tone={sim.peakLat > TIMEOUT ? 'bad' : ''} />
+            <Stat label={isQueueDepth ? '完成延遲峰值' : '回應時間峰值'} value={<Measure kind="set" value={sim.peakLat.toFixed(1)} unit="s" />} tone={sim.peakLat > TIMEOUT ? 'bad' : ''} />
             <Stat label="60 秒結束時未處理" value={sim.left.toLocaleString()} note={sim.left > 0 ? `還要 ${Math.ceil(sim.drain)} 秒消化` : ''} />
             <Stat label="worker 峰值" value={`${sim.peakW} 個`} />
           </Stats>

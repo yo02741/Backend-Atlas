@@ -120,6 +120,8 @@ ALTER TABLE customers DROP CONSTRAINT customers_full_name_nn;
 SELECT id, name, full_name FROM customers ORDER BY id;
 ```
 
+:::stop 讀到這裡可以先停：會分辨 rolling、blue-green、canary 與 feature flag，並把一個欄位改名拆成 expand–contract 的幾次部署。後面的 migration 鎖、回滾還是往前修、自動回滾，在要對大表跑 migration 或設計部署閘門時再回來讀。
+
 ### migration 的鎖與執行時機
 
 - **`ALTER TABLE` 要拿最強的鎖**（ACCESS EXCLUSIVE）。指令本身很快，但如果有一個長交易還握著這張表，`ALTER` 會排隊等它，排隊期間後面所有讀寫這張表的查詢也一起排隊。migration 前先 `SET lock_timeout = '5s'`，拿不到鎖就失敗重試，而不是讓整個服務卡住。

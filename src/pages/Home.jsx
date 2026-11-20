@@ -4,6 +4,7 @@ import { skillsOf, stationsOf, plannedDomainsOf } from '../content/roadmap.js'
 import { EXERCISES } from '../content/exercises/index.js'
 import { useProgress } from '../progress.js'
 import { lastTrack } from '../track.js'
+import { countsOf, labLabel } from '../counts.js'
 
 /* 首頁 #/：開場（貼紙「AI said all good.」、問號章、標題），下面三條路線的卡片：課數、下一站、進度。 */
 export default function Home() {
@@ -42,7 +43,7 @@ function TrackCard({ t, isDone, last }) {
   const stations = stationsOf(t.id)
   const doneN = skills.filter((s) => isDone(s.id)).length
   const next = stations.find((s) => !isDone(s.id)) || stations[0] || skills[0]
-  const labs = skills.filter((s) => s.lab).length
+  const c = countsOf(t.id)
   const ex = EXERCISES.filter((e) => !e.project && skills.some((s) => s.id === e.skill)).length
   return (
     <article className={cls}>
@@ -50,7 +51,10 @@ function TrackCard({ t, isDone, last }) {
       <span className="track-card-n">{skills.length}<small>課</small></span>
       <h2><a href={`#/track/${t.id}`}>{t.title}</a></h2>
       <p>{t.tagline}</p>
-      <p className="track-card-meta">{[labs && `${labs} 實驗室`, ex && `${ex} 程式題`, stations.length && `路線 ${stations.length} 站`, doneN && `已完成 ${doneN}`].filter(Boolean).join(' · ')}</p>
+      <p className="track-card-meta"><b>主線</b>{[c.stations && `路線 ${c.stations} 站`, c.weeks && `課綱 ${c.weeks} 週`].filter(Boolean).join(' · ')}</p>
+      {c.optional > 0 && <p className="track-card-meta"><b>選讀</b>其餘 {c.optional} 課</p>}
+      <p className="track-card-meta"><b>練習</b>{[c.labs && labLabel(c), ex && `${ex} 程式題`].filter(Boolean).join(' · ')}</p>
+      {doneN > 0 && <p className="track-card-meta">讀過 {doneN} 課</p>}
       <div className="track-card-actions">
         <a className="btn ghost small" href={`#/skill/${next.id}`}>{doneN ? '繼續' : '第一站'}：{next.label || next.title} →</a>
         <a className="btn ghost small" href={`#/track/${t.id}`}>路線首頁</a>

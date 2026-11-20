@@ -8,7 +8,7 @@
 | **地圖** | `src/content/body/dN-<domain>.js` 的 `map` | 每課的基底：叫得出名字、說得出要求、驗得出對錯（見下方「地圖層」） |
 | 重點卡 | `src/content/body/dN-<domain>.js` | 5 條 points、3 條 checklist、refs |
 | **深入** | `src/content/deep/<skill-id>.md` | 本檔主要規範的部分：一篇完整的課 |
-| 驗收 | `src/content/quizzes/<domain>.js`（3 題選擇題，見 `CONTRIBUTING-quizzes.md`）、`src/content/exercises/`（程式題，選配） | |
+| 驗收 | `src/content/quizzes/<domain>.js`（3 題選擇題，見 `CONTRIBUTING-quizzes.md`）、`src/content/exercises/`（程式題，選配）、`body/dN-<domain>.js` 的 `challenge`（進階驗收） | |
 
 地圖是每課的基底，讓讀者叫得出名字、說得出要求、驗得出對錯；重點卡是複習用的摘要；深入內容是選讀的細節。三者不矛盾、不重複整段文字。
 
@@ -30,6 +30,49 @@ map: {
 - `prompt` 是一段真的能用的描述：情境具體、用到 `names` 的名詞，不寫「請你」「幫我」這類客套。
 - `verify` 要可操作：指令、開發者工具的哪個分頁、哪個查詢、看到什麼代表錯了；適合時點出 AI 產生的程式常見的錯。
 - 範例：`body/d2-web.js` 的 `rest-design`。`npm run validate:content` 會檢查格式。
+
+## 進階驗收（`challenge`）
+
+每課都要有（`validate` 會擋），放在 `body/dN-*.js` 該課的物件裡（和 `map`、`points` 同一層）。課頁顯示在驗收區、程式題與選擇題之後，標題「進階驗收」；驗收條件的勾選只存在讀者的瀏覽器，不同步。
+
+```js
+challenge: {
+  task: '情境與任務（markdown，可以有站內連結 #/skill/…、#/lab/…）',
+  deliver: '交付物，一句（例如「三次操作各一張截圖與一句觀察」「一段 PR 評語」）',
+  check: ['驗收條件 1', '驗收條件 2'],   // 2–4 條，每條能判斷過或不過
+  twist: '需求變化（選填）：按了才展開，要讀者先預測驗收結果會怎麼變、為什麼',
+},
+```
+
+- 任務要用到站上存在的工具、實驗室或程式題；交付物是觀察、預測、解釋或取捨，不是能整段交給 AI 產生的東西。
+- 部分課的 `task` 或 `twist` 換成非醫療情境（庫存、票務、訂位、物流），要讀者說出哪些條件能沿用、哪些要跟業務確認。
+- `npm run validate:content` 檢查格式；設計情境的 `challenge` 格式相同。
+
+## 跨課作業（`src/content/assignments.js`）
+
+把幾堂課接成一次任務，頁面在 `#/assignments`（可依路線篩選）與 `#/assignment/<id>`，路線首頁有入口。
+
+```js
+{
+  id: 'vue-vite-upgrade', track: 'frontend', title: '…', summary: '一句',
+  lessons: ['npm-packages', 'vite-basics'],   // 存在的課 id，至少一個
+  stages: ['fe-deploy'],                      // 選填：實作路線階段 id
+  scenarios: ['env-config-choice'],           // 選填：設計情境 id
+  steps: [ { title: '…', do: '…（markdown）', deliver: '一句', check: ['…'] } ],   // check 1–4 條，勾選記在讀者的瀏覽器
+  twist: '…',                                 // 選填
+}
+```
+
+`npm run validate:content` 檢查課、階段、情境與站內連結都存在。
+
+寫法：
+
+- 每份 3–6 步。每一步的交付物是觀察、預測、取捨，或自己操作後才有的紀錄（錯誤訊息、截圖、diff、逐案例的對照表），不是能整份交給 AI 產生的文件。要預測的步驟，`check` 寫「預測在執行前寫下，和結果並排」。
+- `check` 每條都能判斷過或不過：寫數字、看得到的結果或紀錄的位置，不寫「理解」「合理」。
+- `do` 指名站上真的有的東西：課、情境、實驗室（`#/lab/<Name>`）、Playground 的固定情境或 `api.get` 覆寫的假 API 路由、實作路線階段的「串接驗收」、後端參考專案 `companion/clinic-api`。控制項的名稱照畫面上的文字寫。
+- 接到既有的實作路線階段時，`stages` 列出階段，`do` 直接引用該階段串接驗收的第幾步，不重寫一遍。
+- `twist` 是做完才展開的一個需求變化，要讀者先預測結果怎麼變，再決定改什麼。
+- 資料一律虛構，網域用 `example` 系列；牽涉金額、單價、版本時，要讀者註明來源與查詢日期，不在作業裡寫死。
 
 ## 深入內容（`deep/<skill-id>.md`）
 
@@ -58,6 +101,18 @@ map: {
 ### 支援的 markdown
 
 標題（`##`、`###`）、段落、清單（兩層）、表格、程式碼區塊、引用（`>`，顯示成提示框）、分隔線、**粗體**、`行內碼`、[連結](https://example.org)。不支援 HTML、圖片。
+
+### 停靠點（`:::stop`）
+
+每份深入內容都要有一個（`validate` 會擋），獨佔一行、從行首開始：
+
+```
+:::stop 讀到這裡可以先停：會做 X、Y。後面的 Z 在 <情況> 時再回來讀。
+```
+
+- 每課最多 1 個（`spa-containers`、`k8s-rbac-tenancy`、`k8s-networking` 最多 3 個，寫成「停靠點 N：交付物」，各自有完成條件）。放在「第一次讀到這裡就夠用」的位置，通常在運作原理與一個完整範例之後。
+- 不放在程式碼區塊、表格或清單中間。頁面顯示成停靠點橫幅，課的目錄列多一個「停靠點」連結跳到第一個。
+- `npm run validate:content` 檢查數量與位置。
 
 ### 可執行的程式碼區塊
 
@@ -90,7 +145,8 @@ print(Decimal('0.1') + Decimal('0.2'))
 2. 地圖與重點卡：`body/dN-*.js` 加同 id 的 `map`（見上方「地圖層」）、points（5 條，每條 `{ b, t }`）、checklist（3 條）、refs（只放確定存在的官方 https 連結，不確定就留空陣列）
 3. 深入：`deep/<id>.md`
 4. 選擇題：`quizzes/<domain>.js` 3 題
-5. 程式題（選配）：`exercises/` 加題；題型有 `sql`、`python`、`js`、`config`（設定檔：使用者內容成為 `source`／`lines`，用 JS 測試檢查）
+5. 程式題（選配）：`exercises/` 加題；題型有 `sql`、`python`、`js`、`config`（設定檔：使用者內容成為 `source`／`lines`，用 JS 測試檢查）、`html`、`css`、`vue`。交卷後結果區顯示「這題驗了什麼」：預設依題型（config：只檢查設定檔的文字，沒有啟動服務；sql：比對查詢結果與預期資料表；python、js：執行測試清單；html、css、vue：在沙箱裡照測試操作畫面並量測），題目可以用 `verifies: '…'`（字串）改寫成更精確的說明，例如設定題只檢查了哪幾個鍵
+6. 進階驗收：`body/dN-*.js` 的 `challenge`（見上方「進階驗收」）
 
 ## 交付前
 

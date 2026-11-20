@@ -224,3 +224,20 @@ watch 的來源是「只在這個路由時才有值」的字串：路由換到�
 **篩選放網址**：沙箱的文件網址是 `about:srcdoc`，`history.replaceState` 只能改 hash，所以題目把 hash 當成 query（和 `createWebHashHistory` 的網址相同，`#/sessions?date=…`），附上代替 `route.query` 的 `readQuery()` 與代替 `router.replace` 的 `replaceQuery()`。沙箱 iframe 的瀏覽紀錄和網站共用（實測在 iframe 裡改 hash，外殼的 `history.length` 跟著增加，iframe 移除後也不會減少），所以題目只用 replace，push 與上一頁的行為在上面的程式裡。測試打開帶條件的網址時第一個請求要用那組條件、選單跟著顯示；不合法的參數落回預設值，網址上不留 `date`、`doctor_id`；改條件後網址與請求一起變，選回全部醫師時網址拿掉 `doctor_id`；網址從外面改變並觸發 `hashchange` 時重新載入。
 
 下一階段從卡片上的「掛號」進到掛號表單。
+
+## 串接驗收
+
+**1. 重播回應亂序。** 在 Playground 的 Vue 模式選「掛號：四種狀態」，在 `createApp` 之前加一條假 API 路由，讓醫師 1 的回應比醫師 2 慢：
+
+```js
+api.get('/api/sessions', (req) => ({
+  delay: req.query.doctor_id === '1' ? 900 : 100,
+  body: [{ id: Number(req.query.doctor_id), doctor_id: Number(req.query.doctor_id), session_date: '2026-11-26', period: 'morning', capacity: 30, remaining: 5 }],
+}))
+```
+
+把範例改成有醫師選單、換選項時以 `fetch('/api/sessions?doctor_id=' + id)` 重新載入，從醫師 1 快速切到醫師 2。先預測最後畫面是哪一位醫師的診次。預期：沒有取消上一輪時，最後顯示醫師 1（晚到的舊回應蓋掉新的）；把這一階段「換條件時取消上一輪」的寫法搬進來之後顯示醫師 2，預覽下方的網路紀錄裡第一個請求標成「已取消」。
+
+**2. 接上參考專案，不帶醫師。** 照[登入](#/project/fe-login)串接驗收的接線，打開 `/sessions?date=<seed 印出的日期>`（不帶 `doctor_id`），先預測畫面是四種狀態的哪一種。預期：參考專案的 `doctor_id` 是必填，回 422，畫面是 error、沒有「重試」（4xx 重送結果一樣）；站上的假 API 對同一個網址回全部醫師的診次。兩邊的契約不一致，寫下你的決定：前端一定帶醫師，或請後端把 `doctor_id` 改成選填。
+
+**3. 網址就是狀態。** 把帶 `date` 與 `doctor_id` 的網址貼到新分頁、按重新整理、從別頁按上一頁回來。預期：三種情況都是同一份清單，第一個請求就帶網址上的條件。下一階段從卡片的「掛號」進到[掛號表單](#/project/fe-booking)，回上一頁時條件還在。

@@ -182,6 +182,8 @@ except TypeError as e:
     print("TypeError：", e)
 ```
 
+:::stop 讀到這裡可以先停：會用型別提示與 pydantic 在邊界驗資料、避開可變預設參數。後面的模組載入與例外轉換，在拆模組或設計錯誤回應時再回來讀。
+
 ### 模組只執行一次、`__name__` 決定要不要跑
 
 ```python run

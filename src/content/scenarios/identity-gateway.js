@@ -56,6 +56,21 @@ export default {
     { id: 'agent', situation: '要讓 agent 代表工程師呼叫部署與工單 API，資安要求 agent 只能唯讀、要能單獨撤銷，且不影響本人的 CLI 與網頁登入。', options: ['diy', 'shared-idp', 'gateway'], answer: 'gateway',
       explain: 'agent 在閘道上是一個獨立的用戶端：用 Device Code 讓本人在瀏覽器同意，拿到 scope 只有唯讀、自己一個 refresh 家族的 token。撤銷這個家族只影響 agent。各服務自己發 key 的做法，agent 只能拿本人那把，權限一樣大、撤了本人也斷。' },
   ],
+  switchIf: [
+    { when: '只有一個內部網頁工具，沒有 CLI 與排程呼叫它', then: '改用 `shared-idp`：網頁直接接 IdP 的授權碼流程就夠，閘道沒有東西可以統一。' },
+    { when: '兩週的離線實驗環境，沒有 IdP、資料全是假的，結束就拆', then: '改用 `diy`：自己發幾把金鑰最快，結束時連同環境一起刪掉。' },
+  ],
+  alternative: { option: 'shared-idp', holdsWhen: '服務只有少數幾個、短期內不會新增，而且每個服務都已經做好授權碼與 Device Code 流程時。離職撤銷仍要逐一確認每個服務的 session 與 refresh token。' },
+  challenge: {
+    task: 'IdP 停用帳號之後，各用戶端手上的 token 不會同一秒失效。設想 alice 10:00 被停用，當時她有桌機 CLI、跳板機 CLI、agent 與網頁四個工作階段。先在本頁模擬器選「集中式身分閘道」，按「alice 離職（IdP 停用）」，看每個工作階段的狀態，再用「用戶端」切換看各自的 token 壽命。然後畫一條 10:00 到 11:00 的時間線，標出每個工作階段最晚什麼時候失去存取、依據是哪一種 token 的壽命。',
+    deliver: '一條時間線：四個工作階段各自失效的時間點與依據',
+    check: [
+      '每個時間點都寫出依據的 token 種類與壽命，壽命數字來自模擬器',
+      '標出最晚失效的那一個，並寫出一個縮短它的做法（縮短 access token 壽命、閘道端的撤銷清單、高風險操作改用 introspection）',
+      '切到「各服務自己發金鑰」再按一次，指出哪個工作階段在時間線上沒有終點',
+    ],
+    twist: '資安要求停用後 5 分鐘內全部失效。先預測哪個工作階段最難做到、代價是什麼（例如每個請求都回閘道查），再寫下改法。',
+  },
   implementation: [
     { title: '閘道上的用戶端登記：每種用戶端對應一種流程（示意格式）', lang: 'yaml', code: `clients:
   atlas-cli:                      # 有瀏覽器的桌機 CLI

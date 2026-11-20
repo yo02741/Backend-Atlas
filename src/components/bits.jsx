@@ -3,6 +3,8 @@ import { LEVELS } from '../content/roadmap.js'
 import { loadLab, LAB_META } from '../labs/index.js'
 import { LabVisibility } from '../labs/ui.jsx'
 import { loadScenarioLab } from '../labs/scenarios/index.js'
+import { LAB_TASKS } from '../labs/tasks.js'
+import { useLocalNote } from '../localStore.js'
 
 export function Level({ level }) {
   return (
@@ -27,7 +29,7 @@ export function ProgressRing({ value, total, color }) {
   const r = 12, c = 2 * Math.PI * r
   const pct = total ? value / total : 0
   return (
-    <svg className="progress-ring" viewBox="0 0 30 30" role="img" aria-label={`完成 ${value} / ${total}`}
+    <svg className="progress-ring" viewBox="0 0 30 30" role="img" aria-label={`讀過 ${value} / ${total}`}
          style={{ '--tint': color }}>
       <circle className="track" cx="15" cy="15" r={r} />
       <circle className="bar" cx="15" cy="15" r={r}
@@ -37,16 +39,47 @@ export function ProgressRing({ value, total, color }) {
   )
 }
 
-/* 嵌入實驗室：懶載入 chunk，失敗時顯示訊息而非整頁炸掉 */
+/* 嵌入實驗室：懶載入 chunk，失敗時顯示訊息而非整頁炸掉。一般實驗室有觀察任務（src/labs/tasks.js）時顯示在上方 */
 export function LabEmbed({ name, scenario = false }) {
   const Comp = scenario ? loadScenarioLab(name) : loadLab(name)
   if (!Comp) return <p className="status-msg">實驗室 {name} 尚未上線。</p>
+  const task = scenario ? null : LAB_TASKS[name]
   return (
+    <>
+    {task && <LabTask name={name} task={task} />}
     <ErrorBoundary name={name}>
       <Suspense fallback={<div className="lab" style={{ minHeight: 240 }}><p className="status-msg">載入實驗室…</p></div>}>
         <LabVisibility><Comp /></LabVisibility>
       </Suspense>
     </ErrorBoundary>
+    </>
+  )
+}
+
+/* 觀察任務：先猜（寫下來，存在這個瀏覽器）→ 操作 → 看哪個觀察推翻猜測；preset 是帶人時共用的固定參數 */
+export function LabTask({ name, task }) {
+  const [guess, setGuess] = useLocalNote(`lab:${name}`)
+  return (
+    <section className="lab-task" aria-label="觀察任務">
+      <ol className="lab-task-steps">
+        <li>
+          <b className="lab-task-k">先猜</b>
+          <div>
+            <p>{task.predict}</p>
+            <textarea className="lab-task-guess" rows={2} aria-label="我的猜測" placeholder="我的猜測" value={guess} onChange={(e) => setGuess(e.target.value)} />
+          </div>
+        </li>
+        <li>
+          <b className="lab-task-k">操作</b>
+          <ol className="lab-task-ops">{task.steps.map((x, i) => <li key={i}>{x}</li>)}</ol>
+        </li>
+        <li>
+          <b className="lab-task-k">看哪個觀察推翻猜測</b>
+          <p>{task.observe}</p>
+        </li>
+      </ol>
+      {task.preset && <p className="lab-task-preset"><span className="pill">固定參數</span>{task.preset}</p>}
+    </section>
   )
 }
 

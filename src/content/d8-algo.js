@@ -18,6 +18,7 @@ export default {
       example: { primary: 'Python 內建結構 + SQL 查詢計畫', alts: [] },
       keywords: ['SQL', 'Python'],
       lab: 'BigOLab',
+      reviewed: '2026-11',
     },
     {
       id: 'data-structures',
@@ -28,6 +29,7 @@ export default {
       example: { primary: 'Python collections + Redis 資料型別', alts: [] },
       keywords: ['Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'rate-limiting',
@@ -48,6 +50,7 @@ export default {
       example: { primary: 'LRU（functools.lru_cache、Redis allkeys-lru）', alts: ['LFU', 'FIFO', 'TTL-only'] },
       keywords: ['Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'concurrency-bugs',
@@ -58,6 +61,7 @@ export default {
       example: { primary: 'asyncio.Lock + PostgreSQL 唯一約束與條件更新', alts: ['threading.Lock', 'SELECT … FOR UPDATE', 'Redis SET NX'] },
       keywords: ['Python', 'PostgreSQL'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'queues-workers',
@@ -68,6 +72,7 @@ export default {
       example: { primary: 'Redis + RQ / Celery / arq', alts: ['RabbitMQ', 'Kafka（事件流）', '雲端佇列（SQS、Pub/Sub）'] },
       keywords: ['Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'event-driven',
@@ -88,6 +93,7 @@ export default {
       example: { primary: 'Kubernetes CronJob + 執行紀錄表', alts: ['cron + PostgreSQL advisory lock', 'systemd timer', 'Celery beat / APScheduler'] },
       keywords: ['Python', 'PostgreSQL'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'load-testing',
@@ -108,6 +114,7 @@ export default {
       example: { primary: '多 API 實例 + 一主多讀 PostgreSQL + Redis', alts: [] },
       keywords: ['nginx', 'PostgreSQL', 'Docker'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'distributed-basics',

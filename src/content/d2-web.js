@@ -28,6 +28,7 @@ export default {
       example: { primary: 'HTTP keep-alive + 資料庫連線池', alts: ['httpx.Client 連線池', 'PgBouncer'] },
       keywords: ['PostgreSQL'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'rest-design',
@@ -58,6 +59,7 @@ export default {
       example: { primary: 'httpx 設 timeout + tenacity 重試', alts: ['service mesh 層的重試 / 斷路', '雲端 API gateway'] },
       keywords: ['Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'openapi',
@@ -68,6 +70,7 @@ export default {
       example: { primary: 'OpenAPI 3.1（FastAPI 自動產生）', alts: ['GraphQL schema', 'Protobuf'] },
       keywords: ['Python'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'cors-cookies',
@@ -78,7 +81,7 @@ export default {
       example: { primary: 'FastAPI CORSMiddleware', alts: ['nginx add_header', 'API gateway'] },
       keywords: ['nginx'],
       lab: null,
-      reviewed: '2026-10',
+      reviewed: '2026-11',
     },
     {
       id: 'http-caching',
@@ -99,6 +102,7 @@ export default {
       example: { primary: "Let's Encrypt + nginx TLS 終結", alts: ['雲端負載平衡器終結 TLS', 'Cloudflare'] },
       keywords: ['nginx'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'http2-http3',
@@ -109,7 +113,7 @@ export default {
       example: { primary: 'nginx 對外 HTTP/2、對後端 HTTP/1.1', alts: ['HTTP/3（QUIC）', 'gRPC over HTTP/2'] },
       keywords: ['nginx'],
       lab: null,
-      reviewed: '2026-10',
+      reviewed: '2026-11',
     },
     {
       id: 'realtime-choice',
@@ -120,6 +124,7 @@ export default {
       example: { primary: 'SSE（伺服器單向推送）', alts: ['WebSocket', '長輪詢', '短輪詢'] },
       keywords: ['nginx'],
       lab: null,
+      reviewed: '2026-11',
     },
     {
       id: 'beyond-rest',

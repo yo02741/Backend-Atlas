@@ -202,6 +202,8 @@ function search(q) {
 
 搜尋框這段用清理函式做 debounce：每打一個字觸發一次 callback，下一次觸發前清掉上一次的計時器，只有停下來 300 毫秒的那一次會送出。VueUse 的 `watchDebounced` 把同樣的事包成一個函式。
 
+:::stop 讀到這裡可以先停：分得出 `watch`、`watchEffect` 與 `computed` 的用途，會用 `onWatcherCleanup` 取消上一次的請求。後面的 React 對照與錯誤訊息表，在讀 `useEffect` 的依賴陣列時再回來讀。
+
 ## React 對照
 
 | Vue 3.5 | React 19 |

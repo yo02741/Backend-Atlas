@@ -155,6 +155,8 @@ Content-Type: application/problem+json
 
 `type`、`title`、`status`、`detail`、`instance` 是標準欄位，`errors` 是擴充欄位（RFC 允許自訂）。`type` 是錯誤種類的識別碼，給程式判斷用；`title`、`detail` 給人看。錯誤碼怎麼分層、要不要對外暴露內部訊息，見 [錯誤設計](#/skill/error-design)。
 
+:::stop 讀到這裡可以先停：會設計資源路徑、選方法與狀態碼、統一錯誤格式。後面的列表參數與狀態碼判斷程式，在設計列表 API 或寫端點測試時再回來讀。
+
 ## 列表：過濾、排序、欄位選擇
 
 ```http

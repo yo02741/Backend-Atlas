@@ -250,6 +250,8 @@ SELECT id, kind, status, attempts, last_error FROM jobs ORDER BY id;
 
 成功時把 `status` 設成 `done`（或直接刪掉）。這張表會一直有更新與刪除，要注意 autovacuum 跟不跟得上，見 [資料庫維運](#/skill/db-operations)。
 
+:::stop 讀到這裡可以先停：會寫冪等的消費者、在 commit 之後才入列、設退避與死信，並用 `FOR UPDATE SKIP LOCKED` 做 PostgreSQL 佇列。後面的監控、分流與選工具，在佇列開始積壓或要決定用哪一套 broker 時再回來讀。
+
 ## 監控、容量與分流
 
 佇列把「現在做不完的」延後，但不會讓工作消失。要看的指標：
@@ -273,6 +275,8 @@ SELECT id, kind, status, attempts, last_error FROM jobs ORDER BY id;
 | Kafka | 事件流：多個消費者各自讀同一串事件、需要重播 | 不是任務佇列：以 partition 為單位依序消費、提交的是 offset，一筆一直失敗的訊息會卡住整個 partition，重試與死信要自己設計 |
 
 Kafka 的強項是「事件被保留下來，新的消費者可以從頭讀」與「同一個 partition 內有順序」。單純要「把這件事丟到背景去做」時，Redis 或 RabbitMQ 簡單得多。
+
+上表寫的是 Kafka 傳統的 consumer group。Kafka 4.2 起把 share group（KIP-932，「Queues for Kafka」）列為可用於正式環境：同一個 partition 的訊息可以分給多個消費者、逐筆確認，超過投遞次數上限就不再重投，較新的版本再加上死信 topic（KIP-1191）。已經有 Kafka、又想用它跑背景任務時可以評估；各項功能在你用的版本是否可用，以 Apache Kafka 該版本的升級說明為準（2026 年 11 月核對到 4.4.0）。
 
 ## 常見錯誤與錯誤訊息
 

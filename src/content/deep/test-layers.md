@@ -83,6 +83,8 @@ jsdom 與 happy-dom 用 JavaScript 實作 DOM 與一部分瀏覽器 API，讓元
 - `globals` 預設是 `false`：`describe`、`it`、`expect` 要自己 import。Testing Library 的自動清理靠全域的 `afterEach`，沒開 `globals` 就要自己呼叫 `cleanup()`，見 [元件測試的寫法](#/skill/component-tests)。
 - `vitest` 不加參數，在終端機裡預設進入 watch 模式、改檔就重跑；CI 上（`CI` 環境變數）預設跑一次就結束。Vitest 5.1 另外會偵測自己是不是被 AI 寫程式工具執行（看 `CLAUDECODE`、`CURSOR_AGENT`、`AI_AGENT` 這類環境變數），是的話不進 watch 模式、改用精簡的輸出。腳本裡明確寫 `vitest run`，不必依賴這些偵測。
 
+:::stop 讀到這裡可以先停：會替一條驗收條件選單元、元件或 E2E，說得出 jsdom 測不到什麼。後面的 Vitest、Browser Mode 與 E2E 設定，在要替專案建立測試設定時再回來讀。
+
 ## 實際程式碼
 
 ### Vitest 設定：沿用 Vite 的設定，排除 E2E

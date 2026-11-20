@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, useReducedMotion, useWidth } from './ui.jsx'
+import { Lab, LabControls, LabGrid, LabStage, LabExplain, Seg, Toggle, Slider, Code, Callout, useReducedMotion, useWidth, Measure } from './ui.jsx'
 
 /* ============================================================
    同步 / 多執行緒 / async：I/O 等待時 CPU 在幹嘛
@@ -145,9 +145,9 @@ export default function AsyncLab() {
       <LabGrid>
         <div className="lab-stack">
           <div className="asy-stats" aria-live="polite">
-            <div><span>總耗時</span><b key={sim.total} className="asy-num">{sim.total}<i>ms</i></b></div>
+            <div><span>總耗時</span><b key={sim.total} className="asy-num"><Measure kind="set" value={sim.total} unit="ms" /></b></div>
             <div><span>相對同步</span><b className="asy-num">{speedup.toFixed(1)}<i>× 快</i></b></div>
-            <div><span>CPU 利用率</span><b className="asy-num">{util}<i>%</i></b></div>
+            <div><span>CPU 利用率</span><b className="asy-num"><Measure kind="set" value={util} unit="%" /></b></div>
             <div><span>同時握住的請求</span><b className="asy-num">{conc}<i>個</i></b></div>
           </div>
           <LabStage label="請求排程甘特圖"
@@ -169,9 +169,9 @@ export default function AsyncLab() {
       <style>{`
         .asy-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
         .asy-stats > div { border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface-1); padding: 8px 12px; display: grid; gap: 2px; }
-        .asy-stats span { font-size: 0.7rem; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; }
+        .asy-stats > div > span { font-size: 0.7rem; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; }
         .asy-stats b { font-family: var(--mono); font-size: 1.25rem; color: var(--ink-1); font-variant-numeric: tabular-nums; line-height: 1.2; }
-        .asy-stats b i { font-style: normal; font-size: 0.72rem; color: var(--ink-3); margin-left: 4px; font-family: var(--sans); }
+        .asy-stats b i, .asy-stats b small { font-style: normal; font-size: 0.72rem; color: var(--ink-3); margin-left: 4px; font-family: var(--sans); }
         .asy-stats > div:first-child b { color: var(--lab-accent); }
         .asy-num { animation: asy-bump 0.35s ease-out; }
         @keyframes asy-bump { from { opacity: 0.3; transform: translateY(3px); } to { opacity: 1; transform: none; } }

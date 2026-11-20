@@ -220,6 +220,8 @@ Service 只把流量送給 **ready** 的 Pod，所以 ② 接上了、但 Pod �
 
 同一個 namespace 裡用 `booking-api` 就連得到；跨 namespace 要寫 `booking-api.booking`，完整名稱是 `booking-api.booking.svc.cluster.local`（`cluster.local` 是預設的叢集網域）。
 
+:::stop 讀到這裡可以先停：會寫 Deployment 與 Service、接好 selector、label 與 targetPort，並算出滾動更新期間的 Pod 數。後面的 Ingress、namespace 與套用後的確認，在要讓叢集外連進來時再回來讀。
+
 ## Ingress：把外部流量導到 Service
 
 ```yaml

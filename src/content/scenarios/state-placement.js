@@ -64,6 +64,22 @@ export default {
     { id: 'form-section', situation: '`FormSection` 元件包住十幾個輸入元件，整段要一起停用、一起決定尺寸；同一頁有三個 FormSection，各自獨立。', options: ['local', 'provide', 'pinia'], answer: 'provide',
       explain: '每個 FormSection `provide` 自己那一份設定，裡面的輸入元件 `inject` 最近的提供者，三段互不干擾。Pinia 只有一個實例，三段要共用一份，或自己用 id 分開；用 props 則頁面要對每個輸入元件重複寫 `:disabled` 與 `:size`。' },
   ],
+  switchIf: [
+    { when: '篩選條件只在一個 Dialog 裡用，關掉就丟，沒有人會分享', then: '放 `local`：元件自己的 `ref` 就夠，不必寫進網址。' },
+    { when: '狀態要讓路由守衛與 API 攔截器讀到（登入的醫師）', then: '放 `pinia`：元件外的程式也拿得到同一個實例；登出時一併重設其他 store。' },
+    { when: '同一頁有三個獨立區塊，各自要讓裡面十幾個輸入元件一起停用', then: '用 `provide`：每個區塊提供自己的值，互不影響，中間層不必轉傳。' },
+  ],
+  alternative: { option: 'pinia', holdsWhen: '篩選條件不需要分享網址或存書籤，只要在同一個工作階段的幾個頁面之間保留時。重新整理會丟掉，要接受或另外存 sessionStorage。' },
+  challenge: {
+    task: '把三件事當成可以重播的事件：重新整理、網址貼給同事、登出換李醫師登入。先為四種狀態（科別、篩選條件、登入的醫師、掛號表單草稿）各寫下你選的位置，並預測每個事件後畫面上的值。再到本頁模擬器依你的選擇切換「狀態」與「放在」，按這三個事件的按鈕，對照預測。',
+    deliver: '一張 4 × 3 的預測與結果表，每格標命中或沒命中，沒命中的寫一句原因',
+    check: [
+      '預測在按按鈕之前寫好',
+      '「掛號表單草稿」在換人登入後是空白，並寫出是哪一段程式清掉的',
+      '在你的選擇下，「個資或身分進網址」是「否」',
+    ],
+    twist: '櫃台要求重新整理後草稿不要不見（誤按 F5、瀏覽器當掉）。先預測草稿要改放哪裡、「登出換人」那一格會不會因此失敗，以及要加什麼條件兩個需求才都能滿足。',
+  },
   implementation: [
     { title: '篩選條件與科別放網址：解析、預設值、寫回（composables/useListQuery.ts）', lang: 'ts', code: `import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

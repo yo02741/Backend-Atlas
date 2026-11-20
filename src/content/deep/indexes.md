@@ -143,6 +143,8 @@ EXPLAIN ANALYZE SELECT id FROM big_orders WHERE id BETWEEN 1 AND 100;
 - 最後一句是 Index Only Scan，但 `Heap Fetches: 100` 表示每一列仍然回表確認了可見性。資料表要經過 `VACUUM` 把頁面標成 all-visible，Index Only Scan 才會不回表。本站的 Playground 會把整個區塊當成一個交易執行，`VACUUM` 放在區塊裡會報 `VACUUM cannot run inside a transaction block`；在真的資料庫上單獨執行 `VACUUM big_orders;` 之後再看，Heap Fetches 會變成 0。
 - 時間數字每次跑都不一樣，要看的是數量級和節點種類。
 
+:::stop 讀到這裡可以先停：會讀 EXPLAIN ANALYZE 的節點、估計列數與 Buffers，也知道小表不走索引是正常的。後面的複合索引、選擇性與寫入成本，在查詢有多個條件或寫入變慢時再回來讀。
+
 ## 複合索引：欄位順序決定能服務哪些查詢
 
 複合索引 `(user_id, created_at)` 是先依 `user_id` 排序、`user_id` 相同時再依 `created_at` 排序，像電話簿先依姓、再依名。所以：

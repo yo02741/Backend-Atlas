@@ -121,6 +121,8 @@ Failed to process request due to 'clinic/api:release-1.4.0' configured as immuta
 
 `release-*` 適合設成不可變。每個 commit 的 SHA tag 不要設：不可變的 artifact 刪不掉，保留規則也清不掉，磁碟會一直長。
 
+:::stop 讀到這裡可以先停：知道 registry 存的是 manifest 與 layer，會用 Harbor 的專案、角色與機器人帳號分權限，設好推送後掃描。後面的清理、外部映像、CI 推送、叢集拉取與斷網搬運，在磁碟快滿、Docker Hub 限流或要準備斷網叢集時再回來讀。
+
 ## 清理：保留規則、垃圾回收與配額
 
 ### 保留規則

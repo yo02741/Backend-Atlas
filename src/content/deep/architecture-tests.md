@@ -114,13 +114,15 @@ print("architecture test:", "FAILED" if violations else "passed")
 
 把它包成 pytest 測試只要最後一行改成 `assert not violations`，CI 就會在違規時失敗，並印出哪個模組 import 了什麼。
 
+:::stop 讀到這裡可以先停：會用 `ast` 收集 import，依分層與禁用規則找出違規，並把它包成會紅燈的測試。後面的 import-linter 設定、例外處理與 C4 架構圖，在專案要正式導入規則或要畫架構圖時再回來讀。
+
 ## 用現成工具：import-linter
 
 自己寫的檢查器適合理解原理；專案裡用現成工具比較省事。Python 的 **import-linter** 讀設定檔裡的 contract，用 `lint-imports` 指令檢查。它的幾個特點：
 
 - contract 類型包含 `layers`、`forbidden`、`independence` 等，對應上一節的三類規則。
 - 它會建出整個套件的 import 圖，**間接的依賴鏈**也會檢查：repository 透過 `app.common.x` 再 import service，同樣會被回報，並列出整條鏈。
-- 要檢查第三方套件（例如禁止 import `fastapi`）時，需要在設定裡打開 `include_external_packages`。
+- 要檢查第三方套件（例如禁止 import `fastapi`）時，需要在設定裡打開 `include_external_packages`；import-linter 2.x 沒打開時會直接報設定錯誤。
 
 設定示意（寫在 `pyproject.toml`；欄位以所用版本的文件為準，不能在瀏覽器執行）：
 
@@ -230,7 +232,7 @@ workspace "掛號系統" {
 | 現象 | 原因 | 處理 |
 |---|---|---|
 | `lint-imports` 回報 contract BROKEN，列出一條 `app.repositories.x -> app.common.y -> app.services.z` 的鏈 | 間接依賴：透過共用模組繞回上層 | 找出鏈上不該存在的那一段；常見是共用模組 import 了某一層的東西 |
-| forbidden contract 列了 `fastapi`，`lint-imports` 報設定錯誤或規則沒有生效（行為依版本而定） | 沒有打開檢查外部套件的設定 | 頂層設定 `include_external_packages = true` |
+| forbidden contract 列了 `fastapi`，`lint-imports` 報 `The top level configuration must have include_external_packages=True when there are external forbidden modules.`（import-linter 2.17 的訊息） | 沒有打開檢查外部套件的設定 | 頂層設定 `include_external_packages = true` |
 | 自寫檢查器把 `app.servicesx` 當成 `app.services` | 只用 `startswith(prefix)` | 改成 `== prefix` 或 `startswith(prefix + ".")` |
 | 檢查器漏掉 `from . import repo` | 相對 import 的 `module` 可能是 `None`，`level` 大於 0 | 依照檔案所在套件換算成絕對名稱 |
 | 架構測試全綠，但執行時還是出現循環 import | 依賴藏在 `importlib.import_module` 這類動態載入 | 用 lint 禁止動態 import，或把它限制在組裝層 |

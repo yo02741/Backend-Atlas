@@ -122,6 +122,8 @@ Chrome 團隊在 npm 上發布的 `modern-web-guidance`（1.0.1，2026-11，Apac
 - **MDN**：功能頁上方的 Baseline 標示（例如「Baseline Widely available」或「Limited availability」），頁尾的 Browser compatibility 表列出每個瀏覽器從哪一版開始支援、有哪些注意事項。表的資料來自 @mdn/browser-compat-data。
 - **Can I use**：一個功能一張表，橫軸是瀏覽器、縱向是版本。格子的狀態對應它的資料代碼：支援（y）、不支援（n）、部分支援（a）、要加前綴（x）、預設停用要手動開啟（d）、未知（u）；格子上的編號對到下方的 Notes。部分支援一定要讀 Notes，常見的是「只支援某些值」或「行為有 bug」。上方的使用比例是全球估計值，院內系統要看自己的使用者統計。
 
+:::stop 讀到這裡可以先停：會分辨語法轉換與 polyfill，讀得懂 Baseline 的狀態與日期。後面的 Vite 設定、功能偵測與支援範圍的寫法，在要替專案定最低瀏覽器版本時再回來讀。
+
 ## 實際程式
 
 ### 依支援範圍設定 Vite

@@ -292,6 +292,8 @@ for name, conf in [("原本的設定", ORIGINAL), ("修正後", FIXED)]:
 
 原本的設定每次開頁都是 1.1 MB 左右；修正後第二次開頁只剩三個條件請求、沒有 body。部署 v2 之後，`index.html` 的 ETag 變了，拿到新內容，引用的 `index-a1b2c3d4.js` 是新網址所以下載，`vendor` 與 CSS 的檔名沒變，直接用快取。`/patients/123` 那一列顯示內部轉址後實際送出的是 `/index.html`。
 
+:::stop 停靠點 1：只送靜態檔的前端映像。完成條件：`curl -sI` 打 `/patients/123` 與 `/assets/<檔名>` 分別得到 `no-cache` 與 `immutable`，`/assets/not-exist.js` 回 404，每個回應都帶 `X-Content-Type-Options`。換環境就要重建映像時，再往下讀執行期設定。
+
 ## 建置時設定與執行期設定
 
 前端程式裡常見這種寫法：
@@ -383,6 +385,8 @@ location = /config.js {
 | 適合 | 值比較多、要整段 JS | 只有幾個值，想在啟動時就擋下漏設定 |
 
 `config.js` 是公開檔案，任何打開網頁的人都讀得到，它跟 bundle 一樣不能放秘密：資料庫密碼、API 金鑰、OAuth 的 client secret 都不行。前端需要呼叫的外部服務，由後端代為呼叫，秘密留在後端，見 [秘密管理](#/skill/secrets)。
+
+:::stop 停靠點 2：同一個映像跑兩個環境。完成條件：兩個環境的映像 digest 相同、`/config.js` 內容不同，`grep` `dist/` 找不到任何一個環境的網址。要把 `/api` 搬上 Kubernetes 時，再往下讀兩條路。
 
 ## 搬上 Kubernetes：兩條路
 
@@ -730,6 +734,8 @@ for title, rules, api_location in scenarios:
 ```
 
 第二組是沿用原本 `location /api` 的結果：`/api-docs/` 被送到 Flask、回 404，同一個請求在第一組與第三組都回到前端。第四組是對一個路由本來就有 `/api` 的後端多做了改寫，每個 API 都 404。
+
+:::stop 停靠點 3：`/api` 轉到後端。完成條件：`/api/healthz` 由後端回應、`/api-docs/` 回到前端，直接連後端的那一層閒置逾時比後端的 keep-alive 短。後面的子路徑部署、健康檢查與 chunk 404，在部署到子路徑或滾動更新後出現 404 時再回來讀。
 
 ## 其他實務
 

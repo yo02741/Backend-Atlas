@@ -103,6 +103,8 @@ import Chart from 'chart.js/auto'
 
 只有某個按鈕按下才需要的大元件（例如富文字編輯器），可以用 `defineAsyncComponent(() => import('./RichEditor.vue'))`，在元件層級再切一次。
 
+:::stop 讀到這裡可以先停：會用路由懶載入把頁面移出首頁，說得出帶 hash 的檔名為什麼能長效快取。後面的 vendor 切法、建置報表與 hash 模擬，在首頁的 chunk 仍然太大或要調整快取時再回來讀。
+
 ### 切出 vendor：Vite 8 與 Vite 6
 
 ```js

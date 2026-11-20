@@ -56,6 +56,21 @@ export default {
     { id: 'cron', situation: '排程 agent 每晚彙整工單與資料庫統計，沒有任何使用者在場。', options: ['gateway', 'exchange'], answer: 'gateway',
       explain: '沒有使用者，「下游依使用者判斷」的理由就不存在：Token Exchange 換出來的也只是這個服務自己的身分，多一次往返換不到額外資訊。排程用 Client Credentials 以服務身分登入 gateway，gateway 依政策給它唯讀工具、稽核記成服務身分。不要借某位工程師的帳號跑：那個人離職，排程就壞。' },
   ],
+  switchIf: [
+    { when: '下游都不區分使用者，只要確認「是公司的人」', then: '改用 `gateway`：gateway 注入自己的服務憑證就夠，不必每個下游都接 Token Exchange。' },
+    { when: '五人小團隊，只有一個唯讀的公開文件搜尋', then: '改用 `direct`：沒有權限差異要保護，gateway 是多出來的元件。' },
+  ],
+  alternative: { option: 'gateway', holdsWhen: '下游的權限不依使用者區分（或區分只在 gateway 的群組政策做就夠），而且資安接受下游的 log 只記到 gateway、使用者身分只在 gateway 的稽核裡時。' },
+  challenge: {
+    task: '撤銷權限要能只撤一個工具。設想工單 MCP server 的 `close_ticket` 會誤關工單，要立刻停掉，但 `list_tickets`、資料庫查詢與文件搜尋都要照常能用。先在本頁模擬器用三種做法各按一次「工具描述被改」，記下每種做法停掉的範圍。然後寫出在 gateway 上只停用 `close_ticket` 的設定與驗收步驟：用哪個身分、呼叫哪個工具、預期收到什麼。',
+    deliver: '三種做法停掉範圍的對照，以及一份撤銷單一工具的驗收清單（至少四個呼叫與預期結果）',
+    check: [
+      '驗收清單裡 `close_ticket` 的呼叫預期被拒，並寫出 agent 收到的錯誤',
+      '同一位使用者的 `list_tickets` 與另一個 server 的工具預期成功',
+      '寫出「各自直連」要達到同樣效果得改哪些地方',
+    ],
+    twist: '只對客服部停用 `close_ticket`，工程部照常。先預測「MCP Gateway」與「Gateway + Token Exchange」各要改哪一層（gateway 政策、授權伺服器的 scope、工單系統本身），再寫下來。',
+  },
   implementation: [
     { title: 'gateway 的上架登記與政策（示意格式，不是特定產品的設定）', lang: 'yaml', code: `servers:
   tickets:

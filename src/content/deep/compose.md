@@ -204,6 +204,8 @@ for name, healthy in [("depends_on: [db]", False), ("condition: service_healthy"
     print("\n".join("  " + line for line in start(ready_after=4, wait_for_healthy=healthy)))
 ```
 
+:::stop 讀到這裡可以先停：寫得出 api 加資料庫的 compose，服務之間用服務名連線、資料放 volume、用 healthcheck 等資料庫就緒。後面的 `.env`、profiles、常用指令與正式環境的差異，在要分環境或加選用的服務時再回來讀。
+
 ## 環境變數與 `.env`
 
 compose 裡跟環境變數有關的東西有三種，最常混淆的是第一種：

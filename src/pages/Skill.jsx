@@ -4,7 +4,9 @@ import { findTrack } from '../content/tracks.js'
 import { withTrack } from '../components/TrackFilter.jsx'
 import { readSkillBody } from '../content/skillBody.js'
 import { readSkillDeep, preloadSkillDeep, hasDeep } from '../content/skillDeep.js'
-import Markdown from '../components/Markdown.jsx'
+import Markdown, { countStops } from '../components/Markdown.jsx'
+import Challenge from '../components/Challenge.jsx'
+import { WEEK_OF } from '../content/curriculum-weeks.js'
 import { playgroundHref, runLangOf } from '../playgroundLink.js'
 import { useProgress } from '../progress.js'
 import { Level, DomainPill, LabEmbed, labTitle } from '../components/bits.jsx'
@@ -35,6 +37,9 @@ export default function Skill({ id }) {
   const crossTrack = relatedOf(s.id)
   const path = PATHS[d.track] || []
   const station = path.findIndex((p) => p.skill === s.id)
+  const week = WEEK_OF[s.id]
+  const canExplain = body.checklist.length > 0 && checkedN === body.checklist.length
+  const quizPassed = assess.quiz && progress.quizStatus(s.id) === 'pass'
 
   return (
     <article className="lesson fade-swap" style={{ '--tint': color }}>
@@ -49,7 +54,8 @@ export default function Skill({ id }) {
           <div className="lesson-meta">
             <Level level={s.level} />
             <DomainPill domain={d} />
-            {station >= 0 && <a href={`#/track/${t.id}`} className="pill" title={`${t.title}學習路線`}>學習路線 第 {station + 1} / {path.length} 站</a>}
+            {station >= 0 && <a href={`#/track/${t.id}`} className="pill" title={`${t.title}學習路線`}>學習路線第 {station + 1}／{path.length} 站</a>}
+            {week && <a href={withTrack('curriculum', d.track, { week })} className="pill" title="到課綱的這一週">課綱第 {week} 週</a>}
             {s.lab && <a href="#lab" className="pill tint" style={{ '--tint': color }}>互動實驗室</a>}
             {assess.total > 0 && <a href="#assess" className={`pill${assess.complete ? ' assess-ok' : ''}`}>{assess.complete ? '✓ 驗收通過' : `驗收 ${assess.passed}/${assess.total}`}</a>}
             {s.keywords.map((k) => <a key={k} href={withTrack('roadmap', d.track, { kw: k })} className="pill mono">{k}</a>)}
@@ -70,13 +76,19 @@ export default function Skill({ id }) {
           {s.lab && <a href="#lab" className="lab-link">▶ 實驗室</a>}
           <a href="#points">重點（{body.points.length}）</a>
           {hasDeep(s.id) && <a href="#deep">深入</a>}
+          {hasDeep(s.id) && <React.Suspense fallback={null}><StopLink id={s.id} /></React.Suspense>}
           {assess.total > 0 && <a href="#assess">驗收（{assess.passed}/{assess.total}）</a>}
+          {body.challenge && <a href="#challenge">進階驗收</a>}
           <a href="#check">自我檢核（{checkedN}/{body.checklist.length}）</a>
           {body.refs.length > 0 && <a href="#refs">延伸閱讀</a>}
         </nav>
-        <button className={`btn small done-btn${done ? ' is-done' : ' ghost'}`} onClick={() => toggleDone(s.id)}>
-          {done ? '✓ 已完成' : '標記完成'}
-        </button>
+        <div className="lesson-states" role="group" aria-label="這一課的進度">
+          <button className={`btn small done-btn${done ? ' is-done' : ' ghost'}`} aria-pressed={done} onClick={() => toggleDone(s.id)}>
+            {done ? '✓ 讀過' : '標記讀過'}
+          </button>
+          <a href="#check" className={`lesson-state${canExplain ? ' on' : ''}`} title={`自我檢核 ${checkedN} / ${body.checklist.length}`}>{canExplain ? '✓ ' : ''}能自行解釋</a>
+          {assess.quiz && <a href="#assess" className={`lesson-state${quizPassed ? ' on' : ''}`} title="選擇題全對">{quizPassed ? '✓ ' : ''}測驗通過</a>}
+        </div>
       </div>
 
       {body.map && <MapLayer map={body.map} />}
@@ -105,6 +117,7 @@ export default function Skill({ id }) {
           {assess.total === 0 && <p className="muted">這一課的驗收題目撰寫中。</p>}
           {assess.exercises.map((ex) => <ExerciseRunner key={ex.id} exercise={ex} compact />)}
           {assess.quiz && <Quiz key={s.id} skillId={s.id} questions={assess.quiz} />}
+          {body.challenge && <Challenge challenge={body.challenge} storeKey={`challenge:${s.id}`} />}
           {assess.quiz && <p className="rv-after">做完了？<a href={withTrack('review', d.track)}>到複習頁混合練習 →</a></p>}
 
           <h2 id="check">自我檢核 <span className="muted" style={{ fontSize: '0.85rem', fontFamily: 'var(--sans)', fontWeight: 500 }}>{checkedN} / {body.checklist.length}</span></h2>
@@ -118,9 +131,7 @@ export default function Skill({ id }) {
               </li>
             ))}
           </ul>
-          {checkedN === body.checklist.length && !done && (
-            <Callout tone="good" title="全部打勾了" />
-          )}
+          {canExplain && <Callout tone="good" title="✓ 能自行解釋" />}
 
           {related.length > 0 && (
             <>
@@ -169,9 +180,15 @@ function Deep({ id }) {
   return (
     <section className="deep">
       <h2 id="deep">深入</h2>
-      <Markdown text={text} className="deep-body" headingOffset={1} idFor={(_, slug) => `deep-${slug}`} codeAction={action} />
+      <Markdown text={text} className="deep-body" headingOffset={1} idFor={(_, slug) => `deep-${slug}`} codeAction={action} stopId={(n) => `deep-stop-${n}`} />
     </section>
   )
+}
+
+/* 課的目錄列：跳到第一個停靠點（深入內容到了才知道有沒有） */
+function StopLink({ id }) {
+  const n = countStops(readSkillDeep(id))
+  return n > 0 ? <a href="#deep-stop-1">停靠點{n > 1 ? `（${n}）` : ''}</a> : null
 }
 
 /* 重點文字裡的 `code` 轉成 <code> */

@@ -100,6 +100,8 @@ COMMIT;
 
 第三種做法是**樂觀鎖**：資料表加一個 `version` 欄位，更新時寫 `WHERE id = 1 AND version = <讀到的版本>`。更新到 0 列就代表有人先改了，重讀再試。這種做法適合衝突很少、不想讓別人排隊的情況。
 
+:::stop 讀到這裡可以先停：會說明 READ COMMITTED 與 REPEATABLE READ 各在什麼時候拍快照，也會把「讀 → 算 → 寫」改成一句條件 UPDATE 或 FOR UPDATE。後面的交易範圍與重試，在寫服務層的程式時再回來讀。
+
 ## 實際程式：交易要短，失敗要能重試
 
 Python 裡用 psycopg（PostgreSQL 官方推薦的驅動）時，交易大致長這樣（需要實際的資料庫，不能在瀏覽器裡跑）：

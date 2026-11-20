@@ -2,6 +2,43 @@
 import m3 from './parts/d3-data-m3.js'
 const base = {
   'sql-basics': {
+    map: {
+      names: [
+        { n: '邏輯執行順序', t: 'FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT；決定別名在哪裡能用、聚合條件要放 HAVING。' },
+        { n: '`WHERE` 與 `HAVING`', t: 'WHERE 在分組前逐列過濾，HAVING 在分組後過濾群組；`count(*) > 3` 只能放 HAVING。' },
+        { n: '三值邏輯', t: '和 NULL 比較的結果是 NULL，WHERE 只留下 true；`status <> \'paid\'` 會漏掉 status 是 NULL 的列。' },
+        { n: '`IS NULL`、`IS DISTINCT FROM`', t: '判斷 NULL 要用 `IS NULL`；想讓 NULL 也參與「不等於」，用 `IS DISTINCT FROM`。' },
+        { n: '`count(*)` 與 `count(col)`', t: '`count(*)` 數列數，`count(col)` 不數 NULL；LEFT JOIN 之後算筆數要用後者。' },
+        { n: '`GROUP BY` 的粒度', t: '分組之後每組一列，SELECT 只能放群組鍵與聚合；要「每組最新一筆」改用視窗函數或 `DISTINCT ON`。' },
+        { n: '`NUMERIC` 與 `TIMESTAMPTZ`', t: '金額用十進位定點數，時間存帶時區的時間點；用浮點數存金額，加總會差幾分錢。' },
+      ],
+      ask: [
+        '結果的一列代表什麼（每個城市一列、每張訂單一列），以及排序與筆數上限。',
+        '哪些條件是逐列過濾、哪些是對群組過濾（例如「只算已付款」與「只列 3 筆以上的城市」）。',
+        '欄位可能是 NULL 時要怎麼算：要不要包含、顯示成什麼。',
+        '日期區間的邊界與時區（例如台灣時間 3 月整個月，用 `>=` 月初與 `<` 下月初）。',
+        '金額、時間、id 的欄位型別。',
+      ],
+      prompt: '寫一句 PostgreSQL 查詢給月報：統計 2026 年 3 月（台灣時間）每個城市已付款訂單的筆數與總金額，只列 3 筆以上的城市，依總金額由高到低排序。orders 以 `user_id` 對 users，城市是 NULL 的會員歸成「未填」一組。日期條件寫成 `created_at >= \'2026-03-01 00:00+08\' AND created_at < \'2026-04-01 00:00+08\'`，不要對欄位套 `::date`；筆數條件放 `HAVING`，金額欄位是 `NUMERIC`。',
+      verify: [
+        { c: '手算對照', t: '挑一個城市手算筆數與金額，再在 `psql` 或 Playground 執行查詢比對；差一筆時先查邊界那一天與時區。' },
+        { c: 'NULL', t: '先 `SELECT count(*) FROM users WHERE city IS NULL` 確認有沒有未填的會員，再看結果裡有沒有「未填」這一組；不見了通常是用了 `=` 或 `<>` 比較 NULL。' },
+        { c: 'HAVING', t: '把門檻從 3 改成 1，城市數應該變多；報錯 `aggregate functions are not allowed in WHERE` 代表聚合條件放進了 WHERE。' },
+        { c: '型別', t: '`\\d orders` 看 amount 的型別；`double precision` 或 `real` 要改成 `numeric`，加總結果出現 `0.30000000000000004` 這類尾數就是浮點誤差。' },
+        { c: '日期條件', t: '`EXPLAIN` 看 created_at 上的索引有沒有被用到；條件寫成 `created_at::date = …` 或 `date_trunc(…)` 時，計畫通常變成 Seq Scan。' },
+      ],
+    },
+    challenge: {
+      task: '在 [Playground](#/playground?lang=sql) 先執行 `UPDATE users SET city = NULL WHERE id IN (4, 5);`，讓兩位會員沒填城市。**執行下面三句之前**，先手算每句回傳幾列（第三句再寫出每一組的 count）：\n\n1. `SELECT count(*) FROM users WHERE city <> \'台北\';`\n2. `SELECT count(city), count(*) FROM users;`\n3. `SELECT city, count(*) FROM users GROUP BY city;`\n\n寫下預測後再執行，對照差異。',
+      deliver: '三句各一組「預測 → 實際」的數字，加上每個差異一句原因。',
+      check: [
+        '預測寫在執行之前，三句都有預測與實際兩個數字',
+        '第 1 句的解釋指出 `city <> \'台北\'` 對 NULL 得到 NULL、被 WHERE 丟掉，並寫出把未填城市算進來的改法（`IS DISTINCT FROM` 或加 `OR city IS NULL`）',
+        '第 3 句說出 GROUP BY 把所有 NULL 歸成同一組，和用 `=` 比較 NULL 的結果不同',
+        '列出這份會員報表要跟業務確認的定義：未填城市算不算一組、「不在台北」要不要包含未填',
+      ],
+      twist: '行銷部門改口：沒填城市的會員要顯示成「未填」，並且只列出會員數 2 人以上的城市。先預測第 3 句改寫後剩幾列、哪幾組消失，再用 `coalesce(city, \'未填\')` 與 `HAVING count(*) >= 2` 驗證。',
+    },
     points: [
       { b: '邏輯執行順序不是書寫順序', t: 'FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT。所以 WHERE 裡不能用 SELECT 的別名，HAVING 才能用聚合。（PostgreSQL 的擴充：ORDER BY 與 GROUP BY 可以用輸出欄位的別名，別的資料庫不一定。）' },
       { b: 'NULL 不等於任何東西', t: '`NULL = NULL` 是 NULL 不是 true；要用 `IS NULL`。`COUNT(col)` 不算 NULL、`COUNT(*)` 算全部列。`NOT IN (含 NULL 的子查詢)` 會整個變空。' },
@@ -45,6 +82,16 @@ const base = {
         { c: '可疑寫法', t: '出現 `sum(DISTINCT ...)` 或用 `SELECT DISTINCT` 消掉重複列，通常是在掩蓋一對多放大的列數；`NATURAL JOIN` 與沒有條件的逗號 JOIN 也要改成明寫 `ON`。' },
       ],
     },
+    challenge: {
+      task: '在 [Playground](#/playground?lang=sql) 先執行兩句：`INSERT INTO order_items VALUES (101, 2, 2);`（Alice 的 101 號訂單多一個品項）、`INSERT INTO orders VALUES (107, NULL, \'pending\', 500, \'2026-03-20 12:00+08\');`（一筆訪客訂單）。執行下面三句之前，先寫下預測：\n\n1. `users LEFT JOIN orders LEFT JOIN order_items` 之後 `GROUP BY u.name` 算 `sum(o.amount)`，Alice 是多少\n2. `SELECT count(*) FROM users WHERE id NOT IN (SELECT user_id FROM orders);` 回傳多少\n3. 同一個問題改用 `NOT EXISTS`，回傳哪幾位',
+      deliver: '三個預測與實際結果，加上每一句「差在哪一步配對」的說明，以及第 1 句改成先聚合再 JOIN 的查詢。',
+      check: [
+        '預測寫在執行之前',
+        'Alice 的金額指出是哪張訂單被品項數放大、放大幾倍；改寫後的查詢算出正確的 3290',
+        '第 2 句回 0 的原因指向訪客訂單的 NULL `user_id`，第 3 句回 Dave 與 Eve',
+      ],
+      twist: '同一份報表改給倉儲用：一張出貨單拆成多個包裹，每個包裹有多個品項，運費記在出貨單上。先預測「每位客戶的運費加總」用同樣三表 JOIN 會被放大幾倍，再說出哪些條件可以沿用（粒度、一對多的方向、先聚合再 JOIN），哪些要跟物流確認（運費記在出貨單還是包裹、退件算不算）。',
+    },
     points: [
       { b: 'JOIN 是在配對列', t: 'ON 條件決定左表每列跟右表哪些列配成一列。一對多會讓左表「變多」，後續 SUM / COUNT 重複計算就是從這裡來的。' },
       { b: 'LEFT 保左、INNER 只留配對', t: '「所有使用者含沒訂單的」用 LEFT；「有訂單的使用者」用 INNER。RIGHT 幾乎都能改寫成 LEFT。' },
@@ -61,6 +108,16 @@ const base = {
     ],
   },
   'data-modeling': {
+    challenge: {
+      task: '把本課開頭那張「什麼都裝」的訂單表拆到 3NF，寫成 PostgreSQL DDL（主鍵、外鍵與 ON DELETE、NOT NULL、CHECK），在 [Playground](#/playground?lang=sql) 建起來，每張表插兩筆資料，再寫一句把原本那張大表的內容 JOIN 回來的查詢。',
+      deliver: 'DDL、JOIN 回原樣的查詢結果，以及一張表：原本每個欄位搬到哪張表、依賴哪個鍵。',
+      check: [
+        '客戶 email 這類「目前的值」只存在一張表；訂單上若保留商品名稱與單價，註明是成交快照與理由',
+        '每個外鍵寫出 ON DELETE 的選擇與理由（RESTRICT、CASCADE 或 SET NULL）',
+        'JOIN 回來的結果和原本大表的資料一致，沒有重複列',
+      ],
+      twist: '交卷後需求變更：一張訂單可以分批出貨，每批有自己的物流單號與出貨日，退貨要知道是哪一批。先預測要新增或修改幾張表、哪些既有查詢會跟著改，再實際改 DDL，比對預測與實際改動的差距；最後寫出哪些約束可以沿用、哪些要跟業務確認（部分出貨時訂單狀態怎麼算、同一品項能不能跨批）。',
+    },
     points: [
       { b: '正規化的目的：一件事實只存一處', t: '客戶的地址存在 customers 表一次，orders 用 customer_id 指過去。改地址只改一處，不會出現兩筆不一致。' },
       { b: '約束是最便宜的驗證', t: '`NOT NULL`、`UNIQUE`、`FOREIGN KEY`、`CHECK (amount >= 0)` 由資料庫保證，比應用層驗證更可靠（任何程式、任何路徑進來都擋）。' },
@@ -78,6 +135,17 @@ const base = {
     ],
   },
   'schema-design-practice': {
+    challenge: {
+      task: '從本課的掛號需求列出至少六條業務不變條件（例如同一位病患同一診次只能有一筆有效掛號、名額不能為負、取消後可以重掛），每一條分配給「資料庫約束」「交易」「應用程式邏輯」其中一層。接著在 [Playground](#/playground?lang=sql) 執行本課的完整 DDL，對分給約束的每一條寫一句會被擋下的 INSERT 或 UPDATE。',
+      deliver: '一張三欄表（不變條件、放在哪一層、理由），以及每條約束被擋下時的錯誤訊息與約束名稱。',
+      check: [
+        '跨列的規則（唯一的有效掛號）用部分唯一索引或約束守住，不靠應用程式先查再寫',
+        '要讀多列再判斷的規則標成交易，並寫出用條件式 UPDATE 或哪一種鎖',
+        '放在應用程式的條件說明資料庫為什麼擋不了（例如要呼叫外部系統、要看使用者的角色）',
+        '每條約束都附上實際跑出的錯誤訊息',
+      ],
+      twist: '院方新增規則：同一位病患同一天最多掛三個診。先預測它該放哪一層、能不能用一個 CHECK 或唯一索引寫出來，再試著實作，說明預測錯在哪裡（如果有）。',
+    },
     points: [
       { b: '先從需求句子找名詞與規則', t: '名詞是候選實體（病患、醫師、診次、掛號），「每個…只能…」是唯一約束，「必須是…之一」是 CHECK，「…屬於…」是外鍵。規則寫進 DDL，任何程式路徑都繞不過。' },
       { b: '主鍵：bigint identity 或 UUID', t: '`bigint GENERATED ALWAYS AS IDENTITY` 小、有序、索引友善；需要在用戶端先產生 id、或不想讓 id 透露數量時用 UUID（有時間序的 UUIDv7 對索引比較友善）。業務上的編號（病歷號）另設唯一約束，不拿來當主鍵。' },
@@ -126,6 +194,17 @@ const base = {
         { c: 'migration', t: '`CREATE INDEX CONCURRENTLY` 被包進交易會報 `cannot run inside a transaction block`；中途失敗留下的 INVALID 索引用 `\\d 表名` 找出來，`DROP INDEX` 後重建。' },
       ],
     },
+    challenge: {
+      task: '在 [Playground](#/playground?lang=sql) 依序執行本課「範例資料太小」與「用 generate_series 做出 10 萬筆」兩段。執行第二段之前，先預測 `big_orders WHERE user_id = 42` 在建索引前後各是什麼節點、估計列數（`rows`）大概多少、Buffers 會差幾倍。執行後把兩份 `EXPLAIN ANALYZE` 原文並排比較。',
+      deliver: '兩份計畫原文，加上一段比較：節點類型、估計與實際列數、Buffers、Execution Time，以及預測錯的地方。',
+      check: [
+        '預測寫在執行之前',
+        '說出 6 列的 orders 建了索引仍走 Seq Scan 是規劃器的正確選擇，不是索引壞了',
+        '指出 Bitmap Index Scan 與 Index Scan 的差別，以及這 10 列分散在幾頁',
+        '時間數字標明是瀏覽器內 PGlite 的本機量測，只比數量級，不當成正式環境的效能',
+      ],
+      twist: '把條件改成 `user_id < 5000`（約一半的列）。先預測計畫會變成 Index Scan、Bitmap 還是 Seq Scan，再執行，用選擇性說明規劃器為什麼這樣選。',
+    },
     points: [
       { b: '索引是排序好的副本', t: 'B-tree 把欄位值排序存在樹裡，查一個值只要走樹高（幾層），不用掃整張表。代價：每次寫入要同步更新索引。' },
       { b: '什麼時候索引沒用', t: '對欄位套函數（`LOWER(email)`，要建表達式索引）、前置萬用字元 `LIKE \'%abc\'`、選擇性太低（status 只有 3 種值）、資料量太小（掃全表更快）。' },
@@ -145,6 +224,17 @@ const base = {
     ],
   },
   'full-text-search': {
+    challenge: {
+      task: '在 [Playground](#/playground?lang=sql) 建一張 `products_fts(id, name, body)`，放 8 筆自己寫的中文商品說明，`body` 用本課的手動斷詞方式（詞之間加空白），以 `to_tsvector(\'simple\', body)` 建 GIN 索引。執行前列出 5 個查詢詞與你預期命中的商品 id，其中一個預期找不到；再用 `websearch_to_tsquery` 查詢並依 `ts_rank` 排序。',
+      deliver: '5 列的對照表：查詢詞、預期命中、實際命中與排名，加上一句搜尋沒結果時畫面要顯示什麼。',
+      check: [
+        '預期寫在執行之前',
+        '至少一個詞因為斷詞的切法不同而沒命中（例如文件寫成「無線藍牙」、查詢是「藍牙」），並說明原因是斷詞，不是索引',
+        '排名和自己的主觀判斷不一致的地方寫出原因（詞頻、文件長度、有沒有設權重）',
+        '沒結果時的畫面不顯示 tsquery 的錯誤訊息',
+      ],
+      twist: '同一套搜尋改給演唱會售票網站：使用者會打歌手暱稱、錯字與英文縮寫。先預測哪幾種輸入內建全文檢索處理不了，再說出哪些做法可以沿用（GIN、`websearch_to_tsquery` 接受任何輸入），哪些要跟業務確認（暱稱對照表由誰維護、錯字要不要容錯、改用 pg_trgm 或搜尋引擎）。',
+    },
     points: [
       { b: '前置萬用字元用不到 B-tree', t: "`LIKE '%keyword%'` 只能逐列比對字串，資料量變大時成本線性成長；而且子字串比對分不出詞的邊界（`%log%` 會命中 `catalog`、`blog`），也沒有相關度可以排序。" },
       { b: 'tsvector 是斷詞後的詞位清單', t: "`to_tsvector('english', 'Indexes are rebuilt')` 得到 `'index':1 'rebuilt':3`：轉小寫、去掉停用詞（are）、還原字根（indexes → index），並記下位置。查詢端的 `to_tsquery` 也做同樣處理，兩邊才對得上。" },
@@ -191,6 +281,17 @@ const base = {
         { c: '有沒有 COMMIT', t: '寫入後從另一個連線（例如 `psql`）查得到資料；查不到通常是忘了 COMMIT，連線關掉時交易被 rollback。' },
       ],
     },
+    challenge: {
+      task: '開 [兩個交易搶最後一件](#/lab/TxnLab) 實驗室，隔離等級（READ COMMITTED、REPEATABLE READ）乘以做法（讀→算→寫、一句條件 UPDATE、SELECT … FOR UPDATE）共六種組合。每一種先寫下預測：T2 最後讀到的庫存、誰在等鎖、有沒有錯誤、成立幾張訂單，再逐步播放核對。',
+      deliver: '六格的預測與實際對照表，預測錯的格子各一句原因。',
+      check: [
+        '六格都有播放前的預測',
+        '讀→算→寫在 READ COMMITTED 下成立兩張訂單，並說出包在交易裡也擋不住的原因',
+        'REPEATABLE READ 出現的錯誤寫出 SQLSTATE `40001`，以及應用程式要重做整個交易',
+        '說明條件 UPDATE 與 FOR UPDATE 各在什麼需求下選用',
+      ],
+      twist: '換成音樂祭的票務：一張訂單要同時扣「場次總量」與「該票種的剩餘量」兩列。先預測一句條件 UPDATE 還夠不夠、兩張訂單會不會互相死結，再說出哪些條件可以沿用（扣減與判斷在同一句、固定上鎖順序），哪些要跟業務確認（一人限購幾張、未付款的保留票多久釋出）。',
+    },
     points: [
       { b: 'ACID 四個字', t: '原子性（全做或全不做）、一致性（約束永遠成立）、隔離性（並發交易互不干擾的程度）、持久性（COMMIT 後斷電也在）。' },
       { b: '隔離等級是「看得到多少別人的變更」', t: 'READ COMMITTED（PostgreSQL 預設：只看到已 commit 的）→ REPEATABLE READ（同一交易內讀到的一致）→ SERIALIZABLE（等同序列執行，可能失敗要重試）。' },
@@ -208,6 +309,17 @@ const base = {
     ],
   },
   'locks-deadlocks': {
+    challenge: {
+      task: '用本課死結那段 Python 模擬，跑兩組計畫：`{"A": [1, 2], "B": [2, 3], "C": [3, 1]}` 與 `{"A": [1, 2], "B": [2, 3], "C": [3, 4]}`。執行前先畫出每組的等待關係（誰握著哪一列、在等誰），預測哪一組會形成環。接著為下表的每一種錯誤決定處理方式：重試整個交易、稍後重跑、或不重試：`40P01`、`55P03`（lock timeout）、`55P03`（NOWAIT）、`57014`、`23505`。',
+      deliver: '兩張等待關係圖（文字畫也可以）與預測、實際輸出，加上一張錯誤碼對處理方式的表。',
+      check: [
+        '等待圖的每條邊標出「誰等誰、等哪一列」，有環的那一組指出環',
+        '說明死結被偵測後中止的是整個交易，所以重試的單位是整個交易，不是失敗的那一句',
+        '兩種 `55P03` 分開處理（migration 稍後重跑、NOWAIT 回「處理中」），`23505` 不重試',
+        '重試寫出次數上限',
+      ],
+      twist: '把三個交易都改成依 id 由小到大上鎖。先預測環會不會消失、有沒有交易要等比較久，再執行並說明原因。',
+    },
     points: [
       { b: '列鎖四種強度', t: '`FOR UPDATE`（要改或刪）> `FOR NO KEY UPDATE`（一般 UPDATE 自動拿的）> `FOR SHARE`（只要確保別人不能改）> `FOR KEY SHARE`（外鍵檢查用）。一般讀取不拿列鎖，MVCC 讓讀不被寫擋住。' },
       { b: 'NOWAIT 與 SKIP LOCKED', t: '`NOWAIT` 拿不到鎖立刻報錯（55P03）；`SKIP LOCKED` 跳過被鎖的列，多個 worker 同時 `SELECT … LIMIT 1 FOR UPDATE SKIP LOCKED` 就能各拿到不同的工作，是用資料表做工作佇列的標準寫法。' },
@@ -227,6 +339,17 @@ const base = {
     ],
   },
   'sql-advanced': {
+    challenge: {
+      task: '在 [Playground](#/playground?lang=sql) 先執行 `INSERT INTO orders VALUES (107, 2, \'paid\', 3290, \'2026-03-12 16:45+08\');`，和 106 號訂單同一位使用者、同時間、同金額。執行前預測：\n\n1. 「每位使用者最新一筆」用 `ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC)` 取 `rn = 1`，Bob 拿到哪一筆\n2. 改用 `RANK()`，Bob 有幾列\n3. 全部訂單依金額排名，`RANK()` 與 `DENSE_RANK()` 在 3290 之後的下一個名次各是多少',
+      deliver: '三個預測與實際結果，加上你為「最新一筆」補上的決勝鍵與理由。',
+      check: [
+        '預測寫在執行之前',
+        '說出同值時 ROW_NUMBER 選哪一筆沒有保證，換資料或換計畫可能不同',
+        '補上決勝鍵（例如 `ORDER BY created_at DESC, id DESC`）後結果固定，並說明 id 能當決勝鍵的前提',
+        '用實際的名次數字說明 RANK 與 DENSE_RANK 的差別',
+      ],
+      twist: '需求變成「每位使用者最近三筆，同一秒的訂單要一起列出」。先預測該用 ROW_NUMBER、RANK 還是 DENSE_RANK，Bob 會有幾列，再寫出來驗證。',
+    },
     points: [
       { b: 'CTE 是查詢的變數', t: '`WITH recent AS (SELECT …) SELECT … FROM recent JOIN …`，每段有名字、可讀、可重用。遞迴 CTE 能走樹狀資料（組織圖、分類）。' },
       { b: '視窗函數不縮列', t: '`ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC)` 給每人每筆訂單編號，取 = 1 就是「每人最新一筆」。`SUM() OVER (ORDER BY …)` 做累計。' },
@@ -243,6 +366,17 @@ const base = {
     ],
   },
   'orm-migrations': {
+    challenge: {
+      task: '替「把 `users.name` 改名為 `display_name`」寫一份 expand–contract 計畫，部署是滾動更新，新舊版本的程式會並存幾分鐘。每一步寫出：migration 的 SQL、這一步上線的程式版本、此時舊版與新版各讀寫哪個欄位。在 [Playground](#/playground?lang=sql) 把每一步的 migration 實際跑一次，每步之後各執行一句「舊版程式會送的 SQL」與「新版程式會送的 SQL」。',
+      deliver: '步驟表（migration、程式版本、新舊版讀寫的欄位），以及每一步兩句 SQL 的執行結果。',
+      check: [
+        '每一步之後舊版與新版的 SQL 都成功，沒有一步要求兩版同時停機',
+        '先讓新程式雙寫、再回填舊資料，回填可以重跑而結果不變',
+        '刪舊欄位排在所有舊版程式下線之後，並寫出怎麼確認沒有程式還在讀它',
+        '指出 autogenerate 會把這次改名產生成 drop 加 add，計畫裡的 migration 是手寫或手改的',
+      ],
+      twist: '部署到一半，新版有 bug 要回滾到上一版程式。先預測在哪幾步回滾是安全的、哪一步之後回滾會出錯，再用步驟表逐步驗證。',
+    },
     points: [
       { b: 'N+1：迴圈裡的隱形查詢', t: '取 100 篇文章再逐篇存取 `.author` = 1 + 100 次查詢。用 eager loading（`selectinload` / `joinedload`）變 2 次。開 SQL log 看一次就懂。' },
       { b: 'session 的生命週期', t: '一個請求一個 session，結束時 commit 或 rollback 並關閉。長壽 session 會拿到舊資料、洩漏連線。' },
@@ -261,6 +395,16 @@ const base = {
     ],
   },
   'db-operations': {
+    challenge: {
+      task: '在自己的電腦用 Docker 起兩個 PostgreSQL 容器（來源與還原目標），在來源建本站 Playground 的電商四張表與資料。寫一份還原演練腳本：`pg_dump -Fc` 備份、在目標 `pg_restore`、用應用程式的帳號連上去，查出 Alice 的訂單並新增一筆訂單。演練的結束條件是這筆業務請求成功，不是 `pg_restore` 結束。腳本在每一步前後記下時間。',
+      deliver: '腳本、一次實際執行的計時紀錄（各步驟與總長），以及最後那筆業務請求的輸出。',
+      check: [
+        '結束條件是業務請求成功：查得到既有訂單、新訂單寫得進去',
+        '記下還原後才發現缺的東西（例如應用程式的角色與權限，`pg_dump` 不會備份角色），並補進腳本',
+        '計時標明機器、資料量與 PostgreSQL 版本，是本機量測，不直接當成正式環境的 RTO',
+      ],
+      twist: '演練改成「有人誤刪了 orders，要回到誤刪前一分鐘」。先預測只靠每日 `pg_dump` 最多會丟多少資料、要做到一分鐘需要什麼（WAL 歸檔與 PITR），再寫出要跟業務確認的 RPO 與 RTO 數字，以及哪些步驟可以沿用到門診系統、哪些要重新確認（可以停機多久、哪些資料可以事後補）。',
+    },
     points: [
       { b: '備份三件事', t: '自動化（每天 `pg_dump` 或受管服務快照）、異地存放、**定期還原演練**並記錄花多久（RTO）。有 WAL 歸檔才能做時間點還原（PITR）。' },
       { b: '連線是稀缺資源', t: 'PostgreSQL 每個連線是一個程序，`max_connections` 通常一兩百。API worker 數 × 每個 pool 大小要小於它；多實例時用 pgbouncer 做連線池。' },
@@ -279,6 +423,16 @@ const base = {
     ],
   },
   'mongodb': {
+    challenge: {
+      task: '開 [表格 vs 文件](#/lab/DocVsRelLab) 實驗室，在三種模式各新增 5 則留言，記下每次寫入動到的範圍。接著用本課「文件大小」那段 Python 估算：一篇熱門文章每天 2,000 則留言、每則 300 個中文字（示意數字），把留言全部嵌入文章時幾天會碰到 16MB 上限。最後寫下這篇文章的嵌入或參照決定。',
+      deliver: '三種模式的寫入範圍對照、估算的算式與假設，以及設計決定與理由。',
+      check: [
+        '估算寫出每則留言的位元組數假設（中文在 UTF-8 是 3 bytes，加上欄位名與 BSON 的額外開銷）',
+        '決定說明文章頁一次顯示多少留言、留言會不會被單獨查詢或修改',
+        '選「嵌入最新 N 則、全部另存」時，寫出兩邊不一致時以哪邊為準',
+      ],
+      twist: '需求改成每則留言可以按讚，文章頁要顯示讚數最多的前 3 則。先預測原本的設計要改哪裡、哪一個操作變貴，再說明改法。',
+    },
     points: [
       { b: '一起讀的資料放一起', t: '文章與它的留言常一起顯示 → 嵌入；留言可能無限多 → 參照。「一次讀取拿到整份需要的資料」是文件模型的優勢，也是設計原則。' },
       { b: '嵌入的三個條件', t: '被擁有（不會被別的文件共享）、數量有上限、一起讀寫。不滿足任一就參照。' },
@@ -297,6 +451,17 @@ const base = {
     ],
   },
   'mongodb-ops': {
+    challenge: {
+      task: '執行本課 ESR 那段 SQL（PostgreSQL 的 B-tree 遵守同樣的規則），把三句 `EXPLAIN (COSTS OFF)` 改成 `EXPLAIN (ANALYZE, BUFFERS)`。執行前先預測三種索引順序各會不會有 Sort 節點、大約讀幾列才拿到 20 筆。執行後把結果翻成 MongoDB 的 `explain("executionStats")` 欄位：哪個數字對應 `totalKeysExamined`、`totalDocsExamined`、有沒有 `SORT` stage。',
+      deliver: '三種索引的預測與實際對照（Sort 有無、讀了幾列、Buffers），以及對應到 MongoDB explain 欄位的表。',
+      check: [
+        '預測寫在執行之前',
+        '用「讀了幾列」相對「回傳 20 列」的比例判斷索引效率，不只看有沒有用到索引',
+        '說出 E-R-S 順序為什麼仍然要排序',
+        '數字註明是瀏覽器內的本機量測；有本機 MongoDB 的話，用同樣的資料再跑一次 explain 對照',
+      ],
+      twist: '範圍條件改成只查最近 3 天（`created_at >= \'2026-10-25\'`）。先預測 ESR 那個索引還是不是最好的選擇，再執行，說明範圍很窄時欄位順序的取捨。',
+    },
     points: [
       { b: 'aggregation 是管線', t: '`$match` → `$group` → `$sort` → `$project` 一階段接一階段，跟 SQL 的 WHERE / GROUP BY / ORDER BY 對應。`$match` 越早越好，才能用索引。' },
       { b: '索引規則跟 B-tree 一樣', t: '複合索引最左前綴、ESR 原則（Equality → Sort → Range 排欄位順序）、`explain("executionStats")` 看有沒有 COLLSCAN。' },
@@ -313,6 +478,17 @@ const base = {
     ],
   },
   'redis-cache': {
+    challenge: {
+      task: '改本課 cache-aside 那段 Python：建 4 個 `FakeRedis`（共用同一個 `clock` 與 `db`），模擬 4 個 worker 各有一份程序內快取。4 個 worker 先各讀一次，讓 worker 1 改名並刪掉自己的快取，接著 4 個 worker 各讀一次、30 秒後再讀、61 秒後再讀。改程式之前先預測每次讀到新名字還是舊名字。最後改成 4 個 worker 共用同一個 `FakeRedis` 再跑一次。',
+      deliver: '兩種版本的輸出（每個 worker 每次讀到的值與時間），預測對照，加上一句結論：刪除快取的效果傳到了哪裡。',
+      check: [
+        '預測寫在改程式之前',
+        '各自一份快取的版本指出其他 3 個 worker 在 TTL 到期前回舊名字',
+        '共用快取的版本說明刪一次全部生效，並指出還剩哪一種並發交錯會留下舊值',
+        '提出至少一種讓程序內快取也能失效的做法（縮短 TTL、pub/sub 廣播、改用共用快取），並寫出代價',
+      ],
+      twist: '換成航空公司的座位圖：每秒被讀上千次，但「已售出」必須立刻反映。先預測 cache-aside 加 TTL 還適不適用，再說出哪些做法可以沿用（先寫 DB 再刪快取、TTL 當安全網），哪些要跟業務確認（可以容忍幾秒的舊資料、真的超賣時怎麼補救）。',
+    },
     points: [
       { b: 'cache-aside', t: '讀：先查快取，miss 才查 DB 並回寫快取（帶 TTL）。寫：更新 DB 後刪快取，不去更新快取（刪比較不會出錯）。' },
       { b: 'TTL 是安全網', t: '就算失效邏輯漏了，資料最多舊 TTL 那麼久。依「可以容忍多舊」決定 TTL。' },
@@ -330,6 +506,17 @@ const base = {
     ],
   },
   'db-choice': {
+    challenge: {
+      task: '本課開頭的四人團隊接到新案子：餐廳訂位平台，功能有訂位、桌位與時段、候補名單、評論、熱門餐廳排行。用本課的六個判斷依據選出主資料庫，以及（如果需要）第二個資料儲存。',
+      deliver: '一張六列的判斷表（依據、這個平台的情況、結論），最後的選擇，以及三條「出現什麼訊號就改變這個決定」。',
+      check: [
+        '六個依據都寫到這個平台的具體情況，不是通用描述',
+        '同一張桌子同一時段不能重複訂，對應到交易、約束或鎖的做法',
+        '加第二個資料儲存時寫出同步方式，以及兩邊不一致時以哪邊為準',
+        '寫出哪些判斷可以沿用到其他業務，哪些要跟業務或團隊確認（評論量、尖峰時段、團隊熟悉哪種資料庫）',
+      ],
+      twist: '半年後新增需求：每家餐廳每 5 分鐘的訂位量與取消率，保留兩年，給餐廳看趨勢。先預測原本的選擇撐不撐得住、要不要加資料庫，再用同一張表重評一次，說明改選或不改選的條件。',
+    },
     points: [
       { b: '預設選關聯式', t: '交易、約束、JOIN、成熟工具鏈，涵蓋大多數業務系統的需求。PostgreSQL 的 JSONB 還能兼顧半結構化資料。' },
       { b: '文件式適合的情境', t: '每筆資料形狀差異大、幾乎都是整份讀寫、需要水平擴展寫入、快速迭代原型。' },

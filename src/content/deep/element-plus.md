@@ -263,6 +263,8 @@ async function onSubmit() {
 
 `el-form` 渲染成 `<form>`，`@submit.prevent` 接到原生的 submit 事件，在輸入框按 Enter 也會送出；`native-type="submit"` 讓按鈕是 `type="submit"`。
 
+:::stop 讀到這裡可以先停：會按需引入 Element Plus、設好繁體中文與主題變數，並把後端的 422 放進 `el-form-item`。後面的表格排序、瀏覽器裡的主題檢查與升級，在做清單頁或改主題色時再回來讀。
+
 ### 預約清單：後端排序與空狀態
 
 ```vue
